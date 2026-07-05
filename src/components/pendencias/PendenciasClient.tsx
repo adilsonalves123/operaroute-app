@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AlertBadge } from "@/components/ui/AlertBadge";
-import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur } from "@/lib/utils";
+import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
 import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
 import { whatsAppUrl } from "@/lib/nichos/cassino/relatorio";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
@@ -21,7 +21,12 @@ export interface PendenciaItem {
   created_at: string;
   ponto_id: string | null;
   visita_id: string | null;
+  coleta_id: string | null;
   pontos: { nome: string; whatsapp: string | null } | null;
+}
+
+function isFuraFuraPendencia(p: PendenciaItem): boolean {
+  return Boolean(p.coleta_id) && p.titulo.toLowerCase().includes("fura-fura");
 }
 
 function valorPendenciaAberta(p: PendenciaItem): number {
@@ -63,6 +68,7 @@ const tipoVariant: Record<string, "danger" | "warning" | "info" | "success"> = {
 
 const filtrosTipo = [
   { id: "todos", label: "Todos" },
+  { id: "fura_fura", label: "Fura Fura" },
   { id: "parcial", label: "Pagamento parcial" },
   { id: "pagamento_pendente", label: "Pagamento pendente" },
   { id: "negativo", label: "Débito negativo" },
@@ -86,14 +92,21 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
 
   const lista = pendencias.filter((p) => {
     const statusOk = mostrarTodas || p.status === "aberta";
-    const tipoOk = filtroTipo === "todos" || p.tipo === filtroTipo;
+    const tipoOk =
+      filtroTipo === "todos"
+        ? true
+        : filtroTipo === "fura_fura"
+          ? isFuraFuraPendencia(p)
+          : p.tipo === filtroTipo;
     return statusOk && tipoOk;
   });
 
   function countTipo(tipo: FiltroTipo) {
     return pendencias.filter((p) => {
       const statusOk = mostrarTodas || p.status === "aberta";
-      return statusOk && (tipo === "todos" || p.tipo === tipo);
+      if (tipo === "todos") return statusOk;
+      if (tipo === "fura_fura") return statusOk && isFuraFuraPendencia(p);
+      return statusOk && p.tipo === tipo;
     }).length;
   }
 
@@ -112,7 +125,62 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
     }));
   }
 
+  async function baixarFuraFura(p: PendenciaItem, valorOverride?: number) {
+    const form = forms[p.id] ?? emptyForm();
+    const valorPix = parseMoneyInput(form.valor_pix);
+    const valorDinheiro = parseMoneyInput(form.valor_dinheiro);
+    const valor = valorOverride ?? valorPix + valorDinheiro;
+    if (!p.ponto_id || valor <= 0) {
+      setForms((prev) => ({
+        ...prev,
+        [p.id]: { ...form, erro: "Informe um valor válido." },
+      }));
+      return;
+    }
+
+    setLoadingId(p.id);
+    try {
+    const forma =
+      valorOverride != null
+        ? "dinheiro"
+        : valorPix > 0.009 && valorDinheiro > 0.009
+          ? "misto"
+          : valorPix > 0.009
+            ? "pix"
+            : "dinheiro";
+      const res = await fetch("/api/coletas/fura-fura/pagamentos", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          ponto_id: p.ponto_id,
+          valor,
+          forma_pagamento: forma,
+          observacao: form.observacao || "Baixa via pendências",
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setForms((prev) => ({ ...prev, [p.id]: emptyForm() }));
+        router.refresh();
+      } else {
+        setForms((prev) => ({
+          ...prev,
+          [p.id]: { ...form, erro: data.error ?? "Erro ao registrar pagamento." },
+        }));
+      }
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
   async function baixar(id: string) {
+    const pendencia = pendencias.find((p) => p.id === id);
+    if (pendencia && isFuraFuraPendencia(pendencia)) {
+      await baixarFuraFura(pendencia);
+      return;
+    }
+
     const form = forms[id] ?? emptyForm();
     setLoadingId(id);
     try {
@@ -148,6 +216,12 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
   }
 
   async function quitar(id: string) {
+    const pendencia = pendencias.find((p) => p.id === id);
+    if (pendencia && isFuraFuraPendencia(pendencia)) {
+      await baixarFuraFura(pendencia, valorPendenciaAberta(pendencia));
+      return;
+    }
+
     const form = forms[id] ?? emptyForm();
     setLoadingId(id);
     try {
@@ -247,6 +321,8 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
               ? whatsAppUrl(whatsapp, mensagemCobrancaPendencia(p, valorAtual))
               : null;
 
+            const isFura = isFuraFuraPendencia(p);
+
             return (
               <div key={p.id} className="glass-card p-4 space-y-3">
                 <button
@@ -263,10 +339,19 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                       {p.status === "resolvida" && (
                         <AlertBadge variant="success">Resolvida</AlertBadge>
                       )}
+                      {isFura && <AlertBadge variant="info">Fura Fura</AlertBadge>}
                     </div>
                     <p className="text-sm text-slate-400 mt-1">
                       {p.pontos?.nome ?? "—"} · {formatDate(p.created_at)}
                     </p>
+                    {isFura && p.coleta_id && (
+                      <a
+                        href={`/coletas/fura-fura/${p.coleta_id}`}
+                        className="text-xs text-primary-neon hover:underline mt-1 inline-block"
+                      >
+                        Ver coleta
+                      </a>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <p
@@ -298,6 +383,11 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
 
                     {p.status === "aberta" && (
                       <>
+                        {isFura && (
+                          <p className="text-xs text-amber-400/90">
+                            Pagamento sincroniza com a coleta fura-fura (FIFO).
+                          </p>
+                        )}
                         <div className="grid gap-3 sm:grid-cols-3">
                           <div className="space-y-1.5">
                             <label className="block text-sm font-medium text-slate-300">

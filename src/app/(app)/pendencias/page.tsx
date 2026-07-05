@@ -21,7 +21,7 @@ export default async function PendenciasPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Pendências</h1>
-          <p className="text-slate-400 mt-1">Débitos negativos e pagamentos pendentes das coletas</p>
+          <p className="text-slate-400 mt-1">Débitos, pagamentos pendentes e coletas fura-fura em aberto</p>
         </div>
         <Link
           href="/pendencias/nova"

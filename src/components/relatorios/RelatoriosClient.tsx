@@ -13,14 +13,24 @@ export interface RelatorioItem {
   pontos: { nome: string } | null;
 }
 
-export function RelatoriosClient({ relatorios }: { relatorios: RelatorioItem[] }) {
+export function RelatoriosClient({
+  relatorios,
+  nicho = "cassino",
+}: {
+  relatorios: RelatorioItem[];
+  nicho?: "cassino" | "fura_fura";
+}) {
   if (relatorios.length === 0) {
     return (
       <EmptyState
         title="Sem relatórios"
-        description="Relatórios são gerados automaticamente após cada coleta cassino."
-        actionLabel="Nova leitura"
-        actionHref="/coletas/nova/cassino"
+        description={
+          nicho === "cassino"
+            ? "Relatórios são gerados automaticamente após cada coleta cassino."
+            : "Coletas fura-fura com foto aparecem na aba Fura Fura."
+        }
+        actionLabel={nicho === "cassino" ? "Nova leitura" : "Nova coleta"}
+        actionHref={nicho === "cassino" ? "/coletas/nova/cassino" : "/coletas/nova/fura-fura"}
         icon={<FileImage className="h-8 w-8" />}
       />
     );

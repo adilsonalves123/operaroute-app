@@ -103,7 +103,10 @@ export function PontoFuraFuraSettings({
         <div>
           <h2 className="font-semibold text-white">Configurações fura-fura</h2>
           <p className="text-xs text-slate-500 mt-1">
-            Preço, estoque de furos e brindes alocados neste ponto
+            Preço, estoque de furos e brindes alocados neste ponto.{" "}
+            <a href="/estoque" className="text-primary-neon hover:underline">
+              Estoque central
+            </a>
           </p>
         </div>
 
