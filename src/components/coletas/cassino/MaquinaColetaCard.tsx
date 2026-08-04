@@ -1,7 +1,7 @@
 "use client";
 
-import { memo, useCallback, useRef, type Dispatch, type SetStateAction } from "react";
-import { AlertCircle, Camera, Gamepad2, X } from "lucide-react";
+import { memo, useCallback, type Dispatch, type SetStateAction } from "react";
+import { AlertCircle, Gamepad2 } from "lucide-react";
 import {
   formatContador,
   formatContadorInput,
@@ -11,6 +11,8 @@ import {
 import { formatCurrency, cn } from "@/lib/utils";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
+import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
+import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
 
 export interface LeituraFormState {
   equipamentoId: string;
@@ -19,6 +21,7 @@ export interface LeituraFormState {
   saidaAnterior: number;
   entradaAtualInput: string;
   saidaAtualInput: string;
+  fotoReferenciaUrl: string | null;
   fotoFile: File | null;
   fotoPreview: string | null;
 }
@@ -29,6 +32,7 @@ function getCentesimos(input: string, anterior: number): number {
 }
 
 interface MaquinaColetaCardProps {
+  pontoId: string;
   leitura: LeituraFormState;
   onUpdate: (id: string, field: "entradaAtualInput" | "saidaAtualInput", value: string) => void;
   onFotoChange: (id: string, file: File | null) => void;
@@ -38,6 +42,7 @@ interface MaquinaColetaCardProps {
 }
 
 export const MaquinaColetaCard = memo(function MaquinaColetaCard({
+  pontoId,
   leitura,
   onUpdate,
   onFotoChange,
@@ -45,7 +50,6 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
   erroSaida,
   erroFoto,
 }: MaquinaColetaCardProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
   const entradaAtual = getCentesimos(leitura.entradaAtualInput, leitura.entradaAnterior);
   const saidaAtual = getCentesimos(leitura.saidaAtualInput, leitura.saidaAnterior);
   const lucro =
@@ -55,10 +59,6 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
 
   const temErro = Boolean(erroEntrada || erroSaida || erroFoto);
 
-  function handleFile(file: File | null) {
-    onFotoChange(leitura.equipamentoId, file);
-  }
-
   return (
     <div
       id={`maquina-${leitura.equipamentoId}`}
@@ -67,15 +67,33 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         temErro ? "border-red-500/50 ring-1 ring-red-500/20" : "border-blue-500/10"
       )}
     >
-      <div className="flex items-center gap-2">
-        <Gamepad2 className="h-4 w-4 text-primary-neon shrink-0" />
-        <p className="font-medium text-white">{leitura.nome}</p>
-        {temErro && (
-          <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-400">
-            <AlertCircle className="h-3 w-3" />
-            Corrigir
-          </span>
+      <div className="flex items-center gap-3">
+        {leitura.fotoReferenciaUrl ? (
+          <ExpandableImage
+            src={leitura.fotoReferenciaUrl}
+            alt={`Referência ${leitura.nome}`}
+            className="h-12 w-12 shrink-0 rounded-lg object-cover ring-1 ring-white/10"
+          />
+        ) : (
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-800/80 ring-1 ring-white/5">
+            <Gamepad2 className="h-5 w-5 text-slate-600" />
+          </div>
         )}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+          <p className="font-medium text-white truncate">{leitura.nome}</p>
+          <AbrirChamadoButton
+            pontoId={pontoId}
+            equipamentoId={leitura.equipamentoId}
+            equipamentoNome={leitura.nome}
+            variant="icon"
+          />
+          {temErro && (
+            <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-400">
+              <AlertCircle className="h-3 w-3" />
+              Corrigir
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3 text-xs text-slate-500">
@@ -132,51 +150,13 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         </div>
       </div>
 
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-slate-300">Foto da máquina *</label>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-        />
-        {leitura.fotoPreview ? (
-          <div className="relative">
-            <ExpandableImage
-              src={leitura.fotoPreview}
-              alt={`Foto ${leitura.nome}`}
-              className="h-36"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                handleFile(null);
-                if (inputRef.current) inputRef.current.value = "";
-              }}
-              className="absolute top-2 right-2 z-10 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-lg border border-dashed py-8 text-sm hover:border-primary-neon/40 hover:text-primary-neon",
-              erroFoto
-                ? "border-red-500/50 text-red-400"
-                : "border-slate-600 text-slate-400"
-            )}
-          >
-            <Camera className="h-5 w-5" />
-            Tirar foto ou escolher da galeria
-          </button>
-        )}
-        {erroFoto && <p className="text-xs text-red-400">{erroFoto}</p>}
-      </div>
+      <FotoColetaCaptura
+        preview={leitura.fotoPreview}
+        onChange={(file) => onFotoChange(leitura.equipamentoId, file)}
+        erro={erroFoto}
+        hint="Foto do painel agora — a miniatura acima é a referência do cadastro."
+        alt={`Foto ${leitura.nome}`}
+      />
 
       {lucro !== null && !erroEntrada && !erroSaida && (
         <div className="rounded-lg bg-slate-900/60 px-3 py-2 flex justify-between text-sm">
@@ -200,6 +180,7 @@ export function leituraToInput(eq: {
   numero_maquina?: string | null;
   numero_entrada: number | null;
   numero_saida: number | null;
+  foto_url?: string | null;
 }): LeituraFormState {
   return {
     equipamentoId: eq.id,
@@ -208,6 +189,7 @@ export function leituraToInput(eq: {
     saidaAnterior: Math.round(Number(eq.numero_saida ?? 0)),
     entradaAtualInput: "",
     saidaAtualInput: "",
+    fotoReferenciaUrl: eq.foto_url ?? null,
     fotoFile: null,
     fotoPreview: null,
   };

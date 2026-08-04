@@ -1,62 +1,52 @@
 "use client";
 
-import { useRef } from "react";
-import { Camera, X } from "lucide-react";
+import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
-import { cn } from "@/lib/utils";
+import { formatDateTime } from "@/lib/utils";
+
+export type UltimaColetaFoto = {
+  foto_url: string;
+  created_at: string;
+};
 
 type Props = {
   preview: string | null;
   onChange: (file: File | null) => void;
   erro?: string | null;
+  ultimaColeta?: UltimaColetaFoto | null;
 };
 
-export function FotoColetaFuraFura({ preview, onChange, erro }: Props) {
-  const inputRef = useRef<HTMLInputElement>(null);
+export function FotoColetaFuraFura({ preview, onChange, erro, ultimaColeta }: Props) {
+  const novaFoto = (
+    <FotoColetaCaptura
+      preview={preview}
+      onChange={onChange}
+      erro={erro}
+      label="Foto da máquina *"
+    />
+  );
 
-  function handleFile(file: File | null) {
-    onChange(file);
+  if (!ultimaColeta?.foto_url) {
+    return novaFoto;
   }
 
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-slate-300">Foto da máquina *</label>
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => handleFile(e.target.files?.[0] ?? null)}
-      />
-      {preview ? (
-        <div className="relative">
-          <ExpandableImage src={preview} alt="Foto da coleta" className="h-36" />
-          <button
-            type="button"
-            onClick={() => {
-              handleFile(null);
-              if (inputRef.current) inputRef.current.value = "";
-            }}
-            className="absolute top-2 right-2 z-10 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80"
-          >
-            <X className="h-4 w-4" />
-          </button>
+    <div className="space-y-3">
+      <p className="text-xs text-slate-500">
+        Compare com a foto da visita anterior para conferir o que saiu da máquina.
+      </p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-400">Última coleta</label>
+          <ExpandableImage
+            src={ultimaColeta.foto_url}
+            alt="Foto da última coleta"
+            className="h-36"
+          />
+          <p className="text-xs text-slate-500">{formatDateTime(ultimaColeta.created_at)}</p>
         </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className={cn(
-            "flex w-full items-center justify-center gap-2 rounded-lg border border-dashed py-8 text-sm hover:border-primary-neon/40 hover:text-primary-neon",
-            erro ? "border-red-500/50 text-red-400" : "border-slate-600 text-slate-400"
-          )}
-        >
-          <Camera className="h-5 w-5" />
-          Tirar foto ou escolher da galeria
-        </button>
-      )}
-      {erro && <p className="text-xs text-red-400">{erro}</p>}
+        {novaFoto}
+      </div>
     </div>
   );
 }
