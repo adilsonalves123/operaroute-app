@@ -1,10 +1,17 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { fetchCartelaPontos, type CartelaPontos } from "@/lib/dashboard-cartela-pontos";
 import { computePulsoOperacao, type PulsoOperacao } from "@/lib/dashboard-pulso";
-import { fetchSaudePontos, type SaudePontosResumo } from "@/lib/dashboard-saude-pontos";
-import { NICHO_MODULO_FURA_FURA, saldoPendenteColeta } from "@/lib/nichos/fura-fura";
+import {
+  buildSaudeResumoFromEventos,
+  coletasToEventosPonto,
+  type SaudePontosResumo,
+} from "@/lib/dashboard-saude-pontos";
+import { fetchDashboardPontosBase } from "@/lib/dashboard-pontos-base";
+import { fetchPendenciasAbertas } from "@/lib/dashboard-pendencias-abertas";
+import { NICHO_MODULO_FURA_FURA, saldoPendenteColeta, somarHaverFuraFuraAberto } from "@/lib/nichos/fura-fura";
 import type { ComparativoMes } from "@/lib/nichos/fura-fura/reconstruct-coleta";
 import type { Ponto } from "@/lib/types/database";
+import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
 
 function startOfPreviousMonth(): string {
   const now = new Date();
@@ -53,8 +60,9 @@ function sparklineFromDailyValues(
 export async function getFuraFuraDashboardStats(
   supabase: SupabaseClient,
   empresaId: string,
-  startOfMonth: string
+  periodo: DashboardPeriodoFiltro
 ) {
+  const { inicioISO, fimISO } = periodo;
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const thirtyFiveDaysAgo = new Date(now.getTime() - 35 * 24 * 60 * 60 * 1000).toISOString();
@@ -63,11 +71,11 @@ export async function getFuraFuraDashboardStats(
     { data: coletasMes },
     { data: coletasMesAnterior },
     { data: coletasPulso },
-    { data: pontos },
-    { count: pendenciasCount },
+    { data: coletasPendentesAbertas },
+    pontos,
+    pendenciasAbertas,
     { data: estoque },
     cartela,
-    saude,
   ] = await Promise.all([
     supabase
       .from("coletas")
@@ -76,7 +84,8 @@ export async function getFuraFuraDashboardStats(
       )
       .eq("empresa_id", empresaId)
       .eq("nicho_modulo", NICHO_MODULO_FURA_FURA)
-      .gte("created_at", startOfMonth),
+      .gte("created_at", inicioISO)
+      .lte("created_at", fimISO),
     supabase
       .from("coletas")
       .select("valor_bruto, lucro_real, valor_liquido, quantidade_furos")
@@ -92,16 +101,19 @@ export async function getFuraFuraDashboardStats(
       .eq("empresa_id", empresaId)
       .eq("nicho_modulo", NICHO_MODULO_FURA_FURA)
       .gte("created_at", thirtyFiveDaysAgo),
-    supabase.from("pontos").select("*").eq("empresa_id", empresaId),
     supabase
-      .from("pendencias")
-      .select("*", { count: "exact", head: true })
+      .from("coletas")
+      .select("valor_a_receber, valor_pago_recebido")
       .eq("empresa_id", empresaId)
-      .eq("status", "aberta"),
+      .eq("nicho_modulo", NICHO_MODULO_FURA_FURA)
+      .gt("valor_a_receber", 0),
+    fetchDashboardPontosBase(supabase, empresaId),
+    fetchPendenciasAbertas(supabase, empresaId),
     supabase.from("estoque").select("quantidade").eq("empresa_id", empresaId),
     fetchCartelaPontos(supabase, empresaId),
-    fetchSaudePontos(supabase, empresaId, "fura_fura"),
   ]);
+
+  const pendenciasCount = pendenciasAbertas.length;
 
   const list = coletasMes ?? [];
   const mesAtual = aggregateColetas(list);
@@ -109,7 +121,11 @@ export async function getFuraFuraDashboardStats(
   const totalBruto = mesAtual.totalBruto;
   const lucroReal = mesAtual.lucroReal;
   const totalFuros = mesAtual.furos;
-  const pendenteColetas = list.reduce((s, c) => s + saldoPendenteColeta(c), 0);
+  const pendenteColetas = (coletasPendentesAbertas ?? []).reduce(
+    (s, c) => s + saldoPendenteColeta(c),
+    0
+  );
+  const haverPontos = somarHaverFuraFuraAberto(pendenciasAbertas);
 
   const pontosAtivos = pontos?.filter((p) => p.status === "ativo").length ?? 0;
   const pontosSemColeta =
@@ -155,6 +171,11 @@ export async function getFuraFuraDashboardStats(
     })
   );
 
+  const saude: SaudePontosResumo = buildSaudeResumoFromEventos(
+    coletasToEventosPonto((coletasPulso ?? []) as Parameters<typeof coletasToEventosPonto>[0]),
+    (pontos ?? []).filter((p) => p.status === "ativo").map((p) => ({ id: p.id, nome: p.nome }))
+  );
+
   return {
     stats: {
       total_mes: totalBruto,
@@ -167,6 +188,7 @@ export async function getFuraFuraDashboardStats(
       receita_mes: totalBruto,
       furos_mes: totalFuros,
       a_receber_pendente: pendenteColetas,
+      haver_ponto: haverPontos,
     },
     ranking,
     pontosSemColeta,

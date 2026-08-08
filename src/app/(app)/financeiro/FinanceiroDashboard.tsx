@@ -28,6 +28,7 @@ type VisitaResumo = {
   id: string;
   desconto: number | null;
   desconto_recebimento: number | null;
+  debito_abatido?: number | null;
   created_at: string;
 };
 
@@ -74,12 +75,16 @@ export function FinanceiroDashboard({
   lancamentos,
   visitas,
   dividasAbatidasHistorico,
+  saldoCaixa = 0,
 }: {
   lancamentos: FinanceiroRow[];
   visitas: VisitaResumo[];
   dividasAbatidasHistorico: number;
+  /** Saldo real (todo histórico). Nunca deve ir abaixo de zero nas novas saídas. */
+  saldoCaixa?: number;
 }) {
   const [periodo, setPeriodo] = useState<PeriodoFiltro>("hoje");
+  const saldoCaixaExibido = Math.max(0, saldoCaixa);
 
   const metrics = useMemo(() => {
     const rows = lancamentos.filter((l) => dataNoPeriodo(l.data, periodo));
@@ -95,19 +100,23 @@ export function FinanceiroDashboard({
 
     let totalPix = 0;
     let totalDinheiro = 0;
-    let totalRecuperadoNegativo = 0;
 
     for (const l of rows) {
       const b = breakdownLancamento(l);
       if (l.tipo === "entrada") {
         totalPix += b.pix;
         totalDinheiro += b.dinheiro;
-        totalRecuperadoNegativo += b.debitoAbatido;
       } else if (l.tipo === "saida") {
         totalPix -= b.pix;
         totalDinheiro -= b.dinheiro;
       }
     }
+
+    // Recuperação é da visita (lucro ou dinheiro), não só do lançamento de entrada.
+    const totalRecuperadoNegativo = visitasPeriodo.reduce(
+      (s, v) => s + Number(v.debito_abatido ?? 0),
+      0
+    );
 
     const potencialCobrado = entradas + descontos.recebimento;
     const taxaCobrada =
@@ -149,39 +158,51 @@ export function FinanceiroDashboard({
 
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Caixa</p>
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-3 items-stretch">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4 items-stretch">
+          <StatCard
+            label="Saldo do caixa"
+            value={formatCurrency(saldoCaixaExibido)}
+            color="border-blue-500/20"
+            sub={
+              saldoCaixa < -0.009
+                ? "Ajustado para não ficar negativo"
+                : "Dinheiro disponível agora"
+            }
+          />
           <StatCard
             label="Entradas"
             value={formatCurrency(metrics.entradas)}
             color="border-green-500/20"
+            sub={periodoLabels[periodo]}
           />
           <StatCard
             label="Saídas"
             value={formatCurrency(metrics.saidas)}
             color="border-red-500/20"
+            sub={periodoLabels[periodo]}
           />
           <StatCard
-            label="Lucro líquido"
+            label="Resultado do período"
             value={formatCurrency(metrics.lucro)}
-            color="border-blue-500/20"
-            sub="Dinheiro real que entrou"
+            color="border-slate-500/20"
+            sub="Entradas − saídas no filtro"
           />
         </div>
       </div>
 
       <div className="space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Composição das entradas
+          Composição do caixa
         </p>
         <div className="grid gap-3 grid-cols-2 items-stretch">
           <StatCard
             label="Pix"
-            value={formatCurrency(metrics.totalPix)}
+            value={formatCurrency(Math.max(0, metrics.totalPix))}
             color="border-cyan-500/20"
           />
           <StatCard
             label="Dinheiro"
-            value={formatCurrency(metrics.totalDinheiro)}
+            value={formatCurrency(Math.max(0, metrics.totalDinheiro))}
             color="border-amber-500/20"
           />
         </div>

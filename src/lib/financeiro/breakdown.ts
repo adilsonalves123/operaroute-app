@@ -63,6 +63,31 @@ export function breakdownLancamento(l: {
 }): LancamentoBreakdown {
   const valor = Number(l.valor ?? 0);
   const visita = l.visitas;
+  const vazio: LancamentoBreakdown = {
+    pix: 0,
+    dinheiro: 0,
+    debitoAbatido: 0,
+    descontoManual: 0,
+    descontoRecebimento: 0,
+    descontoTotal: 0,
+  };
+
+  // Saída (adiantamento / prêmio): usa o lançamento — visita.valor_pix/dinheiro é pagamento do cliente.
+  if (l.tipo === "saida") {
+    const pixMatch = l.descricao?.match(PIX_REGEX);
+    const dinheiroMatch = l.descricao?.match(DINHEIRO_REGEX);
+    if (pixMatch || dinheiroMatch) {
+      return {
+        ...vazio,
+        pix: pixMatch ? parseBRL(pixMatch[1]) : 0,
+        dinheiro: dinheiroMatch ? parseBRL(dinheiroMatch[1]) : 0,
+      };
+    }
+    const forma = l.forma_pagamento;
+    if (forma === "pix") return { ...vazio, pix: valor };
+    if (forma === "dinheiro") return { ...vazio, dinheiro: valor };
+    return vazio;
+  }
 
   if (visita) {
     const descontos = descontoFromVisita(visita);
@@ -80,56 +105,21 @@ export function breakdownLancamento(l: {
   const dinheiroMatch = l.descricao?.match(DINHEIRO_REGEX);
   if (pixMatch || dinheiroMatch) {
     return {
+      ...vazio,
       pix: pixMatch ? parseBRL(pixMatch[1]) : 0,
       dinheiro: dinheiroMatch ? parseBRL(dinheiroMatch[1]) : 0,
-      debitoAbatido: 0,
-      descontoManual: 0,
-      descontoRecebimento: 0,
-      descontoTotal: 0,
     };
   }
 
-  if (l.tipo !== "entrada" && l.tipo !== "saida") {
-    return {
-      pix: 0,
-      dinheiro: 0,
-      debitoAbatido: 0,
-      descontoManual: 0,
-      descontoRecebimento: 0,
-      descontoTotal: 0,
-    };
+  if (l.tipo !== "entrada") {
+    return vazio;
   }
 
   const forma = l.forma_pagamento;
-  if (forma === "pix") {
-    return {
-      pix: valor,
-      dinheiro: 0,
-      debitoAbatido: 0,
-      descontoManual: 0,
-      descontoRecebimento: 0,
-      descontoTotal: 0,
-    };
-  }
-  if (forma === "dinheiro") {
-    return {
-      pix: 0,
-      dinheiro: valor,
-      debitoAbatido: 0,
-      descontoManual: 0,
-      descontoRecebimento: 0,
-      descontoTotal: 0,
-    };
-  }
+  if (forma === "pix") return { ...vazio, pix: valor };
+  if (forma === "dinheiro") return { ...vazio, dinheiro: valor };
 
-  return {
-    pix: 0,
-    dinheiro: 0,
-    debitoAbatido: 0,
-    descontoManual: 0,
-    descontoRecebimento: 0,
-    descontoTotal: 0,
-  };
+  return vazio;
 }
 
 export function totalDividasAbatidas(

@@ -1,0 +1,129 @@
+"use client";
+
+import { forwardRef } from "react";
+import { formatCurrency } from "@/lib/utils";
+import type { RelatorioBolinhaData } from "@/lib/nichos/bolinha/relatorio";
+import type { RelatorioLinhaComprovante } from "@/lib/coletas/relatorio-comprovante-theme";
+import {
+  RelatorioBadgePrevia,
+  RelatorioCabecalho,
+  RelatorioCardSoft,
+  RelatorioFotoPainel,
+  RelatorioResumoFinanceiro,
+  RELATORIO_COLORS as colors,
+  RELATORIO_SHELL_STYLE,
+} from "@/components/coletas/relatorio/RelatorioComprovanteShell";
+
+function buildLinhasResumo(data: RelatorioBolinhaData): RelatorioLinhaComprovante[] {
+  const c = data.calculo;
+  const linhas: RelatorioLinhaComprovante[] = [
+    { label: "Operação", secao: true },
+    { label: "Arrecadação bruta", valor: formatCurrency(c.valorBruto) },
+    {
+      label: `Comissão (${c.comissaoPercentual}%)`,
+      valor: formatCurrency(c.valorComissao),
+    },
+  ];
+  if (c.desconto > 0.009) {
+    linhas.push({
+      label: "Desconto",
+      valor: `− ${formatCurrency(c.desconto)}`,
+      variant: "discount",
+    });
+  }
+  linhas.push({ label: "Acerto desta visita", secao: true, dividerBefore: true });
+  linhas.push({
+    label: "A receber",
+    valor: formatCurrency(c.valorAReceber),
+    variant: "highlight",
+    destaque: true,
+  });
+  if (c.custoBrindes > 0.009) {
+    linhas.push({ label: "Custo cápsulas", valor: formatCurrency(c.custoBrindes) });
+  }
+  linhas.push({
+    label: "Lucro real",
+    valor: formatCurrency(c.lucroReal),
+    variant: "success",
+  });
+  if (c.valorPagoRecebido > 0.009) {
+    linhas.push({
+      label: "Recebido agora",
+      valor: formatCurrency(c.valorPagoRecebido),
+      variant: "success",
+      dividerBefore: true,
+    });
+  }
+  if (c.saldoPendente > 0.009) {
+    linhas.push({
+      label: "Saldo pendente",
+      valor: formatCurrency(c.saldoPendente),
+      variant: "warning",
+    });
+  }
+  if (c.haver > 0.009) {
+    linhas.push({
+      label: "Haver do ponto",
+      valor: formatCurrency(c.haver),
+      variant: "warning",
+    });
+  }
+  return linhas;
+}
+
+export const RelatorioBolinhaView = forwardRef<HTMLDivElement, { data: RelatorioBolinhaData }>(
+  function RelatorioBolinhaView({ data }, ref) {
+    return (
+      <div ref={ref} style={RELATORIO_SHELL_STYLE}>
+        {data.previa && <RelatorioBadgePrevia />}
+        <RelatorioCabecalho
+          empresaNome={data.empresaNome}
+          pontoNome={data.pontoNome}
+          data={data.data}
+        />
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+          {data.maquinas.map((m) => (
+            <RelatorioCardSoft key={m.nome}>
+              <p style={{ margin: "0 0 8px", fontWeight: 600, color: colors.text }}>{m.nome}</p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <div>
+                  <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Contado</p>
+                  <p style={{ margin: "2px 0 0", color: colors.green, fontWeight: 500 }}>
+                    {formatCurrency(m.valorContado)}
+                  </p>
+                </div>
+                <div>
+                  <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Saiu</p>
+                  <p style={{ margin: "2px 0 0", color: colors.slate300 }}>{m.unidadesSaiu}</p>
+                </div>
+              </div>
+              <p style={{ margin: "8px 0 0", fontSize: 11, color: colors.slate400 }}>
+                Jogada {formatCurrency(m.precoJogada)}
+              </p>
+              <div
+                style={{
+                  marginTop: 10,
+                  paddingTop: 8,
+                  borderTop: `1px solid ${colors.border}`,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <span style={{ color: colors.slate400 }}>Operação</span>
+                <span style={{ fontWeight: 700, color: colors.cyan }}>
+                  {formatCurrency(m.valorBruto)}
+                </span>
+              </div>
+              <RelatorioFotoPainel fotoUrl={m.fotoUrl} alt={`Foto ${m.nome}`} />
+            </RelatorioCardSoft>
+          ))}
+        </div>
+
+        <RelatorioResumoFinanceiro linhas={buildLinhasResumo(data)} />
+      </div>
+    );
+  }
+);

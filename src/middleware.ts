@@ -1,15 +1,40 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const publicRoutes = ["/login", "/cadastro", "/auth/callback"];
-const authRoutes = ["/login", "/cadastro"];
+const publicRoutes = [
+  "/login",
+  "/cadastro",
+  "/esqueci-senha",
+  "/redefinir-senha",
+  "/auth/callback",
+  "/termos",
+  "/privacidade",
+  "/suporte-contato",
+  "/parceiro",
+  "/c",
+];
+const authRoutes = ["/login", "/cadastro", "/esqueci-senha"];
 
-function needsOnboarding(profile: {
+type MiddlewareProfile = {
   onboarding_completo?: boolean | null;
   empresa_id?: string | null;
-} | null) {
+} | null;
+
+function needsOnboarding(profile: MiddlewareProfile) {
   if (!profile) return true;
   return !profile.empresa_id;
+}
+
+function routeNeedsProfileCheck(
+  pathname: string,
+  isPublic: boolean,
+  isApiRoute: boolean,
+  isAuthRoute: boolean
+): boolean {
+  if (isApiRoute) return false;
+  if (isAuthRoute) return true;
+  if (pathname === "/" || pathname === "/configuracao" || pathname === "/pesquisa") return true;
+  return !isPublic;
 }
 
 export async function middleware(request: NextRequest) {
@@ -44,49 +69,58 @@ export async function middleware(request: NextRequest) {
   const isPublic = publicRoutes.some((r) => pathname.startsWith(r));
   const isAuthRoute = authRoutes.some((r) => pathname === r);
   const isApiRoute = pathname.startsWith("/api/");
+  // Painel do dono: login/cookie próprios — não exige sessão Supabase do SaaS
+  const isDonoArea =
+    pathname.startsWith("/dono") || pathname.startsWith("/api/dono");
+
+  if (isDonoArea) {
+    return supabaseResponse;
+  }
 
   if (!user && !isPublic && pathname !== "/" && !isApiRoute) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  const getProfile = async () => {
-    const { data } = await supabase
+  if (pathname === "/" && !user) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  if (user && routeNeedsProfileCheck(pathname, isPublic, isApiRoute, isAuthRoute)) {
+    const { data: profile } = await supabase
       .from("profiles")
       .select("onboarding_completo, empresa_id")
-      .eq("user_id", user!.id)
+      .eq("user_id", user.id)
       .maybeSingle();
-    return data;
-  };
 
-  if (user && isAuthRoute) {
-    const profile = await getProfile();
-    if (needsOnboarding(profile)) {
-      return NextResponse.redirect(new URL("/configuracao", request.url));
+    const onboarding = needsOnboarding(profile);
+
+    if (isAuthRoute) {
+      return NextResponse.redirect(
+        new URL(onboarding ? "/pesquisa" : "/dashboard", request.url)
+      );
     }
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
 
-  if (user && pathname === "/configuracao") {
-    const profile = await getProfile();
-    if (profile && !needsOnboarding(profile)) {
+    if (
+      (pathname === "/configuracao" || pathname === "/pesquisa") &&
+      !onboarding
+    ) {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
-  }
 
-  if (user && !isPublic && !isApiRoute && pathname !== "/configuracao" && pathname !== "/") {
-    const profile = await getProfile();
-    if (needsOnboarding(profile)) {
-      return NextResponse.redirect(new URL("/configuracao", request.url));
+    if (pathname === "/") {
+      return NextResponse.redirect(
+        new URL(onboarding ? "/pesquisa" : "/dashboard", request.url)
+      );
     }
-  }
 
-  if (pathname === "/") {
-    if (!user) return NextResponse.redirect(new URL("/login", request.url));
-    const profile = await getProfile();
-    if (needsOnboarding(profile)) {
-      return NextResponse.redirect(new URL("/configuracao", request.url));
+    if (
+      !isPublic &&
+      pathname !== "/configuracao" &&
+      pathname !== "/pesquisa" &&
+      onboarding
+    ) {
+      return NextResponse.redirect(new URL("/pesquisa", request.url));
     }
-    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
   return supabaseResponse;

@@ -28,6 +28,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { uploadFotoFuraFura } from "@/lib/storage/coleta-fotos";
 import { useVisitaPontoContext } from "@/components/visitas-ponto/useVisitaPontoContext";
+import { parseFetchJson } from "@/lib/http/parse-fetch-json";
 import { VisitaPontoNav } from "@/components/visitas-ponto/VisitaPontoNav";
 import {
   VisitaColetaModoPagamento,
@@ -491,7 +492,12 @@ export function NovaColetaFuraFuraForm() {
           incluir_pendencia_operacao: receberAgora && incluirPendencia,
         }),
       });
-      const data = await res.json();
+      const data = await parseFetchJson<{
+        error?: string;
+        id?: string;
+        calculo?: CalculoColetaFuraFuraResult;
+        ponto?: { nome?: string; whatsapp?: string | null };
+      }>(res);
       if (!res.ok) {
         setError(data.error ?? "Erro ao registrar coleta.");
         return;

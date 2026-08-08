@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
+import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("pendencias", "criar");
+  if (!auth.ok) return auth.response;
+
+  const { profile } = auth;
 
   const body = await request.json();
   if (!body.ponto_id || body.valor == null || !body.tipo) {

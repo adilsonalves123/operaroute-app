@@ -7,7 +7,7 @@ VALUES (
   'coleta-fotos',
   true,
   10485760,
-  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/heic']
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/avif']
 )
 ON CONFLICT (id) DO UPDATE SET
   public = EXCLUDED.public,
@@ -30,6 +30,10 @@ CREATE POLICY "Empresa upload coleta fotos" ON storage.objects
 CREATE POLICY "Empresa update coleta fotos" ON storage.objects
   FOR UPDATE TO authenticated
   USING (
+    bucket_id = 'coleta-fotos'
+    AND (storage.foldername(name))[1] = get_user_empresa_id()::text
+  )
+  WITH CHECK (
     bucket_id = 'coleta-fotos'
     AND (storage.foldername(name))[1] = get_user_empresa_id()::text
   );

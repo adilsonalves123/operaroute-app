@@ -3,10 +3,10 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Route } from "lucide-react";
-import { FormInput } from "@/components/ui/FormInput";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
+import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
+import { AuthLegalLinks } from "@/components/auth/AuthLegalLinks";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,9 +28,22 @@ export default function LoginPage() {
     });
 
     if (authError) {
-      setError("E-mail ou senha incorretos.");
+      const msg = authError.message.toLowerCase();
+      if (msg.includes("email not confirmed") || msg.includes("not confirmed")) {
+        setError(
+          "Confirme sua conta antes de entrar (e-mail, SMS ou WhatsApp)."
+        );
+      } else {
+        setError("E-mail ou senha incorretos.");
+      }
       setLoading(false);
       return;
+    }
+
+    try {
+      sessionStorage.removeItem("or_auditoria_sessao");
+    } catch {
+      // ignore
     }
 
     const { data: profile } = await supabase
@@ -38,96 +51,82 @@ export default function LoginPage() {
       .select("onboarding_completo")
       .single();
 
-    router.push(profile?.onboarding_completo ? "/dashboard" : "/configuracao");
+    router.push(profile?.onboarding_completo ? "/dashboard" : "/pesquisa");
     router.refresh();
   }
 
   return (
-    <div className="space-y-8">
-      <div className="lg:hidden flex flex-col items-center gap-3">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary-neon/20 neon-glow">
-          <Route className="h-6 w-6 text-primary-neon" />
-        </div>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white">
-            Opera<span className="text-primary-neon">Route</span>
-          </h1>
-          <p className="text-sm text-slate-400 mt-1">Controle total da sua operação</p>
-        </div>
-      </div>
-
-      <div className="hidden lg:block">
-        <h2 className="text-2xl font-bold text-white">Entrar</h2>
-        <p className="text-slate-400 mt-1">Acesse sua conta OperaRoute</p>
-      </div>
+    <div className="space-y-7">
+      <header className="space-y-2">
+        <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#7dd3e8]/75">
+          Platform access
+        </p>
+        <h1 className="text-[1.65rem] font-semibold tracking-tight text-[#f4f7fb]">
+          Entrar na operação
+        </h1>
+        <p className="text-[13.5px] leading-relaxed text-[#8b93a3]">
+          Seu painel, pontos e rotas — do jeito que você deixou.
+        </p>
+      </header>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <FormInput
-          label="E-mail ou telefone"
-          type="email"
-          placeholder="seu@email.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <FormInput
+        <label className="block space-y-1.5">
+          <span className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#7a8494]">
+            E-mail
+          </span>
+          <input
+            type="email"
+            autoComplete="email"
+            placeholder="seu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="auth-input-v2"
+          />
+        </label>
+
+        <AuthPasswordField
           label="Senha"
-          type="password"
-          placeholder="••••••••"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
+          onChange={setPassword}
+          autoComplete="current-password"
         />
 
-        <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 text-sm text-slate-400 cursor-pointer">
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <label className="flex cursor-pointer items-center gap-2.5 text-[13px] text-[#8b93a3]">
             <input
               type="checkbox"
               checked={remember}
               onChange={(e) => setRemember(e.target.checked)}
-              className="w-4 h-4 rounded accent-primary-neon"
+              className="auth-check-v2"
             />
             Manter conectado
           </label>
-          <Link href="#" className="text-sm text-primary-neon hover:underline">
-            Esqueci minha senha
+          <Link
+            href="/esqueci-senha"
+            className="text-[13px] text-[#c9a87c] transition hover:text-[#e0c9a0]"
+          >
+            Esqueci a senha
           </Link>
         </div>
 
         {error && (
-          <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+          <p className="rounded-md border border-rose-500/25 bg-rose-500/10 px-3 py-2 text-[13px] text-rose-200">
             {error}
-          </div>
+          </p>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-primary-neon py-3 font-semibold text-slate-900 transition hover:bg-cyan-300 disabled:opacity-50"
-        >
-          {loading ? "Entrando..." : "Entrar"}
+        <button type="submit" disabled={loading} className="auth-submit-v2">
+          {loading ? "Autenticando…" : "Entrar"}
         </button>
       </form>
 
-      <Link
-        href="/cadastro"
-        className="block w-full rounded-lg border border-blue-500/30 py-3 text-center font-medium text-white transition hover:bg-blue-500/10"
-      >
-        Criar conta grátis
-      </Link>
-
-      <footer className="flex flex-wrap justify-center gap-4 text-xs text-slate-500 pt-4 border-t border-slate-800">
-        <Link href="#" className="hover:text-slate-300">Termos de uso</Link>
-        <Link href="#" className="hover:text-slate-300">Privacidade</Link>
-        <a
-          href="https://wa.me/5500000000000"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-slate-300"
-        >
-          Suporte WhatsApp
-        </a>
-      </footer>
+      <div className="space-y-4 pt-1">
+        <Link href="/cadastro" className="auth-secondary-v2">
+          Criar conta · 7 dias grátis
+        </Link>
+        <AuthLegalLinks />
+      </div>
 
       <LoadingOverlay
         show={loading}

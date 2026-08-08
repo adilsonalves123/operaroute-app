@@ -1,17 +1,24 @@
 import { createClient, getProfile, getEmpresa } from "@/lib/supabase/server";
-import { resolveNichosAtivos } from "@/lib/assinatura";
+import { resolveNichosAtivos, nichosParaPainelPonto } from "@/lib/assinatura";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, MapPin, Package, MessageCircle, Pencil, CircleDot } from "lucide-react";
-import { AlertBadge } from "@/components/ui/AlertBadge";
-import { EquipamentosSection } from "@/components/pontos/EquipamentosSection";
 import { PontoCassinoSettings } from "@/components/pontos/PontoCassinoSettings";
+import { PontoUrsoSettings } from "@/components/pontos/PontoUrsoSettings";
+import { PontoDadosCard } from "@/components/pontos/PontoDadosCard";
+import { PontoNichoPainel } from "@/components/pontos/PontoNichoPainel";
+import { PontoHistoricoNicho } from "@/components/pontos/PontoHistoricoNicho";
 import { PontoFuraFuraSettings } from "@/components/pontos/PontoFuraFuraSettings";
+import { PontoKitInstalar } from "@/components/pontos/PontoKitInstalar";
 import { PontoExcluirButton } from "@/components/pontos/PontoExcluirButton";
+import { PontoHero } from "@/components/pontos/PontoHero";
 import { PontoFuraAlertas } from "@/components/coletas/fura-fura/PontoFuraAlertas";
-import { formatDate, formatCurrency, formatDateTime, cn } from "@/lib/utils";
-import { centesimosToReais, formatContador } from "@/lib/nichos/cassino";
+import { formatCurrency } from "@/lib/utils";
 import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
+import { visitaPontoDisponivel } from "@/lib/visitas-ponto";
+import { LinkColetaPonto } from "@/components/visitas-ponto/LinkColetaPonto";
+import { PontoHistoricoVisitas } from "@/components/pontos/PontoHistoricoVisitas";
+
+const ACAO_COLETA =
+  "inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-3 text-[13px] font-medium text-white transition hover:border-white/25 hover:bg-white/[0.08]";
 
 export default async function PontoDetailPage({
   params,
@@ -19,92 +26,278 @@ export default async function PontoDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const profile = await getProfile();
-  const supabase = await createClient();
+  const [profile, supabase] = await Promise.all([getProfile(), createClient()]);
   const empresa = profile?.empresa_id ? await getEmpresa(profile.empresa_id) : null;
   const nichosAtivos = resolveNichosAtivos(empresa?.nichos_ativos, empresa?.nicho);
-  const isCassino = nichosAtivos.includes("maquinas_cassino");
-  const isFuraFura = nichosAtivos.includes("fura_fura");
+  const nichosPainel = nichosParaPainelPonto(nichosAtivos);
+  const isCassino = nichosPainel.includes("maquinas_cassino");
+  const isUrsinho = nichosPainel.includes("ursinho");
+  const isVending = nichosPainel.includes("vending_ursinho");
+  const isFuraFura = nichosPainel.includes("fura_fura");
+  const isDiversao = nichosPainel.includes("diversao");
+  const isBolinha = nichosPainel.includes("bolinha");
+  const isConsignado = nichosPainel.includes("consignado");
+  const isOutros = nichosPainel.includes("outros");
+  const mostraVisitaUnificada = visitaPontoDisponivel(nichosAtivos);
 
   const { data: ponto } = await supabase
     .from("pontos")
-    .select("*")
+    .select(
+      "id, nome, responsavel, whatsapp, endereco, bairro, cidade, status, observacoes, ultima_coleta, created_at, comissao_percentual, comissao_por_nicho, foto_url, abater_automatico, kit_ativo_id, kit_instalado_em, preco_furo, furos_estoque, furos_minimo, estoque_brindes"
+    )
     .eq("id", id)
     .eq("empresa_id", profile?.empresa_id ?? "")
     .single();
 
   if (!ponto) notFound();
 
-  const { data: equipamentos } = await supabase
-    .from("equipamentos")
-    .select("*")
-    .eq("ponto_id", id)
-    .order("created_at");
+  const [
+    kitAtivoResult,
+    estoqueCentralResult,
+    equipamentosResult,
+    estoqueEquipamentosResult,
+    todosPontosResult,
+    visitasResult,
+    visitasCountResult,
+    coletasFuraResult,
+    coletasFuraCountResult,
+    coletasUrsinhoResult,
+    coletasUrsinhoCountResult,
+    coletasDiversaoResult,
+    coletasDiversaoCountResult,
+    coletasBolinhaResult,
+    coletasBolinhaCountResult,
+    coletasConsignadoResult,
+    coletasConsignadoCountResult,
+    coletasOutrosResult,
+    coletasOutrosCountResult,
+    pendenciasAbertasResult,
+    chamadosAbertosResult,
+    visitaRascunhoResult,
+    visitasPontoHistoricoResult,
+  ] = await Promise.all([
+    isFuraFura && ponto.kit_ativo_id && profile?.empresa_id
+      ? supabase
+          .from("fura_kits")
+          .select("nome")
+          .eq("id", ponto.kit_ativo_id)
+          .eq("empresa_id", profile.empresa_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    profile?.empresa_id
+      ? supabase
+          .from("estoque")
+          .select("id, nome_item, custo_unitario, quantidade, foto_url")
+          .eq("empresa_id", profile.empresa_id)
+          .order("nome_item")
+      : Promise.resolve({ data: [] }),
+    supabase
+      .from("equipamentos")
+      .select(
+        "id, empresa_id, ponto_id, nome, tipo, status, numero_maquina, numero_serie, numero_entrada, numero_saida, entrada_atual, preco_jogada, observacao, foto_url, estoque_brindes, created_at"
+      )
+      .eq("ponto_id", id)
+      .order("created_at"),
+    profile?.empresa_id
+      ? supabase
+          .from("equipamentos")
+          .select(
+            "id, empresa_id, ponto_id, nome, tipo, status, numero_maquina, numero_serie, numero_entrada, numero_saida, entrada_atual, preco_jogada, observacao, foto_url, estoque_brindes, created_at"
+          )
+          .eq("empresa_id", profile.empresa_id)
+          .is("ponto_id", null)
+          .eq("status", "ativo")
+          .order("nome")
+      : Promise.resolve({ data: [] }),
+    profile?.empresa_id
+      ? supabase
+          .from("pontos")
+          .select("id, nome")
+          .eq("empresa_id", profile.empresa_id)
+          .neq("id", id)
+          .order("nome")
+      : Promise.resolve({ data: [] }),
+    isCassino
+      ? supabase
+          .from("visitas")
+          .select("id, created_at, total_lucro_centavos, valor_operacao, saldo_negativo")
+          .eq("ponto_id", id)
+          .order("created_at", { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: null }),
+    isCassino
+      ? supabase.from("visitas").select("id", { count: "exact", head: true }).eq("ponto_id", id)
+      : Promise.resolve({ count: 0 }),
+    isFuraFura
+      ? supabase
+          .from("coletas")
+          .select("id, created_at, valor_liquido, lucro_real, quantidade_furos, nicho_modulo")
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "fura_fura")
+          .order("created_at", { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: null }),
+    isFuraFura
+      ? supabase
+          .from("coletas")
+          .select("id", { count: "exact", head: true })
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "fura_fura")
+      : Promise.resolve({ count: 0 }),
+    isUrsinho
+      ? supabase
+          .from("coletas")
+          .select("id, created_at, valor_liquido, lucro_real, nicho_modulo")
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "ursinho")
+          .order("created_at", { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: null }),
+    isUrsinho
+      ? supabase
+          .from("coletas")
+          .select("id", { count: "exact", head: true })
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "ursinho")
+      : Promise.resolve({ count: 0 }),
+    isDiversao
+      ? supabase
+          .from("coletas")
+          .select("id, created_at, valor_liquido, lucro_real, nicho_modulo")
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "diversao")
+          .order("created_at", { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: null }),
+    isDiversao
+      ? supabase
+          .from("coletas")
+          .select("id", { count: "exact", head: true })
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "diversao")
+      : Promise.resolve({ count: 0 }),
+    isBolinha
+      ? supabase
+          .from("coletas")
+          .select("id, created_at, valor_liquido, lucro_real, nicho_modulo")
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "bolinha")
+          .order("created_at", { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: null }),
+    isBolinha
+      ? supabase
+          .from("coletas")
+          .select("id", { count: "exact", head: true })
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "bolinha")
+      : Promise.resolve({ count: 0 }),
+    isConsignado
+      ? supabase
+          .from("coletas")
+          .select("id, created_at, valor_liquido, lucro_real, nicho_modulo")
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "consignado")
+          .order("created_at", { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: null }),
+    isConsignado
+      ? supabase
+          .from("coletas")
+          .select("id", { count: "exact", head: true })
+          .eq("ponto_id", id)
+          .eq("nicho_modulo", "consignado")
+      : Promise.resolve({ count: 0 }),
+    isOutros
+      ? supabase
+          .from("coletas")
+          .select(
+            "id, created_at, valor_bruto, valor_liquido, entrada, saida, ponto_id, forma_pagamento, observacao, nicho_modulo"
+          )
+          .eq("ponto_id", id)
+          .order("created_at", { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: null }),
+    isOutros
+      ? supabase.from("coletas").select("id", { count: "exact", head: true }).eq("ponto_id", id)
+      : Promise.resolve({ count: 0 }),
+    supabase
+      .from("pendencias")
+      .select("id, tipo, valor, titulo, descricao")
+      .eq("ponto_id", id)
+      .eq("status", "aberta"),
+    profile?.empresa_id
+      ? supabase
+          .from("chamados")
+          .select("id, equipamento_id, status, titulo")
+          .eq("empresa_id", profile.empresa_id)
+          .eq("ponto_id", id)
+          .in("status", ["aberta", "em_andamento"])
+      : Promise.resolve({ data: [] }),
+    mostraVisitaUnificada && profile?.empresa_id
+      ? supabase
+          .from("visitas_ponto")
+          .select("id")
+          .eq("empresa_id", profile.empresa_id)
+          .eq("ponto_id", id)
+          .eq("status", "rascunho")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    mostraVisitaUnificada && profile?.empresa_id
+      ? supabase
+          .from("visitas_ponto")
+          .select(
+            "id, created_at, finalizada_em, status, subtotal_cobravel, total_cobrado, valor_pago, restante"
+          )
+          .eq("empresa_id", profile.empresa_id)
+          .eq("ponto_id", id)
+          .eq("status", "finalizada")
+          .order("finalizada_em", { ascending: false })
+          .limit(10)
+      : Promise.resolve({ data: [] }),
+  ]);
 
-  const { data: todosPontos } = profile?.empresa_id
-    ? await supabase
-        .from("pontos")
-        .select("id, nome")
-        .eq("empresa_id", profile.empresa_id)
-        .neq("id", id)
-        .order("nome")
-    : { data: [] };
+  const kitAtivoNome = kitAtivoResult.data?.nome ?? null;
+  const estoqueCentral = estoqueCentralResult.data ?? [];
+  const equipamentos = equipamentosResult.data ?? [];
+  const estoqueEquipamentos = estoqueEquipamentosResult.data ?? [];
+  const todosPontos = todosPontosResult.data ?? [];
+  const visitas = visitasResult.data ?? null;
+  const visitasCount = visitasCountResult.count ?? 0;
+  const coletasFura = coletasFuraResult.data ?? null;
+  const coletasFuraCount = coletasFuraCountResult.count ?? 0;
+  const coletasUrsinho = coletasUrsinhoResult.data ?? null;
+  const coletasUrsinhoCount = coletasUrsinhoCountResult.count ?? 0;
+  const coletasDiversao = coletasDiversaoResult.data ?? null;
+  const coletasDiversaoCount = coletasDiversaoCountResult.count ?? 0;
+  const coletasBolinha = coletasBolinhaResult.data ?? null;
+  const coletasBolinhaCount = coletasBolinhaCountResult.count ?? 0;
+  const coletasConsignado = coletasConsignadoResult.data ?? null;
+  const coletasConsignadoCount = coletasConsignadoCountResult.count ?? 0;
+  const coletas = coletasOutrosResult.data ?? null;
+  const coletasCount = coletasOutrosCountResult.count ?? 0;
+  const pendenciasAbertas = pendenciasAbertasResult.data ?? [];
+  const chamadosAbertos = chamadosAbertosResult.data ?? [];
+  const visitaRascunhoId = visitaRascunhoResult.data?.id ?? null;
+  const visitasPontoHistorico = visitasPontoHistoricoResult.data ?? [];
 
-  const { data: visitas } = isCassino
-    ? await supabase
-        .from("visitas")
-        .select("id, created_at, total_lucro_centavos, valor_operacao, saldo_negativo")
-        .eq("ponto_id", id)
-        .order("created_at", { ascending: false })
-        .limit(10)
-    : { data: null };
+  const chamadosResumo = chamadosAbertos ?? [];
 
-  const { count: visitasCount } = isCassino
-    ? await supabase
-        .from("visitas")
-        .select("id", { count: "exact", head: true })
-        .eq("ponto_id", id)
-    : { count: 0 };
-
-  const { data: coletasFura } = isFuraFura
-    ? await supabase
-        .from("coletas")
-        .select("id, created_at, valor_liquido, lucro_real, quantidade_furos, nicho_modulo")
-        .eq("ponto_id", id)
-        .eq("nicho_modulo", "fura_fura")
-        .order("created_at", { ascending: false })
-        .limit(10)
-    : { data: null };
-
-  const { count: coletasFuraCount } = isFuraFura
-    ? await supabase
-        .from("coletas")
-        .select("id", { count: "exact", head: true })
-        .eq("ponto_id", id)
-        .eq("nicho_modulo", "fura_fura")
-    : { count: 0 };
-
-  const { data: coletas } = !isCassino && !isFuraFura
-    ? await supabase
-        .from("coletas")
-        .select("*")
-        .eq("ponto_id", id)
-        .order("created_at", { ascending: false })
-        .limit(10)
-    : { data: null };
-
-  const { count: coletasCount } = !isCassino && !isFuraFura
-    ? await supabase
-        .from("coletas")
-        .select("id", { count: "exact", head: true })
-        .eq("ponto_id", id)
-    : { count: 0 };
-
-  const { data: pendenciasAbertas } = await supabase
-    .from("pendencias")
-    .select("id, tipo, valor, titulo, descricao")
-    .eq("ponto_id", id)
-    .eq("status", "aberta");
+  const temMaquinaUrso = (equipamentos ?? []).some(
+    (e) => e.tipo === "ursinho" || e.tipo === "vending_ursinho"
+  );
+  const nichoInicialPonto: "ursinho" | "vending_ursinho" | undefined =
+    temMaquinaUrso && isUrsinho
+      ? "ursinho"
+      : temMaquinaUrso && isVending
+        ? "vending_ursinho"
+        : isUrsinho
+          ? "ursinho"
+          : isVending
+            ? "vending_ursinho"
+            : undefined;
 
   const pendenciasCobraveis = (pendenciasAbertas ?? []).filter((p) => p.tipo !== "haver");
   const totalCobravel = pendenciasCobraveis.reduce((total, p) => {
@@ -144,272 +337,260 @@ export default async function PontoDetailPage({
         )}`
       : null;
 
-  const statusVariant = {
-    ativo: "success" as const,
-    pausado: "warning" as const,
-    retirado: "default" as const,
-    inadimplente: "danger" as const,
-  };
-
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center gap-4">
-        <Link href="/pontos" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-white">{ponto.nome}</h1>
-            <AlertBadge variant={statusVariant[ponto.status as keyof typeof statusVariant]}>
-              {ponto.status}
-            </AlertBadge>
-          </div>
-          <p className="text-slate-400 text-sm">
-            {[ponto.endereco, ponto.bairro, ponto.cidade].filter(Boolean).join(", ")}
-          </p>
-          {isFuraFura && (
-            <PontoFuraAlertas ponto={ponto} className="mt-2" />
-          )}
-        </div>
-      </div>
-
-      <div className={cn("grid gap-3", isCassino && isFuraFura ? "sm:grid-cols-2 lg:grid-cols-4" : "sm:grid-cols-3")}>
-        <Link
-          href={`/pontos/${id}/editar`}
-          className="glass-card p-4 flex items-center gap-3 hover:border-primary-neon/30 transition"
-        >
-          <Pencil className="h-5 w-5 text-primary-neon" />
-          <span className="text-sm font-medium">Editar ponto</span>
-        </Link>
-        {isCassino && (
-          <Link
-            href={`/coletas/nova/cassino?ponto=${id}`}
-            className="glass-card p-4 flex items-center gap-3 hover:border-emerald-500/30 transition border-emerald-500/10"
-          >
-            <Package className="h-5 w-5 text-emerald-400" />
-            <span className="text-sm font-medium">Nova leitura</span>
-          </Link>
-        )}
-        {isFuraFura && (
-          <Link
-            href={`/coletas/nova/fura-fura?ponto=${id}`}
-            className="glass-card p-4 flex items-center gap-3 hover:border-amber-500/30 transition border-amber-500/10"
-          >
-            <CircleDot className="h-5 w-5 text-amber-400" />
-            <span className="text-sm font-medium">Coleta fura-fura</span>
-          </Link>
-        )}
-        {ponto.whatsapp && (
-          <a
-            href={`https://wa.me/55${ponto.whatsapp.replace(/\D/g, "")}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="glass-card p-4 flex items-center gap-3 hover:border-green-500/30 transition"
-          >
-            <MessageCircle className="h-5 w-5 text-green-400" />
-            <span className="text-sm font-medium">WhatsApp</span>
-          </a>
-        )}
-        {cobrarUrl && (
-          <a
-            href={cobrarUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="glass-card p-4 flex items-center gap-3 hover:border-amber-500/30 transition"
-          >
-            <MessageCircle className="h-5 w-5 text-amber-400" />
-            <span className="text-sm font-medium">Cobrar</span>
-          </a>
-        )}
-        <Link
-          href="/pendencias"
-          className="glass-card p-4 flex items-center gap-3 hover:border-amber-500/30 transition"
-        >
-          <MapPin className="h-5 w-5 text-amber-400" />
-          <span className="text-sm font-medium">
-            Pendências ({pendenciasAbertas?.length ?? 0})
-          </span>
-        </Link>
-      </div>
-
-      <div className="glass-card p-6 space-y-3">
-        <h2 className="font-semibold text-white">Dados do ponto</h2>
-        <div className="grid gap-2 text-sm sm:grid-cols-2">
-          <div>
-            <span className="text-slate-400">Responsável:</span>{" "}
-            <span className="text-white">{ponto.responsavel ?? "—"}</span>
-          </div>
-          <div>
-            <span className="text-slate-400">Comissão:</span>{" "}
-            <span className="text-white">{ponto.comissao_percentual}%</span>
-          </div>
-          <div>
-            <span className="text-slate-400">Última coleta:</span>{" "}
-            <span className="text-white">
-              {ponto.ultima_coleta ? formatDate(ponto.ultima_coleta) : "Nunca"}
-            </span>
-          </div>
-        </div>
-        {ponto.observacoes && <p className="text-sm text-slate-400 mt-2">{ponto.observacoes}</p>}
-      </div>
-
-      {isCassino && (
-        <PontoCassinoSettings
-          pontoId={id}
-          abaterAutomatico={ponto.abater_automatico !== false}
-          comissaoPercentual={Number(ponto.comissao_percentual) || 0}
-        />
-      )}
-
-      {isFuraFura && (
-        <PontoFuraFuraSettings
-          pontoId={id}
-          precoFuro={Number(ponto.preco_furo ?? 1)}
-          furosEstoque={ponto.furos_estoque ?? null}
-          furosMinimo={Number(ponto.furos_minimo ?? 0)}
-          comissaoPercentual={Number(ponto.comissao_percentual) || 0}
-          estoqueBrindes={
-            Array.isArray(ponto.estoque_brindes) ? ponto.estoque_brindes : []
-          }
-        />
-      )}
-
-      <EquipamentosSection
+    <div className="mx-auto max-w-3xl space-y-10 pb-10">
+      <PontoHero
         pontoId={id}
-        equipamentos={equipamentos ?? []}
-        outrosPontos={todosPontos ?? []}
-        nichosAtivos={nichosAtivos}
+        nome={ponto.nome}
+        status={ponto.status}
+        endereco={ponto.endereco}
+        bairro={ponto.bairro}
+        cidade={ponto.cidade}
+        fotoUrl={ponto.foto_url}
+        whatsapp={ponto.whatsapp}
+        totalCobravel={totalCobravel}
+        cobrarUrl={cobrarUrl}
+        pendenciasCount={pendenciasAbertas?.length ?? 0}
+        chamadosCount={chamadosResumo.length}
+        mostraVisita={mostraVisitaUnificada}
+        visitaRascunhoId={visitaRascunhoId}
+        alertaFura={
+          isFuraFura && nichosPainel.length === 1 ? (
+            <PontoFuraAlertas ponto={ponto} />
+          ) : undefined
+        }
       />
 
-      <div className="glass-card p-6 space-y-6">
-        {isCassino && isFuraFura ? (
-          <>
-            <div>
-              <h2 className="font-semibold text-white mb-4">Histórico de visitas (cassino)</h2>
-              {!visitas?.length ? (
-                <p className="text-sm text-slate-400">Nenhuma visita registrada.</p>
-              ) : (
-                <div className="space-y-2">
-                  {visitas.map((v) => (
-                    <Link
-                      key={v.id}
-                      href={`/coletas/visita/${v.id}`}
-                      className="flex justify-between py-2 border-b border-slate-800 last:border-0 hover:text-primary-neon"
-                    >
-                      <span className="text-sm text-slate-400">{formatDateTime(v.created_at)}</span>
-                      <span className="text-sm font-medium text-green-400">
-                        {v.saldo_negativo
-                          ? "Negativo"
-                          : formatContador(Number(v.total_lucro_centavos))}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-            <div>
-              <h2 className="font-semibold text-white mb-4">Histórico de coletas (fura-fura)</h2>
-              {!coletasFura?.length ? (
-                <p className="text-sm text-slate-400">Nenhuma coleta fura-fura registrada.</p>
-              ) : (
-                <div className="space-y-2">
-                  {coletasFura.map((c) => (
-                    <Link
-                      key={c.id}
-                      href={`/coletas/fura-fura/${c.id}`}
-                      className="flex justify-between py-2 border-b border-slate-800 last:border-0 hover:text-amber-400"
-                    >
-                      <span className="text-sm text-slate-400">{formatDateTime(c.created_at)}</span>
-                      <span className="text-sm font-medium text-green-400">
-                        {formatCurrency(Number(c.lucro_real ?? c.valor_liquido ?? 0))}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            <h2 className="font-semibold text-white mb-4">
-              {isCassino ? "Histórico de visitas" : "Histórico de coletas"}
-            </h2>
-            {isCassino ? (
-              !visitas?.length ? (
-                <p className="text-sm text-slate-400">Nenhuma visita registrada.</p>
-              ) : (
-                <div className="space-y-2">
-                  {visitas.map((v) => (
-                    <Link
-                      key={v.id}
-                      href={`/coletas/visita/${v.id}`}
-                      className="flex justify-between py-2 border-b border-slate-800 last:border-0 hover:text-primary-neon"
-                    >
-                      <span className="text-sm text-slate-400">{formatDateTime(v.created_at)}</span>
-                      <span className="text-sm font-medium text-green-400">
-                        {v.saldo_negativo
-                          ? "Negativo"
-                          : formatContador(Number(v.total_lucro_centavos))}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )
-            ) : isFuraFura ? (
-              !coletasFura?.length ? (
-                <p className="text-sm text-slate-400">Nenhuma coleta registrada.</p>
-              ) : (
-                <div className="space-y-2">
-                  {coletasFura.map((c) => (
-                    <Link
-                      key={c.id}
-                      href={`/coletas/fura-fura/${c.id}`}
-                      className="flex justify-between py-2 border-b border-slate-800 last:border-0 hover:text-amber-400"
-                    >
-                      <span className="text-sm text-slate-400">{formatDateTime(c.created_at)}</span>
-                      <span className="text-sm font-medium text-green-400">
-                        {formatCurrency(Number(c.lucro_real ?? c.valor_liquido ?? 0))}
-                      </span>
-                    </Link>
-                  ))}
-                </div>
-              )
-            ) : !coletas?.length ? (
-              <p className="text-sm text-slate-400">Nenhuma coleta registrada.</p>
-            ) : (
-              <div className="space-y-2">
-                {coletas.map((c) => (
-                  <div
-                    key={c.id}
-                    className="flex justify-between py-2 border-b border-slate-800 last:border-0"
-                  >
-                    <span className="text-sm text-slate-400">{formatDate(c.created_at)}</span>
-                    <span className="text-sm font-medium text-green-400">
-                      {formatCurrency(Number(c.valor_liquido))}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </>
-        )}
-      </div>
+      {mostraVisitaUnificada && (
+        <PontoHistoricoVisitas visitas={visitasPontoHistorico} />
+      )}
 
-      <div className="glass-card border border-red-500/15 p-6 space-y-3">
-        <h2 className="font-semibold text-white">Zona de perigo</h2>
-        <p className="text-sm text-slate-400">
-          Excluir remove o ponto, equipamentos e histórico de visitas/coletas vinculados. Pendências
-          de negativo ou operação em aberto impedem a exclusão.
+      <PontoNichoPainel
+        nichosContratados={nichosAtivos}
+        faixaPontos={empresa?.quantidade_pontos}
+        nichoInicial={nichoInicialPonto}
+        acoes={{
+          maquinas_cassino: isCassino ? (
+            <LinkColetaPonto
+              pontoId={id}
+              nicho="cassino"
+              viaVisita={mostraVisitaUnificada}
+              rascunhoId={visitaRascunhoId}
+              className={ACAO_COLETA}
+            >
+              Nova leitura
+            </LinkColetaPonto>
+          ) : undefined,
+          ursinho: isUrsinho ? (
+            <LinkColetaPonto
+              pontoId={id}
+              nicho="ursinho"
+              viaVisita={mostraVisitaUnificada}
+              rascunhoId={visitaRascunhoId}
+              className={ACAO_COLETA}
+            >
+              Coleta ursinho
+            </LinkColetaPonto>
+          ) : undefined,
+          fura_fura: isFuraFura ? (
+            <LinkColetaPonto
+              pontoId={id}
+              nicho="fura_fura"
+              viaVisita={mostraVisitaUnificada}
+              rascunhoId={visitaRascunhoId}
+              className={ACAO_COLETA}
+            >
+              Coleta fura-fura
+            </LinkColetaPonto>
+          ) : undefined,
+          diversao: isDiversao ? (
+            <LinkColetaPonto
+              pontoId={id}
+              nicho="diversao"
+              viaVisita={mostraVisitaUnificada}
+              rascunhoId={visitaRascunhoId}
+              className={ACAO_COLETA}
+            >
+              Coleta diversão
+            </LinkColetaPonto>
+          ) : undefined,
+          bolinha: isBolinha ? (
+            <LinkColetaPonto
+              pontoId={id}
+              nicho="bolinha"
+              viaVisita={mostraVisitaUnificada}
+              rascunhoId={visitaRascunhoId}
+              className={ACAO_COLETA}
+            >
+              Coleta bolinha
+            </LinkColetaPonto>
+          ) : undefined,
+          consignado: isConsignado ? (
+            <LinkColetaPonto
+              pontoId={id}
+              nicho="consignado"
+              viaVisita={mostraVisitaUnificada}
+              rascunhoId={visitaRascunhoId}
+              className={ACAO_COLETA}
+            >
+              Recolhe consignado
+            </LinkColetaPonto>
+          ) : undefined,
+        }}
+        equipamentosCtx={{
+          pontoId: id,
+          equipamentos: equipamentos ?? [],
+          estoqueDisponivel: estoqueEquipamentos ?? [],
+          outrosPontos: todosPontos ?? [],
+          nichosAtivos,
+          chamadosAbertos: chamadosResumo,
+          estoqueBrindesPonto: Array.isArray(ponto.estoque_brindes)
+            ? ponto.estoque_brindes
+            : [],
+          estoqueCentral: estoqueCentral ?? [],
+        }}
+        settings={{
+          maquinas_cassino: isCassino ? (
+            <PontoCassinoSettings
+              pontoId={id}
+              abaterAutomatico={ponto.abater_automatico !== false}
+            />
+          ) : undefined,
+          ursinho:
+            isUrsinho || isVending ? (
+              <PontoUrsoSettings
+                pontoId={id}
+                estoqueBrindes={
+                  Array.isArray(ponto.estoque_brindes) ? ponto.estoque_brindes : []
+                }
+                estoqueCentral={estoqueCentral ?? []}
+              />
+            ) : undefined,
+          vending_ursinho:
+            isUrsinho || isVending ? (
+              <PontoUrsoSettings
+                pontoId={id}
+                estoqueBrindes={
+                  Array.isArray(ponto.estoque_brindes) ? ponto.estoque_brindes : []
+                }
+                estoqueCentral={estoqueCentral ?? []}
+              />
+            ) : undefined,
+          fura_fura: isFuraFura ? (
+            <>
+              <PontoFuraAlertas ponto={ponto} />
+              <PontoKitInstalar
+                pontoId={id}
+                kitAtivoId={ponto.kit_ativo_id ?? null}
+                kitInstaladoEm={ponto.kit_instalado_em ?? null}
+                kitAtivoNome={kitAtivoNome}
+              />
+              <PontoFuraFuraSettings
+                pontoId={id}
+                precoFuro={Number(ponto.preco_furo ?? 1)}
+                furosEstoque={ponto.furos_estoque ?? null}
+                furosMinimo={Number(ponto.furos_minimo ?? 0)}
+                estoqueBrindes={
+                  Array.isArray(ponto.estoque_brindes) ? ponto.estoque_brindes : []
+                }
+                estoqueCentral={estoqueCentral ?? []}
+              />
+            </>
+          ) : undefined,
+          bolinha: (
+            <div className="space-y-2 border-t border-white/[0.06] pt-4">
+              <h2 className="text-[15px] text-white">Estoque por máquina</h2>
+              <p className="text-[13px] leading-relaxed text-slate-500">
+                Diferente do fura-fura, bolinha e cápsula guardam o estoque em cada
+                máquina. No cadastro ou em Equipamentos → detalhes → Brindes, escolha o
+                que vai em cada uma.
+              </p>
+            </div>
+          ),
+          consignado: isConsignado ? (
+            <div className="space-y-2 border-t border-white/[0.06] pt-4">
+              <h2 className="text-[15px] text-white">Consignado por expositor</h2>
+              <p className="text-[13px] leading-relaxed text-slate-500">
+                Cadastre os produtos em Produtos consignados. Cada expositor guarda o
+                estoque na máquina — no recolhe o sistema calcula o vendido e a comissão.
+              </p>
+            </div>
+          ) : undefined,
+        }}
+        historicos={{
+          maquinas_cassino: isCassino ? (
+            <PontoHistoricoNicho nicho="maquinas_cassino" visitas={visitas} />
+          ) : undefined,
+          ursinho: isUrsinho ? (
+            <PontoHistoricoNicho nicho="ursinho" coletas={coletasUrsinho} />
+          ) : undefined,
+          vending_ursinho: isVending && !isUrsinho ? (
+            <PontoHistoricoNicho nicho="vending_ursinho" />
+          ) : undefined,
+          fura_fura: isFuraFura ? (
+            <PontoHistoricoNicho nicho="fura_fura" coletas={coletasFura} />
+          ) : undefined,
+          diversao: (
+            <PontoHistoricoNicho nicho="diversao" coletas={coletasDiversao} />
+          ),
+          bolinha: (
+            <PontoHistoricoNicho nicho="bolinha" coletas={coletasBolinha} />
+          ),
+          consignado: isConsignado ? (
+            <PontoHistoricoNicho nicho="consignado" coletas={coletasConsignado} />
+          ) : undefined,
+          outros: isOutros ? (
+            <PontoHistoricoNicho nicho="outros" coletas={coletas} />
+          ) : undefined,
+        }}
+      />
+
+      <section className="space-y-3 border-t border-white/[0.06] pt-8">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+          Ficha
+        </h2>
+        <PontoDadosCard
+          pontoId={id}
+          nome={ponto.nome}
+          responsavel={ponto.responsavel}
+          whatsapp={ponto.whatsapp}
+          endereco={ponto.endereco}
+          bairro={ponto.bairro}
+          cidade={ponto.cidade}
+          status={ponto.status}
+          observacoes={ponto.observacoes}
+          ultimaColeta={ponto.ultima_coleta}
+          createdAt={ponto.created_at}
+          comissaoPercentual={Number(ponto.comissao_percentual) || 0}
+          comissaoPorNicho={ponto.comissao_por_nicho}
+          nichosAtivos={nichosAtivos}
+        />
+      </section>
+
+      <section className="space-y-3 border-t border-white/[0.06] pt-8">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-rose-400/80">
+          Zona de perigo
+        </h2>
+        <p className="text-[13px] leading-relaxed text-slate-500">
+          Excluir remove o ponto, equipamentos e histórico vinculados. Pendências em
+          aberto impedem a exclusão.
         </p>
         <PontoExcluirButton
           pontoId={id}
           pontoNome={ponto.nome}
           equipamentosCount={equipamentos?.length ?? 0}
           visitasCount={visitasCount ?? 0}
-          coletasCount={(coletasFuraCount ?? 0) + (coletasCount ?? 0)}
+          coletasCount={
+            (coletasUrsinhoCount ?? 0) +
+            (coletasFuraCount ?? 0) +
+            (coletasDiversaoCount ?? 0) +
+            (coletasBolinhaCount ?? 0) +
+            (coletasConsignadoCount ?? 0) +
+            (coletasCount ?? 0)
+          }
           pendenciasCobraveisCount={pendenciasCobraveis.length}
         />
-      </div>
+      </section>
     </div>
   );
 }

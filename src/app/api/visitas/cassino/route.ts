@@ -7,11 +7,16 @@ import {
   centesimosToReais,
   parseContadorInput,
   parseComissaoPercentual,
-  valorMovimentoCaixa,
 } from "@/lib/nichos/cassino";
 import type { FormaPagamento } from "@/lib/types/database";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
 import { parseMoneyInput } from "@/lib/utils";
+import { parseVisitaPontoId, vincularItemVisitaPonto } from "@/lib/visitas-ponto/vincular-item";
+import { getComissaoPercentualNicho } from "@/lib/pontos/comissao-nicho";
+import {
+  fetchSaldoCaixa,
+  valorSaidaPermitidaNoCaixa,
+} from "@/lib/financeiro/saldo-caixa";
 
 interface LeituraBody {
   equipamento_id: string;
@@ -29,6 +34,23 @@ function deriveFormaPagamento(pix: number, dinheiro: number): FormaPagamento {
   if (pix > 0 && dinheiro > 0) return "misto";
   if (pix > 0) return "pix";
   return "dinheiro";
+}
+
+/** Prioriza dinheiro no teto do caixa; o que passar do saldo não vira lançamento. */
+function distribuirSaidaNoTeto(pix: number, dinheiro: number, teto: number) {
+  let rest = Math.max(0, teto);
+  const saidaDinheiro = Math.min(Math.max(0, dinheiro), rest);
+  rest -= saidaDinheiro;
+  const saidaPix = Math.min(Math.max(0, pix), rest);
+  return {
+    pix: saidaPix,
+    dinheiro: saidaDinheiro,
+    total: saidaPix + saidaDinheiro,
+  };
+}
+
+function brl(n: number): string {
+  return n.toFixed(2).replace(".", ",");
 }
 
 function mapPendenciasOperacao(
@@ -52,6 +74,23 @@ function marcarAbatimentoComVisita(descricao: string, visitaId: string): string 
   return linhas.join("\n");
 }
 
+/** Com valor já = saldo restante, linhas "Abatido R$" não podem ficar na descrição (senão o saldo desconta de novo). */
+function descricaoHaverAposBaixa(
+  observacaoAtualizada: string,
+  valorAbatidoReais: number,
+  visitaId: string,
+  dataStr: string
+): string {
+  const base = observacaoAtualizada
+    .split("\n")
+    .filter((l) => !/Abatido R\$/i.test(l))
+    .join("\n")
+    .trim();
+  const valorFmt = valorAbatidoReais.toFixed(2).replace(".", ",");
+  const linha = `Compensado R$ ${valorFmt} na coleta de ${dataStr} [visita:${visitaId}]`;
+  return base ? `${base}\n${linha}` : linha;
+}
+
 export async function POST(request: Request) {
   const profile = await getProfile();
   if (!profile?.empresa_id) {
@@ -60,6 +99,7 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const supabase = await createClient();
+  const visitaPontoId = parseVisitaPontoId(body.visita_ponto_id);
 
   if (!body.ponto_id || !Array.isArray(body.leituras) || body.leituras.length === 0) {
     return NextResponse.json(
@@ -73,6 +113,31 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: "Foto obrigatória para cada máquina." },
         { status: 400 }
+      );
+    }
+  }
+
+  // Evita clique duplo em "Receber e encerrar" gravar 2 visitas + 2 entradas no caixa.
+  if (visitaPontoId) {
+    const { data: cassinoJaNaVisita } = await supabase
+      .from("visita_ponto_itens")
+      .select("id, cassino_visita_id")
+      .eq("visita_ponto_id", visitaPontoId)
+      .eq("empresa_id", profile.empresa_id)
+      .eq("nicho", "cassino")
+      .not("cassino_visita_id", "is", null)
+      .limit(1)
+      .maybeSingle();
+
+    if (cassinoJaNaVisita?.cassino_visita_id) {
+      return NextResponse.json(
+        {
+          error:
+            "Cassino já foi registrado nesta visita. Não é necessário tocar em Receber e encerrar de novo.",
+          visita_id: cassinoJaNaVisita.cassino_visita_id,
+          already_done: true,
+        },
+        { status: 409 }
       );
     }
   }
@@ -142,7 +207,7 @@ export async function POST(request: Request) {
         .eq("ponto_id", body.ponto_id)
         .eq("empresa_id", profile.empresa_id)
         .eq("status", "aberta")
-        .in("tipo", ["pagamento_pendente", "parcial"])
+        .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"])
     ).data
   );
 
@@ -165,6 +230,17 @@ export async function POST(request: Request) {
     body.abater_pendencia_operacao_negativa !== false;
   const totaisPreview = calcularTotaisVisita(leiturasPayload.map(calcularMaquina));
   const visitaNegativa = totaisPreview.totalLucroCentavos < 0;
+  const deferirPagamentoVisita =
+    Boolean(visitaPontoId) && !visitaNegativa && body.receber_agora !== true;
+
+  // No modo "continuar" (pagamento na visita ao ponto), a dívida anterior
+  // entra no checkout — não pode inflar o restante da visita cassino.
+  const incluirPendenciaOperacao =
+    !deferirPagamentoVisita && body.incluir_pendencia_operacao === true;
+
+  const valorPixEfetivo = deferirPagamentoVisita ? 0 : valorPix;
+  const valorDinheiroEfetivo = deferirPagamentoVisita ? 0 : valorDinheiro;
+  const descontoRecebimentoEfetivo = descontoRecebimento;
 
   if (visitaNegativa && abaterPendenciaOperacaoNegativa) {
     const { data: operacaoFresh } = await supabase
@@ -173,7 +249,7 @@ export async function POST(request: Request) {
       .eq("ponto_id", body.ponto_id)
       .eq("empresa_id", profile.empresa_id)
       .eq("status", "aberta")
-      .in("tipo", ["pagamento_pendente", "parcial"]);
+      .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"]);
     operacaoPendencias = mapPendenciasOperacao(operacaoFresh);
   }
 
@@ -190,26 +266,42 @@ export async function POST(request: Request) {
         id: p.id,
         valor: Number(p.valor ?? 0),
         observacao: p.descricao,
+        descricao: p.descricao,
+        titulo: p.titulo,
       })),
       pendenciasOperacao: operacaoPendencias,
-      incluirPendenciasOperacao: body.incluir_pendencia_operacao === true,
+      incluirPendenciasOperacao: incluirPendenciaOperacao,
       abaterPendenciaOperacaoNegativa,
-      incluirUsarHaverNegativo: body.incluir_usar_haver_negativo === true,
+      // Haver só abate em visita positiva; negativo nunca consome haver (deixar ou acumular).
+      incluirUsarHaverNegativo: false,
+      descontarHaverNaCobranca: body.descontar_haver_na_cobranca === true,
       comissaoPercentual: parseComissaoPercentual(
-        body.comissao_percentual ?? ponto.comissao_percentual
+        body.comissao_percentual ?? getComissaoPercentualNicho(ponto, "maquinas_cassino")
       ),
       descontoManualReais: descontoManualEfetivo,
-      descontoRecebimentoReais: descontoRecebimento,
-      abaterAutomatico: ponto.abater_automatico !== false,
-      valorPixReais: valorPix,
-      valorDinheiroReais: valorDinheiro,
+      descontoRecebimentoReais: descontoRecebimentoEfetivo,
+      abaterAutomatico:
+        typeof body.abater_automatico === "boolean"
+          ? body.abater_automatico
+          : ponto.abater_automatico !== false,
+      valorPixReais: valorPixEfetivo,
+      valorDinheiroReais: valorDinheiroEfetivo,
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Erro no cálculo da visita";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  const formaPagamento = deriveFormaPagamento(valorPix, valorDinheiro);
+  const formaPagamento = deriveFormaPagamento(valorPixEfetivo, valorDinheiroEfetivo);
+
+  // Lucro que quita o negativo zera debitoAbatidoReais (fluxo de pagamento), mas a
+  // recuperação precisa ir para visitas.debito_abatido (card Financeiro).
+  const negativoRecuperadoReais =
+    !calculo.saldoNegativo &&
+    calculo.debitoTotalReais > 0.009 &&
+    calculo.recuperacaoNegativoReais + 0.009 >= calculo.debitoTotalReais
+      ? calculo.recuperacaoNegativoReais
+      : calculo.debitoAbatidoReais;
 
   const { data: visita, error: visitaError } = await supabase
     .from("visitas")
@@ -220,7 +312,7 @@ export async function POST(request: Request) {
       total_entrada_periodo: calculo.totalEntradaPeriodo,
       total_saida_periodo: calculo.totalSaidaPeriodo,
       total_lucro_centavos: calculo.totalLucroCentavos,
-      debito_abatido: calculo.debitoAbatidoReais,
+      debito_abatido: negativoRecuperadoReais,
       desconto:
         calculo.saldoNegativo
           ? calculo.descontoManualReais
@@ -271,6 +363,7 @@ export async function POST(request: Request) {
   for (const m of calculo.maquinasDistribuidas) {
     const lucroReais = centesimosToReais(m.lucroCentavos);
     const leituraBody = leiturasPayload.find((l) => l.equipamentoId === m.equipamentoId);
+    const eqRef = eqMap.get(m.equipamentoId);
 
     const { data: coleta, error: coletaError } = await supabase
       .from("coletas")
@@ -279,6 +372,7 @@ export async function POST(request: Request) {
         ponto_id: body.ponto_id,
         visita_id: visita.id,
         equipamento_id: m.equipamentoId,
+        equipamento_numero_serie: eqRef?.numero_serie?.trim() || null,
         operador_id: profile.user_id,
         entrada_anterior: m.entradaAnterior,
         saida_anterior: m.saidaAnterior,
@@ -290,7 +384,7 @@ export async function POST(request: Request) {
         valor_cliente: m.valorClienteReais,
         valor_operacao: m.valorOperacaoReais,
         valor_bruto: lucroReais,
-        comissao_percentual: Number(ponto.comissao_percentual) || 0,
+        comissao_percentual: getComissaoPercentualNicho(ponto, "maquinas_cassino"),
         valor_comissao: m.valorClienteReais,
         valor_liquido: m.valorOperacaoReais,
         entrada: lucroReais,
@@ -317,10 +411,18 @@ export async function POST(request: Request) {
   }
 
   for (const ab of calculo.abatimentosHaver) {
+    const dataStr = new Date().toLocaleDateString("pt-BR");
     await supabase
       .from("pendencias")
       .update({
-        descricao: marcarAbatimentoComVisita(ab.observacaoAtualizada, visita.id),
+        // valor = saldo restante; descrição sem "Abatido R$" pra não descontar duas vezes
+        valor: ab.saldoRestanteReais,
+        descricao: descricaoHaverAposBaixa(
+          ab.observacaoAtualizada,
+          ab.valorAbatidoReais,
+          visita.id,
+          dataStr
+        ),
         status: ab.resolvida ? "resolvida" : "aberta",
         resolvido_em: ab.resolvida ? new Date().toISOString() : null,
       })
@@ -341,6 +443,13 @@ export async function POST(request: Request) {
   }
 
   for (const ab of calculo.abatimentosPendenciaOperacao) {
+    const { data: pendOp } = await supabase
+      .from("pendencias")
+      .select("visita_id")
+      .eq("id", ab.pendenciaId)
+      .eq("empresa_id", profile.empresa_id)
+      .maybeSingle();
+
     const { error: abOpError } = await supabase
       .from("pendencias")
       .update({
@@ -361,28 +470,45 @@ export async function POST(request: Request) {
         { status: 500 }
       );
     }
+
+    // Espelha a baixa na visita de origem — senão o checkout vê cobravel antigo e recria dívida.
+    const { sincronizarVisitaAposBaixaOperacao } = await import(
+      "@/lib/visitas-ponto/sync-visita-baixa"
+    );
+    await sincronizarVisitaAposBaixaOperacao(supabase, {
+      empresaId: profile.empresa_id,
+      visitaId: pendOp?.visita_id,
+      valorAbatidoReais: ab.valorAbatidoReais,
+      // Negativo que consome pendência ≠ dinheiro que entrou no caixa.
+      semRecebimento: calculo.saldoNegativo === true,
+    });
   }
 
-  const entradaCaixa = valorMovimentoCaixa({
-    pixReais: valorPix,
-    dinheiroReais: valorDinheiro,
-    pixDoCaixa: recebimentoPixDoCaixa,
-    dinheiroDoCaixa: recebimentoDinheiroDoCaixa,
-  });
+  // Registra todo recebimento da coleta no financeiro (histórico + caixa).
+  // Antes só gravava quando marcado "do caixa" — recebimento sumia e o dashboard mentia.
+  const pagoRecebido = deferirPagamentoVisita ? 0 : valorPixEfetivo + valorDinheiroEfetivo;
 
-  if (entradaCaixa > 0.009) {
-    const entradaPix = recebimentoPixDoCaixa ? valorPix : 0;
-    const entradaDinheiro = recebimentoDinheiroDoCaixa ? valorDinheiro : 0;
+  if (pagoRecebido > 0.009) {
+    const entradaPix = valorPixEfetivo;
+    const entradaDinheiro = valorDinheiroEfetivo;
     const partes: string[] = [];
-    if (entradaPix > 0.009) partes.push(`Pix R$ ${entradaPix.toFixed(2).replace(".", ",")}`);
+    if (entradaPix > 0.009) {
+      partes.push(
+        `Pix R$ ${entradaPix.toFixed(2).replace(".", ",")}${recebimentoPixDoCaixa ? "" : " (fora do caixa)"}`
+      );
+    }
     if (entradaDinheiro > 0.009) {
-      partes.push(`Dinheiro R$ ${entradaDinheiro.toFixed(2).replace(".", ",")}`);
+      partes.push(
+        `Dinheiro R$ ${entradaDinheiro.toFixed(2).replace(".", ",")}${
+          recebimentoDinheiroDoCaixa ? "" : " (fora do caixa)"
+        }`
+      );
     }
     await supabase.from("financeiro").insert({
       empresa_id: profile.empresa_id,
       tipo: "entrada",
       categoria: "Coleta cassino",
-      valor: entradaCaixa,
+      valor: pagoRecebido,
       descricao: `Coleta - ${ponto.nome}${partes.length ? ` (${partes.join(" · ")})` : ""}`,
       forma_pagamento: deriveFormaPagamento(entradaPix, entradaDinheiro),
       ponto_id: body.ponto_id,
@@ -391,27 +517,96 @@ export async function POST(request: Request) {
     });
   }
 
+  // Depois das entradas desta visita: saldo disponível para saídas (nunca abaixo de zero).
+  const saldoCaixaAntesSaida = await fetchSaldoCaixa(supabase, profile.empresa_id);
+
   if (calculo.saldoNegativo && adiantamentoTotal > 0.009) {
-    const saidaCaixa = valorMovimentoCaixa({
-      pixReais: adiantamentoPix,
-      dinheiroReais: adiantamentoDinheiro,
-      pixDoCaixa: adiantamentoPixDoCaixa,
-      dinheiroDoCaixa: adiantamentoDinheiroDoCaixa,
-    });
+    // Visita registra o valor deixado no ponto por completo; o caixa só sai até o saldo.
+    const teto = valorSaidaPermitidaNoCaixa(saldoCaixaAntesSaida, adiantamentoTotal);
+    const { pix: saidaPix, dinheiro: saidaDinheiro, total: saidaCaixa } =
+      distribuirSaidaNoTeto(adiantamentoPix, adiantamentoDinheiro, teto);
+
     if (saidaCaixa > 0.009) {
-      const saidaPix = adiantamentoPixDoCaixa ? adiantamentoPix : 0;
-      const saidaDinheiro = adiantamentoDinheiroDoCaixa ? adiantamentoDinheiro : 0;
       const partes: string[] = [];
-      if (saidaPix > 0.009) partes.push(`Pix R$ ${saidaPix.toFixed(2).replace(".", ",")}`);
-      if (saidaDinheiro > 0.009) {
-        partes.push(`Dinheiro R$ ${saidaDinheiro.toFixed(2).replace(".", ",")}`);
+      if (saidaPix > 0.009) partes.push(`Pix R$ ${brl(saidaPix)}`);
+      if (saidaDinheiro > 0.009) partes.push(`Dinheiro R$ ${brl(saidaDinheiro)}`);
+      const foraCaixa = adiantamentoTotal - saidaCaixa;
+      let descricao = `Adiantamento negativo - ${ponto.nome}${
+        partes.length ? ` (${partes.join(" · ")})` : ""
+      }`;
+      if (foraCaixa > 0.009) {
+        descricao += ` · caixa limitado a R$ ${brl(saidaCaixa)} (resto R$ ${brl(foraCaixa)} fora do caixa)`;
       }
       await supabase.from("financeiro").insert({
         empresa_id: profile.empresa_id,
         tipo: "saida",
         categoria: "Adiantamento ponto",
         valor: saidaCaixa,
-        descricao: `Adiantamento negativo - ${ponto.nome} (${partes.join(" · ")})`,
+        descricao,
+        forma_pagamento: deriveFormaPagamento(saidaPix, saidaDinheiro),
+        ponto_id: body.ponto_id,
+        visita_id: visita.id,
+        operador_id: profile.user_id,
+      });
+    }
+  } else if (calculo.saldoNegativo && calculo.valorDeixadoOperadorReais > 0.009) {
+    // Legado: só desconto_manual — sai do caixa só até o saldo.
+    const desejada = calculo.valorDeixadoOperadorReais;
+    const saida = valorSaidaPermitidaNoCaixa(saldoCaixaAntesSaida, desejada);
+    if (saida > 0.009) {
+      const foraCaixa = desejada - saida;
+      let descricao = `Adiantamento negativo - ${ponto.nome} (Dinheiro R$ ${brl(saida)})`;
+      if (foraCaixa > 0.009) {
+        descricao += ` · caixa limitado (resto R$ ${brl(foraCaixa)} fora do caixa)`;
+      }
+      await supabase.from("financeiro").insert({
+        empresa_id: profile.empresa_id,
+        tipo: "saida",
+        categoria: "Adiantamento ponto",
+        valor: saida,
+        descricao,
+        forma_pagamento: "dinheiro",
+        ponto_id: body.ponto_id,
+        visita_id: visita.id,
+        operador_id: profile.user_id,
+      });
+    }
+  } else if (
+    !calculo.saldoNegativo &&
+    calculo.haverQuitadoReais > 0.009 &&
+    (adiantamentoTotal > 0.009 || calculo.valorDeixadoOperadorReais > 0.009)
+  ) {
+    // Positiva: operador paga haver ao ponto — só o que couber no caixa.
+    const saidaPixDesejada = adiantamentoPix;
+    const saidaDinheiroDesejada =
+      adiantamentoTotal > 0.009
+        ? adiantamentoDinheiro
+        : calculo.valorDeixadoOperadorReais;
+    const desejada = Math.min(
+      saidaPixDesejada + saidaDinheiroDesejada,
+      calculo.haverQuitadoReais
+    );
+    const teto = valorSaidaPermitidaNoCaixa(saldoCaixaAntesSaida, desejada);
+    const { pix: saidaPix, dinheiro: saidaDinheiro, total: saidaCaixa } =
+      distribuirSaidaNoTeto(saidaPixDesejada, saidaDinheiroDesejada, teto);
+
+    if (saidaCaixa > 0.009) {
+      const partes: string[] = [];
+      if (saidaPix > 0.009) partes.push(`Pix R$ ${brl(saidaPix)}`);
+      if (saidaDinheiro > 0.009) partes.push(`Dinheiro R$ ${brl(saidaDinheiro)}`);
+      const foraCaixa = desejada - saidaCaixa;
+      let descricao = `Pagamento haver - ${ponto.nome}${
+        partes.length ? ` (${partes.join(" · ")})` : ""
+      }`;
+      if (foraCaixa > 0.009) {
+        descricao += ` · caixa limitado a R$ ${brl(saidaCaixa)} (resto R$ ${brl(foraCaixa)} fora do caixa)`;
+      }
+      await supabase.from("financeiro").insert({
+        empresa_id: profile.empresa_id,
+        tipo: "saida",
+        categoria: "Pagamento haver",
+        valor: saidaCaixa,
+        descricao,
         forma_pagamento: deriveFormaPagamento(saidaPix, saidaDinheiro),
         ponto_id: body.ponto_id,
         visita_id: visita.id,
@@ -465,7 +660,22 @@ export async function POST(request: Request) {
     });
   }
 
-  if (!calculo.saldoNegativo && calculo.restanteOperacaoReais > 0.009) {
+  if (calculo.saldoNegativo && calculo.excedenteDeixadoReais > 0.009) {
+    const dataStr = new Date().toLocaleDateString("pt-BR");
+    await supabase.from("pendencias").insert({
+      empresa_id: profile.empresa_id,
+      ponto_id: body.ponto_id,
+      visita_id: visita.id,
+      tipo: "pagamento_pendente",
+      titulo: "Excedente deixado na visita",
+      descricao: `Valor acima da perda da máquina — visita de ${dataStr}. Ponto deve ao operador.`,
+      valor: calculo.excedenteDeixadoReais,
+      status: "aberta",
+      prioridade: "media",
+    });
+  }
+
+  if (!calculo.saldoNegativo && !deferirPagamentoVisita && calculo.restanteOperacaoReais > 0.009) {
     await supabase.from("pendencias").insert({
       empresa_id: profile.empresa_id,
       ponto_id: body.ponto_id,
@@ -477,24 +687,85 @@ export async function POST(request: Request) {
       status: "aberta",
       prioridade: "media",
     });
-  } else if (calculo.haverReais > 0.009) {
-    await supabase.from("pendencias").insert({
-      empresa_id: profile.empresa_id,
-      ponto_id: body.ponto_id,
-      visita_id: visita.id,
-      tipo: "haver",
-      titulo: "Haver do cliente",
-      descricao: `Pagamento a maior na visita de ${new Date().toLocaleDateString("pt-BR")}. Total a cobrar: R$ ${calculo.totalACobrarReais.toFixed(2).replace(".", ",")}, pago: R$ ${calculo.valorPagoReais.toFixed(2).replace(".", ",")}.`,
-      valor: calculo.haverReais,
-      status: "aberta",
-      prioridade: "baixa",
-    });
+  } else if (!deferirPagamentoVisita && calculo.haverReais > 0.009) {
+      await supabase.from("pendencias").insert({
+        empresa_id: profile.empresa_id,
+        ponto_id: body.ponto_id,
+        visita_id: visita.id,
+        tipo: "haver",
+        titulo: "Haver do cliente",
+        descricao: `Pagamento a mais (troco/crédito) na visita de ${new Date().toLocaleDateString("pt-BR")}. Total a cobrar: R$ ${calculo.totalACobrarReais.toFixed(2).replace(".", ",")}, pago: R$ ${calculo.valorPagoReais.toFixed(2).replace(".", ",")}.`,
+        valor: calculo.haverReais,
+        status: "aberta",
+        prioridade: "baixa",
+      });
   }
 
   await supabase
     .from("pontos")
     .update({ ultima_coleta: new Date().toISOString() })
     .eq("id", body.ponto_id);
+
+  const visitaPontoIdLink = parseVisitaPontoId(body.visita_ponto_id);
+  if (visitaPontoIdLink) {
+    await vincularItemVisitaPonto({
+      supabase,
+      empresaId: profile.empresa_id,
+      visitaPontoId: visitaPontoIdLink,
+      nicho: "cassino",
+      cassinoVisitaId: visita.id,
+    });
+  }
+
+  const { auditarAcao } = await import("@/lib/auditoria/auditar");
+  const { detectarDiffFinanceiro } = await import("@/lib/auditoria/anomalias");
+  await auditarAcao(supabase, profile, {
+    acao: "visita.criar",
+    tabela: "visitas",
+    registroId: visita.id,
+    dadosNovos: {
+      ponto_id: body.ponto_id,
+      total_a_cobrar: calculo.totalACobrarReais,
+      valor_pago: calculo.valorPagoReais,
+      restante: calculo.restanteReais,
+      haver: calculo.haverReais,
+    },
+    severidade: calculo.restanteReais > 0.02 || calculo.haverReais > 0.02 ? "medium" : "low",
+    categoria: "coleta",
+    modulo: "coletas",
+    titulo: "Visita cassino registrada",
+    resumo: `Cobrar R$ ${calculo.totalACobrarReais.toFixed(2)} · pago R$ ${calculo.valorPagoReais.toFixed(2)} · restante R$ ${calculo.restanteReais.toFixed(2)}`,
+    request,
+  });
+
+  const anomaliaHaver = detectarDiffFinanceiro({
+    esperado: calculo.totalACobrarReais,
+    gravado: calculo.valorPagoReais,
+    tolerancia: 0.02,
+    contexto: "Visita cassino (pago vs a cobrar)",
+  });
+  // Só alerta se não for pendência/haver esperado de propósito — flag quando pago >> cobrado sem haver bate
+  if (anomaliaHaver && Math.abs(calculo.valorPagoReais - calculo.totalACobrarReais) > 0.02) {
+    // haver/restante já explicam; registra anomalia só se inconsistência interna
+    if (
+      calculo.haverReais < 0.01 &&
+      calculo.restanteReais < 0.01 &&
+      Math.abs(calculo.valorPagoReais - calculo.totalACobrarReais) > 1
+    ) {
+      await auditarAcao(supabase, profile, {
+        acao: anomaliaHaver.codigo,
+        tabela: "visitas",
+        registroId: visita.id,
+        severidade: anomaliaHaver.severidade,
+        categoria: "anomalia",
+        modulo: "coletas",
+        titulo: anomaliaHaver.titulo,
+        resumo: anomaliaHaver.resumo,
+        meta: anomaliaHaver.meta,
+        request,
+      });
+    }
+  }
 
   return NextResponse.json({
     success: true,

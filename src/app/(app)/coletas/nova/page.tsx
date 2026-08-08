@@ -15,18 +15,47 @@ export default async function NovaColetaPage({
   const nichosAtivos = resolveNichosAtivos(empresa?.nichos_ativos, empresa?.nicho);
 
   const isCassino = nichosAtivos.includes("maquinas_cassino");
+  const isUrsinho =
+    nichosAtivos.includes("ursinho") || nichosAtivos.includes("vending_ursinho");
   const isFuraFura = nichosAtivos.includes("fura_fura");
+  const isDiversao = nichosAtivos.includes("diversao");
+  const isBolinha = nichosAtivos.includes("bolinha");
+  const isConsignado = nichosAtivos.includes("consignado");
+  const modulosEspecificos = [
+    isCassino,
+    isUrsinho,
+    isFuraFura,
+    isDiversao,
+    isBolinha,
+    isConsignado,
+  ].filter(Boolean).length;
 
-  if (isCassino && isFuraFura) {
-    return <EscolherNovaColeta pontoId={ponto} />;
+  if (modulosEspecificos > 1) {
+    return <EscolherNovaColeta pontoId={ponto} nichosAtivos={nichosAtivos} />;
   }
 
   if (isCassino) {
     redirect(ponto ? `/coletas/nova/cassino?ponto=${ponto}` : "/coletas/nova/cassino");
   }
 
+  if (isUrsinho) {
+    redirect(ponto ? `/coletas/nova/ursinho?ponto=${ponto}` : "/coletas/nova/ursinho");
+  }
+
   if (isFuraFura) {
     redirect(ponto ? `/coletas/nova/fura-fura?ponto=${ponto}` : "/coletas/nova/fura-fura");
+  }
+
+  if (isDiversao) {
+    redirect(ponto ? `/coletas/nova/diversao?ponto=${ponto}` : "/coletas/nova/diversao");
+  }
+
+  if (isBolinha) {
+    redirect(ponto ? `/coletas/nova/bolinha?ponto=${ponto}` : "/coletas/nova/bolinha");
+  }
+
+  if (isConsignado) {
+    redirect(ponto ? `/coletas/nova/consignado?ponto=${ponto}` : "/coletas/nova/consignado");
   }
 
   return <NovaColetaLegacyForm />;

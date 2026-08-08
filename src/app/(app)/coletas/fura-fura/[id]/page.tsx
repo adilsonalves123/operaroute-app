@@ -1,26 +1,20 @@
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, MapPin, MessageCircle } from "lucide-react";
+import { ArrowLeft, MapPin } from "lucide-react";
 import { AlertBadge } from "@/components/ui/AlertBadge";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { ColetaFuraFuraResumo } from "@/components/coletas/fura-fura/ColetaFuraFuraResumo";
 import { ExcluirColetaFuraFuraButton } from "@/components/coletas/fura-fura/ExcluirColetaFuraFuraButton";
+import { CompartilharColetaHistoricoActions } from "@/components/coletas/CompartilharColetaHistoricoActions";
 import {
   calculoFromColetaSalva,
-  mensagemWhatsAppColeta,
   parseBrindesSalvos,
   saldoPendenteColeta,
 } from "@/lib/nichos/fura-fura";
+import { snapshotFromColetaRow } from "@/lib/comprovantes/from-relatorio-nicho";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-
-function whatsAppUrl(phone: string | null | undefined, text: string): string | null {
-  if (!phone) return null;
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length < 10) return null;
-  const num = digits.startsWith("55") ? digits : `55${digits}`;
-  return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
-}
+import { labelFormaPagamento } from "@/lib/financeiro/forma-pagamento";
 
 export default async function ColetaFuraFuraDetailPage({
   params,
@@ -42,11 +36,18 @@ export default async function ColetaFuraFuraDetailPage({
 
   if (!coleta) notFound();
 
-  const { data: pagamentos } = await supabase
-    .from("coleta_pagamentos")
-    .select("*")
-    .eq("coleta_id", id)
-    .order("created_at");
+  const [{ data: pagamentos }, { data: empresa }] = await Promise.all([
+    supabase
+      .from("coleta_pagamentos")
+      .select("*")
+      .eq("coleta_id", id)
+      .order("created_at"),
+    supabase
+      .from("empresas")
+      .select("nome_operacao, chave_pix")
+      .eq("id", profile.empresa_id)
+      .maybeSingle(),
+  ]);
 
   const ponto = coleta.pontos as {
     nome: string;
@@ -59,10 +60,36 @@ export default async function ColetaFuraFuraDetailPage({
   const calculo = calculoFromColetaSalva(coleta);
   const brindes = parseBrindesSalvos(coleta.brindes_entregues);
   const pendente = saldoPendenteColeta(coleta);
-  const waLink = whatsAppUrl(
-    ponto?.whatsapp,
-    mensagemWhatsAppColeta(ponto?.nome ?? "Ponto", calculo)
-  );
+  const snapshot = {
+    ...snapshotFromColetaRow({
+      empresaNome: empresa?.nome_operacao ?? "Operação",
+      pontoNome: ponto?.nome ?? "Ponto",
+      chavePix: empresa?.chave_pix ?? null,
+      nichoLabel: "Fura-Fura",
+      createdAt: coleta.created_at,
+      valorAReceber: calculo.valorAReceber,
+      valorPago: calculo.valorPagoRecebido,
+      saldoPendente: pendente,
+      desconto: calculo.desconto,
+      comissao: calculo.valorComissao,
+      comissaoPercentual: calculo.comissaoPercentual,
+      valorBruto: calculo.valorBruto,
+      haverGerado: calculo.haver,
+      notas: [`Furos: ${calculo.quantidadeFuros} × ${calculo.precoFuro}`],
+    }),
+    layout: "historico" as const,
+    nichoModulo: "fura_fura" as const,
+    relatorio: {
+      empresaNome: empresa?.nome_operacao ?? "Operação",
+      pontoNome: ponto?.nome ?? "Ponto",
+      pontoWhatsapp: ponto?.whatsapp ?? null,
+      data: coleta.created_at,
+      previa: false,
+      calculo,
+      kitNome: (coleta as { kit_nome?: string | null }).kit_nome ?? null,
+      fotoUrl: coleta.foto_url ?? null,
+    },
+  };
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
@@ -95,8 +122,14 @@ export default async function ColetaFuraFuraDetailPage({
           </p>
         </div>
         <div>
-          <p className="text-slate-500">Forma pagamento</p>
-          <p className="font-medium text-white capitalize">{coleta.forma_pagamento ?? "—"}</p>
+          <p className="text-slate-500">Pagamento</p>
+          <p className="font-medium text-white">
+            {labelFormaPagamento(
+              coleta.forma_pagamento,
+              coleta.valor_pix,
+              coleta.valor_dinheiro
+            )}
+          </p>
         </div>
         {Number(coleta.desconto ?? 0) > 0.009 && (
           <div>
@@ -116,7 +149,10 @@ export default async function ColetaFuraFuraDetailPage({
         <div className="glass-card p-6 space-y-3">
           <h2 className="font-semibold text-white text-sm">Brindes entregues</h2>
           {brindes.map((b, i) => (
-            <div key={i} className="flex justify-between text-sm border-b border-slate-800 pb-2 last:border-0">
+            <div
+              key={i}
+              className="flex justify-between text-sm border-b border-slate-800 pb-2 last:border-0"
+            >
               <span className="text-slate-300">
                 {b.nome} × {b.quantidade}
               </span>
@@ -146,26 +182,28 @@ export default async function ColetaFuraFuraDetailPage({
         <div className="glass-card p-6 space-y-2">
           <h2 className="font-semibold text-white text-sm">Pagamentos registrados</h2>
           {pagamentos!.map((p) => (
-            <div key={p.id} className="flex justify-between text-sm">
-              <span className="text-slate-400">{formatDateTime(p.created_at)}</span>
-              <span className="text-green-400 tabular-nums">{formatCurrency(Number(p.valor))}</span>
+            <div key={p.id} className="flex justify-between gap-4 text-sm">
+              <div>
+                <span className="text-slate-400">{formatDateTime(p.created_at)}</span>
+                {(Number(p.valor_pix) > 0.009 || Number(p.valor_dinheiro) > 0.009) && (
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {labelFormaPagamento(p.forma_pagamento, p.valor_pix, p.valor_dinheiro)}
+                  </p>
+                )}
+              </div>
+              <span className="text-green-400 tabular-nums shrink-0">
+                {formatCurrency(Number(p.valor))}
+              </span>
             </div>
           ))}
         </div>
       )}
 
       <div className="flex flex-wrap gap-3">
-        {waLink && (
-          <a
-            href={waLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm text-green-400"
-          >
-            <MessageCircle className="h-4 w-4" />
-            WhatsApp
-          </a>
-        )}
+        <CompartilharColetaHistoricoActions
+          snapshot={snapshot}
+          telefone={ponto?.whatsapp}
+        />
         {coleta.latitude && coleta.longitude && (
           <span className="inline-flex items-center gap-1 text-xs text-slate-500 px-2 py-2">
             <MapPin className="h-3.5 w-3.5" />

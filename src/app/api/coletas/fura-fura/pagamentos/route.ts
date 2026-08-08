@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { createClient, getProfile } from "@/lib/supabase/server";
 import {
+  aplicarPagamentoFifoColetas,
   distribuirPagamentoFifo,
   NICHO_MODULO_FURA_FURA,
+  parseRecebimentoPixDinheiro,
+  registrarHaverFuraFura,
   saldoPendenteColeta,
 } from "@/lib/nichos/fura-fura";
 
@@ -14,11 +17,17 @@ export async function POST(request: Request) {
 
   const body = await request.json();
   const pontoId = String(body.ponto_id ?? "").trim();
-  const valor = Number(body.valor) || 0;
 
   if (!pontoId) {
     return NextResponse.json({ error: "Informe o ponto." }, { status: 400 });
   }
+
+  const recebimento = parseRecebimentoPixDinheiro(body);
+  if (!recebimento.ok) {
+    return NextResponse.json({ error: recebimento.error }, { status: 400 });
+  }
+
+  const valor = recebimento.data.total;
   if (valor <= 0.009) {
     return NextResponse.json({ error: "Informe um valor válido." }, { status: 400 });
   }
@@ -46,21 +55,21 @@ export async function POST(request: Request) {
   }
 
   const pendentes = (coletas ?? []).filter((c) => saldoPendenteColeta(c) > 0.009);
-  if (pendentes.length === 0) {
-    return NextResponse.json({ error: "Nenhuma coleta pendente neste ponto." }, { status: 400 });
-  }
 
-  const { distribuicoes, valorAplicado, valorSobra } = distribuirPagamentoFifo(
-    pendentes.map((c) => ({
-      id: c.id,
-      created_at: c.created_at,
-      valor_a_receber: Number(c.valor_a_receber ?? 0),
-      valor_pago_recebido: Number(c.valor_pago_recebido ?? 0),
-    })),
-    valor
-  );
+  const { distribuicoes, valorAplicado, valorSobra } =
+    pendentes.length > 0
+      ? distribuirPagamentoFifo(
+          pendentes.map((c) => ({
+            id: c.id,
+            created_at: c.created_at,
+            valor_a_receber: Number(c.valor_a_receber ?? 0),
+            valor_pago_recebido: Number(c.valor_pago_recebido ?? 0),
+          })),
+          valor
+        )
+      : { distribuicoes: [], valorAplicado: 0, valorSobra: valor };
 
-  if (distribuicoes.length === 0) {
+  if (pendentes.length > 0 && distribuicoes.length === 0 && valorSobra <= 0.009) {
     return NextResponse.json({ error: "Nada a aplicar." }, { status: 400 });
   }
 
@@ -74,65 +83,48 @@ export async function POST(request: Request) {
     .eq("id", pontoId)
     .maybeSingle();
 
-  for (const d of distribuicoes) {
-    const col = pendentes.find((c) => c.id === d.coletaId)!;
-    const novoPago =
-      Math.round((Number(col.valor_pago_recebido ?? 0) + d.valor) * 100) / 100;
+  const pixRestante = { v: recebimento.data.pix };
+  const dinheiroRestante = { v: recebimento.data.dinheiro };
 
-    await supabase
-      .from("coletas")
-      .update({ valor_pago_recebido: novoPago })
-      .eq("id", d.coletaId)
-      .eq("empresa_id", profile.empresa_id);
+  const { valorSobra: sobraFinal } = await aplicarPagamentoFifoColetas(supabase, {
+    empresaId: profile.empresa_id,
+    pontoId,
+    pontoNome: ponto?.nome ?? "Ponto",
+    coletas: pendentes.map((c) => ({
+      id: c.id,
+      created_at: c.created_at,
+      valor_a_receber: Number(c.valor_a_receber ?? 0),
+      valor_pago_recebido: Number(c.valor_pago_recebido ?? 0),
+    })),
+    valor,
+    pixRestante,
+    dinheiroRestante,
+    formaPagamento: recebimento.data.forma,
+    operadorId: user?.id ?? null,
+    observacao: body.observacao ?? "Pagamento consolidado",
+  });
 
-    await supabase.from("coleta_pagamentos").insert({
-      empresa_id: profile.empresa_id,
-      coleta_id: d.coletaId,
-      ponto_id: pontoId,
-      valor: d.valor,
-      forma_pagamento: body.forma_pagamento ?? "dinheiro",
-      observacao: body.observacao ?? "Pagamento consolidado",
-      operador_id: user?.id ?? null,
+  let haverGerado = 0;
+  if (sobraFinal > 0.009) {
+    haverGerado = sobraFinal;
+    await registrarHaverFuraFura(supabase, {
+      empresaId: profile.empresa_id,
+      pontoId,
+      pontoNome: ponto?.nome ?? "Ponto",
+      valor: sobraFinal,
+      valorPix: pixRestante.v,
+      valorDinheiro: dinheiroRestante.v,
+      motivo: pendentes.length > 0 ? "Pagamento a maior (FIFO)" : "Adiantamento / haver",
+      operadorId: user?.id ?? null,
+      registrarFinanceiro: true,
     });
-
-    await supabase.from("financeiro").insert({
-      empresa_id: profile.empresa_id,
-      tipo: "entrada",
-      categoria: "Recebimento coleta",
-      valor: d.valor,
-      descricao: `Pagamento coleta — ${ponto?.nome ?? "Ponto"}`,
-      forma_pagamento: body.forma_pagamento ?? "dinheiro",
-      ponto_id: pontoId,
-      coleta_id: d.coletaId,
-      operador_id: user?.id ?? null,
-    });
-
-    const novoSaldo = saldoPendenteColeta({
-      valor_a_receber: Number(col.valor_a_receber ?? 0),
-      valor_pago_recebido: novoPago,
-    });
-
-    if (novoSaldo <= 0.009) {
-      await supabase
-        .from("pendencias")
-        .update({ status: "resolvida", valor: 0, resolvido_em: new Date().toISOString() })
-        .eq("coleta_id", d.coletaId)
-        .eq("empresa_id", profile.empresa_id)
-        .eq("status", "aberta");
-    } else {
-      await supabase
-        .from("pendencias")
-        .update({ valor: novoSaldo })
-        .eq("coleta_id", d.coletaId)
-        .eq("empresa_id", profile.empresa_id)
-        .eq("status", "aberta");
-    }
   }
 
   return NextResponse.json({
     success: true,
     valorAplicado,
-    valorSobra,
+    valorSobra: sobraFinal,
+    haverGerado,
     distribuicoes,
   });
 }

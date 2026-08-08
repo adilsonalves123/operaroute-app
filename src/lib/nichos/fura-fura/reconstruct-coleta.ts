@@ -44,6 +44,7 @@ export function calculoFromColetaSalva(coleta: ColetaSalva): CalculoColetaFuraFu
     const valorAReceber = Number(coleta.valor_a_receber ?? recalculado.valorAReceber);
     const valorPago = Number(coleta.valor_pago_recebido ?? 0);
     const saldoPendente = Math.max(0, Math.round((valorAReceber - valorPago) * 100) / 100);
+    const haver = Math.max(0, Math.round((valorPago - valorAReceber) * 100) / 100);
     return {
       ...recalculado,
       valorBruto: Number(coleta.valor_bruto ?? recalculado.valorBruto),
@@ -53,6 +54,7 @@ export function calculoFromColetaSalva(coleta: ColetaSalva): CalculoColetaFuraFu
       lucroReal: Number(coleta.lucro_real ?? coleta.valor_liquido ?? recalculado.lucroReal),
       valorPagoRecebido: valorPago,
       saldoPendente,
+      haver,
       quitado: saldoPendente <= 0.009,
     };
   }

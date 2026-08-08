@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { centesimosToReais } from "@/lib/nichos/cassino/contadores";
 import type { PulsoEvento } from "@/lib/dashboard-pulso";
 import { NICHO_MODULO_FURA_FURA } from "@/lib/nichos/fura-fura";
+import { cache } from "react";
 
 export type SaudePontoClasse = "forte" | "razoavel" | "fraco" | "sem_dados";
 
@@ -192,13 +193,17 @@ export function visitasToEventosPonto(
   visitas: {
     ponto_id: string;
     total_lucro_centavos: number | null;
+    valor_operacao?: number | null;
     saldo_negativo: boolean | null;
     created_at: string;
     pontos: { nome: string } | { nome: string }[] | null;
-  }[]
+  }[],
+  opts?: { usarValorOperacao?: boolean }
 ): PulsoEventoPonto[] {
   return visitas.map((v) => {
-    const lucroReais = centesimosToReais(Number(v.total_lucro_centavos ?? 0));
+    const lucroReais = opts?.usarValorOperacao
+      ? Number(v.valor_operacao ?? 0)
+      : centesimosToReais(Number(v.total_lucro_centavos ?? 0));
     const ponto = Array.isArray(v.pontos) ? v.pontos[0] : v.pontos;
     return {
       ponto_id: v.ponto_id,
@@ -208,6 +213,32 @@ export function visitasToEventosPonto(
       negativa: Boolean(v.saldo_negativo) || lucroReais < -0.009,
     };
   });
+}
+
+export function buildSaudeResumoFromEventos(
+  eventos: PulsoEventoPonto[],
+  pontosAtivos: { id: string; nome: string }[]
+): SaudePontosResumo {
+  const resumo = computeSaudePontos(eventos);
+  const idsComVisitaMes = new Set(resumo.mes.map((p) => p.pontoId));
+
+  for (const p of pontosAtivos) {
+    if (!idsComVisitaMes.has(p.id)) {
+      resumo.mes.push({
+        pontoId: p.id,
+        nome: p.nome,
+        classe: "sem_dados",
+        indice: null,
+        lucroMes: 0,
+        impulsos: 0,
+        pressoes: 0,
+        visitas: 0,
+      });
+    }
+  }
+
+  resumo.contagem = contarClasses(resumo.mes);
+  return resumo;
 }
 
 export function coletasToEventosPonto(
@@ -268,11 +299,11 @@ export function coletasToEventosPonto(
   }));
 }
 
-export async function fetchSaudePontos(
+export const fetchSaudePontos = cache(async (
   supabase: SupabaseClient,
   empresaId: string,
   nicho: "cassino" | "generico" | "fura_fura"
-): Promise<SaudePontosResumo> {
+): Promise<SaudePontosResumo> => {
   const thirtyFiveDaysAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
 
   let coletasData: Parameters<typeof coletasToEventosPonto>[0] = [];
@@ -286,6 +317,9 @@ export async function fetchSaudePontos(
       .gte("created_at", thirtyFiveDaysAgo);
     if (nicho === "fura_fura") {
       query = query.eq("nicho_modulo", NICHO_MODULO_FURA_FURA);
+    } else if (nicho === "generico") {
+      // Evita somar coletas de cassino (já entram via visitas) no ranking Melhores.
+      query = query.is("visita_id", null);
     }
     const { data } = await query;
     coletasData = (data ?? []) as Parameters<typeof coletasToEventosPonto>[0];
@@ -313,24 +347,5 @@ export async function fetchSaudePontos(
       ? visitasToEventosPonto(visitasResult.data ?? [])
       : coletasToEventosPonto(coletasData);
 
-  const resumo = computeSaudePontos(eventos);
-  const idsComVisitaMes = new Set(resumo.mes.map((p) => p.pontoId));
-
-  for (const p of pontosAtivos ?? []) {
-    if (!idsComVisitaMes.has(p.id)) {
-      resumo.mes.push({
-        pontoId: p.id,
-        nome: p.nome,
-        classe: "sem_dados",
-        indice: null,
-        lucroMes: 0,
-        impulsos: 0,
-        pressoes: 0,
-        visitas: 0,
-      });
-    }
-  }
-
-  resumo.contagem = contarClasses(resumo.mes);
-  return resumo;
-}
+  return buildSaudeResumoFromEventos(eventos, pontosAtivos ?? []);
+});

@@ -1,14 +1,6 @@
-import { ModulePage } from "@/components/layout/ModulePage";
+import { redirect } from "next/navigation";
 
+/** Certificados pausados — conteúdo agora vive na Universidade. */
 export default function CertificadosPage() {
-  return (
-    <ModulePage
-      title="Certificados"
-      description="Seus certificados da Universidade OperaRoute"
-      emptyTitle="Nenhum certificado"
-      emptyDescription="Complete cursos na Universidade para ganhar certificados."
-      actionLabel="Ir para Universidade"
-      actionHref="/universidade"
-    />
-  );
+  redirect("/universidade");
 }

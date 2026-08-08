@@ -9,7 +9,7 @@ SELECT
   email,
   NOW(),
   NOW() + INTERVAL '7 days',
-  TRUE
+  FALSE
 FROM auth.users
 WHERE id NOT IN (SELECT user_id FROM profiles WHERE user_id IS NOT NULL)
 ON CONFLICT (user_id) DO NOTHING;

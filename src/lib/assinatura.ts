@@ -4,8 +4,15 @@ import type { Nicho } from "./types/database";
 
 export const EQUIPAMENTO_NICHO: Record<EquipamentoTipo, Nicho> = {
   cassino: "maquinas_cassino",
-  vending_ursinho: "maquinas_cassino",
+  ursinho: "ursinho",
+  vending_ursinho: "vending_ursinho",
   fura_fura: "fura_fura",
+  sinuca: "diversao",
+  fliperama: "diversao",
+  cadeira_massagem: "diversao",
+  diversao: "diversao",
+  bolinha: "bolinha",
+  consignado: "consignado",
 };
 
 export function resolveNichosAtivos(
@@ -38,6 +45,20 @@ export function filterEquipamentoTiposPorNicho<
     if (!nichosAtivos?.length) return true;
     return canUseEquipamentoTipo(nichosAtivos, t.id);
   });
+}
+
+/** Nichos exibidos no painel do ponto (sem "outros" quando há cassino/fura). */
+export function nichosParaPainelPonto(nichosAtivos: Nicho[]): Nicho[] {
+  const principais = nichosAtivos.filter((n) => n !== "outros");
+  return principais.length > 0 ? principais : ["outros"];
+}
+
+export function filterEquipamentosPorNicho<T extends { tipo: EquipamentoTipo }>(
+  equipamentos: T[],
+  nicho: Nicho
+): T[] {
+  if (nicho === "outros") return [];
+  return equipamentos.filter((eq) => EQUIPAMENTO_NICHO[eq.tipo] === nicho);
 }
 
 export function getLimitePontos(

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
 import { canAddPonto, canUseEquipamentoTipo, resolveNichosAtivos } from "@/lib/assinatura";
 import type { EquipamentoTipo } from "@/lib/equipamentos";
-import { parseLeituraContador } from "@/lib/equipamentos";
+import { parseLeituraContador, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
 import { registrarMovimentoPonto } from "@/lib/pontos-movimentos";
 
 async function resolveEmpresaId(): Promise<string | null> {
@@ -68,6 +69,7 @@ export async function GET(request: Request) {
 interface EquipamentoBody {
   nome: string;
   numero_maquina: string;
+  numero_serie?: string;
   tipo: EquipamentoTipo;
   numero_entrada?: string;
   numero_saida?: string;
@@ -76,7 +78,10 @@ interface EquipamentoBody {
 }
 
 export async function POST(request: Request) {
-  const empresaId = await resolveEmpresaId();
+  const auth = await requireAcesso("pontos", "criar");
+  if (!auth.ok) return auth.response;
+
+  const empresaId = auth.profile.empresa_id ?? (await resolveEmpresaId());
 
   if (!empresaId) {
     return NextResponse.json(
@@ -111,8 +116,9 @@ export async function POST(request: Request) {
   ) {
     return NextResponse.json(
       {
-        error: `Limite de ${empresa.limite_pontos} pontos atingido. Faça upgrade em /planos.`,
+        error: `Limite de pontos do seu plano atingido (${empresa.limite_pontos === 9999 ? "ilimitado" : empresa.limite_pontos}). Faça upgrade para continuar.`,
         limite_atingido: true,
+        upgrade_url: "/planos",
       },
       { status: 403 }
     );
@@ -125,8 +131,9 @@ export async function POST(request: Request) {
     if (!canUseEquipamentoTipo(nichosAtivos, eq.tipo)) {
       return NextResponse.json(
         {
-          error: `Nicho não contratado para equipamento "${eq.tipo}". Adicione o nicho em /planos.`,
+          error: `Nicho não contratado para equipamento "${eq.tipo}". Faça upgrade ou adicione o nicho em /planos.`,
           nicho_bloqueado: true,
+          upgrade_url: "/planos",
         },
         { status: 403 }
       );
@@ -143,18 +150,39 @@ export async function POST(request: Request) {
       cidade: body.cidade || null,
       bairro: body.bairro || null,
       endereco: body.endereco || null,
+      latitude: (() => {
+        const n = Number(body.latitude);
+        return Number.isFinite(n) ? n : null;
+      })(),
+      longitude: (() => {
+        const n = Number(body.longitude);
+        return Number.isFinite(n) ? n : null;
+      })(),
       status: body.status || "ativo",
       comissao_percentual: parseFloat(body.comissao_percentual) || 0,
+      comissao_por_nicho:
+        body.comissao_por_nicho && typeof body.comissao_por_nicho === "object"
+          ? body.comissao_por_nicho
+          : {},
+      consignado_modo_comissao:
+        body.consignado_modo_comissao === "percentual" ? "percentual" : "tabela",
       observacoes: body.observacoes || null,
     })
-    .select("id")
+    .select("id, nome")
     .maybeSingle();
 
   if (pontoError || !ponto) {
-    return NextResponse.json(
-      { error: pontoError?.message ?? "Erro ao cadastrar ponto" },
-      { status: 500 }
-    );
+    const msg = pontoError?.message ?? "Erro ao cadastrar ponto";
+    if (/comissao_por_nicho|schema cache/i.test(msg)) {
+      return NextResponse.json(
+        {
+          error:
+            "Coluna comissao_por_nicho ausente. Rode supabase/comissao-por-nicho.sql no Supabase SQL Editor.",
+        },
+        { status: 500 }
+      );
+    }
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
 
   await registrarMovimentoPonto(supabase, {
@@ -165,12 +193,20 @@ export async function POST(request: Request) {
     motivo: "cadastro",
   });
 
+  let insertedEquipamentos: { id: string; nome: string; numero_maquina: string | null; tipo: string }[] =
+    [];
+
   if (equipamentos.length > 0) {
     const rows = equipamentos.map((eq) => ({
       empresa_id: empresaId,
       ponto_id: ponto.id,
       nome: eq.nome.trim(),
       numero_maquina: eq.numero_maquina?.trim() || null,
+      numero_serie:
+        (eq.tipo === "cassino" || eq.tipo === "ursinho" || isEquipamentoTipoDiversao(eq.tipo)) &&
+        eq.numero_serie?.trim()
+          ? eq.numero_serie.trim()
+          : null,
       tipo: eq.tipo,
       numero_entrada:
         eq.tipo === "cassino" && eq.numero_entrada
@@ -181,19 +217,24 @@ export async function POST(request: Request) {
           ? parseLeituraContador(eq.numero_saida)
           : null,
       entrada_atual:
-        eq.tipo === "vending_ursinho" && eq.entrada_atual
+        (eq.tipo === "ursinho" || eq.tipo === "vending_ursinho" || isEquipamentoTipoDiversao(eq.tipo)) &&
+        eq.entrada_atual
           ? parseLeituraContador(eq.entrada_atual)
           : null,
       observacao: eq.observacao || null,
       status: "ativo",
     }));
 
-    const { error: eqError } = await supabase.from("equipamentos").insert(rows);
+    const { data: insertedEquipamentosData, error: eqError } = await supabase
+      .from("equipamentos")
+      .insert(rows)
+      .select("id, nome, numero_maquina, tipo");
 
     if (eqError) {
       const msg = eqError.message ?? "";
       const needsMigration =
         msg.includes("numero_maquina") ||
+        msg.includes("numero_serie") ||
         msg.includes("schema cache") ||
         msg.includes("does not exist");
 
@@ -201,14 +242,37 @@ export async function POST(request: Request) {
         {
           error: needsMigration
             ? msg.includes("equipamentos")
-              ? "Coluna numero_maquina não existe no banco. Rode supabase/equipamentos-numero-maquina.sql no Supabase SQL Editor."
-              : "Tabela equipamentos não existe. Rode supabase/equipamentos.sql no Supabase."
+              ? "Coluna numero_serie não existe. Rode supabase/equipamentos-numero-serie.sql no Supabase."
+              : "Tabela equipamentos não existe. Rode supabase/equipamentos.sql."
             : msg,
         },
         { status: 500 }
       );
     }
+    insertedEquipamentos = insertedEquipamentosData ?? [];
   }
 
-  return NextResponse.json({ success: true, id: ponto.id });
+  const { auditarAcao } = await import("@/lib/auditoria/auditar");
+  if (profile) {
+    await auditarAcao(supabase, profile, {
+      acao: "ponto.criar",
+      tabela: "pontos",
+      registroId: ponto.id,
+      dadosNovos: {
+        nome: ponto.nome,
+        equipamentos: (insertedEquipamentos ?? []).length,
+      },
+      severidade: "medium",
+      categoria: "ponto",
+      modulo: "pontos",
+      titulo: `Cadastrou ponto ${ponto.nome}`,
+      resumo: `${(insertedEquipamentos ?? []).length} equipamento(s) no cadastro`,
+      request,
+    });
+  }
+  return NextResponse.json({
+    success: true,
+    id: ponto.id,
+    equipamentos: insertedEquipamentos ?? [],
+  });
 }

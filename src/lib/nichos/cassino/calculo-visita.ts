@@ -4,7 +4,11 @@ import { ajustarArredondamento, distribuirValoresMaquinas } from "./distribuicao
 import {
   calcularAbatimentos,
   calcularBaixasValorPendencia,
+  isHaverCreditoComum,
+  isHaverDeNegativoCliente,
   totalDebitoAbertoReais,
+  totalHaverAbertoReais,
+  totalHaverDeNegativoAbertoReais,
 } from "./pendencias";
 import type {
   CalculoVisitaInput,
@@ -29,11 +33,26 @@ function mesclarAbatimentos(
   operacionais: AbatimentoDebito[],
   pagamento: AbatimentoDebito[]
 ): AbatimentoDebito[] {
-  const payIds = new Set(pagamento.map((a) => a.pendenciaId));
-  return [
-    ...operacionais.filter((a) => !payIds.has(a.pendenciaId)),
-    ...pagamento,
-  ];
+  const byId = new Map<string, AbatimentoDebito>();
+  for (const a of operacionais) {
+    byId.set(a.pendenciaId, { ...a });
+  }
+  for (const a of pagamento) {
+    const prev = byId.get(a.pendenciaId);
+    if (!prev) {
+      byId.set(a.pendenciaId, { ...a });
+      continue;
+    }
+    // Mesma pendência: soma o abatido (desconto na cobrança + pagamento em dinheiro).
+    byId.set(a.pendenciaId, {
+      ...a,
+      valorAbatidoReais: prev.valorAbatidoReais + a.valorAbatidoReais,
+      saldoRestanteReais: a.saldoRestanteReais,
+      resolvida: a.resolvida,
+      observacaoAtualizada: a.observacaoAtualizada,
+    });
+  }
+  return [...byId.values()];
 }
 
 function resultadoNegativo(
@@ -50,21 +69,31 @@ function resultadoNegativo(
   incluirUsarHaverNegativo: boolean
 ): CalculoVisitaResult {
   const prejuizoMaquinasReais = centesimosToReais(Math.abs(totais.totalLucroCentavos));
-  const haverTotalReais = totalDebitoAbertoReais(pendenciasHaver);
+  const haverTotalReais = totalHaverAbertoReais(pendenciasHaver);
   const pendenciaOperacaoTotalReais = totalDebitoAbertoReais(pendenciasOperacao);
   const abatimentoAutomaticoPendenciaReais = abaterPendenciaOperacaoNegativa
     ? Math.min(pendenciaOperacaoTotalReais, prejuizoMaquinasReais)
     : 0;
 
-  const valorDeixadoOperadorReais = Math.min(
-    Math.max(0, valorDeixadoNoPontoReais),
-    Math.max(0, prejuizoMaquinasReais - abatimentoAutomaticoPendenciaReais)
+  const tetoCoberturaPrejuizoReais = Math.max(
+    0,
+    prejuizoMaquinasReais - abatimentoAutomaticoPendenciaReais
+  );
+  // Aceita valor acima da perda: o excedente vira pendência (não some no teto).
+  const valorDeixadoOperadorReais = Math.max(0, valorDeixadoNoPontoReais);
+  const valorAplicadoNoPrejuizoReais = Math.min(
+    valorDeixadoOperadorReais,
+    tetoCoberturaPrejuizoReais
+  );
+  const excedenteDeixadoReais = Math.max(
+    0,
+    valorDeixadoOperadorReais - valorAplicadoNoPrejuizoReais
   );
   let restantePrejuizoReais = Math.max(
     0,
     prejuizoMaquinasReais -
       abatimentoAutomaticoPendenciaReais -
-      valorDeixadoOperadorReais
+      valorAplicadoNoPrejuizoReais
   );
 
   const valorPagoReais = abaterPendenciaOperacaoNegativa ? 0 : valorPixReais + valorDinheiroReais;
@@ -148,10 +177,13 @@ function resultadoNegativo(
     pendenciaOperacaoRestanteReais,
     abatimentosPendenciaOperacao: payPendenciaOperacao.abatimentos,
     valorDeixadoOperadorReais,
+    excedenteDeixadoReais,
     valorPagoReais,
     restanteOperacaoReais: 0,
     restanteReais: pendenciaOperacaoRestanteReais,
     haverTotalReais,
+    haverDeNegativoTotalReais: 0,
+    recuperacaoHaverDeNegativoReais: 0,
     haverCompensadoReais,
     haverQuitadoReais: 0,
     haverRestanteReais,
@@ -175,7 +207,7 @@ function resultadoNegativo(
 /**
  * Cadeia financeira da visita cassino.
  * Negativo: operador deixa dinheiro → débito; cliente paga → haver.
- * Positiva com haver: lucro compensa haver antes da comissão; operação pode ser zero.
+ * Positiva: comissão sobre o lucro; haver só abate na cobrança se o operador optar.
  */
 export function calcularVisitaCassino(
   input: CalculoVisitaInput
@@ -184,7 +216,7 @@ export function calcularVisitaCassino(
   const totais = calcularTotaisVisita(maquinas);
   const debitoTotalReais = totalDebitoAbertoReais(input.pendenciasNegativas);
   const haverPendencias = input.pendenciasHaver ?? [];
-  const haverTotalReais = totalDebitoAbertoReais(haverPendencias);
+  const haverTotalReais = totalHaverAbertoReais(haverPendencias);
   const temHaver = haverTotalReais > 0.009;
   const temNegativo = debitoTotalReais > 0.009;
 
@@ -208,7 +240,11 @@ export function calcularVisitaCassino(
   const valorDinheiro = input.valorDinheiroReais ?? 0;
   const valorPagoClienteReais = valorPix + valorDinheiro;
   const valorPagoClienteCentavos = reaisToCentesimos(valorPagoClienteReais);
-  const valorDeixadoOperadorReais = temHaver ? input.descontoManualReais : 0;
+  const haverDeNegativoPendencias = haverPendencias.filter(isHaverDeNegativoCliente);
+  const haverCreditoPendencias = haverPendencias.filter(isHaverCreditoComum);
+  const temHaverCredito = totalHaverAbertoReais(haverCreditoPendencias) > 0.009;
+  /** Só deixa dinheiro para quitar crédito (troco). Haver de ganhadores zera no lucro. */
+  const valorDeixadoOperadorReais = temHaverCredito ? input.descontoManualReais : 0;
   const valorDeixadoOperadorCentavos = reaisToCentesimos(valorDeixadoOperadorReais);
 
   const descontoManualCentavos = reaisToCentesimos(
@@ -231,24 +267,45 @@ export function calcularVisitaCassino(
     saldoAposDescontoCentavos - opNegativoLucro.debitoAbatidoCentavos
   );
 
-  const opHaver = input.abaterAutomatico && temHaver
-    ? calcularAbatimentos(haverPendencias, saldoAposNegativoCentavos)
-    : { abatimentos: [], debitoAbatidoCentavos: 0 };
-  const haverCompensadoReais = centesimosToReais(opHaver.debitoAbatidoCentavos);
+  /**
+   * Haver de “cliente pagou ganhadores” bloqueia comissão como negativo
+   * e é baixado automaticamente pelo lucro (não entra em descontar/pagar).
+   */
+  const haverDeNegativoTotalReais = totalHaverDeNegativoAbertoReais(haverPendencias);
+  const buracoHaverDeNegativoCentavos = Math.min(
+    reaisToCentesimos(haverDeNegativoTotalReais),
+    saldoAposNegativoCentavos
+  );
+  const recuperacaoHaverDeNegativoReais = centesimosToReais(
+    buracoHaverDeNegativoCentavos
+  );
+  const opHaverDeNegativoLucro =
+    input.abaterAutomatico && buracoHaverDeNegativoCentavos > 0
+      ? calcularAbatimentos(haverDeNegativoPendencias, buracoHaverDeNegativoCentavos)
+      : { abatimentos: [], debitoAbatidoCentavos: 0 };
 
+  /** Comissão só no lucro após negativo e após haver-de-negativo. */
   const saldoParaComissaoCentavos = Math.max(
     0,
-    saldoAposNegativoCentavos - opHaver.debitoAbatidoCentavos
+    saldoAposNegativoCentavos - buracoHaverDeNegativoCentavos
   );
+  const lucroDisponivelParaOperacaoCentavos = saldoParaComissaoCentavos;
 
-  const comissaoAplicada = saldoParaComissaoCentavos > 0;
+  const comissaoAplicada = lucroDisponivelParaOperacaoCentavos > 0;
 
-  const valorClienteCentavos =
+  const valorClienteBrutoCentavos =
     comissaoAplicada && input.comissaoPercentual > 0
       ? Math.round((saldoParaComissaoCentavos * input.comissaoPercentual) / 100)
       : 0;
+  const valorClienteCentavos = Math.min(
+    valorClienteBrutoCentavos,
+    lucroDisponivelParaOperacaoCentavos
+  );
 
-  const valorOperacaoCentavos = saldoParaComissaoCentavos - valorClienteCentavos;
+  const valorOperacaoCentavos = Math.max(
+    0,
+    lucroDisponivelParaOperacaoCentavos - valorClienteCentavos
+  );
   const descontoRecebCentavos = reaisToCentesimos(input.descontoRecebimentoReais);
   const valorOperacaoEfetivoCentavos =
     valorOperacaoCentavos - descontoRecebCentavos;
@@ -260,19 +317,38 @@ export function calcularVisitaCassino(
 
   const pendenciasOperacao = input.pendenciasOperacao ?? [];
   const pendenciaOperacaoTotalReais = totalDebitoAbertoReais(pendenciasOperacao);
-  const lucroReaisVisita = centesimosToReais(totais.totalLucroCentavos);
-  const lucroCobreHaverTotal =
-    !temHaver || lucroReaisVisita + 0.009 >= haverTotalReais;
   const incluirPendenciaOperacao =
-    lucroCobreHaverTotal &&
     Boolean(input.incluirPendenciasOperacao) &&
     pendenciaOperacaoTotalReais > 0.009;
   const pendenciaOperacaoIncluidaReais = incluirPendenciaOperacao
     ? pendenciaOperacaoTotalReais
     : 0;
 
-  const totalACobrarReais =
+  const totalAntesHaverReais =
     debitoTotalReais + valorOperacaoEfetivoReais + pendenciaOperacaoIncluidaReais;
+
+  // Descontar na cobrança: só crédito (troco/a mais). Haver de ganhadores já foi no lucro.
+  const opHaverCobranca =
+    Boolean(input.descontarHaverNaCobranca) &&
+    temHaverCredito &&
+    input.abaterAutomatico
+      ? calcularAbatimentos(
+          haverCreditoPendencias,
+          reaisToCentesimos(totalAntesHaverReais)
+        )
+      : { abatimentos: [], debitoAbatidoCentavos: 0 };
+
+  const haverCompensadoReais = centesimosToReais(opHaverCobranca.debitoAbatidoCentavos);
+
+  const totalACobrarReais = Math.max(
+    0,
+    totalAntesHaverReais - centesimosToReais(opHaverCobranca.debitoAbatidoCentavos)
+  );
+
+  const opHaver = {
+    abatimentos: opHaverCobranca.abatimentos,
+    debitoAbatidoCentavos: opHaverCobranca.debitoAbatidoCentavos,
+  };
 
   // Cliente paga: negativo → operação
   const { abatimentos, debitoAbatidoCentavos } = calcularAbatimentosPorPagamento(
@@ -287,15 +363,33 @@ export function calcularVisitaCassino(
   );
   const debitoRestanteReais = centesimosToReais(debitoRestanteCentavos);
 
+  const haverDescontadoNaCobrancaReais = centesimosToReais(
+    opHaverCobranca.debitoAbatidoCentavos
+  );
+  const haverAbateOperacaoReais = Math.min(
+    haverDescontadoNaCobrancaReais,
+    valorOperacaoEfetivoReais
+  );
+  const valorOperacaoDevidoNaCobrancaReais = Math.max(
+    0,
+    valorOperacaoEfetivoReais - haverAbateOperacaoReais
+  );
+  const valorOperacaoDevidoCentavos = reaisToCentesimos(
+    valorOperacaoDevidoNaCobrancaReais
+  );
+
   let saldoPagoClienteCentavos = Math.max(
     0,
     valorPagoClienteCentavos - debitoAbatidoCentavos
   );
-  const pagoOperacaoCentavos = Math.min(saldoPagoClienteCentavos, valorOperacaoEfetivoCentavos);
+  const pagoOperacaoCentavos = Math.min(
+    saldoPagoClienteCentavos,
+    valorOperacaoDevidoCentavos
+  );
   const valorPagoParaOperacaoReais = centesimosToReais(pagoOperacaoCentavos);
   const restanteOperacaoReais = Math.max(
     0,
-    valorOperacaoEfetivoReais - valorPagoParaOperacaoReais
+    valorOperacaoDevidoNaCobrancaReais - valorPagoParaOperacaoReais
   );
 
   saldoPagoClienteCentavos = Math.max(
@@ -320,23 +414,28 @@ export function calcularVisitaCassino(
     saldoPagoClienteCentavos - payPendenciaOperacao.abatidoCentavos
   );
 
-  const pendenciasHaverAposVirtual = haverPendencias.map((p) => {
+  const pendenciasHaverAposVirtual = haverCreditoPendencias.map((p) => {
     const ab = opHaver.abatimentos.find((a) => a.pendenciaId === p.id);
     return ab ? { ...p, observacao: ab.observacaoAtualizada } : p;
   });
 
-  // Operador quita haver com o ponto (valor deixado) — não é pagamento do cliente
+  // Operador quita só crédito (troco) com o ponto — não é pagamento do cliente
   const payHaver = calcularAbatimentosPorPagamento(
     pendenciasHaverAposVirtual,
     valorDeixadoOperadorCentavos,
     input.abaterAutomatico
   );
   const haverQuitadoReais = centesimosToReais(payHaver.debitoAbatidoCentavos);
-  const abatimentosHaver = mesclarAbatimentos(opHaver.abatimentos, payHaver.abatimentos);
+  const abatimentosHaver = mesclarAbatimentos(
+    mesclarAbatimentos(opHaverDeNegativoLucro.abatimentos, opHaver.abatimentos),
+    payHaver.abatimentos
+  );
 
   const haverTotalCentavos = reaisToCentesimos(haverTotalReais);
   const haverAbatidoTotalCentavos =
-    opHaver.debitoAbatidoCentavos + payHaver.debitoAbatidoCentavos;
+    opHaverDeNegativoLucro.debitoAbatidoCentavos +
+    opHaver.debitoAbatidoCentavos +
+    payHaver.debitoAbatidoCentavos;
   const haverRestanteCentavos = Math.max(0, haverTotalCentavos - haverAbatidoTotalCentavos);
   const haverRestanteReais = centesimosToReais(haverRestanteCentavos);
 
@@ -358,11 +457,14 @@ export function calcularVisitaCassino(
     abatimentosNegativoFinal = opNegativoLucro.abatimentos;
     debitoRestanteFinal = 0;
     debitoAbatidoFinal = 0;
-    const valorReceberHoje =
-      recuperacaoNegativoReais +
-      valorOperacaoEfetivoReais +
-      pendenciaOperacaoIncluidaReais;
-    const faltaCobrancaCliente = Math.max(0, valorReceberHoje - valorPagoClienteReais);
+    // Cobrança desta visita (negativo recuperado + operação − haver), sem
+    // reempacotar pendências antigas — elas ficam nas linhas próprias.
+    const faltaCobrancaCliente = Math.max(
+      0,
+      totalACobrarReais -
+        pendenciaOperacaoIncluidaReais -
+        valorPagoClienteReais
+    );
     restanteOperacaoFinal = faltaCobrancaCliente;
     restanteFinal = faltaCobrancaCliente;
   }
@@ -406,10 +508,13 @@ export function calcularVisitaCassino(
     pendenciaOperacaoRestanteReais,
     abatimentosPendenciaOperacao: payPendenciaOperacao.abatimentos,
     valorDeixadoOperadorReais,
+    excedenteDeixadoReais: 0,
     valorPagoReais: valorPagoClienteReais,
     restanteOperacaoReais: restanteOperacaoFinal,
     restanteReais: restanteFinal,
     haverTotalReais,
+    haverDeNegativoTotalReais,
+    recuperacaoHaverDeNegativoReais,
     haverCompensadoReais,
     haverQuitadoReais,
     haverRestanteReais,

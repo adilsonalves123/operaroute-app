@@ -66,6 +66,18 @@ export async function DELETE(
 
   await supabase.from("coleta_pagamentos").delete().eq("coleta_id", id);
   await supabase.from("financeiro").delete().eq("coleta_id", id);
+
+  // Restaura haver/pendências que esta coleta abateu ANTES de apagar as dela.
+  const { reverterPendenciasAfetadasPorColeta } = await import(
+    "@/lib/coletas/reverter-pendencias-coleta"
+  );
+  await reverterPendenciasAfetadasPorColeta(supabase, {
+    empresaId: profile.empresa_id,
+    pontoId: coleta.ponto_id,
+    coletaId: id,
+    createdAt: coleta.created_at,
+  });
+
   await supabase
     .from("pendencias")
     .delete()
@@ -95,6 +107,24 @@ export async function DELETE(
       await supabase.from("pontos").update(pontoUpdates).eq("id", ponto.id);
     }
   }
+
+  const { registrarAuditoria } = await import("@/lib/auditoria/registrar");
+  await registrarAuditoria({
+    supabase,
+    empresaId: profile.empresa_id,
+    userId: profile.user_id,
+    userNome: profile.nome,
+    userEmail: profile.email,
+    acao: "coleta.excluir",
+    tabela: "coletas",
+    registroId: id,
+    dadosAnteriores: coleta as unknown as Record<string, unknown>,
+    severidade: "high",
+    categoria: "coleta",
+    modulo: "coletas",
+    titulo: "Apagou coleta fura-fura",
+    resumo: `Ponto ${coleta.ponto_id} · valor líquido ${coleta.valor_liquido ?? "—"}`,
+  });
 
   return NextResponse.json({ success: true });
 }

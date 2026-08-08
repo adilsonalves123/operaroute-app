@@ -72,7 +72,7 @@ CREATE INDEX IF NOT EXISTS idx_coletas_visita ON coletas(visita_id);
 CREATE INDEX IF NOT EXISTS idx_coletas_equipamento ON coletas(equipamento_id);
 
 -- Pendências vinculadas à visita
-ALTER TABLE pendencias ADD COLUMN IF NOT EXISTS visita_id UUID REFERENCES visitas(id) ON DELETE SET NULL;
+ALTER TABLE pendencias ADD COLUMN IF NOT EXISTS visita_id UUID REFERENCES visitas(id) ON DELETE CASCADE;
 ALTER TABLE pendencias ADD COLUMN IF NOT EXISTS coleta_id UUID REFERENCES coletas(id) ON DELETE SET NULL;
 ALTER TABLE pendencias ADD COLUMN IF NOT EXISTS resolvido_em TIMESTAMPTZ;
 

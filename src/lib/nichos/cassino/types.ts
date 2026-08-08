@@ -26,6 +26,9 @@ export interface PendenciaNegativaInput {
   id: string;
   valor: number;
   observacao?: string | null;
+  descricao?: string | null;
+  /** Título da pendência (ex.: "Cliente pagou ganhadores"). */
+  titulo?: string | null;
 }
 
 export interface AbatimentoDebito {
@@ -56,6 +59,8 @@ export interface CalculoVisitaInput {
   abaterPendenciaOperacaoNegativa?: boolean;
   /** Visita negativa: abater haver existente antes de gerar novo haver */
   incluirUsarHaverNegativo?: boolean;
+  /** Visita positiva: descontar haver do total a cobrar do cliente */
+  descontarHaverNaCobranca?: boolean;
   comissaoPercentual: number;
   descontoManualReais: number;
   descontoRecebimentoReais: number;
@@ -102,6 +107,8 @@ export interface CalculoVisitaResult {
   abatimentosPendenciaOperacao: BaixaPendenciaValor[];
   /** Quanto o operador deixou no ponto (quitar haver ou visita negativa) */
   valorDeixadoOperadorReais: number;
+  /** Negativo: valor deixado acima da perda — vira pendência (ponto deve ao operador). */
+  excedenteDeixadoReais: number;
   /** Pago pelo cliente (Pix + dinheiro) */
   valorPagoReais: number;
   /** Dívida da operação ainda não paga (vira pagamento_pendente) */
@@ -110,6 +117,13 @@ export interface CalculoVisitaResult {
   restanteReais: number;
   /** Haver aberto antes da visita (cliente pagou ganhadores em visita negativa anterior) */
   haverTotalReais: number;
+  /**
+   * Parte do haver total que veio de “cliente pagou ganhadores”.
+   * Bloqueia comissão como um negativo, sem mudar quem deve a quem.
+   */
+  haverDeNegativoTotalReais: number;
+  /** Quanto do lucro desta visita ficou sem comissão por causa desse haver. */
+  recuperacaoHaverDeNegativoReais: number;
   /** Lucro da visita usado para compensar haver (sem dinheiro) */
   haverCompensadoReais: number;
   /** Haver quitado em dinheiro nesta visita (inclui valor deixado no ponto) */

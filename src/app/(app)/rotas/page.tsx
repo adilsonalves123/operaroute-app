@@ -1,44 +1,145 @@
 import { createClient, getProfile, getEmpresa } from "@/lib/supabase/server";
-import { resolveNichosAtivos } from "@/lib/assinatura";
-import { FuraFuraRotaDiaClient } from "@/components/rotas/FuraFuraRotaDiaClient";
+import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import { ModulePage } from "@/components/layout/ModulePage";
+import {
+  RotaInteligenteClient,
+  type PontoRotaEnriquecido,
+} from "@/components/rotas/RotaInteligenteClient";
+import { agregarPendenciasPorPonto, NICHO_MODULO_FURA_FURA } from "@/lib/nichos/fura-fura";
+import { fetchChamadosAbertosResumo } from "@/lib/chamados/fetch-resumo";
+import { listarRotasSalvas } from "@/lib/rotas/listar-rotas-salvas";
+import type { OperadorRotaOpcao } from "@/lib/rotas/rotas-salvas";
 
 export default async function RotasPage() {
-  const profile = await getProfile();
-  const empresa = profile?.empresa_id ? await getEmpresa(profile.empresa_id) : null;
-  const nichosAtivos = resolveNichosAtivos(empresa?.nichos_ativos, empresa?.nicho);
-  const isFuraFura = nichosAtivos.includes("fura_fura");
+  const [profile, supabase] = await Promise.all([getProfile(), createClient()]);
 
-  if (!isFuraFura || !profile?.empresa_id) {
+  if (!profile?.empresa_id) {
     return (
       <ModulePage
         title="Rotas"
-        description="Planeje e execute visitas do dia"
-        emptyTitle="Nenhuma rota criada"
-        emptyDescription="Crie uma rota para organizar suas visitas e coletas."
-        actionLabel="Nova rota"
-        actionHref="#"
+        description="Organize o dia de campo e envie para a equipe"
+        emptyTitle="Faça login"
+        emptyDescription="Entre na conta para montar sua rota do dia."
+        actionLabel="Dashboard"
+        actionHref="/dashboard"
       />
     );
   }
 
-  const supabase = await createClient();
-  const { data: pontos } = await supabase
-    .from("pontos")
-    .select("*")
-    .eq("empresa_id", profile.empresa_id)
-    .eq("status", "ativo")
-    .order("nome");
+  const [empresa, pontosResult, equipe] = await Promise.all([
+    getEmpresa(profile.empresa_id),
+    supabase
+      .from("pontos")
+      .select(
+        "id, empresa_id, nome, responsavel, whatsapp, cidade, bairro, endereco, latitude, longitude, tipo_ponto, status, comissao_percentual, operador_id, observacoes, abater_automatico, foto_url, ultima_coleta, created_at, preco_furo, furos_estoque, furos_minimo, estoque_brindes, kit_ativo_id, kit_instalado_em"
+      )
+      .eq("empresa_id", profile.empresa_id)
+      .eq("status", "ativo")
+      .order("nome"),
+    supabase
+      .from("equipe")
+      .select("user_id, nome, role, status, whatsapp")
+      .eq("empresa_id", profile.empresa_id)
+      .eq("status", "ativo")
+      .not("user_id", "is", null),
+  ]);
+
+  const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
+  const podeGerenciarRotas = acesso.podeGerenciarRotas;
+  const pontos = pontosResult.data ?? [];
+  const pontosSemFoto = pontos.filter((p) => !(p.foto_url ?? "").trim());
+  const pontosSemGps = pontos.filter((p) => p.latitude == null || p.longitude == null);
+  const limiteFotosColeta = Math.min(Math.max(pontosSemFoto.length * 8, 300), 2000);
+  const limiteGpsColeta = Math.min(Math.max(pontosSemGps.length * 8, 300), 2000);
+
+  const [coletasFotosResult, coletasPendResult, coletasGpsResult, chamadosResumo, rotasSalvas] =
+    await Promise.all([
+      pontosSemFoto.length > 0
+        ? supabase
+            .from("coletas")
+            .select("ponto_id, foto_url, created_at")
+            .eq("empresa_id", profile.empresa_id)
+            .not("foto_url", "is", null)
+            .order("created_at", { ascending: false })
+            .limit(limiteFotosColeta)
+        : Promise.resolve({ data: [] }),
+      supabase
+        .from("coletas")
+        .select("ponto_id, valor_a_receber, valor_pago_recebido")
+        .eq("empresa_id", profile.empresa_id)
+        .eq("nicho_modulo", NICHO_MODULO_FURA_FURA)
+        .or("valor_a_receber.gt.0,valor_pago_recebido.gt.0"),
+      pontosSemGps.length > 0
+        ? supabase
+            .from("coletas")
+            .select("ponto_id, latitude, longitude, created_at")
+            .eq("empresa_id", profile.empresa_id)
+            .not("latitude", "is", null)
+            .not("longitude", "is", null)
+            .order("created_at", { ascending: false })
+            .limit(limiteGpsColeta)
+        : Promise.resolve({ data: [] }),
+      fetchChamadosAbertosResumo(profile.empresa_id),
+      listarRotasSalvas(supabase, profile.empresa_id, profile.user_id, podeGerenciarRotas),
+    ]);
+
+  const fotoPorPonto = new Map<string, string>();
+  for (const c of coletasFotosResult.data ?? []) {
+    if (c.ponto_id && !fotoPorPonto.has(c.ponto_id) && c.foto_url) {
+      fotoPorPonto.set(c.ponto_id, c.foto_url);
+    }
+  }
+
+  const gpsPorPonto = new Map<string, { latitude: number; longitude: number }>();
+  for (const c of coletasGpsResult.data ?? []) {
+    if (
+      c.ponto_id &&
+      !gpsPorPonto.has(c.ponto_id) &&
+      c.latitude != null &&
+      c.longitude != null
+    ) {
+      gpsPorPonto.set(c.ponto_id, {
+        latitude: Number(c.latitude),
+        longitude: Number(c.longitude),
+      });
+    }
+  }
+
+  const pendencias = agregarPendenciasPorPonto(coletasPendResult.data ?? []);
+  const pontosEnriquecidos: PontoRotaEnriquecido[] = (pontos ?? []).map((p) => {
+    const gpsFallback = gpsPorPonto.get(p.id);
+    return {
+      ...p,
+      latitude: p.latitude ?? gpsFallback?.latitude ?? null,
+      longitude: p.longitude ?? gpsFallback?.longitude ?? null,
+      fotoExibir: p.foto_url ?? fotoPorPonto.get(p.id) ?? null,
+      pendente: pendencias.get(p.id)?.totalPendente ?? 0,
+      chamadosAbertos: chamadosResumo.porPonto.get(p.id) ?? [],
+    };
+  });
+
+  const operadores: OperadorRotaOpcao[] = (equipe.data ?? [])
+    .filter(
+      (m) =>
+        m.user_id && (m.role === "operador" || m.role === "gerente" || m.role === "admin")
+    )
+    .map((m) => ({
+      userId: m.user_id!,
+      nome: m.nome,
+      role: m.role,
+      whatsapp: m.whatsapp ?? null,
+    }));
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Rota do dia</h1>
-        <p className="text-slate-400 mt-1 text-sm">
-          Pontos ordenados por prioridade — sem coleta, furos baixos primeiro
-        </p>
-      </div>
-      <FuraFuraRotaDiaClient pontos={pontos ?? []} />
+    <div className="mx-auto max-w-5xl">
+      <RotaInteligenteClient
+        pontos={pontosEnriquecidos}
+        rotasSalvas={rotasSalvas}
+        operadores={operadores}
+        podeGerenciarRotas={podeGerenciarRotas}
+        userId={profile.user_id}
+        chamadosAbertos={chamadosResumo.total}
+      />
     </div>
   );
 }

@@ -102,20 +102,22 @@ Use o mesmo IP que aparece em **Network** quando roda `npm run dev`.
 
 ## Planos
 
-Preço = **faixa de pontos** + **nichos ativos** (fura-fura, cassino). Nicho "Outros" é incluso.
+Preço = **faixa de pontos** + **nichos ativos** (fura-fura, cassino, ursinho, diversão). Nicho "Outros" é incluso.
 
-| Pontos | 1 nicho | 2 nichos | 3 nichos |
-|--------|---------|----------|----------|
-| 1–10 | R$ 79 | R$ 119 | R$ 149 |
-| 11–30 | R$ 129 | R$ 179 | R$ 219 |
-| 31–60 | R$ 199 | R$ 259 | R$ 299 |
-| 61–100 | R$ 279 | R$ 349 | R$ 399 |
-| 100+ | Sob consulta | | |
+| Pontos | 1 nicho | 2 nichos | 3 nichos | 4 nichos |
+|--------|---------|----------|----------|----------|
+| 1–10 | R$ 79 | R$ 119 | R$ 149 | R$ 179 |
+| 11–30 | R$ 129 | R$ 179 | R$ 219 | R$ 259 |
+| 31–60 | R$ 199 | R$ 259 | R$ 299 | R$ 339 |
+| 61–100 | R$ 279 | R$ 349 | R$ 399 | R$ 449 |
+| 100+ | Sob consulta | | | |
 
 Config em `src/lib/pricing.ts`.
 
 - **Fura Fura** — coletas com furos, brindes, comissão
 - **Máquinas / Cassino** — entrada/saída, leituras
+- **Ursinho** — entrada + brindes
+- **Diversão** — sinuca, fliperama, massagem (só entrada)
 - **Outros** — visitas genéricas
 
 ## Segurança

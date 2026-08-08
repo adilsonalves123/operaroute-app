@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, getProfile } from "@/lib/supabase/server";
+import { devolverEstoqueBrindesPontoParaCentral } from "@/lib/estoque/transferir-ponto";
+import { normalizarEstoqueBrindesPonto } from "@/lib/estoque/brindes-ponto";
 import {
   motivoEntradaPorStatus,
   motivoSaidaPorStatus,
@@ -23,6 +25,8 @@ export async function PATCH(
   const allowed = [
     "abater_automatico",
     "comissao_percentual",
+    "comissao_por_nicho",
+    "consignado_modo_comissao",
     "preco_furo",
     "furos_estoque",
     "furos_minimo",
@@ -35,12 +39,35 @@ export async function PATCH(
     "cidade",
     "bairro",
     "endereco",
+    "latitude",
+    "longitude",
+    "foto_url",
   ];
   const updates: Record<string, unknown> = {};
   for (const key of allowed) {
     if (!(key in body)) continue;
     if (key === "comissao_percentual" || key === "preco_furo") {
       updates[key] = parseFloat(body[key]) || 0;
+    } else if (key === "latitude" || key === "longitude") {
+      const raw = body[key];
+      if (raw == null || raw === "") {
+        updates[key] = null;
+      } else {
+        const n = typeof raw === "number" ? raw : parseFloat(String(raw).replace(",", "."));
+        updates[key] = Number.isFinite(n) ? n : null;
+      }
+    } else if (key === "comissao_por_nicho") {
+      const raw = body[key];
+      if (!raw || typeof raw !== "object" || Array.isArray(raw)) {
+        return NextResponse.json({ error: "comissao_por_nicho inválido" }, { status: 400 });
+      }
+      const map: Record<string, number> = {};
+      for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+        map[k] = Math.max(0, Math.min(100, Number(v) || 0));
+      }
+      updates[key] = map;
+    } else if (key === "consignado_modo_comissao") {
+      updates[key] = body[key] === "tabela" ? "tabela" : "percentual";
     } else if (key === "furos_estoque") {
       updates[key] = body[key] == null || body[key] === "" ? null : Math.max(0, parseInt(body[key], 10) || 0);
     } else if (key === "furos_minimo") {
@@ -60,6 +87,9 @@ export async function PATCH(
     } else if (["responsavel", "whatsapp", "cidade", "bairro", "endereco", "observacoes"].includes(key)) {
       const v = body[key];
       updates[key] = typeof v === "string" ? v.trim() || null : v ?? null;
+    } else if (key === "foto_url") {
+      const v = body[key];
+      updates[key] = typeof v === "string" && v.trim() ? v.trim() : null;
     } else {
       updates[key] = body[key];
     }
@@ -126,6 +156,15 @@ export async function PATCH(
 
   if (error) {
     const msg = error.message ?? "";
+    if (/comissao_por_nicho|consignado_modo_comissao/i.test(msg) || msg.includes("schema cache")) {
+      return NextResponse.json(
+        {
+          error:
+            "Coluna de comissão por nicho ausente. Rode supabase/comissao-por-nicho.sql no Supabase SQL Editor.",
+        },
+        { status: 500 }
+      );
+    }
     const needsMigration =
       msg.includes("preco_furo") ||
       msg.includes("furos_estoque") ||
@@ -140,6 +179,28 @@ export async function PATCH(
       { status: 500 }
     );
   }
+
+  const { registrarAuditoria, requestMeta } = await import("@/lib/auditoria/registrar");
+  const meta = requestMeta(request);
+  await registrarAuditoria({
+    supabase,
+    empresaId: profile.empresa_id,
+    userId: profile.user_id,
+    userNome: profile.nome,
+    userEmail: profile.email,
+    acao: "ponto.editar",
+    tabela: "pontos",
+    registroId: id,
+    dadosAnteriores: { nome: atual.nome, status: atual.status },
+    dadosNovos: updates,
+    severidade: "status" in updates ? "high" : "medium",
+    categoria: "ponto",
+    modulo: "pontos",
+    titulo: `Editou ponto ${atual.nome}`,
+    resumo: Object.keys(updates).join(", "),
+    ip: meta.ip,
+    userAgent: meta.userAgent,
+  });
 
   return NextResponse.json({ success: true });
 }
@@ -158,7 +219,7 @@ export async function DELETE(
 
   const { data: ponto, error: pontoError } = await supabase
     .from("pontos")
-    .select("id, nome")
+    .select("id, nome, status, estoque_brindes")
     .eq("id", id)
     .eq("empresa_id", profile.empresa_id)
     .maybeSingle();
@@ -197,6 +258,24 @@ export async function DELETE(
     motivo: "exclusao",
   });
 
+  const estoqueBrindes = normalizarEstoqueBrindesPonto(ponto.estoque_brindes);
+  if (estoqueBrindes.length > 0) {
+    const devolucao = await devolverEstoqueBrindesPontoParaCentral(supabase, {
+      empresaId: profile.empresa_id,
+      pontoId: id,
+      brindes: estoqueBrindes,
+      observacao: `Exclusão do ponto "${ponto.nome}" — saldo restante devolvido ao central`,
+      tipoMovimento: "devolucao_ponto",
+    });
+
+    if (devolucao.error) {
+      return NextResponse.json(
+        { error: `Não foi possível devolver o estoque ao central: ${devolucao.error}` },
+        { status: 500 }
+      );
+    }
+  }
+
   const { error: deleteError } = await supabase
     .from("pontos")
     .delete()
@@ -207,8 +286,22 @@ export async function DELETE(
     return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
 
+  const { auditarAcao } = await import("@/lib/auditoria/auditar");
+  await auditarAcao(supabase, profile, {
+    acao: "ponto.excluir",
+    tabela: "pontos",
+    registroId: id,
+    dadosAnteriores: { nome: ponto.nome, status: ponto.status },
+    severidade: "critical",
+    categoria: "ponto",
+    modulo: "pontos",
+    titulo: `Excluiu ponto ${ponto.nome}`,
+    resumo: `Estoque devolvido: ${estoqueBrindes.reduce((sum, item) => sum + item.quantidade, 0)} un.`,
+  });
+
   return NextResponse.json({
     success: true,
     mensagem: `Ponto "${ponto.nome}" excluído.`,
+    estoque_devolvido: estoqueBrindes.reduce((sum, item) => sum + item.quantidade, 0),
   });
 }

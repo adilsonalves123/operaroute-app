@@ -9,7 +9,7 @@ export interface KpiItem {
 
 export function DashboardKpiStrip({ items }: { items: KpiItem[] }) {
   return (
-    <div className="bank-card grid grid-cols-2 divide-x divide-blue-500/10 sm:grid-cols-4">
+    <div className="bank-card grid grid-cols-2 divide-x divide-blue-500/10 sm:grid-cols-3 lg:grid-cols-6">
       {items.map((item) => {
         const display =
           typeof item.value === "number" && item.isCurrency
@@ -26,7 +26,9 @@ export function DashboardKpiStrip({ items }: { items: KpiItem[] }) {
                 "mt-1.5 text-xl font-semibold tabular-nums tracking-tight",
                 item.highlight === "warning" && Number(item.value) > 0
                   ? "text-red-400"
-                  : "text-white"
+                  : item.label.toLowerCase().includes("haver") && Number(item.value) > 0
+                    ? "text-cyan-400"
+                    : "text-white"
               )}
             >
               {display}

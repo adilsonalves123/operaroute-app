@@ -93,7 +93,7 @@ BEGIN
   WHERE id = v_user_id;
 
   INSERT INTO profiles (user_id, nome, email, trial_inicio, trial_fim, assinatura_ativa)
-  VALUES (v_user_id, v_nome, v_email, NOW(), NOW() + INTERVAL '7 days', TRUE)
+  VALUES (v_user_id, v_nome, v_email, NOW(), NOW() + INTERVAL '7 days', FALSE)
   ON CONFLICT (user_id) DO NOTHING;
 
   INSERT INTO empresas (
@@ -120,7 +120,9 @@ BEGIN
     nome_operacao = p_nome_operacao,
     empresa_id = v_empresa_id,
     plano = 'start',
-    assinatura_ativa = TRUE
+    assinatura_ativa = FALSE,
+    trial_inicio = COALESCE(trial_inicio, NOW()),
+    trial_fim = COALESCE(trial_fim, NOW() + INTERVAL '7 days')
   WHERE user_id = v_user_id;
 
   IF NOT EXISTS (

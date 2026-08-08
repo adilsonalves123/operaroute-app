@@ -18,10 +18,12 @@ export function VisitaNegativaResumo({
   className?: string;
 }) {
   return (
-    <div className={cn("glass-card p-6 space-y-4", className)}>
-      <div className="text-sm">
+    <div className={cn("glass-card space-y-3 p-5", className)}>
+      <div className="flex items-baseline justify-between gap-3 text-sm">
         <p className="text-slate-500">Lucro da visita</p>
-        <p className="font-semibold text-white">{formatContador(totalLucroCentavos)}</p>
+        <p className="font-semibold tabular-nums text-red-300">
+          {formatContador(totalLucroCentavos)}
+        </p>
       </div>
       <ResumoOperacaoNegativaView calculo={calculo} adiantamento={adiantamento} />
     </div>

@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, AlertTriangle, Loader2, Clock, HandCoins } from "lucide-react";
-import { FormInput, FormTextarea } from "@/components/ui/FormInput";
+import { AlertTriangle, Loader2, Clock, HandCoins } from "lucide-react";
+import { FormInput } from "@/components/ui/FormInput";
 import { FormSelect } from "@/components/ui/FormInput";
 import {
   MaquinaColetaCard,
@@ -19,17 +18,39 @@ import { CobrancaClienteResumo } from "@/components/coletas/cassino/CobrancaClie
 import { PagamentoCaixaFields } from "@/components/coletas/cassino/PagamentoCaixaFields";
 import { ColetaCassinoSucessoModal } from "@/components/coletas/cassino/ColetaCassinoSucessoModal";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
-import { calcularVisitaCassino, centesimosToReais, formatContador, resumoTotalVisita, somenteQuitarHaver, parseComissaoPercentual, baseComissaoReais, comissaoBloqueada } from "@/lib/nichos/cassino";
+import {
+  ColetaNovaPageShell,
+  ColetaNovaGrid,
+  ColetaPontoBar,
+  ColetaOperacaoSection,
+  FecharColetaPanel,
+} from "@/components/coletas/layout";
+import {
+  VisitaColetaModoPagamento,
+  type VisitaColetaModoFechar,
+} from "@/components/visitas-ponto/VisitaColetaModoPagamento";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
+import { calcularVisitaCassino, centesimosToReais, formatContador, parseComissaoPercentual, baseComissaoReais, comissaoBloqueada } from "@/lib/nichos/cassino";
 import {
   temErrosLeitura,
   validarLeiturasMaquina,
   type ErrosLeituraMaquina,
 } from "@/lib/nichos/cassino/calculo-maquina";
-import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
+import {
+  saldoPendenciaReais,
+  saldoHaverReais,
+  isHaverDeNegativoCliente,
+  isHaverCreditoComum,
+} from "@/lib/nichos/cassino/pendencias";
 import type { RelatorioColetaData } from "@/lib/nichos/cassino/relatorio";
 import { uploadFotosMaquinasParalelo } from "@/lib/storage/coleta-fotos";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
+import {
+  clearCassinoLeiturasDraft,
+  loadCassinoLeiturasDraft,
+  saveCassinoLeiturasDraft,
+} from "@/lib/visitas-ponto/cassino-leitura-draft";
 import {
   cn,
   formatCurrency,
@@ -38,6 +59,9 @@ import {
   parseMoneyInput,
 } from "@/lib/utils";
 import type { Equipamento, Ponto } from "@/lib/types/database";
+import { getComissaoPercentualNicho } from "@/lib/pontos/comissao-nicho";
+import { useVisitaPontoContext } from "@/components/visitas-ponto/useVisitaPontoContext";
+import { VisitaPontoNav } from "@/components/visitas-ponto/VisitaPontoNav";
 
 interface PendenciaNegativa {
   id: string;
@@ -51,28 +75,70 @@ interface SucessoState {
   visitaId: string;
   empresaId: string;
   relatorioData: RelatorioColetaData;
+  /** Receber agora já fechou a visita ao ponto — ao sair, não vai pra tela Cobrar. */
+  visitaJaFinalizada?: boolean;
+}
+
+type LeituraState = ReturnType<typeof leituraToInput>;
+
+/** Evita zerar entrada/saída/foto se o operador já digitou enquanto um reload assíncrono rodava. */
+function mesclarLeiturasPreservandoDigitacao(
+  next: LeituraState[],
+  prev: LeituraState[]
+): LeituraState[] {
+  if (prev.length === 0) return next;
+  const prevById = new Map(prev.map((l) => [l.equipamentoId, l]));
+  return next.map((l) => {
+    const p = prevById.get(l.equipamentoId);
+    if (!p) return l;
+    const keepEntrada = Boolean(p.entradaAtualInput?.trim());
+    const keepSaida = Boolean(p.saidaAtualInput?.trim());
+    const keepFoto = Boolean(p.fotoFile || p.fotoPreview);
+    return {
+      ...l,
+      entradaAtualInput: keepEntrada ? p.entradaAtualInput : l.entradaAtualInput,
+      saidaAtualInput: keepSaida ? p.saidaAtualInput : l.saidaAtualInput,
+      fotoFile: keepFoto ? p.fotoFile : l.fotoFile,
+      fotoPreview: keepFoto ? p.fotoPreview : l.fotoPreview,
+    };
+  });
 }
 
 export function NovaColetaCassinoForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pontoInicial = searchParams.get("ponto") ?? "";
+  const editarVisitaUrl = searchParams.get("editar_visita")?.trim() ?? "";
+  const [pontoId, setPontoId] = useState(pontoInicial);
+  const { visitaPontoId, emVisitaPonto, ensuringVisita, voltarAposColeta, finalizarVisitaAgora, confirmarReceberEncerrar } =
+    useVisitaPontoContext(pontoId);
 
   const [loading, setLoading] = useState(false);
+  const submitLock = useSubmitLock();
   const [loadingPonto, setLoadingPonto] = useState(false);
   const [error, setError] = useState("");
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [empresaNome, setEmpresaNome] = useState("Operação");
+  const [chavePix, setChavePix] = useState<string | null>(null);
   const [pontos, setPontos] = useState<Ponto[]>([]);
-  const [pontoId, setPontoId] = useState(pontoInicial);
   const [ponto, setPonto] = useState<Ponto | null>(null);
   const [leituras, setLeituras] = useState<ReturnType<typeof leituraToInput>[]>([]);
+  /** Visita cassino já salva no rascunho — reabrir/corrigir (DELETE+POST). */
+  const [editarVisitaId, setEditarVisitaId] = useState<string | null>(
+    editarVisitaUrl || null
+  );
   const [pendencias, setPendencias] = useState<PendenciaNegativa[]>([]);
   const [havers, setHavers] = useState<PendenciaNegativa[]>([]);
   const [pendenciasOperacao, setPendenciasOperacao] = useState<PendenciaNegativa[]>([]);
   const [incluirPendenciaOperacao, setIncluirPendenciaOperacao] = useState(false);
   const [abaterPendenciaOperacaoNegativa, setAbaterPendenciaOperacaoNegativa] = useState(true);
-  const [incluirUsarHaverNegativo, setIncluirUsarHaverNegativo] = useState(false);
+  const [descontarHaverNaCobranca, setDescontarHaverNaCobranca] = useState(false);
+  /** Operador paga em dinheiro/Pix o haver (ou o que restar após descontar na cobrança). */
+  const [pagarHaverRestante, setPagarHaverRestante] = useState(false);
+  /** Saldo real do caixa (entradas − saídas) — saídas não podem zerar abaixo disso. */
+  const [saldoCaixa, setSaldoCaixa] = useState<number | null>(null);
+  /** Abater tipo=negativo anterior em visita positiva (default = config do ponto). */
+  const [abaterNegativoAnterior, setAbaterNegativoAnterior] = useState(true);
   const [comissaoVisita, setComissaoVisita] = useState("");
   const [sucesso, setSucesso] = useState<SucessoState | null>(null);
   const [validacaoVisivel, setValidacaoVisivel] = useState(false);
@@ -90,9 +156,17 @@ export function NovaColetaCassinoForm() {
     recebimento_dinheiro_do_caixa: false,
     observacao: "",
   });
+  const [modoFecharVisita, setModoFecharVisita] =
+    useState<VisitaColetaModoFechar>("continuar");
+  const receberAgora = emVisitaPonto && modoFecharVisita === "receber";
+  const finalizarVisitaSemPagar = emVisitaPonto && modoFecharVisita === "finalizar";
+  /** Fecha a visita ao ponto agora (receber com pagamento OU finalizar negativa sem pagar). */
+  const fecharVisitaAgora = receberAgora || finalizarVisitaSemPagar;
 
   const updateLeitura = useLeituraUpdater(setLeituras);
   const updateFoto = useFotoUpdater(setLeituras);
+  /** Evita reaplicar edição/rascunho e apagar o que o operador está digitando. */
+  const contextoVisitaAplicadoRef = useRef("");
 
   function handleToggleAbaterPendenciaOperacaoNegativa(checked: boolean) {
     setAbaterPendenciaOperacaoNegativa(checked);
@@ -125,7 +199,7 @@ export function NovaColetaCassinoForm() {
 
       const leituraPreenchida = l.entradaAtualInput || l.saidaAtualInput;
       const exigeFoto = exigirPreenchimento || leituraPreenchida;
-      if (exigeFoto && !l.fotoFile) {
+      if (exigeFoto && !l.fotoFile && !l.fotoPreview) {
         errosFotoMap.set(l.equipamentoId, "Foto obrigatória");
       }
     }
@@ -179,16 +253,36 @@ export function NovaColetaCassinoForm() {
           .eq("empresa_id", eid)
           .eq("status", "ativo")
           .order("nome"),
-        supabase.from("empresas").select("nome_operacao").eq("id", eid).maybeSingle(),
+        supabase.from("empresas").select("nome_operacao, chave_pix").eq("id", eid).maybeSingle(),
       ]);
 
       setPontos(pontosData ?? []);
       if (empresa?.nome_operacao) setEmpresaNome(empresa.nome_operacao);
+      setChavePix(empresa?.chave_pix ?? null);
     }
     loadPontos();
   }, []);
 
   useEffect(() => {
+    if (!empresaId) {
+      setSaldoCaixa(null);
+      return;
+    }
+    let cancelled = false;
+    async function loadSaldo() {
+      const supabase = createClient();
+      const { fetchSaldoCaixa } = await import("@/lib/financeiro/saldo-caixa");
+      const saldo = await fetchSaldoCaixa(supabase, empresaId!);
+      if (!cancelled) setSaldoCaixa(saldo);
+    }
+    void loadSaldo();
+    return () => {
+      cancelled = true;
+    };
+  }, [empresaId, sucesso]);
+
+  useEffect(() => {
+    contextoVisitaAplicadoRef.current = "";
     if (!pontoId) {
       setPonto(null);
       setLeituras([]);
@@ -197,17 +291,37 @@ export function NovaColetaCassinoForm() {
       setPendenciasOperacao([]);
       setIncluirPendenciaOperacao(false);
       setAbaterPendenciaOperacaoNegativa(true);
-      setIncluirUsarHaverNegativo(false);
+      setDescontarHaverNaCobranca(false);
+      setPagarHaverRestante(false);
       setComissaoVisita("");
       setValidacaoVisivel(false);
+      setEditarVisitaId(null);
       return;
     }
+
+    let cancelled = false;
 
     async function loadPontoData() {
       setLoadingPonto(true);
       setError("");
+      setEditarVisitaId(null);
 
       const supabase = createClient();
+      const eid = empresaId ?? (await getEmpresaIdForUser(supabase));
+      if (eid) {
+        try {
+          const { reconciliarPendenciasCobraveisPonto } = await import(
+            "@/lib/visitas-ponto/reconciliar-pendencias-ponto"
+          );
+          await reconciliarPendenciasCobraveisPonto(supabase, {
+            empresaId: eid,
+            pontoId,
+          });
+        } catch {
+          /* não bloqueia a coleta se a limpeza falhar */
+        }
+      }
+
       const [{ data: pontoData }, { data: equipamentos }, { data: pendenciasData }, { data: haverData }, { data: operacaoData }] =
         await Promise.all([
           supabase.from("pontos").select("*").eq("id", pontoId).maybeSingle(),
@@ -235,20 +349,26 @@ export function NovaColetaCassinoForm() {
             .select("id, valor, descricao, tipo, titulo")
             .eq("ponto_id", pontoId)
             .eq("status", "aberta")
-            .in("tipo", ["pagamento_pendente", "parcial"]),
+            .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"]),
         ]);
 
+      if (cancelled) return;
+
       setPonto(pontoData);
-      setComissaoVisita(String(pontoData?.comissao_percentual ?? 0));
+      setComissaoVisita(String(getComissaoPercentualNicho(pontoData, "maquinas_cassino")));
       setPendencias(pendenciasData ?? []);
       setHavers(haverData ?? []);
       setPendenciasOperacao(operacaoData ?? []);
       setIncluirPendenciaOperacao(false);
       setAbaterPendenciaOperacaoNegativa(true);
-      setIncluirUsarHaverNegativo(false);
+      setDescontarHaverNaCobranca(false);
+      setPagarHaverRestante(false);
+      setAbaterNegativoAnterior(pontoData?.abater_automatico !== false);
 
       const cassinos = (equipamentos ?? []).filter((e: Equipamento) => e.tipo === "cassino");
-      setLeituras(cassinos.map(leituraToInput));
+      const nextLeituras = cassinos.map(leituraToInput);
+      // Preserva digitação se o operador começou a preencher antes do fetch terminar
+      setLeituras((prev) => mesclarLeiturasPreservandoDigitacao(nextLeituras, prev));
       setLoadingPonto(false);
 
       if (!pontoData) setError("Ponto não encontrado.");
@@ -256,7 +376,170 @@ export function NovaColetaCassinoForm() {
     }
 
     loadPontoData();
+    return () => {
+      cancelled = true;
+    };
   }, [pontoId]);
+
+  // Aplica edição salva / rascunho quando a visita entra na URL — sem recarregar as máquinas
+  useEffect(() => {
+    if (!pontoId || loadingPonto || leituras.length === 0) return;
+    if (!visitaPontoId && !editarVisitaUrl) return;
+
+    const applyKey = `${pontoId}|${visitaPontoId}|${editarVisitaUrl}`;
+    if (contextoVisitaAplicadoRef.current === applyKey) return;
+
+    let cancelled = false;
+
+    async function aplicarContextoVisita() {
+      const supabase = createClient();
+      let visitaParaEditar = editarVisitaUrl || null;
+
+      if (visitaPontoId) {
+        try {
+          const res = await fetch(`/api/visitas-ponto/${visitaPontoId}`, {
+            credentials: "include",
+          });
+          const data = await res.json().catch(() => ({}));
+          if (cancelled) return;
+          if (res.ok) {
+            const statusVisita = String(
+              (data.resumo as { status?: string } | undefined)?.status ?? ""
+            ).toLowerCase();
+            // Visita já encerrada: NÃO reabrir como edição — isso bagunçava
+            // negativo/haver (pendências já baixadas + leituras antigas).
+            if (statusVisita === "finalizada" || statusVisita === "cancelada") {
+              visitaParaEditar = null;
+              if (editarVisitaUrl) {
+                const params = new URLSearchParams(searchParams.toString());
+                params.delete("editar_visita");
+                params.set("ponto", pontoId);
+                router.replace(`/coletas/nova/cassino?${params.toString()}`);
+              }
+            } else if (!visitaParaEditar) {
+              const fromItens = (data.itens as { cassino_visita_id?: string | null }[] | undefined)
+                ?.map((i) => i.cassino_visita_id)
+                .find((id): id is string => Boolean(id));
+              const fromNeg = data.resumo?.cassinoNegativo?.visitaId as string | undefined;
+              const fromNicho = (
+                data.resumo?.nichos as { nicho: string; itemIds?: string[] }[] | undefined
+              )?.find((n) => n.nicho === "cassino")?.itemIds?.[0];
+              visitaParaEditar = fromItens || fromNeg || fromNicho || null;
+            }
+          }
+        } catch {
+          /* segue sem edição */
+        }
+      }
+
+      if (cancelled) return;
+
+      if (visitaParaEditar) {
+        const { data: coletasEdit } = await supabase
+          .from("coletas")
+          .select(
+            "equipamento_id, entrada_anterior, saida_anterior, entrada_atual, saida_atual, foto_url"
+          )
+          .eq("visita_id", visitaParaEditar);
+
+        if (cancelled) return;
+
+        if (coletasEdit?.length) {
+          const byEq = new Map(
+            coletasEdit
+              .filter((c) => c.equipamento_id)
+              .map((c) => [c.equipamento_id as string, c])
+          );
+          setLeituras((prev) =>
+            mesclarLeiturasPreservandoDigitacao(
+              prev.map((l) => {
+                const c = byEq.get(l.equipamentoId);
+                if (!c) return l;
+                const foto = c.foto_url?.trim() || null;
+                return {
+                  ...l,
+                  entradaAnterior: Math.round(Number(c.entrada_anterior ?? l.entradaAnterior)),
+                  saidaAnterior: Math.round(Number(c.saida_anterior ?? l.saidaAnterior)),
+                  // null no banco ≠ "0,00" — não apaga o que o operador está digitando
+                  entradaAtualInput:
+                    c.entrada_atual != null
+                      ? formatContador(Number(c.entrada_atual))
+                      : l.entradaAtualInput,
+                  saidaAtualInput:
+                    c.saida_atual != null
+                      ? formatContador(Number(c.saida_atual))
+                      : l.saidaAtualInput,
+                  fotoPreview: foto || l.fotoPreview,
+                  fotoFile: foto ? null : l.fotoFile,
+                };
+              }),
+              prev
+            )
+          );
+          setEditarVisitaId(visitaParaEditar);
+          // Marca a chave atual e a que o router.replace vai gerar, para não reaplicar
+          contextoVisitaAplicadoRef.current = applyKey;
+          if (visitaPontoId) {
+            contextoVisitaAplicadoRef.current = `${pontoId}|${visitaPontoId}|${visitaParaEditar}`;
+          }
+          if (visitaPontoId && !editarVisitaUrl) {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("editar_visita", visitaParaEditar);
+            params.set("ponto", pontoId);
+            params.set("visita_ponto", visitaPontoId);
+            router.replace(`/coletas/nova/cassino?${params.toString()}`);
+          }
+          return;
+        }
+      }
+
+      setEditarVisitaId(null);
+      const draft =
+        visitaPontoId && pontoId
+          ? loadCassinoLeiturasDraft(visitaPontoId, pontoId)
+          : null;
+      if (draft?.length) {
+        const byEq = new Map(draft.map((d) => [d.equipamentoId, d]));
+        setLeituras((prev) =>
+          prev.map((l) => {
+            const d = byEq.get(l.equipamentoId);
+            if (!d) return l;
+            return {
+              ...l,
+              entradaAtualInput: l.entradaAtualInput || d.entradaAtualInput || "",
+              saidaAtualInput: l.saidaAtualInput || d.saidaAtualInput || "",
+              fotoPreview: l.fotoPreview || d.fotoUrl || null,
+            };
+          })
+        );
+      }
+      if (!cancelled) {
+        contextoVisitaAplicadoRef.current = applyKey;
+      }
+    }
+
+    void aplicarContextoVisita();
+    return () => {
+      cancelled = true;
+    };
+    // leituras.length: só espera as máquinas existirem; não reaplicar a cada tecla
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- applyKey cobre visita/edição
+  }, [pontoId, visitaPontoId, editarVisitaUrl, loadingPonto, leituras.length]);
+
+  useEffect(() => {
+    if (!visitaPontoId || !pontoId || editarVisitaId || loadingPonto) return;
+    saveCassinoLeiturasDraft(
+      visitaPontoId,
+      pontoId,
+      leituras.map((l) => ({
+        equipamentoId: l.equipamentoId,
+        entradaAtualInput: l.entradaAtualInput,
+        saidaAtualInput: l.saidaAtualInput,
+        fotoUrl:
+          l.fotoPreview && /^https?:\/\//i.test(l.fotoPreview) ? l.fotoPreview : null,
+      }))
+    );
+  }, [leituras, visitaPontoId, pontoId, editarVisitaId, loadingPonto]);
 
   const { errosLeitura: errosMaquinas, errosFotoMap: errosFoto } = useMemo(
     () => validarFormulario(validacaoVisivel),
@@ -279,6 +562,8 @@ export function NovaColetaCassinoForm() {
       id: p.id,
       valor: Number(p.valor ?? 0),
       observacao: p.descricao,
+      descricao: p.descricao,
+      titulo: p.titulo,
     }));
     const pendenciasOperacaoMapped = pendenciasOperacao.map((p) => ({
       id: p.id,
@@ -292,7 +577,6 @@ export function NovaColetaCassinoForm() {
     const adiantamentoDinheiro = parseMoneyInput(pagamento.adiantamento_dinheiro);
     const adiantamentoTotal = adiantamentoPix + adiantamentoDinheiro;
     const descontoManualInput = parseMoneyInput(pagamento.desconto_manual);
-    const temHaver = pendenciasHaver.some((p) => p.valor > 0.009);
 
     const calcInputBase = {
       leituras: input,
@@ -301,10 +585,11 @@ export function NovaColetaCassinoForm() {
       pendenciasOperacao: pendenciasOperacaoMapped,
       incluirPendenciasOperacao: incluirPendenciaOperacao,
       abaterPendenciaOperacaoNegativa,
-      incluirUsarHaverNegativo: incluirUsarHaverNegativo,
+      incluirUsarHaverNegativo: false, // Negativo nunca consome haver — haver só abate em visita positiva.
+      descontarHaverNaCobranca,
       comissaoPercentual,
       descontoRecebimentoReais: parseMoneyInput(pagamento.desconto_recebimento),
-      abaterAutomatico: ponto?.abater_automatico !== false,
+      abaterAutomatico: abaterNegativoAnterior,
     };
 
     try {
@@ -316,27 +601,23 @@ export function NovaColetaCassinoForm() {
         valorDinheiroReais: 0,
       });
 
-      const modoQuitarHaver = somenteQuitarHaver(calcProbe);
-      const operadorPagaHaver = valorPix + valorDinheiro;
-
+      const temHaverProbe = pendenciasHaver.some((p) => p.valor > 0.009);
       const descontoManualReais = calcProbe.saldoNegativo
         ? adiantamentoTotal
-        : temHaver
-          ? modoQuitarHaver
-            ? operadorPagaHaver
-            : descontoManualInput
+        : temHaverProbe && pagarHaverRestante
+          ? adiantamentoTotal
           : descontoManualInput;
 
       return calcularVisitaCassino({
         ...calcInputBase,
         descontoManualReais,
-        valorPixReais: calcProbe.saldoNegativo || !modoQuitarHaver ? valorPix : 0,
-        valorDinheiroReais: calcProbe.saldoNegativo || !modoQuitarHaver ? valorDinheiro : 0,
+        valorPixReais: valorPix,
+        valorDinheiroReais: valorDinheiro,
       });
     } catch {
       return null;
     }
-  }, [leituras, pendencias, havers, pendenciasOperacao, incluirPendenciaOperacao, abaterPendenciaOperacaoNegativa, incluirUsarHaverNegativo, ponto, pagamento, errosMaquinas, comissaoPercentual]);
+  }, [leituras, pendencias, havers, pendenciasOperacao, incluirPendenciaOperacao, abaterPendenciaOperacaoNegativa, descontarHaverNaCobranca, pagarHaverRestante, abaterNegativoAnterior, ponto, pagamento, errosMaquinas, comissaoPercentual]);
 
   const adiantamentoDetalhe = useMemo(() => {
     const pixReais = parseMoneyInput(pagamento.adiantamento_pix);
@@ -355,7 +636,6 @@ export function NovaColetaCassinoForm() {
     pagamento.adiantamento_dinheiro_do_caixa,
   ]);
 
-  const modoQuitarHaver = calculo ? somenteQuitarHaver(calculo) : false;
   const descontoOperacaoExibido = calculo
     ? Math.max(0, calculo.valorOperacaoReais - calculo.valorOperacaoEfetivoReais)
     : 0;
@@ -365,26 +645,18 @@ export function NovaColetaCassinoForm() {
     const prejuizoVisitaReais = centesimosToReais(Math.abs(calculo.totalLucroCentavos));
     const abatidoPendenciaReais = calculo.pendenciaOperacaoAbatidaReais;
     const valorBaseAcertoReais = Math.max(0, prejuizoVisitaReais - abatidoPendenciaReais);
-    const valorInformadoReais = Math.min(calculo.valorDeixadoOperadorReais, valorBaseAcertoReais);
-    const valorRestanteReais = Math.max(0, valorBaseAcertoReais - valorInformadoReais);
-    const saldoLiquidoAbsReais = Math.abs(calculo.saldoLiquidoReais);
-
-    const saldoLabel =
-      saldoLiquidoAbsReais <= 0.009
-        ? "Acerto zerado com o ponto"
-        : calculo.saldoLiquidoReais > 0
-          ? "Ponto ainda te deve"
-          : "Você ainda deve ao ponto";
-
+    const valorInformadoReais = calculo.valorDeixadoOperadorReais;
+    const valorAplicadoReais = Math.min(valorInformadoReais, valorBaseAcertoReais);
+    const valorRestanteReais = Math.max(0, valorBaseAcertoReais - valorAplicadoReais);
+    const excedenteReais = calculo.excedenteDeixadoReais ?? 0;
     return {
       prejuizoVisitaReais,
       abatidoPendenciaReais,
       valorBaseAcertoReais,
       valorInformadoReais,
       valorRestanteReais,
+      excedenteReais,
       negativoARecuperarReais: calculo.novoDebitoReais,
-      saldoLiquidoAbsReais,
-      saldoLabel,
     };
   }, [calculo]);
 
@@ -403,6 +675,15 @@ export function NovaColetaCassinoForm() {
     }
     eraSaldoNegativo.current = calculo.saldoNegativo;
   }, [calculo]);
+
+  useEffect(() => {
+    if (!calculo) return;
+    if (calculo.saldoNegativo && modoFecharVisita === "receber") {
+      setModoFecharVisita("continuar");
+    } else if (!calculo.saldoNegativo && modoFecharVisita === "finalizar") {
+      setModoFecharVisita("continuar");
+    }
+  }, [calculo?.saldoNegativo]); // eslint-disable-line react-hooks/exhaustive-deps -- só ao mudar sinal
 
   const relatorioData: RelatorioColetaData | null = useMemo(() => {
     if (!calculo || !ponto) return null;
@@ -433,22 +714,47 @@ export function NovaColetaCassinoForm() {
     0
   );
 
-  const haverAberto = havers.reduce((s, p) => s + Number(p.valor ?? 0), 0);
-  const haverCompensadoAnterior = havers.reduce(
+  const haverAberto = havers.reduce(
     (s, p) =>
       s +
-      Math.max(
-        0,
-        Number(p.valor ?? 0) -
-          saldoPendenciaReais({
-            id: p.id,
-            valor: Number(p.valor ?? 0),
-            observacao: p.descricao,
-          })
-      ),
+      saldoHaverReais({
+        valor: Number(p.valor ?? 0),
+        descricao: p.descricao,
+      }),
     0
   );
-  const haverSaldoAberto = Math.max(0, haverAberto - haverCompensadoAnterior);
+  const haverDeNegativoAberto = havers
+    .filter((p) =>
+      isHaverDeNegativoCliente({ titulo: p.titulo, descricao: p.descricao })
+    )
+    .reduce(
+      (s, p) =>
+        s +
+        saldoHaverReais({
+          valor: Number(p.valor ?? 0),
+          descricao: p.descricao,
+        }),
+      0
+    );
+  const haverCreditoAberto = havers
+    .filter((p) => isHaverCreditoComum({ titulo: p.titulo, descricao: p.descricao }))
+    .reduce(
+      (s, p) =>
+        s +
+        saldoHaverReais({
+          valor: Number(p.valor ?? 0),
+          descricao: p.descricao,
+        }),
+      0
+    );
+  const haverRegistrado = havers.reduce((s, p) => s + Number(p.valor ?? 0), 0);
+  // Só faz sentido no estilo antigo (valor bruto − Abatido). No moderno, valor já é o saldo.
+  const haverCompensadoAnterior = havers.some((p) =>
+    /Compensado R\$/i.test(p.descricao ?? "")
+  )
+    ? 0
+    : Math.max(0, haverRegistrado - haverAberto);
+  const haverSaldoAberto = haverAberto;
 
   const pendenciaOperacaoAberta = pendenciasOperacao.reduce(
     (s, p) => s + Number(p.valor ?? 0),
@@ -460,10 +766,15 @@ export function NovaColetaCassinoForm() {
 
   const leiturasCompletas =
     leituras.length > 0 &&
-    leituras.every((l) => l.entradaAtualInput && l.saidaAtualInput && l.fotoFile);
+    leituras.every(
+      (l) => l.entradaAtualInput && l.saidaAtualInput && (l.fotoFile || l.fotoPreview)
+    );
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Trava síncrona: sem isso, 2 cliques no loading criam 2 visitas + 2x caixa.
+    if (sucesso || submitLock.isLocked() || loading) return;
+
     setError("");
     setValidacaoVisivel(true);
 
@@ -475,7 +786,9 @@ export function NovaColetaCassinoForm() {
     const { errosLeitura, errosFotoMap } = validarFormulario(true);
 
     if (
-      !leituras.every((l) => l.entradaAtualInput && l.saidaAtualInput && l.fotoFile) ||
+      !leituras.every(
+        (l) => l.entradaAtualInput && l.saidaAtualInput && (l.fotoFile || l.fotoPreview)
+      ) ||
       errosLeitura.size > 0 ||
       errosFotoMap.size > 0
     ) {
@@ -488,7 +801,14 @@ export function NovaColetaCassinoForm() {
       return;
     }
 
+    if (receberAgora) {
+      const ok = await confirmarReceberEncerrar();
+      if (!ok) return;
+    }
+
+    if (!submitLock.tryLock()) return;
     setLoading(true);
+    let concluido = false;
 
     try {
       const supabase = createClient();
@@ -508,6 +828,20 @@ export function NovaColetaCassinoForm() {
       const recebimentoPixReais = parseMoneyInput(pagamento.valor_pix);
       const recebimentoDinheiroReais = parseMoneyInput(pagamento.valor_dinheiro);
 
+      const finalizarDireto = emVisitaPonto && fecharVisitaAgora;
+
+      if (editarVisitaId) {
+        const delRes = await fetch(`/api/visitas/cassino/${editarVisitaId}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        const delData = await delRes.json().catch(() => ({}));
+        if (!delRes.ok) {
+          setError(delData.error ?? "Não foi possível atualizar a coleta anterior.");
+          return;
+        }
+      }
+
       const res = await fetch("/api/visitas/cassino", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -518,7 +852,9 @@ export function NovaColetaCassinoForm() {
             equipamento_id: l.equipamentoId,
             entrada_atual: l.entradaAtualInput.replace(/\D/g, ""),
             saida_atual: l.saidaAtualInput.replace(/\D/g, ""),
-            foto_url: fotoUrls.get(l.equipamentoId),
+            foto_url:
+              fotoUrls.get(l.equipamentoId) ??
+              (l.fotoPreview && /^https?:\/\//i.test(l.fotoPreview) ? l.fotoPreview : null),
           })),
           desconto_manual: pagamento.desconto_manual,
           adiantamento_pix: pagamento.adiantamento_pix,
@@ -529,59 +865,125 @@ export function NovaColetaCassinoForm() {
           recebimento_dinheiro_do_caixa:
             recebimentoDinheiroReais > 0.009 || pagamento.recebimento_dinheiro_do_caixa,
           desconto_recebimento: pagamento.desconto_recebimento,
-          valor_pix: pagamento.valor_pix,
-          valor_dinheiro: pagamento.valor_dinheiro,
+          valor_pix: finalizarVisitaSemPagar ? "" : pagamento.valor_pix,
+          valor_dinheiro: finalizarVisitaSemPagar ? "" : pagamento.valor_dinheiro,
           incluir_pendencia_operacao: incluirPendenciaOperacao,
           abater_pendencia_operacao_negativa: abaterPendenciaOperacaoNegativa,
-          incluir_usar_haver_negativo: incluirUsarHaverNegativo,
+          incluir_usar_haver_negativo: false,
+          descontar_haver_na_cobranca: descontarHaverNaCobranca,
+          // Espelha o checkbox "Abater este negativo nesta coleta"
+          abater_automatico: abaterNegativoAnterior,
           comissao_percentual: comissaoPercentual,
           observacao: pagamento.observacao || null,
           latitude: gps?.latitude ?? null,
           longitude: gps?.longitude ?? null,
+          visita_ponto_id: visitaPontoId || null,
+          // Receber agora: aplica pagamento na coleta e fecha.
+          // Finalizar (negativo): só fecha depois, sem cobrança.
+          // Continuar: defere o pagamento para o checkout.
+          receber_agora: receberAgora,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
+        // Já gravou na 1ª tentativa — não trata como erro fatal se veio do 2º clique.
+        if (res.status === 409 && data.already_done && data.visita_id) {
+          setEditarVisitaId(null);
+          setSucesso({
+            visitaId: data.visita_id,
+            empresaId,
+            relatorioData: { ...relatorioData, previa: false },
+            visitaJaFinalizada: finalizarDireto,
+          });
+          concluido = true;
+          return;
+        }
         setError(data.error ?? "Erro ao registrar coleta.");
         return;
       }
 
+      if (visitaPontoId && pontoId) {
+        clearCassinoLeiturasDraft(visitaPontoId, pontoId);
+      }
+
+      if (finalizarDireto) {
+        await finalizarVisitaAgora({
+          pix: finalizarVisitaSemPagar ? 0 : recebimentoPixReais,
+          dinheiro: finalizarVisitaSemPagar ? 0 : recebimentoDinheiroReais,
+          desconto: finalizarVisitaSemPagar
+            ? 0
+            : parseMoneyInput(pagamento.desconto_recebimento),
+          somenteFechar: true,
+        });
+      }
+
+      setEditarVisitaId(null);
       setSucesso({
         visitaId: data.visita_id,
         empresaId,
         relatorioData: { ...relatorioData, previa: false },
+        visitaJaFinalizada: finalizarDireto,
       });
+      concluido = true;
+
+      // Evita F5 reabrir a coleta já salva (leituras + pendências já baixadas = números loucos).
+      {
+        const params = new URLSearchParams();
+        if (pontoId) params.set("ponto", pontoId);
+        if (visitaPontoId && !finalizarDireto) {
+          params.set("visita_ponto", visitaPontoId);
+        }
+        router.replace(
+          params.toString()
+            ? `/coletas/nova/cassino?${params.toString()}`
+            : "/coletas/nova/cassino"
+        );
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro de conexão. Tente novamente.");
     } finally {
       setLoading(false);
+      // Sucesso: mantém travado pra não reenviar. Erro: libera novo intento.
+      if (!concluido) submitLock.unlock();
     }
   }
 
   function handleConcluir() {
+    const jaFinalizada = sucesso?.visitaJaFinalizada === true;
     setSucesso(null);
-    router.push("/coletas");
-    router.refresh();
+    voltarAposColeta(jaFinalizada ? { visitaJaFinalizada: true } : undefined);
   }
 
   return (
     <>
-      <div className="max-w-2xl mx-auto space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/coletas" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Nova leitura</h1>
-            <p className="text-slate-400 text-sm">Cassino · leitura por máquina + relatório</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div
+      <ColetaNovaPageShell
+        title="Coleta cassino"
+        subtitle={
+          ensuringVisita
+            ? "Entrando na visita do ponto…"
+            : editarVisitaId
+              ? "Corrigindo coleta cassino já salva nesta visita."
+            : calculo?.saldoNegativo
+              ? "Visita negativa — Continuar (outros nichos) ou Finalizar sem cobrar."
+              : emVisitaPonto
+                ? "Leitura das máquinas. Depois: Continuar ou Receber."
+                : "Leitura das máquinas e fechamento ao lado."
+        }
+        backHref={emVisitaPonto ? `/visitas-ponto/${visitaPontoId}` : "/coletas"}
+        topSlot={
+          emVisitaPonto ? (
+            <VisitaPontoNav visitaPontoId={visitaPontoId} pontoId={pontoId || undefined} active="cassino" />
+          ) : ensuringVisita ? (
+            <div className="rounded-xl border border-primary-neon/20 bg-primary-neon/5 px-3 py-2 text-xs text-slate-400">
+              Preparando visita multi-nicho…
+            </div>
+          ) : undefined
+        }
+      >
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <ColetaPontoBar
             className={cn(
-              "glass-card p-6 space-y-4 transition-colors",
               ponto &&
                 debitoAberto > 0.009 &&
                 "border-amber-500/35 ring-1 ring-amber-500/15",
@@ -599,193 +1001,336 @@ export function NovaColetaCassinoForm() {
                 haverAberto <= 0.009 &&
                 "border-rose-500/35 ring-1 ring-rose-500/15"
             )}
-          >
-            <FormSelect
-              label="Ponto *"
-              value={pontoId}
-              onChange={(e) => setPontoId(e.target.value)}
-              options={[
-                { value: "", label: "Selecione o ponto..." },
-                ...pontos.map((p) => ({ value: p.id, label: p.nome })),
-              ]}
-            />
-
-            {ponto && (
-              <>
-                {(debitoAberto > 0.009 ||
-                  haverAberto > 0.009 ||
-                  pendenciaOperacaoAberta > 0.009) && (
-                  <div className="space-y-2">
-                    {debitoAberto > 0.009 && (
-                      <div className="rounded-lg border border-amber-500/45 bg-amber-500/12 px-4 py-3 space-y-2">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
-                            <AlertTriangle className="h-5 w-5 text-amber-400" />
+            pontoField={
+              <FormSelect
+                label="Ponto *"
+                value={pontoId}
+                onChange={(e) => setPontoId(e.target.value)}
+                options={[
+                  { value: "", label: "Selecione o ponto..." },
+                  ...pontos.map((p) => ({ value: p.id, label: p.nome })),
+                ]}
+              />
+            }
+            alert={
+              ponto ? (
+                <div className="mt-3 space-y-3">
+                  {(debitoAberto > 0.009 ||
+                    haverAberto > 0.009 ||
+                    pendenciaOperacaoAberta > 0.009) && (
+                    <div className="space-y-2">
+                      {debitoAberto > 0.009 && (
+                        <div className="space-y-2 rounded-xl border border-amber-500/40 bg-amber-500/[0.08] px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
+                              <AlertTriangle className="h-5 w-5 text-amber-400" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-400/90">
+                                Negativo em aberto
+                              </p>
+                              <p className="text-xl font-bold tabular-nums text-amber-300">
+                                {formatCurrency(debitoAberto)}
+                              </p>
+                              <p className="mt-0.5 text-xs text-amber-400/75">
+                                Você adiantou — recuperar nesta coleta
+                              </p>
+                            </div>
+                          </div>
+                          {calculo && !calculo.saldoNegativo && (
+                            <label
+                              htmlFor="abater-negativo-anterior"
+                              className={`flex cursor-pointer gap-3 rounded-xl border p-3 transition-colors ${
+                                abaterNegativoAnterior
+                                  ? "border-emerald-500/40 bg-emerald-500/10"
+                                  : "border-amber-500/30 bg-black/20"
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                id="abater-negativo-anterior"
+                                className="mt-0.5 h-4 w-4 accent-emerald-400"
+                                checked={abaterNegativoAnterior}
+                                onChange={(e) => setAbaterNegativoAnterior(e.target.checked)}
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium text-emerald-200">
+                                  Abater este negativo nesta coleta
+                                </p>
+                                <p className="mt-0.5 text-xs text-slate-400">
+                                  {abaterNegativoAnterior
+                                    ? "O lucro de hoje reduz o negativo e a comissão."
+                                    : "Negativo fica de fora — cobrança só do lucro de hoje."}
+                                </p>
+                              </div>
+                            </label>
+                          )}
+                          {pendencias.length > 0 && (
+                            <div className="space-y-1.5 border-t border-amber-500/20 pt-2 text-xs">
+                              {pendencias.map((p) => {
+                                const saldo = saldoPendenciaReais({
+                                  id: p.id,
+                                  valor: Number(p.valor ?? 0),
+                                  observacao: p.descricao,
+                                });
+                                if (saldo <= 0.009) return null;
+                                return (
+                                  <div
+                                    key={p.id}
+                                    className="flex justify-between gap-3 text-slate-400"
+                                  >
+                                    <span className="min-w-0 truncate">
+                                      {p.titulo ?? "Saldo negativo"}
+                                      {p.descricao && (
+                                        <span className="block truncate text-[10px] text-slate-500">
+                                          {p.descricao.split("\n")[0]}
+                                        </span>
+                                      )}
+                                    </span>
+                                    <span className="shrink-0 font-semibold tabular-nums text-amber-300">
+                                      {formatCurrency(saldo)}
+                                    </span>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {haverDeNegativoAberto > 0.009 && (
+                        <div className="flex items-center gap-3 rounded-xl border border-violet-500/40 bg-violet-500/[0.08] px-4 py-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-500/20">
+                            <HandCoins className="h-5 w-5 text-violet-400" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium uppercase tracking-wide text-amber-400/90">
-                              Negativo em aberto
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-violet-400/90">
+                              Haver — cliente pagou o negativo
                             </p>
-                            <p className="text-xl font-bold tabular-nums text-amber-300">
-                              {formatCurrency(debitoAberto)}
+                            <p className="text-xl font-bold tabular-nums text-violet-300">
+                              {formatCurrency(haverDeNegativoAberto)}
                             </p>
-                            <p className="text-xs text-amber-400/75 mt-0.5">
-                              Você adiantou — recuperar nesta coleta
+                            <p className="mt-0.5 text-xs text-violet-300/80">
+                              Ponto pagou ganhadores — comissão bloqueada até o lucro superar este
+                              valor. Zera sozinho no cálculo (sem descontar/pagar haver).
                             </p>
                           </div>
                         </div>
-                        {pendencias.length > 0 && (
-                          <div className="border-t border-amber-500/20 pt-2 space-y-1.5 text-xs">
-                            {pendencias.map((p) => {
-                              const saldo = saldoPendenciaReais({
-                                id: p.id,
-                                valor: Number(p.valor ?? 0),
-                                observacao: p.descricao,
-                              });
-                              if (saldo <= 0.009) return null;
-                              return (
-                                <div key={p.id} className="flex justify-between gap-3 text-slate-400">
+                      )}
+                      {haverCreditoAberto > 0.009 && (
+                        <div className="flex items-center gap-3 rounded-xl border border-cyan-500/40 bg-cyan-500/[0.08] px-4 py-3">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/20">
+                            <HandCoins className="h-5 w-5 text-cyan-400" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-400/90">
+                              Haver — crédito (troco / a mais)
+                            </p>
+                            <p className="text-xl font-bold tabular-nums text-cyan-300">
+                              {formatCurrency(haverCreditoAberto)}
+                            </p>
+                            <p className="mt-0.5 text-xs text-cyan-400/75">
+                              {haverCompensadoAnterior > 0.009 && haverDeNegativoAberto <= 0.009
+                                ? `Registrado ${formatCurrency(haverRegistrado)} · já compensado ${formatCurrency(haverCompensadoAnterior)}`
+                                : "Cliente pagou a mais ou sem troco — abate da cobrança ou você devolve"}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {pendenciaOperacaoAberta > 0.009 && (
+                        <div className="space-y-2 rounded-xl border border-rose-500/40 bg-rose-500/[0.08] px-4 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/20">
+                              <Clock className="h-5 w-5 text-rose-400" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-400/90">
+                                {temPagamentoParcial
+                                  ? "Pagamento parcial em aberto"
+                                  : "Pagamento pendente"}
+                              </p>
+                              <p className="text-xl font-bold tabular-nums text-rose-300">
+                                {formatCurrency(pendenciaOperacaoAberta)}
+                              </p>
+                              <p className="mt-0.5 text-xs text-rose-400/75">
+                                Dívida da operação de coletas anteriores — pode incluir na cobrança
+                              </p>
+                            </div>
+                          </div>
+                          {pendenciasOperacao.length > 0 && (
+                            <div className="space-y-1.5 border-t border-rose-500/20 pt-2 text-xs">
+                              {pendenciasOperacao.map((p) => (
+                                <div
+                                  key={p.id}
+                                  className="flex justify-between gap-3 text-slate-400"
+                                >
                                   <span className="min-w-0 truncate">
-                                    {p.titulo ?? "Saldo negativo"}
+                                    {p.titulo ?? "Dívida da operação"}
                                     {p.descricao && (
-                                      <span className="block text-[10px] text-slate-500 truncate">
+                                      <span className="block truncate text-[10px] text-slate-500">
                                         {p.descricao.split("\n")[0]}
                                       </span>
                                     )}
                                   </span>
-                                  <span className="font-semibold tabular-nums text-amber-300 shrink-0">
-                                    {formatCurrency(saldo)}
+                                  <span className="shrink-0 font-semibold tabular-nums text-rose-300">
+                                    {formatCurrency(Number(p.valor ?? 0))}
                                   </span>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {haverAberto > 0.009 && (
-                      <div className="flex items-center gap-3 rounded-lg border border-cyan-500/45 bg-cyan-500/12 px-4 py-3">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/20">
-                          <HandCoins className="h-5 w-5 text-cyan-400" />
+                              ))}
+                            </div>
+                          )}
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-medium uppercase tracking-wide text-cyan-400/90">
-                            Haver do ponto
-                          </p>
-                          <p className="text-xl font-bold tabular-nums text-cyan-300">
-                            {formatCurrency(
-                              haverSaldoAberto > 0.009 ? haverSaldoAberto : haverAberto
-                            )}
-                          </p>
-                          <p className="text-xs text-cyan-400/75 mt-0.5">
-                            {haverCompensadoAnterior > 0.009
-                              ? `Registrado ${formatCurrency(haverAberto)} · já compensado ${formatCurrency(haverCompensadoAnterior)}`
-                              : "Ponto pagou ganhadores — abate do lucro ou você devolve"}
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    {pendenciaOperacaoAberta > 0.009 && (
-                      <div className="rounded-lg border border-rose-500/45 bg-rose-500/12 px-4 py-3 space-y-2">
-                        <div className="flex items-center gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/20">
-                            <Clock className="h-5 w-5 text-rose-400" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium uppercase tracking-wide text-rose-400/90">
-                              {temPagamentoParcial
-                                ? "Pagamento parcial em aberto"
-                                : "Pagamento pendente"}
-                            </p>
-                            <p className="text-xl font-bold tabular-nums text-rose-300">
-                              {formatCurrency(pendenciaOperacaoAberta)}
-                            </p>
-                            <p className="text-xs text-rose-400/75 mt-0.5">
-                              Dívida da operação de coletas anteriores — pode incluir na cobrança
-                            </p>
-                          </div>
-                        </div>
-                        {pendenciasOperacao.length > 0 && (
-                          <div className="border-t border-rose-500/20 pt-2 space-y-1.5 text-xs">
-                            {pendenciasOperacao.map((p) => (
-                              <div key={p.id} className="flex justify-between gap-3 text-slate-400">
-                                <span className="min-w-0 truncate">
-                                  {p.titulo ?? "Dívida da operação"}
-                                  {p.descricao && (
-                                    <span className="block text-[10px] text-slate-500 truncate">
-                                      {p.descricao.split("\n")[0]}
-                                    </span>
-                                  )}
-                                </span>
-                                <span className="font-semibold tabular-nums text-rose-300 shrink-0">
-                                  {formatCurrency(Number(p.valor ?? 0))}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
-                  <span>
-                    Comissão: <strong className="text-slate-300">{comissaoPercentual}%</strong>
-                  </span>
-                  {gps && (
-                    <span className="text-green-500/80 text-xs">GPS capturado</span>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          {loadingPonto && (
-            <div className="flex items-center justify-center gap-2 text-slate-400 py-8">
-              <Loader2 className="h-5 w-5 animate-spin" />
-              Carregando máquinas...
-            </div>
-          )}
-
-          {!loadingPonto && leituras.length > 0 && (
-            <div className="space-y-4">
-              <h2 className="text-sm font-medium text-slate-400">Leituras das máquinas</h2>
-              {leituras.map((l) => {
-                const erros = errosMaquinas.get(l.equipamentoId);
-                return (
-                  <MaquinaColetaCard
-                    key={l.equipamentoId}
-                    leitura={l}
-                    onUpdate={updateLeitura}
-                    onFotoChange={updateFoto}
-                    erroEntrada={erros?.entrada}
-                    erroSaida={erros?.saida}
-                    erroFoto={errosFoto.get(l.equipamentoId)}
-                  />
-                );
-              })}
-            </div>
-          )}
-
-          {calculo && relatorioData && (
-            <>
-              <div className="glass-card p-6 space-y-4 border border-primary-neon/20">
-                <h2 className="font-semibold text-white">Resumo da visita</h2>
-                {calculo.saldoNegativo ? (
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2 rounded-lg bg-red-500/10 border border-red-500/20 p-3 text-red-300 text-sm">
-                      <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-                      Comissão bloqueada — negativo só recupera em coleta positiva.
+                      )}
                     </div>
-                    <ResumoOperacaoNegativaView
-                      calculo={calculo}
-                      adiantamento={adiantamentoDetalhe}
-                    />
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-white/[0.05] pt-3 text-sm text-slate-500">
+                    <span>
+                      Comissão:{" "}
+                      <strong className="tabular-nums text-slate-200">{comissaoPercentual}%</strong>
+                    </span>
+                    {gps ? (
+                      <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400/90">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                        GPS capturado
+                      </span>
+                    ) : null}
                   </div>
+                </div>
+              ) : undefined
+            }
+          />
+
+          <ColetaNovaGrid
+            operacao={
+              <ColetaOperacaoSection
+                title="Máquinas"
+                subtitle={
+                  leituras.length > 0
+                    ? `${leituras.filter((l) => l.entradaAtualInput.trim() && l.saidaAtualInput.trim() && l.fotoFile).length}/${leituras.length} prontas`
+                    : undefined
+                }
+                loading={loadingPonto}
+                loadingLabel="Carregando máquinas..."
+                empty={
+                  !loadingPonto && leituras.length === 0 && pontoId ? (
+                    <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-950/40 px-6 py-10 text-center text-sm text-slate-500">
+                      Nenhuma máquina ativa neste ponto.
+                    </div>
+                  ) : undefined
+                }
+              >
+                {leituras.map((l, index) => {
+                  const erros = errosMaquinas.get(l.equipamentoId);
+                  return (
+                    <MaquinaColetaCard
+                      key={l.equipamentoId}
+                      pontoId={pontoId}
+                      leitura={l}
+                      index={index}
+                      onUpdate={updateLeitura}
+                      onFotoChange={updateFoto}
+                      erroEntrada={erros?.entrada}
+                      erroSaida={erros?.saida}
+                      erroFoto={errosFoto.get(l.equipamentoId)}
+                    />
+                  );
+                })}
+              </ColetaOperacaoSection>
+            }
+            fechar={
+              <FecharColetaPanel
+                accent={
+                  calculo?.saldoNegativo
+                    ? "red"
+                    : emVisitaPonto && receberAgora
+                      ? "emerald"
+                      : "cyan"
+                }
+                title={
+                  calculo?.saldoNegativo
+                    ? "Visita negativa"
+                    : emVisitaPonto && receberAgora
+                      ? "Receber agora"
+                      : "Fechar coleta"
+                }
+                subtitle={
+                  calculo?.saldoNegativo
+                    ? "Sem cobrança nesta coleta"
+                    : emVisitaPonto && !receberAgora
+                      ? "Desconto aqui · Pix/dinheiro na aba Cobrar"
+                      : "Resultado e pagamento"
+                }
+                empty={
+                  !calculo || !relatorioData ? (
+                    <p className="rounded-xl border border-dashed border-slate-700/80 bg-slate-950/40 px-3.5 py-5 text-center text-sm text-slate-500">
+                      Preencha as leituras das máquinas para ver o resultado.
+                    </p>
+                  ) : undefined
+                }
+                resumo={
+                  calculo && relatorioData ? (
+                    <div className="space-y-4">
+                {calculo.saldoNegativo ? (
+                  <ResumoOperacaoNegativaView
+                    calculo={calculo}
+                    adiantamento={adiantamentoDetalhe}
+                  />
                 ) : (
                   <>
-                    <div className="space-y-2.5 text-sm">
+                    <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/[0.08] to-transparent px-4 py-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-400/90">
+                        Valor da operação
+                      </p>
+                      <p className="mt-1.5 text-3xl font-bold tabular-nums tracking-tight text-white">
+                        {formatCurrency(
+                          descontoOperacaoExibido > 0.009
+                            ? calculo.valorOperacaoEfetivoReais
+                            : calculo.valorOperacaoReais
+                        )}
+                      </p>
+                      <div className="mt-3 space-y-1.5 border-t border-white/[0.06] pt-3 text-sm">
+                        <div className="flex justify-between gap-3 text-slate-500">
+                          <span>Lucro da visita</span>
+                          <span className="tabular-nums text-slate-300">
+                            {formatContador(calculo.totalLucroCentavos)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between gap-3 text-slate-500">
+                          <span>
+                            {comissaoBloqueada(calculo) ? "Comissão bloqueada" : "Comissão"}
+                            {!comissaoBloqueada(calculo) ? ` (${comissaoPercentual}%)` : ""}
+                          </span>
+                          <span className="tabular-nums text-orange-400">
+                            {formatCurrency(calculo.valorClienteReais)}
+                          </span>
+                        </div>
+                        {descontoOperacaoExibido > 0.009 && (
+                          <div className="flex justify-between gap-3 text-slate-500">
+                            <span>Desconto na operação</span>
+                            <span className="tabular-nums text-orange-400">
+                              − {formatCurrency(descontoOperacaoExibido)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {calculo.haverCompensadoReais > 0.009 &&
+                        calculo.totalACobrarReais <= 0.009 && (
+                          <p className="mt-3 text-xs leading-relaxed text-cyan-300/90">
+                            Cliente não paga nesta visita — a operação é menor que o haver do ponto
+                            (você deve a ele)
+                            {calculo.haverRestanteReais > 0.009
+                              ? `; restam ${formatCurrency(calculo.haverRestanteReais)} em aberto`
+                              : ""}
+                            .
+                          </p>
+                        )}
+                    </div>
+
+                    <details className="rounded-xl border border-white/[0.06] bg-white/[0.02] text-sm">
+                      <summary className="cursor-pointer list-none px-3.5 py-2.5 text-slate-400 marker:content-none [&::-webkit-details-marker]:hidden">
+                        Detalhes da visita
+                      </summary>
+                      <div className="space-y-2 border-t border-white/[0.06] px-3.5 py-3">
                       <div className="flex items-baseline justify-between gap-4">
                         <p className="text-slate-500">Total entrada / Total saída</p>
                         <p className="font-semibold text-white tabular-nums text-right">
@@ -796,26 +1341,26 @@ export function NovaColetaCassinoForm() {
                           </span>
                         </p>
                       </div>
-                      <div className="flex items-baseline justify-between gap-4">
-                        <p className="text-slate-500">Lucro da visita</p>
-                        <p className="font-semibold text-white tabular-nums">
-                          {formatContador(calculo.totalLucroCentavos)}
-                        </p>
-                      </div>
-                      {(calculo.haverCompensadoReais > 0.009 ||
-                        calculo.recuperacaoNegativoReais > 0.009) &&
-                        baseComissaoReais(calculo) > 0.009 && (
-                          <div className="flex items-baseline justify-between gap-4">
-                            <p className="text-slate-500">Base para comissão</p>
-                            <p className="font-semibold text-white tabular-nums">
-                              {formatCurrency(baseComissaoReais(calculo))}
-                            </p>
-                          </div>
-                        )}
+                      {calculo.recuperacaoNegativoReais > 0.009 && (
+                        <div className="flex items-baseline justify-between gap-4">
+                          <p className="text-slate-500">− Recuperação de negativo</p>
+                          <p className="font-semibold text-amber-400 tabular-nums">
+                            {formatCurrency(calculo.recuperacaoNegativoReais)}
+                          </p>
+                        </div>
+                      )}
+                      {baseComissaoReais(calculo) > 0.009 && (
+                        <div className="flex items-baseline justify-between gap-4">
+                          <p className="text-slate-500">Base para comissão</p>
+                          <p className="font-semibold text-white tabular-nums">
+                            {formatCurrency(baseComissaoReais(calculo))}
+                          </p>
+                        </div>
+                      )}
                       <div className="flex items-center justify-between gap-4">
                         <div className="flex items-center gap-2 min-w-0">
                           <p className="text-slate-500 shrink-0">
-                            {comissaoBloqueada(calculo) ? "Comissão bloqueada" : "Comissão"}
+                            {comissaoBloqueada(calculo) ? "Comissão %" : "Ajustar comissão"}
                           </p>
                           {!comissaoBloqueada(calculo) && (
                             <>
@@ -841,63 +1386,11 @@ export function NovaColetaCassinoForm() {
                         comissaoPercentual <= 0 &&
                         baseComissaoReais(calculo) > 0.009 && (
                           <p className="text-[11px] text-amber-400/90">
-                            Informe a comissão (%) — ela incide só sobre a base de{" "}
-                            {formatCurrency(baseComissaoReais(calculo))}, não sobre o haver compensado.
+                            Informe a comissão (%) — incide sobre o lucro da visita.
                           </p>
                         )}
-                      <div className="flex items-baseline justify-between gap-4">
-                        <p className="text-slate-500">Valor operação</p>
-                        <p className="font-semibold text-green-400 tabular-nums">
-                          {formatCurrency(calculo.valorOperacaoReais)}
-                        </p>
                       </div>
-                      {descontoOperacaoExibido > 0.009 && (
-                        <>
-                          <div className="flex items-baseline justify-between gap-4 min-w-0">
-                            <p className="text-slate-500 shrink min-w-0">Desconto na operação</p>
-                            <p className="font-semibold text-orange-400 tabular-nums shrink-0 whitespace-nowrap text-right">
-                              − {formatCurrency(descontoOperacaoExibido)}
-                            </p>
-                          </div>
-                          <div className="flex items-baseline justify-between gap-4">
-                            <p className="text-slate-500">Operação líquida</p>
-                            <p className="font-semibold text-green-400 tabular-nums">
-                              {formatCurrency(calculo.valorOperacaoEfetivoReais)}
-                            </p>
-                          </div>
-                        </>
-                      )}
-                      {calculo.haverTotalReais > 0.009 && (
-                        <div className="flex items-baseline justify-between gap-4">
-                          <p className="text-slate-500">Haver do ponto</p>
-                          <p className="font-semibold text-cyan-400 tabular-nums">
-                            {formatCurrency(calculo.haverTotalReais)}
-                          </p>
-                        </div>
-                      )}
-                      {(() => {
-                        const total = resumoTotalVisita(calculo);
-                        return (
-                          <div className="border-t border-slate-800 pt-3 mt-1">
-                            <div className="flex items-baseline justify-between gap-4">
-                              <p className="font-medium text-slate-300">{total.label}</p>
-                              <p
-                                className={`text-base font-bold tabular-nums ${
-                                  total.tipo === "pagar" ? "text-amber-400" : "text-primary-neon"
-                                }`}
-                              >
-                                {formatCurrency(total.valorReais)}
-                              </p>
-                            </div>
-                            {total.hint && (
-                              <p className="text-[11px] text-slate-500 mt-1 text-right">
-                                {total.hint}
-                              </p>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </div>
+                    </details>
 
                     {(calculo.debitoTotalReais > 0.009 ||
                       calculo.recuperacaoNegativoReais > 0.009 ||
@@ -906,7 +1399,7 @@ export function NovaColetaCassinoForm() {
                       calculo.pendenciaOperacaoIncluidaReais > 0.009 ||
                       calculo.haverCompensadoReais > 0.009 ||
                       calculo.haverQuitadoReais > 0.009) && (
-                      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 text-sm border-t border-slate-800 pt-3 mt-3">
+                      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 text-sm">
                         {calculo.debitoTotalReais > 0.009 && (
                           <div>
                             <p className="text-slate-500">Negativo em aberto</p>
@@ -932,14 +1425,6 @@ export function NovaColetaCassinoForm() {
                               </p>
                             </div>
                           )}
-                        {calculo.haverCompensadoReais > 0.009 && (
-                          <div>
-                            <p className="text-slate-500">Compensado pelo lucro</p>
-                            <p className="font-semibold text-cyan-400">
-                              {formatCurrency(calculo.haverCompensadoReais)}
-                            </p>
-                          </div>
-                        )}
                         {calculo.descontoManualReais > 0.009 &&
                           calculo.debitoTotalReais <= 0.009 && (
                             <div>
@@ -965,6 +1450,14 @@ export function NovaColetaCassinoForm() {
                             </p>
                           </div>
                         )}
+                        {calculo.haverCompensadoReais > 0.009 && (
+                          <div>
+                            <p className="text-slate-500">Haver abatido</p>
+                            <p className="font-semibold text-cyan-400">
+                              − {formatCurrency(calculo.haverCompensadoReais)}
+                            </p>
+                          </div>
+                        )}
                         {calculo.haverQuitadoReais > 0.009 && (
                           <div>
                             <p className="text-slate-500">Você pagou o ponto (haver)</p>
@@ -974,8 +1467,8 @@ export function NovaColetaCassinoForm() {
                           </div>
                         )}
                         {calculo.haverRestanteReais > 0.009 &&
-                          centesimosToReais(calculo.totalLucroCentavos) + 0.009 >=
-                            calculo.haverTotalReais && (
+                          (calculo.haverCompensadoReais > 0.009 ||
+                            calculo.haverQuitadoReais > 0.009) && (
                             <div>
                               <p className="text-slate-500">Haver restante</p>
                               <p className="font-semibold text-cyan-400">
@@ -983,25 +1476,13 @@ export function NovaColetaCassinoForm() {
                               </p>
                             </div>
                           )}
-                        {resumoTotalVisita(calculo).tipo === "pagar" &&
-                          calculo.totalACobrarReais > 0.009 && (
-                            <div>
-                              <p className="text-slate-500">Cliente ainda paga</p>
-                              <p className="font-semibold text-primary-neon">
-                                {formatCurrency(calculo.totalACobrarReais)}
-                              </p>
-                            </div>
-                          )}
                       </div>
                     )}
                   </>
                 )}
-              </div>
-            </>
-          )}
 
           {calculo && calculo.saldoNegativo && calculo.pendenciaOperacaoTotalReais > 0.009 && (
-            <div className="glass-card p-6 space-y-4 border border-rose-500/20">
+            <div className="space-y-4 border-t border-slate-800 pt-4">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-rose-400" />
                 <h2 className="font-semibold text-white">Pendência da coleta anterior</h2>
@@ -1100,66 +1581,56 @@ export function NovaColetaCassinoForm() {
           )}
 
           {calculo && calculo.saldoNegativo && (
-            <div className="glass-card p-6 space-y-4">
-              <h2 className="font-semibold text-white">Quem pagou os ganhadores?</h2>
-              <p className="text-xs text-slate-500">
-                Prejuízo de{" "}
-                <strong className="text-slate-400">
-                  {formatCurrency(centesimosToReais(Math.abs(calculo.totalLucroCentavos)))}
-                </strong>
-                . Informe o que <strong className="text-slate-400">você adiantou</strong> (Pix ou
-                dinheiro). Se abater a pendência acima, esse valor já entra descontando no acerto com
-                o ponto.
-              </p>
+            <div className="space-y-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5">
+              <div>
+                <h2 className="text-sm font-semibold text-white">Você adiantou algo?</h2>
+                <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
+                  Se o ponto pagou sozinho, deixe zerado. Só preencha se você repôs na máquina.
+                </p>
+              </div>
 
-              {resumoAcertoNegativo && (
-                <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/5 px-4 py-4 space-y-3">
-                  <div>
-                    <p className="text-sm text-slate-400">Falta repor ao ponto</p>
-                    <p className="text-2xl font-bold text-cyan-400 tabular-nums">
-                      {formatCurrency(resumoAcertoNegativo.valorRestanteReais)}
-                    </p>
-                    <p className="text-xs text-slate-500 mt-1">
-                      {resumoAcertoNegativo.valorRestanteReais <= 0.009
-                        ? "Você já informou todo o valor deste acerto."
-                        : "Este é o restante depois do abatimento e do valor já informado."}
-                    </p>
-                  </div>
-
-                  <div className="space-y-1.5 border-t border-cyan-500/15 pt-3 text-sm">
-                    <div className="flex justify-between gap-4">
-                      <span className="text-slate-400">Prejuízo da visita</span>
-                      <span className="font-medium tabular-nums text-slate-200">
-                        {formatCurrency(resumoAcertoNegativo.prejuizoVisitaReais)}
-                      </span>
+              {resumoAcertoNegativo &&
+                (resumoAcertoNegativo.abatidoPendenciaReais > 0.009 ||
+                  resumoAcertoNegativo.valorInformadoReais > 0.009) && (
+                  <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.05] px-3 py-2.5 space-y-1.5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="text-xs text-slate-400">
+                        {resumoAcertoNegativo.valorRestanteReais <= 0.009
+                          ? "Acerto informado"
+                          : "Falta repor ao ponto"}
+                      </p>
+                      <p className="text-lg font-bold text-cyan-400 tabular-nums">
+                        {formatCurrency(resumoAcertoNegativo.valorRestanteReais)}
+                      </p>
                     </div>
-                    {resumoAcertoNegativo.abatidoPendenciaReais > 0.009 && (
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Abatido da pendência</span>
-                        <span className="font-medium tabular-nums text-green-400">
-                          - {formatCurrency(resumoAcertoNegativo.abatidoPendenciaReais)}
-                        </span>
-                      </div>
-                    )}
-                    {resumoAcertoNegativo.valorInformadoReais > 0.009 && (
-                      <div className="flex justify-between gap-4">
-                        <span className="text-slate-400">Já informado por você</span>
-                        <span className="font-medium tabular-nums text-cyan-400">
-                          - {formatCurrency(resumoAcertoNegativo.valorInformadoReais)}
-                        </span>
-                      </div>
-                    )}
-                    {resumoAcertoNegativo.negativoARecuperarReais > 0.009 && (
-                      <div className="flex justify-between gap-4 border-t border-cyan-500/15 pt-2">
-                        <span className="font-medium text-amber-300">Negativo a recuperar</span>
-                        <span className="font-bold tabular-nums text-amber-400">
-                          {formatCurrency(resumoAcertoNegativo.negativoARecuperarReais)}
-                        </span>
-                      </div>
-                    )}
+                    <div className="space-y-1 border-t border-cyan-500/15 pt-2 text-xs">
+                      {resumoAcertoNegativo.abatidoPendenciaReais > 0.009 && (
+                        <div className="flex justify-between gap-3 text-slate-500">
+                          <span>Abatido da pendência</span>
+                          <span className="tabular-nums text-green-400">
+                            − {formatCurrency(resumoAcertoNegativo.abatidoPendenciaReais)}
+                          </span>
+                        </div>
+                      )}
+                      {resumoAcertoNegativo.valorInformadoReais > 0.009 && (
+                        <div className="flex justify-between gap-3 text-slate-500">
+                          <span>Já informado por você</span>
+                          <span className="tabular-nums text-cyan-400">
+                            − {formatCurrency(resumoAcertoNegativo.valorInformadoReais)}
+                          </span>
+                        </div>
+                      )}
+                      {resumoAcertoNegativo.excedenteReais > 0.009 && (
+                        <div className="flex justify-between gap-3 text-slate-500">
+                          <span>Excedente (vira pendência)</span>
+                          <span className="tabular-nums text-amber-300">
+                            {formatCurrency(resumoAcertoNegativo.excedenteReais)}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
               <PagamentoCaixaFields
                 modo="saida"
@@ -1178,64 +1649,331 @@ export function NovaColetaCassinoForm() {
                   setPagamento((p) => ({ ...p, adiantamento_dinheiro_do_caixa: checked }))
                 }
               />
-
-              {calculo.haverTotalReais > 0.009 &&
-                Math.max(
-                  0,
-                  centesimosToReais(Math.abs(calculo.totalLucroCentavos)) -
-                    (parseMoneyInput(pagamento.adiantamento_pix) +
-                      parseMoneyInput(pagamento.adiantamento_dinheiro))
-                ) > 0.009 && (
-                  <label
-                    htmlFor="incluir-usar-haver-negativo"
-                    className={`flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors ${
-                      incluirUsarHaverNegativo
-                        ? "border-cyan-500/35 bg-cyan-500/5"
-                        : "border-slate-700/60 bg-slate-900/30 hover:border-slate-600"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      id="incluir-usar-haver-negativo"
-                      checked={incluirUsarHaverNegativo}
-                      onChange={(e) => setIncluirUsarHaverNegativo(e.target.checked)}
-                      className="mt-0.5"
-                    />
-                    <div className="min-w-0 flex-1 space-y-1.5">
-                      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                        <span className="flex items-center gap-2 text-sm font-medium text-white">
-                          <HandCoins className="h-4 w-4 shrink-0 text-cyan-400" />
-                          Usar haver do ponto no prejuízo
-                        </span>
-                        <span className="text-sm font-semibold tabular-nums text-cyan-400">
-                          {formatCurrency(calculo.haverTotalReais)} em aberto
-                        </span>
-                      </div>
-                      <p className="text-xs leading-relaxed text-slate-400">
-                        Abate do haver existente antes de gerar haver novo — evita crédito
-                        duplicado.
+              {saldoCaixa != null && (
+                <div className="rounded-lg border border-slate-700/60 bg-slate-900/40 px-3 py-2.5 text-xs leading-relaxed text-slate-400">
+                  <p>
+                    Saldo do caixa agora:{" "}
+                    <span className="font-semibold tabular-nums text-slate-200">
+                      {formatCurrency(Math.max(0, saldoCaixa))}
+                    </span>
+                  </p>
+                  {(() => {
+                    const deixado =
+                      parseMoneyInput(pagamento.adiantamento_pix) +
+                      parseMoneyInput(pagamento.adiantamento_dinheiro);
+                    const disponivel = Math.max(0, saldoCaixa);
+                    if (deixado <= 0.009 || deixado <= disponivel + 0.009) return null;
+                    return (
+                      <p className="mt-1.5 text-amber-300/90">
+                        Você está deixando {formatCurrency(deixado)}, mas o caixa só tem{" "}
+                        {formatCurrency(disponivel)}. A visita registra o valor total no ponto; no
+                        financeiro só sai {formatCurrency(disponivel)} — o caixa fica em R$ 0,00, não
+                        negativo. O restante conta como fora do caixa.
                       </p>
-                    </div>
-                  </label>
-                )}
-
-              <FormTextarea
-                label="Observação"
-                value={pagamento.observacao}
-                onChange={(e) => setPagamento((p) => ({ ...p, observacao: e.target.value }))}
-              />
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           )}
 
-          {calculo && !calculo.saldoNegativo && !modoQuitarHaver && (
-            <div className="glass-card p-6 space-y-4">
+          {calculo && !calculo.saldoNegativo && (
+            <div className="space-y-4 border-t border-slate-800 pt-4">
+              {emVisitaPonto && !receberAgora ? (
+                <>
+                  <h2 className="font-semibold text-white">Valor da operação</h2>
+                  <p className="text-xs text-slate-500">
+                    Desconto da operação fica aqui. Continuando, pix e dinheiro no Cobrar.
+                  </p>
+                  <CobrancaClienteResumo calculo={calculo} />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    {calculo.debitoTotalReais <= 0.009 && calculo.haverTotalReais <= 0.009 && (
+                      <FormInput
+                        label="Desconto no lucro (R$)"
+                        inputMode="numeric"
+                        value={pagamento.desconto_manual}
+                        onChange={(e) =>
+                          setPagamento((p) => ({
+                            ...p,
+                            desconto_manual: formatMoneyInput(e.target.value),
+                          }))
+                        }
+                        onBlur={(e) =>
+                          setPagamento((p) => ({
+                            ...p,
+                            desconto_manual: formatMoneyInputOnBlur(e.target.value),
+                          }))
+                        }
+                        hint="Abate do lucro antes de calcular a comissão"
+                      />
+                    )}
+                    <FormInput
+                      label="Desconto na operação (R$)"
+                      inputMode="numeric"
+                      value={pagamento.desconto_recebimento}
+                      onChange={(e) =>
+                        setPagamento((p) => ({
+                          ...p,
+                          desconto_recebimento: formatMoneyInput(e.target.value),
+                        }))
+                      }
+                      onBlur={(e) =>
+                        setPagamento((p) => ({
+                          ...p,
+                          desconto_recebimento: formatMoneyInputOnBlur(e.target.value),
+                        }))
+                      }
+                      hint="Ex.: máquina engoliu notas — abate do valor a cobrar"
+                    />
+                  </div>
+                  <div className="rounded-lg border border-primary-neon/20 bg-primary-neon/5 px-4 py-3 text-sm leading-relaxed text-slate-400">
+                    Continuando: pix, dinheiro, haver e dívida ficam para a aba{" "}
+                    <strong className="text-primary-neon">Cobrar</strong>, no final da visita.
+                    Aqui só o valor desta operação (e desconto, se houver).
+                  </div>
+                </>
+              ) : (
+                <>
               <h2 className="font-semibold text-white">Pagamento do cliente</h2>
               <p className="text-xs text-slate-500">
                 Registre quanto o <strong className="text-slate-400">cliente</strong> pagou nesta
                 coleta (Pix + dinheiro). O valor a receber já está calculado no card abaixo.
               </p>
 
+              {haverCreditoAberto > 0.009 && (
+                <label
+                  htmlFor="descontar-haver-cobranca"
+                  className={`flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors ${
+                    descontarHaverNaCobranca
+                      ? "border-cyan-500/35 bg-cyan-500/5"
+                      : "border-slate-700/60 bg-slate-900/30 hover:border-slate-600"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    id="descontar-haver-cobranca"
+                    checked={descontarHaverNaCobranca}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setDescontarHaverNaCobranca(checked);
+                      if (pagarHaverRestante) {
+                        const operacaoCobranca =
+                          calculo.valorOperacaoEfetivoReais > 0.009
+                            ? calculo.valorOperacaoEfetivoReais
+                            : calculo.valorOperacaoReais;
+                        const totalSemHaver =
+                          operacaoCobranca +
+                          (calculo.debitoTotalReais > 0.009 &&
+                          calculo.recuperacaoNegativoReais > 0.009
+                            ? calculo.recuperacaoNegativoReais
+                            : calculo.debitoTotalReais) +
+                          calculo.pendenciaOperacaoIncluidaReais;
+                        const restante = checked
+                          ? Math.max(
+                              0,
+                              haverCreditoAberto - Math.min(haverCreditoAberto, totalSemHaver)
+                            )
+                          : haverCreditoAberto;
+                        if (restante <= 0.009) {
+                          setPagarHaverRestante(false);
+                          setPagamento((p) => ({
+                            ...p,
+                            adiantamento_pix: "",
+                            adiantamento_dinheiro: "",
+                            adiantamento_pix_do_caixa: false,
+                            adiantamento_dinheiro_do_caixa: false,
+                          }));
+                        } else {
+                          setPagamento((p) => ({
+                            ...p,
+                            adiantamento_dinheiro: formatMoneyInputOnBlur(
+                              restante.toFixed(2).replace(".", ",")
+                            ),
+                            adiantamento_pix: "",
+                          }));
+                        }
+                      }
+                    }}
+                    className="mt-0.5"
+                  />
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                      <span className="flex items-center gap-2 text-sm font-medium text-white">
+                        <HandCoins className="h-4 w-4 shrink-0 text-cyan-400" />
+                        Descontar haver nesta cobrança?
+                      </span>
+                      <span className="text-sm font-semibold tabular-nums text-cyan-400">
+                        {formatCurrency(haverCreditoAberto)}
+                      </span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-slate-400">
+                      {(() => {
+                        const operacaoCobranca =
+                          calculo.valorOperacaoEfetivoReais > 0.009
+                            ? calculo.valorOperacaoEfetivoReais
+                            : calculo.valorOperacaoReais;
+                        const totalSemHaver =
+                          operacaoCobranca +
+                          (calculo.debitoTotalReais > 0.009 &&
+                          calculo.recuperacaoNegativoReais > 0.009
+                            ? calculo.recuperacaoNegativoReais
+                            : calculo.debitoTotalReais) +
+                          calculo.pendenciaOperacaoIncluidaReais;
+                        if (haverCreditoAberto + 0.009 >= totalSemHaver && totalSemHaver > 0.009) {
+                          return (
+                            <>
+                              Crédito de troco/a mais. Se marcar, a operação abate do haver — o
+                              cliente não paga nada nesta visita (é você quem deve), e o que sobrar
+                              fica para a próxima.
+                            </>
+                          );
+                        }
+                        return (
+                          <>
+                            Crédito de troco/a mais. Se marcar, abate da cobrança — o cliente paga
+                            só a diferença e o haver zera.
+                          </>
+                        );
+                      })()}
+                    </p>
+                  </div>
+                </label>
+              )}
+
               <CobrancaClienteResumo calculo={calculo} />
+
+              {(() => {
+                if (haverCreditoAberto <= 0.009) return null;
+                const operacaoCobranca =
+                  calculo.valorOperacaoEfetivoReais > 0.009
+                    ? calculo.valorOperacaoEfetivoReais
+                    : calculo.valorOperacaoReais;
+                const totalSemHaver =
+                  operacaoCobranca +
+                  (calculo.debitoTotalReais > 0.009 &&
+                  calculo.recuperacaoNegativoReais > 0.009
+                    ? calculo.recuperacaoNegativoReais
+                    : calculo.debitoTotalReais) +
+                  calculo.pendenciaOperacaoIncluidaReais;
+                const haverAposCobranca = descontarHaverNaCobranca
+                  ? Math.max(
+                      0,
+                      haverCreditoAberto - Math.min(haverCreditoAberto, totalSemHaver)
+                    )
+                  : haverCreditoAberto;
+                const haverParaPagar = pagarHaverRestante
+                  ? Math.max(calculo.haverRestanteReais, 0)
+                  : haverAposCobranca;
+                if (haverAposCobranca <= 0.009 && !pagarHaverRestante) return null;
+
+                return (
+                  <div className="space-y-3">
+                    <label
+                      htmlFor="pagar-haver-restante"
+                      className={`flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors ${
+                        pagarHaverRestante
+                          ? "border-cyan-500/35 bg-cyan-500/5"
+                          : "border-slate-700/60 bg-slate-900/30 hover:border-slate-600"
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        id="pagar-haver-restante"
+                        checked={pagarHaverRestante}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setPagarHaverRestante(checked);
+                          if (!checked) {
+                            setPagamento((p) => ({
+                              ...p,
+                              adiantamento_pix: "",
+                              adiantamento_dinheiro: "",
+                              adiantamento_pix_do_caixa: false,
+                              adiantamento_dinheiro_do_caixa: false,
+                            }));
+                          } else if (haverAposCobranca > 0.009) {
+                            setPagamento((p) => ({
+                              ...p,
+                              adiantamento_dinheiro: formatMoneyInputOnBlur(
+                                haverAposCobranca.toFixed(2).replace(".", ",")
+                              ),
+                              adiantamento_pix: "",
+                            }));
+                          }
+                        }}
+                        className="mt-0.5"
+                      />
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+                          <span className="flex items-center gap-2 text-sm font-medium text-white">
+                            <HandCoins className="h-4 w-4 shrink-0 text-cyan-400" />
+                            Pagar haver restante ao ponto?
+                          </span>
+                          <span className="text-sm font-semibold tabular-nums text-cyan-400">
+                            {formatCurrency(haverAposCobranca)}
+                          </span>
+                        </div>
+                        <p className="text-xs leading-relaxed text-slate-400">
+                          Se quiser quitar agora o que ainda deve ao ponto, informe Pix ou dinheiro
+                          que você pagou. Pode pagar parcial — o restante fica em aberto.
+                        </p>
+                      </div>
+                    </label>
+
+                    {pagarHaverRestante && (
+                      <div className="space-y-3 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.03] p-4">
+                        <p className="text-xs text-slate-500">
+                          Saída do seu caixa para o ponto — não é pagamento do cliente.
+                        </p>
+                        <PagamentoCaixaFields
+                          modo="saida"
+                          pix={pagamento.adiantamento_pix}
+                          dinheiro={pagamento.adiantamento_dinheiro}
+                          pixDoCaixa={pagamento.adiantamento_pix_do_caixa}
+                          dinheiroDoCaixa={pagamento.adiantamento_dinheiro_do_caixa}
+                          pixLabel="Pix que você pagou (R$)"
+                          dinheiroLabel="Dinheiro que você pagou (R$)"
+                          onPixChange={(v) =>
+                            setPagamento((p) => ({ ...p, adiantamento_pix: v }))
+                          }
+                          onDinheiroChange={(v) =>
+                            setPagamento((p) => ({ ...p, adiantamento_dinheiro: v }))
+                          }
+                          onPixDoCaixaChange={(checked) =>
+                            setPagamento((p) => ({
+                              ...p,
+                              adiantamento_pix_do_caixa: checked,
+                            }))
+                          }
+                          onDinheiroDoCaixaChange={(checked) =>
+                            setPagamento((p) => ({
+                              ...p,
+                              adiantamento_dinheiro_do_caixa: checked,
+                            }))
+                          }
+                        />
+                        {calculo.haverQuitadoReais > 0.009 && (
+                          <p className="text-sm text-cyan-400">
+                            Haver quitado agora: {formatCurrency(calculo.haverQuitadoReais)}
+                            {haverParaPagar > 0.009
+                              ? ` · ainda resta ${formatCurrency(calculo.haverRestanteReais)}`
+                              : " · haver zerado"}
+                          </p>
+                        )}
+                        {saldoCaixa != null &&
+                          parseMoneyInput(pagamento.adiantamento_pix) +
+                            parseMoneyInput(pagamento.adiantamento_dinheiro) >
+                            Math.max(0, saldoCaixa) + 0.009 && (
+                            <p className="text-xs text-amber-300/90">
+                              Saldo do caixa: {formatCurrency(Math.max(0, saldoCaixa))}. Só esse
+                              valor sai do financeiro — o caixa não fica negativo.
+                            </p>
+                          )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
 
               {calculo.pendenciaOperacaoTotalReais > 0.009 && (
                 <label
@@ -1275,7 +2013,7 @@ export function NovaColetaCassinoForm() {
                 {calculo.debitoTotalReais <= 0.009 && calculo.haverTotalReais <= 0.009 && (
                   <FormInput
                     label="Desconto no lucro (R$)"
-                    inputMode="decimal"
+                    inputMode="numeric"
                     value={pagamento.desconto_manual}
                     onChange={(e) =>
                       setPagamento((p) => ({
@@ -1294,7 +2032,10 @@ export function NovaColetaCassinoForm() {
                 )}
                 <FormInput
                   label="Desconto na operação (R$)"
-                  inputMode="decimal"
+                  inputMode="numeric"
+                  enterKeyHint="done"
+                  autoComplete="off"
+                  placeholder="0,00"
                   value={pagamento.desconto_recebimento}
                   onChange={(e) =>
                     setPagamento((p) => ({
@@ -1312,6 +2053,7 @@ export function NovaColetaCassinoForm() {
                 />
               </div>
 
+              {calculo.totalACobrarReais > 0.009 && (
               <PagamentoCaixaFields
                 modo="entrada"
                 pix={pagamento.valor_pix}
@@ -1329,6 +2071,7 @@ export function NovaColetaCassinoForm() {
                   setPagamento((p) => ({ ...p, recebimento_dinheiro_do_caixa: checked }))
                 }
               />
+              )}
               {calculo.pendenciaOperacaoAbatidaReais > 0.009 &&
                 !incluirPendenciaOperacao &&
                 calculo.pendenciaOperacaoIncluidaReais <= 0.009 && (
@@ -1339,117 +2082,70 @@ export function NovaColetaCassinoForm() {
                 )}
               {calculo.haverReais > 0.009 && (
                 <p className="text-sm text-cyan-400">
-                  Cliente pagou a mais: {formatCurrency(calculo.haverReais)} → crédito (haver)
+                  Cliente pagou a mais: {formatCurrency(calculo.haverReais)} → crédito (troco/a mais)
                 </p>
               )}
-              <FormTextarea
-                label="Observação"
-                value={pagamento.observacao}
-                onChange={(e) => setPagamento((p) => ({ ...p, observacao: e.target.value }))}
-              />
-            </div>
-          )}
-
-          {calculo && !calculo.saldoNegativo && modoQuitarHaver && (
-            <div className="glass-card p-6 space-y-4 border border-cyan-500/20">
-              <h2 className="font-semibold text-white">Quitar haver com o ponto</h2>
-              <p className="text-xs text-slate-500">
-                O lucro não cobriu o haver — <strong className="text-slate-400">você</strong> devolve
-                ao ponto. Informe Pix ou dinheiro que você pagou.
-              </p>
-              <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/5 px-4 py-3">
-                <p className="text-sm text-slate-400">Total a pagar ao ponto</p>
-                <p className="text-xl font-bold text-cyan-400 tabular-nums">
-                  {formatCurrency(resumoTotalVisita(calculo).valorReais)}
-                </p>
-                {calculo.haverRestanteReais > 0.009 && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Restante: {formatCurrency(calculo.haverRestanteReais)}
-                  </p>
-                )}
-              </div>
-              <PagamentoCaixaFields
-                modo="saida"
-                pix={pagamento.valor_pix}
-                dinheiro={pagamento.valor_dinheiro}
-                pixDoCaixa={pagamento.adiantamento_pix_do_caixa}
-                dinheiroDoCaixa={pagamento.adiantamento_dinheiro_do_caixa}
-                pixLabel="Pix que você pagou (R$)"
-                dinheiroLabel="Dinheiro que você pagou (R$)"
-                onPixChange={(v) => setPagamento((p) => ({ ...p, valor_pix: v }))}
-                onDinheiroChange={(v) => setPagamento((p) => ({ ...p, valor_dinheiro: v }))}
-                onPixDoCaixaChange={(checked) =>
-                  setPagamento((p) => ({ ...p, adiantamento_pix_do_caixa: checked }))
-                }
-                onDinheiroDoCaixaChange={(checked) =>
-                  setPagamento((p) => ({ ...p, adiantamento_dinheiro_do_caixa: checked }))
-                }
-              />
-
-              {resumoAcertoNegativo && resumoAcertoNegativo.saldoLiquidoAbsReais > 0.009 && (
-                <div
-                  className={cn(
-                    "rounded-lg border px-4 py-3 space-y-1.5 text-sm",
-                    calculo.saldoLiquidoReais > 0
-                      ? "border-green-500/30 bg-green-500/5"
-                      : "border-amber-500/30 bg-amber-500/5"
-                  )}
-                >
-                  <div className="flex justify-between gap-4">
-                    <span
-                      className={cn(
-                        "font-medium",
-                        calculo.saldoLiquidoReais > 0 ? "text-green-300" : "text-amber-300"
-                      )}
-                    >
-                      {resumoAcertoNegativo.saldoLabel}
-                    </span>
-                    <span
-                      className={cn(
-                        "text-lg font-bold tabular-nums",
-                        calculo.saldoLiquidoReais > 0 ? "text-green-400" : "text-amber-400"
-                      )}
-                    >
-                      {formatCurrency(resumoAcertoNegativo.saldoLiquidoAbsReais)}
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-500">
-                    Esse saldo ja considera o que foi abatido da pendência e o que você informou como
-                    adiantamento.
-                  </p>
-                </div>
+                </>
               )}
-
-              <FormTextarea
-                label="Observação"
-                value={pagamento.observacao}
-                onChange={(e) => setPagamento((p) => ({ ...p, observacao: e.target.value }))}
+            </div>
+          )}
+                    </div>
+                  ) : undefined
+                }
+                previa={
+                  calculo && relatorioData ? (
+                    <PreviaRelatorioPanel
+                      data={{ ...relatorioData, previa: true }}
+                      disabled={!leiturasCompletas}
+                      chavePix={chavePix}
+                    />
+                  ) : undefined
+                }
+                observacao
+                observacaoValue={pagamento.observacao}
+                onObservacaoChange={(v) =>
+                  setPagamento((p) => ({ ...p, observacao: v }))
+                }
+                error={error}
+                depoisDaColeta={
+                  emVisitaPonto && calculo ? (
+                    <VisitaColetaModoPagamento
+                      value={
+                        calculo.saldoNegativo && modoFecharVisita === "receber"
+                          ? "continuar"
+                          : modoFecharVisita
+                      }
+                      onChange={(v) => {
+                        setModoFecharVisita(v);
+                        if (v !== "receber") {
+                          setDescontarHaverNaCobranca(false);
+                          setPagarHaverRestante(false);
+                          setIncluirPendenciaOperacao(false);
+                        }
+                      }}
+                      accent={calculo.saldoNegativo ? "rose" : "emerald"}
+                      varianteSegundo={calculo.saldoNegativo ? "finalizar" : "receber"}
+                    />
+                  ) : undefined
+                }
+                submitLabel={
+                  emVisitaPonto
+                    ? finalizarVisitaSemPagar
+                      ? "Encerrar sem cobrar"
+                      : receberAgora
+                        ? "Receber e encerrar"
+                        : editarVisitaId
+                          ? "Salvar correção e seguir"
+                          : "Salvar e seguir"
+                    : "Salvar coleta cassino"
+                }
+                submitDisabled={loadingPonto || leituras.length === 0 || !!sucesso}
+                loading={loading}
               />
-            </div>
-          )}
-
-          {calculo && relatorioData && (
-            <PreviaRelatorioPanel
-              data={{ ...relatorioData, previa: true }}
-              disabled={!leiturasCompletas}
-            />
-          )}
-
-          {error && (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
-              {error}
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || loadingPonto || leituras.length === 0}
-            className="w-full rounded-lg bg-primary-neon py-3 font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-50"
-          >
-            {loading ? "Enviando fotos e registrando..." : "Registrar coleta"}
-          </button>
+            }
+          />
         </form>
-      </div>
+      </ColetaNovaPageShell>
 
       {sucesso && ponto && (
         <ColetaCassinoSucessoModal
@@ -1458,6 +2154,7 @@ export function NovaColetaCassinoForm() {
           visitaId={sucesso.visitaId}
           empresaId={sucesso.empresaId}
           pontoId={pontoId}
+          visitaPontoId={visitaPontoId || null}
           onClose={handleConcluir}
         />
       )}

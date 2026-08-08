@@ -173,19 +173,42 @@ export const RelatorioColetaView = forwardRef<HTMLDivElement, RelatorioColetaVie
               </div>
               {m.fotoUrl &&
                 (m.fotoUrl.startsWith("blob:") || m.fotoUrl.startsWith("http")) && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={m.fotoUrl}
-                    alt={`Foto ${m.nome}`}
+                  <div
                     style={{
-                      marginTop: 8,
-                      width: "100%",
-                      height: 96,
-                      objectFit: "cover",
-                      borderRadius: 6,
+                      marginTop: 12,
+                      borderRadius: 10,
+                      overflow: "hidden",
                       border: `1px solid ${colors.border}`,
+                      backgroundColor: colors.bg,
                     }}
-                  />
+                  >
+                    <p
+                      style={{
+                        margin: 0,
+                        padding: "8px 10px 0",
+                        fontSize: 10,
+                        fontWeight: 600,
+                        letterSpacing: 0.6,
+                        textTransform: "uppercase",
+                        color: colors.slate500,
+                      }}
+                    >
+                      Foto do painel
+                    </p>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={m.fotoUrl}
+                      alt={`Foto ${m.nome}`}
+                      style={{
+                        display: "block",
+                        width: "100%",
+                        height: "auto",
+                        maxHeight: 420,
+                        objectFit: "contain",
+                        objectPosition: "center",
+                      }}
+                    />
+                  </div>
                 )}
             </div>
           ))}

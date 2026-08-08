@@ -1,9 +1,15 @@
 import Link from "next/link";
 import { formatCurrency } from "@/lib/utils";
-import type { Ponto } from "@/lib/types/database";
+
+export type DashboardRankingPoint = {
+  id: string;
+  nome: string;
+  status: string;
+  ultima_coleta: string | null;
+};
 
 interface RankingEntry {
-  ponto: Ponto;
+  ponto: DashboardRankingPoint;
   valor: number;
 }
 

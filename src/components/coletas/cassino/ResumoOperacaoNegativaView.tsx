@@ -13,32 +13,30 @@ const corLinha = {
   "pendencia-operacao": "text-rose-300",
 } as const;
 
-function LinhaDetalhe({
+function quaseIgual(a: number, b: number) {
+  return Math.abs(a - b) <= 0.009;
+}
+
+function LinhaCompacta({
   label,
-  hint,
   valorReais,
   tipo,
-  extraHint,
+  hint,
 }: {
   label: string;
-  hint?: string;
   valorReais: number;
   tipo: keyof typeof corLinha;
-  extraHint?: string;
+  hint?: string;
 }) {
   return (
-    <div className="py-1.5">
-      <div className="flex justify-between gap-4">
-        <span className="text-slate-300">{label}</span>
-        <span className={cn("font-semibold tabular-nums shrink-0", corLinha[tipo])}>
-          {formatCurrency(valorReais)}
-        </span>
+    <div className="flex items-baseline justify-between gap-3 py-0.5">
+      <div className="min-w-0">
+        <span className="text-slate-400">{label}</span>
+        {hint ? <span className="ml-1.5 text-[11px] text-slate-600">{hint}</span> : null}
       </div>
-      {(hint || extraHint) && (
-        <p className="text-[11px] text-slate-500 mt-0.5 text-right">
-          {[hint, extraHint].filter(Boolean).join(" · ")}
-        </p>
-      )}
+      <span className={cn("shrink-0 font-semibold tabular-nums", corLinha[tipo])}>
+        {formatCurrency(valorReais)}
+      </span>
     </div>
   );
 }
@@ -58,130 +56,154 @@ export function ResumoOperacaoNegativaView({
       ? hintAdiantamento(adiantamento)
       : undefined;
 
-  const somaFechamento = d.fechamento.reduce((s, l) => s + l.valorReais, 0);
+  const temNegativoAnterior = d.negativoAnteriorReais > 0.009;
+  const fechamentoSimples =
+    d.fechamento.length === 1 && quaseIgual(d.fechamento[0].valorReais, d.prejuizoVisitaReais);
+
+  const mostrarSaldoSeparado =
+    d.mostrarSaldoLiquido &&
+    (calculo.saldoLiquidoReais > 0 ||
+      !quaseIgual(d.valorSaldoLiquidoAbs, d.negativoTotalProximaReais) ||
+      d.linhasReceberDoPonto.length > 1);
+
+  const fraseFechamento = fechamentoSimples
+    ? [
+        d.fechamento[0].label,
+        adiantHint || d.fechamento[0].hint || null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : null;
 
   return (
-    <div className={cn("space-y-4 text-sm", className)}>
+    <div className={cn("space-y-3", className)}>
       {calculo.pendenciaOperacaoTotalReais > 0.009 && (
-        <div className="rounded-lg border border-rose-500/25 bg-rose-500/5 p-4 space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-rose-400/90">
-            Pendência de coleta anterior
-          </p>
-          <div className="flex justify-between gap-4">
-            <span className="text-slate-400">Cliente devia (em aberto)</span>
-            <span className="font-semibold text-rose-300 tabular-nums">
+        <div className="rounded-xl border border-rose-500/20 bg-rose-500/[0.06] px-3.5 py-2.5 text-sm">
+          <div className="flex justify-between gap-3">
+            <span className="text-rose-200/90">Pendência anterior</span>
+            <span className="font-semibold tabular-nums text-rose-300">
               {formatCurrency(calculo.pendenciaOperacaoTotalReais)}
             </span>
           </div>
           {calculo.pendenciaOperacaoAbatidaReais > 0.009 && (
-            <div className="flex justify-between gap-4">
-              <span className="text-slate-400">Abatido nesta visita</span>
-              <span className="font-semibold text-green-400 tabular-nums">
-                {formatCurrency(calculo.pendenciaOperacaoAbatidaReais)}
-              </span>
-            </div>
-          )}
-          {calculo.pendenciaOperacaoRestanteReais > 0.009 && (
-            <div className="flex justify-between gap-4">
-              <span className="text-slate-400">Ainda em aberto</span>
-              <span className="font-semibold text-amber-300 tabular-nums">
-                {formatCurrency(calculo.pendenciaOperacaoRestanteReais)}
-              </span>
-            </div>
+            <p className="mt-1 text-xs text-slate-500">
+              Abatido agora −{formatCurrency(calculo.pendenciaOperacaoAbatidaReais)}
+              {calculo.pendenciaOperacaoRestanteReais > 0.009 && (
+                <> · ainda {formatCurrency(calculo.pendenciaOperacaoRestanteReais)}</>
+              )}
+            </p>
           )}
         </div>
       )}
 
-      <div className="rounded-lg border border-red-500/25 bg-red-500/5 p-4 space-y-3">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-red-400/90">
-            Prejuízo no visor desta visita
+      {/* Hero do negativo — um bloco, uma leitura */}
+      <div className="overflow-hidden rounded-2xl border border-red-500/30 bg-gradient-to-b from-red-500/[0.14] to-red-950/20">
+        <div className="px-4 pb-3 pt-4 sm:px-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-red-300/90">
+            Negativo da visita
           </p>
-          <p className="text-3xl font-bold tabular-nums text-red-300 mt-1">
+          <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight text-red-200">
             {formatCurrency(d.prejuizoVisitaReais)}
           </p>
-        </div>
-
-        <div className="border-t border-red-500/15 pt-3 space-y-1">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500 mb-2">
-            Quem cobriu o prejuízo
+          <p className="mt-2 text-sm leading-snug text-slate-400">
+            Comissão bloqueada — recupera na próxima positiva.
           </p>
-          {d.fechamento.map((item) => (
-            <LinhaDetalhe
-              key={item.id}
-              label={item.label}
-              hint={item.hint}
-              valorReais={item.valorReais}
-              tipo={item.tipo}
-              extraHint={
-                item.id === "reposto" ? adiantHint : undefined
-              }
-            />
-          ))}
-          {d.fechamento.length > 1 && (
-            <div className="flex justify-between gap-4 border-t border-red-500/15 pt-2 mt-2">
-              <span className="font-medium text-slate-300">Total coberto</span>
-              <span className="font-semibold tabular-nums text-white">
-                {formatCurrency(somaFechamento)}
-              </span>
-            </div>
+          {fraseFechamento && (
+            <p className="mt-2 text-xs leading-relaxed text-slate-500">{fraseFechamento}</p>
           )}
         </div>
-      </div>
 
-      {d.mostrarNegativoAcumulado && (
-        <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-amber-400/90">
-            A recuperar nas próximas coletas positivas
-          </p>
-          {d.negativoAnteriorReais > 0.009 && (
-            <div className="flex justify-between gap-4 text-slate-400">
-              <span>Negativo acumulado anterior</span>
-              <span className="tabular-nums">{formatCurrency(d.negativoAnteriorReais)}</span>
-            </div>
-          )}
-          <div className="flex justify-between gap-4 text-slate-400">
-            <span>+ Prejuízo desta visita</span>
-            <span className="tabular-nums text-amber-300/90">
-              {formatCurrency(d.negativoAdiantadoHojeReais)}
-            </span>
-          </div>
-          <div className="flex justify-between gap-4 border-t border-amber-500/25 pt-3">
-            <span className="font-semibold text-white">Total a recuperar</span>
-            <span className="text-xl font-bold tabular-nums text-amber-300">
-              {formatCurrency(d.negativoTotalProximaReais)}
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-500">
-            Valor integral do prejuízo — recupera quando o ponto tiver lucro positivo.
-          </p>
-        </div>
-      )}
-
-      {d.mostrarSaldoLiquido && (
-        <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4 space-y-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-green-400/90">
-            {d.rotuloSaldoLiquido}
-          </p>
-          {d.linhasReceberDoPonto.length > 0 ? (
-            <div className="space-y-1">
-              {d.linhasReceberDoPonto.map((item) => (
-                <LinhaDetalhe
+        {!fechamentoSimples && d.fechamento.length > 0 && (
+          <div className="border-t border-red-500/15 px-4 py-2.5 sm:px-5">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+              Quem cobriu
+            </p>
+            <div className="space-y-0.5 text-sm">
+              {d.fechamento.map((item) => (
+                <LinhaCompacta
                   key={item.id}
                   label={item.label}
-                  hint={item.hint}
+                  valorReais={item.valorReais}
+                  tipo={item.tipo}
+                  hint={item.id === "reposto" ? adiantHint : item.hint}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {d.mostrarNegativoAcumulado && (
+          <div className="border-t border-red-500/20 bg-black/25 px-4 py-3 sm:px-5">
+            {temNegativoAnterior ? (
+              <div className="space-y-1 text-xs text-slate-500">
+                <div className="flex justify-between gap-3">
+                  <span>Negativo anterior</span>
+                  <span className="tabular-nums">{formatCurrency(d.negativoAnteriorReais)}</span>
+                </div>
+                <div className="flex justify-between gap-3">
+                  <span>+ Desta visita</span>
+                  <span className="tabular-nums text-amber-300/80">
+                    {formatCurrency(d.negativoAdiantadoHojeReais)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-3 pt-1 text-sm">
+                  <span className="font-medium text-amber-200">A recuperar</span>
+                  <span className="font-bold tabular-nums text-amber-300">
+                    {formatCurrency(d.negativoTotalProximaReais)}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-sm text-amber-100/90">A recuperar nas próximas</span>
+                <span className="text-lg font-bold tabular-nums text-amber-300">
+                  {formatCurrency(d.negativoTotalProximaReais)}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {mostrarSaldoSeparado && (
+        <div
+          className={cn(
+            "rounded-xl border px-3.5 py-2.5",
+            calculo.saldoLiquidoReais > 0
+              ? "border-green-500/25 bg-green-500/[0.06]"
+              : "border-amber-500/25 bg-amber-500/[0.06]"
+          )}
+        >
+          <div className="flex justify-between gap-3 text-sm">
+            <span
+              className={cn(
+                "font-medium",
+                calculo.saldoLiquidoReais > 0 ? "text-green-300" : "text-amber-300"
+              )}
+            >
+              {d.rotuloSaldoLiquido}
+            </span>
+            <span
+              className={cn(
+                "font-bold tabular-nums",
+                calculo.saldoLiquidoReais > 0 ? "text-green-400" : "text-amber-400"
+              )}
+            >
+              {formatCurrency(d.valorSaldoLiquidoAbs)}
+            </span>
+          </div>
+          {d.linhasReceberDoPonto.length > 1 && (
+            <div className="mt-2 space-y-0.5 border-t border-white/5 pt-2 text-sm">
+              {d.linhasReceberDoPonto.map((item) => (
+                <LinhaCompacta
+                  key={item.id}
+                  label={item.label}
                   valorReais={item.valorReais}
                   tipo={item.tipo}
                 />
               ))}
             </div>
-          ) : null}
-          <div className="flex justify-between gap-4 border-t border-green-500/25 pt-3">
-            <span className="font-semibold text-white">Total</span>
-            <span className="text-xl font-bold tabular-nums text-green-400">
-              {formatCurrency(d.valorSaldoLiquidoAbs)}
-            </span>
-          </div>
+          )}
         </div>
       )}
     </div>

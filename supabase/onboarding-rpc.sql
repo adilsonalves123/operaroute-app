@@ -32,7 +32,7 @@ BEGIN
 
   -- Garante profile
   INSERT INTO profiles (user_id, nome, email, trial_inicio, trial_fim, assinatura_ativa)
-  VALUES (v_user_id, v_nome, v_email, NOW(), NOW() + INTERVAL '7 days', TRUE)
+  VALUES (v_user_id, v_nome, v_email, NOW(), NOW() + INTERVAL '7 days', FALSE)
   ON CONFLICT (user_id) DO NOTHING;
 
   -- Cria empresa
@@ -46,14 +46,16 @@ BEGIN
   )
   RETURNING id INTO v_empresa_id;
 
-  -- Atualiza profile
+  -- Atualiza profile (trial 7 dias — sem assinatura paga)
   UPDATE profiles SET
     onboarding_completo = TRUE,
     nicho = p_nicho,
     nome_operacao = p_nome_operacao,
     empresa_id = v_empresa_id,
     plano = 'start',
-    assinatura_ativa = TRUE
+    trial_inicio = COALESCE(trial_inicio, NOW()),
+    trial_fim = COALESCE(trial_fim, NOW() + INTERVAL '7 days'),
+    assinatura_ativa = FALSE
   WHERE user_id = v_user_id;
 
   -- Admin na equipe

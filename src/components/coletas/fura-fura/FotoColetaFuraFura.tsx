@@ -26,8 +26,18 @@ export function FotoColetaFuraFura({ preview, onChange, erro, ultimaColeta }: Pr
     />
   );
 
-  if (!ultimaColeta?.foto_url) {
-    return novaFoto;
+  const urlAnterior = String(ultimaColeta?.foto_url ?? "").trim();
+
+  if (!urlAnterior) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs text-amber-400/90">
+          Sem foto da última coleta neste ponto — tire a foto da máquina agora para
+          referência nas próximas visitas.
+        </p>
+        {novaFoto}
+      </div>
+    );
   }
 
   return (
@@ -39,11 +49,15 @@ export function FotoColetaFuraFura({ preview, onChange, erro, ultimaColeta }: Pr
         <div className="space-y-2">
           <label className="block text-sm font-medium text-slate-400">Última coleta</label>
           <ExpandableImage
-            src={ultimaColeta.foto_url}
+            src={urlAnterior}
             alt="Foto da última coleta"
             className="h-36"
           />
-          <p className="text-xs text-slate-500">{formatDateTime(ultimaColeta.created_at)}</p>
+          {ultimaColeta?.created_at ? (
+            <p className="text-xs text-slate-500">
+              {formatDateTime(ultimaColeta.created_at)}
+            </p>
+          ) : null}
         </div>
         {novaFoto}
       </div>

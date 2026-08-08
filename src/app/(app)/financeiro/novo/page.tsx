@@ -39,11 +39,45 @@ export default function NovoFinanceiroPage() {
       return;
     }
 
+    const valor = parseFloat(form.valor);
+    if (!Number.isFinite(valor) || valor <= 0) {
+      setError("Informe um valor válido.");
+      setLoading(false);
+      return;
+    }
+
+    let valorFinal = valor;
+    if (form.tipo === "saida") {
+      const { fetchSaldoCaixa, valorSaidaPermitidaNoCaixa } = await import(
+        "@/lib/financeiro/saldo-caixa"
+      );
+      const saldo = await fetchSaldoCaixa(supabase, empresaId);
+      valorFinal = valorSaidaPermitidaNoCaixa(saldo, valor);
+      if (valorFinal <= 0.009) {
+        setError(
+          `Caixa sem saldo (disponível: R$ ${Math.max(0, saldo).toFixed(2).replace(".", ",")}). Não é possível registrar saída.`
+        );
+        setLoading(false);
+        return;
+      }
+      if (valorFinal + 0.009 < valor) {
+        // Cap automático — avisa mas salva o máximo possível
+        const ok = window.confirm(
+          `Saldo do caixa é R$ ${Math.max(0, saldo).toFixed(2).replace(".", ",")}. ` +
+            `A saída será limitada a R$ ${valorFinal.toFixed(2).replace(".", ",")} para o caixa não ficar negativo. Continuar?`
+        );
+        if (!ok) {
+          setLoading(false);
+          return;
+        }
+      }
+    }
+
     const { error: insertError } = await supabase.from("financeiro").insert({
       empresa_id: empresaId,
       tipo: form.tipo,
       categoria: form.categoria,
-      valor: parseFloat(form.valor),
+      valor: valorFinal,
       data: form.data,
       descricao: form.descricao || null,
       forma_pagamento: form.forma_pagamento,
@@ -55,6 +89,27 @@ export default function NovoFinanceiroPage() {
       setLoading(false);
       return;
     }
+
+    void fetch("/api/auditoria/evento", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        acao: "financeiro.criar",
+        tabela: "financeiro",
+        categoria: "financeiro",
+        severidade: "medium",
+        modulo: "financeiro",
+        titulo: `Lançamento ${form.tipo} · ${form.categoria}`,
+        resumo: `R$ ${valorFinal.toFixed(2)} · ${form.data}${form.descricao ? ` · ${form.descricao}` : ""}`,
+        dados_novos: {
+          tipo: form.tipo,
+          categoria: form.categoria,
+          valor: valorFinal,
+          data: form.data,
+          forma_pagamento: form.forma_pagamento,
+        },
+      }),
+    });
 
     router.push("/financeiro");
     router.refresh();

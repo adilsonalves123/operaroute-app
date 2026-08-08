@@ -129,6 +129,7 @@ CREATE TABLE estoque (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   empresa_id UUID REFERENCES empresas(id) ON DELETE CASCADE NOT NULL,
   nome_item TEXT NOT NULL,
+  descricao TEXT,
   categoria TEXT,
   custo_unitario NUMERIC(12,2) DEFAULT 0,
   quantidade INTEGER DEFAULT 0,
@@ -163,6 +164,7 @@ CREATE TABLE equipe (
   role user_role DEFAULT 'operador',
   comissao_percentual NUMERIC(5,2) DEFAULT 0,
   status TEXT DEFAULT 'ativo',
+  permissoes JSONB DEFAULT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -285,20 +287,25 @@ CREATE POLICY "Empresa scoped insert" ON auditoria FOR INSERT WITH CHECK (empres
 
 -- Trigger: auto-create profile on signup
 CREATE OR REPLACE FUNCTION handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
-  INSERT INTO profiles (user_id, nome, email, trial_inicio, trial_fim, assinatura_ativa)
+  INSERT INTO public.profiles (user_id, nome, email, trial_inicio, trial_fim, assinatura_ativa)
   VALUES (
     NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'nome', NEW.email),
-    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'nome', split_part(COALESCE(NEW.email, ''), '@', 1)),
+    COALESCE(NEW.email, ''),
     NOW(),
     NOW() + INTERVAL '7 days',
-    TRUE
-  );
+    FALSE
+  )
+  ON CONFLICT (user_id) DO NOTHING;
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$;
 
 CREATE OR REPLACE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users

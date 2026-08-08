@@ -17,6 +17,9 @@ export function LoadingOverlay({ show, message, messages }: LoadingOverlayProps)
       className="fixed inset-0 z-[200] flex items-center justify-center bg-[#0a0e1a]/92 backdrop-blur-lg"
       aria-modal="true"
       aria-label="Processando"
+      role="alertdialog"
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden>
         <div className="or-loader-glow or-loader-glow-1" />

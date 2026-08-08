@@ -31,23 +31,25 @@ export function parseMoneyInput(value: string | number | null | undefined): numb
   return parseFloat(cleaned) || 0;
 }
 
+/**
+ * Máscara de moeda pt-BR enquanto digita: só números, vírgula e pontos automáticos.
+ * Digita 350 → 3,50 | 3500 → 35,00 | 35000 → 350,00
+ */
 export function formatMoneyInput(raw: string): string {
-  const cleaned = raw.replace(/[^\d,]/g, "");
-  if (!cleaned) return "";
+  const digits = String(raw ?? "").replace(/\D/g, "");
+  if (!digits) return "";
 
-  const [intRaw, decRaw] = cleaned.split(",", 2);
-  const intDigits = intRaw.replace(/\D/g, "");
-  const intFormatted = intDigits.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const cents = Number.parseInt(digits, 10);
+  if (!Number.isFinite(cents)) return "";
 
-  if (decRaw !== undefined) {
-    return `${intFormatted || "0"},${decRaw.replace(/\D/g, "").slice(0, 2)}`;
-  }
-
-  return intFormatted;
+  return new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(cents / 100);
 }
 
 export function formatMoneyInputOnBlur(raw: string): string {
-  if (!raw.trim()) return "";
+  if (!String(raw ?? "").trim()) return "";
   return new Intl.NumberFormat("pt-BR", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,

@@ -4,8 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { FormInput, FormSelect } from "@/components/ui/FormInput";
-import { formatCurrency } from "@/lib/utils";
+import { FormSelect } from "@/components/ui/FormInput";
+import { PagamentoPixDinheiroFields } from "@/components/ui/PagamentoPixDinheiroFields";
+import { formatCurrency, parseMoneyInput } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { saldoPendenteColeta, NICHO_MODULO_FURA_FURA } from "@/lib/nichos/fura-fura";
@@ -22,8 +23,8 @@ export function FuraFuraPendentesClient() {
   const pontoFromUrl = searchParams.get("ponto") ?? "";
   const [pontos, setPontos] = useState<ResumoPonto[]>([]);
   const [selectedPonto, setSelectedPonto] = useState("");
-  const [valor, setValor] = useState("");
-  const [forma, setForma] = useState("dinheiro");
+  const [valorPix, setValorPix] = useState("");
+  const [valorDinheiro, setValorDinheiro] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -65,7 +66,7 @@ export function FuraFuraPendentesClient() {
       if (pontoFromUrl && resumo.some((r) => r.ponto.id === pontoFromUrl)) {
         const item = resumo.find((r) => r.ponto.id === pontoFromUrl)!;
         setSelectedPonto(pontoFromUrl);
-        setValor(String(item.totalPendente.toFixed(2)));
+        setValorDinheiro(String(item.totalPendente.toFixed(2).replace(".", ",")));
       }
     }
     load();
@@ -73,7 +74,16 @@ export function FuraFuraPendentesClient() {
 
   async function registrarPagamento(e: React.FormEvent) {
     e.preventDefault();
-    if (!selectedPonto || !valor) return;
+    if (!selectedPonto) return;
+
+    const pix = parseMoneyInput(valorPix);
+    const dinheiro = parseMoneyInput(valorDinheiro);
+    const total = pix + dinheiro;
+    if (total <= 0.009) {
+      setError("Informe quanto foi Pix e/ou dinheiro.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
@@ -83,8 +93,8 @@ export function FuraFuraPendentesClient() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ponto_id: selectedPonto,
-          valor: Number(valor),
-          forma_pagamento: forma,
+          valor_pix: valorPix,
+          valor_dinheiro: valorDinheiro,
         }),
       });
       const data = await res.json();
@@ -94,9 +104,14 @@ export function FuraFuraPendentesClient() {
       }
       setSuccess(
         `Aplicado ${formatCurrency(data.valorAplicado)}` +
-          (data.valorSobra > 0.009 ? ` · Sobra ${formatCurrency(data.valorSobra)}` : "")
+          (data.haverGerado > 0.009
+            ? ` · Haver ${formatCurrency(data.haverGerado)}`
+            : data.valorSobra > 0.009
+              ? ` · Sobra ${formatCurrency(data.valorSobra)}`
+              : "")
       );
-      setValor("");
+      setValorPix("");
+      setValorDinheiro("");
       setSelectedPonto("");
     } catch {
       setError("Erro de conexão.");
@@ -132,7 +147,8 @@ export function FuraFuraPendentesClient() {
                 type="button"
                 onClick={() => {
                   setSelectedPonto(ponto.id);
-                  setValor(String(totalPendente.toFixed(2)));
+                  setValorPix("");
+                  setValorDinheiro(String(totalPendente.toFixed(2).replace(".", ",")));
                 }}
                 className={`glass-card w-full p-4 text-left transition ${
                   selectedPonto === ponto.id ? "ring-1 ring-primary-neon/50" : ""
@@ -167,26 +183,15 @@ export function FuraFuraPendentesClient() {
                 })),
               ]}
             />
-            <div className="grid gap-4 sm:grid-cols-2">
-              <FormInput
-                label="Valor recebido (R$)"
-                type="number"
-                step="0.01"
-                min={0}
-                value={valor}
-                onChange={(e) => setValor(e.target.value)}
-              />
-              <FormSelect
-                label="Forma"
-                value={forma}
-                onChange={(e) => setForma(e.target.value)}
-                options={[
-                  { value: "dinheiro", label: "Dinheiro" },
-                  { value: "pix", label: "Pix" },
-                  { value: "misto", label: "Misto" },
-                ]}
-              />
-            </div>
+            <PagamentoPixDinheiroFields
+              pix={valorPix}
+              dinheiro={valorDinheiro}
+              onPixChange={setValorPix}
+              onDinheiroChange={setValorDinheiro}
+              pixLabel="Pix recebido (R$)"
+              dinheiroLabel="Dinheiro recebido (R$)"
+              hint="Informe a divisão exata entre Pix e dinheiro."
+            />
             {error && <p className="text-sm text-red-400">{error}</p>}
             {success && <p className="text-sm text-green-400">{success}</p>}
             <button

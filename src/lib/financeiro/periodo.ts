@@ -26,7 +26,8 @@ export function dataNoPeriodo(
     return data.getTime() === hoje.getTime();
   }
 
+  // Inclusivo: "7 dias" = hoje + 6 anteriores (igual Análise).
   const limite = new Date(hoje);
-  limite.setDate(limite.getDate() - (periodo === "7d" ? 7 : 30));
+  limite.setDate(limite.getDate() - (periodo === "7d" ? 6 : 29));
   return data >= limite;
 }

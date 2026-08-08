@@ -42,6 +42,9 @@ export function mensagemWhatsAppColeta(
   if (calculo.valorPagoRecebido > 0) {
     linhas.push(`💵 Recebido: ${formatCurrency(calculo.valorPagoRecebido)}`);
   }
+  if (calculo.haver > 0.009) {
+    linhas.push(`💳 Haver do ponto: ${formatCurrency(calculo.haver)}`);
+  }
   if (calculo.saldoPendente > 0.009) {
     linhas.push(`⏳ Pendente: ${formatCurrency(calculo.saldoPendente)}`);
   }

@@ -579,7 +579,7 @@ if (!positivaNegQuitadoLucro.abatimentos.every((a) => a.resolvida)) {
   process.exit(1);
 }
 
-// Haver 1000, lucro 900 — operação zero, sobra haver 100
+// Haver 1000, lucro 900 — comissão/operação no lucro; haver só abate se optar
 const comHaver = calcularVisitaCassino({
   leituras: [
     {
@@ -597,24 +597,35 @@ const comHaver = calcularVisitaCassino({
   descontoManualReais: 0,
   descontoRecebimentoReais: 0,
   abaterAutomatico: true,
+  descontarHaverNaCobranca: true,
 });
 
-if (Math.abs(comHaver.haverCompensadoReais - 900) > 0.02) {
-  console.error("FAIL: haver compensado esperado 900, got", comHaver.haverCompensadoReais);
+if (Math.abs(comHaver.valorClienteReais - 270) > 0.02) {
+  console.error("FAIL: comissão esperada 270, got", comHaver.valorClienteReais);
   process.exit(1);
 }
 
-if (Math.abs(comHaver.valorOperacaoReais) > 0.02) {
-  console.error("FAIL: valor operação esperado 0 com haver cobrindo lucro, got", comHaver.valorOperacaoReais);
+if (Math.abs(comHaver.valorOperacaoReais - 630) > 0.02) {
+  console.error("FAIL: valor operação esperado 630, got", comHaver.valorOperacaoReais);
   process.exit(1);
 }
 
-if (Math.abs(comHaver.haverRestanteReais - 100) > 0.02) {
-  console.error("FAIL: haver restante esperado 100, got", comHaver.haverRestanteReais);
+if (Math.abs(comHaver.haverCompensadoReais - 630) > 0.02) {
+  console.error("FAIL: haver compensado esperado 630, got", comHaver.haverCompensadoReais);
   process.exit(1);
 }
 
-// Lucro 300, haver 200 — comissão só sobre os 100 que sobram
+if (Math.abs(comHaver.totalACobrarReais) > 0.02) {
+  console.error("FAIL: total a cobrar esperado 0, got", comHaver.totalACobrarReais);
+  process.exit(1);
+}
+
+if (Math.abs(comHaver.haverRestanteReais - 370) > 0.02) {
+  console.error("FAIL: haver restante esperado 370, got", comHaver.haverRestanteReais);
+  process.exit(1);
+}
+
+// Lucro 300, haver 200 descontado na cobrança — comissão no lucro cheio
 const haverParcial = calcularVisitaCassino({
   leituras: [
     {
@@ -632,6 +643,7 @@ const haverParcial = calcularVisitaCassino({
   descontoManualReais: 0,
   descontoRecebimentoReais: 0,
   abaterAutomatico: true,
+  descontarHaverNaCobranca: true,
 });
 
 if (Math.abs(haverParcial.haverCompensadoReais - 200) > 0.02) {
@@ -639,27 +651,22 @@ if (Math.abs(haverParcial.haverCompensadoReais - 200) > 0.02) {
   process.exit(1);
 }
 
-if (Math.abs(haverParcial.saldoAposDebitoReais - 100) > 0.02) {
-  console.error("FAIL: base comissão esperada 100, got", haverParcial.saldoAposDebitoReais);
+if (Math.abs(haverParcial.valorClienteReais - 90) > 0.02) {
+  console.error("FAIL: comissão esperada 90, got", haverParcial.valorClienteReais);
   process.exit(1);
 }
 
-if (Math.abs(haverParcial.valorClienteReais - 30) > 0.02) {
-  console.error("FAIL: comissão esperada 30 sobre os 100, got", haverParcial.valorClienteReais);
+if (Math.abs(haverParcial.valorOperacaoReais - 210) > 0.02) {
+  console.error("FAIL: valor operação esperado 210, got", haverParcial.valorOperacaoReais);
   process.exit(1);
 }
 
-if (Math.abs(haverParcial.valorOperacaoReais - 70) > 0.02) {
-  console.error("FAIL: valor operação esperado 70, got", haverParcial.valorOperacaoReais);
+if (Math.abs(haverParcial.totalACobrarReais - 10) > 0.02) {
+  console.error("FAIL: total a cobrar esperado 10, got", haverParcial.totalACobrarReais);
   process.exit(1);
 }
 
-if (Math.abs(haverParcial.totalACobrarReais - 70) > 0.02) {
-  console.error("FAIL: total a cobrar esperado 70, got", haverParcial.totalACobrarReais);
-  process.exit(1);
-}
-
-// Operador pode quitar os 100 restantes do haver
+// Operador quita o haver restante (370) depois do desconto na cobrança (630)
 const comHaverPago = calcularVisitaCassino({
   ...{
     leituras: comHaver.maquinas.map((m) => ({
@@ -675,16 +682,17 @@ const comHaverPago = calcularVisitaCassino({
     comissaoPercentual: 30,
     descontoRecebimentoReais: 0,
     abaterAutomatico: true,
+    descontarHaverNaCobranca: true,
   },
-  descontoManualReais: 100,
+  descontoManualReais: 370,
 });
 
 if (Math.abs(comHaverPago.haverRestanteReais) > 0.02) {
-  console.error("FAIL: haver deveria zerar após pagar 100, got", comHaverPago.haverRestanteReais);
+  console.error("FAIL: haver deveria zerar após pagar 370, got", comHaverPago.haverRestanteReais);
   process.exit(1);
 }
 
-// Cliente pagou a mais na operação → novo haver (não quita haver do ponto)
+// Cliente pagou a mais (cobrança já coberta pelo haver) → novo haver do cliente
 const comHaverOverpay = calcularVisitaCassino({
   leituras: comHaver.maquinas.map((m) => ({
     equipamentoId: m.equipamentoId,
@@ -700,12 +708,13 @@ const comHaverOverpay = calcularVisitaCassino({
   descontoManualReais: 0,
   descontoRecebimentoReais: 0,
   abaterAutomatico: true,
+  descontarHaverNaCobranca: true,
   valorPixReais: 100,
   valorDinheiroReais: 0,
 });
 
-if (Math.abs(comHaverOverpay.valorOperacaoReais) > 0.02) {
-  console.error("FAIL: operação deveria ser 0, got", comHaverOverpay.valorOperacaoReais);
+if (Math.abs(comHaverOverpay.totalACobrarReais) > 0.02) {
+  console.error("FAIL: total a cobrar esperado 0, got", comHaverOverpay.totalACobrarReais);
   process.exit(1);
 }
 
@@ -722,8 +731,8 @@ if (Math.abs(comHaverOverpay.haverReais - 100) > 0.02) {
   process.exit(1);
 }
 
-if (Math.abs(comHaverOverpay.haverRestanteReais - 100) > 0.02) {
-  console.error("FAIL: haver do ponto ainda em aberto 100, got", comHaverOverpay.haverRestanteReais);
+if (Math.abs(comHaverOverpay.haverRestanteReais - 370) > 0.02) {
+  console.error("FAIL: haver do ponto restante 370, got", comHaverOverpay.haverRestanteReais);
   process.exit(1);
 }
 

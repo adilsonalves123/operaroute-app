@@ -38,6 +38,27 @@ export function extrairTotalAbatido(observacao: string | null | undefined): numb
   return total;
 }
 
+/**
+ * Saldo em aberto do haver.
+ * Estilo moderno: `valor` já é o saldo (linhas Compensado são histórico).
+ * Estilo antigo: `valor` bruto − linhas Abatido.
+ */
+export function saldoHaverReais(pendencia: {
+  valor: number;
+  observacao?: string | null;
+  descricao?: string | null;
+}): number {
+  const obs = pendencia.observacao ?? pendencia.descricao ?? null;
+  if (obs && /Compensado R\$/i.test(obs)) {
+    return Math.max(0, Number(pendencia.valor ?? 0));
+  }
+  return saldoPendenciaReais({
+    id: "",
+    valor: Number(pendencia.valor ?? 0),
+    observacao: obs,
+  });
+}
+
 export function saldoPendenciaReais(pendencia: PendenciaNegativaInput): number {
   const jaAbatido = extrairTotalAbatido(pendencia.observacao);
   return Math.max(0, pendencia.valor - jaAbatido);
@@ -49,10 +70,77 @@ export function totalDebitoAbertoReais(
   return pendencias.reduce((s, p) => s + saldoPendenciaReais(p), 0);
 }
 
+/** Soma do haver em aberto (respeita estilo moderno Compensado vs antigo Abatido). */
+export function totalHaverAbertoReais(
+  pendencias: Array<{ valor: number; observacao?: string | null; descricao?: string | null }>
+): number {
+  return pendencias.reduce((s, p) => s + saldoHaverReais(p), 0);
+}
+
+/**
+ * Haver gerado quando o cliente/ponto cobriu o prejuízo (pagou ganhadores).
+ * Diferente do crédito de troco / pagamento a mais.
+ * Afeta só a base da comissão — quem deve a quem continua sendo haver.
+ */
+export function isHaverDeNegativoCliente(p: {
+  titulo?: string | null;
+  descricao?: string | null;
+  observacao?: string | null;
+}): boolean {
+  const t = `${p.titulo ?? ""} ${p.descricao ?? ""} ${p.observacao ?? ""}`.toLowerCase();
+  return (
+    t.includes("cliente pagou ganhadores") ||
+    t.includes("ponto pagou ganhadores") ||
+    t.includes("pagou ganhadores na visita negativa")
+  );
+}
+
+/** Crédito comum: troco, pagamento a mais, etc. */
+export function isHaverCreditoComum(p: {
+  titulo?: string | null;
+  descricao?: string | null;
+  observacao?: string | null;
+}): boolean {
+  return !isHaverDeNegativoCliente(p);
+}
+
+export function totalHaverDeNegativoAbertoReais(
+  pendencias: Array<{
+    valor: number;
+    titulo?: string | null;
+    observacao?: string | null;
+    descricao?: string | null;
+  }>
+): number {
+  return totalHaverAbertoReais(pendencias.filter(isHaverDeNegativoCliente));
+}
+
+export function totalHaverCreditoComumAbertoReais(
+  pendencias: Array<{
+    valor: number;
+    titulo?: string | null;
+    observacao?: string | null;
+    descricao?: string | null;
+  }>
+): number {
+  return totalHaverAbertoReais(pendencias.filter(isHaverCreditoComum));
+}
+
 export function isPendenciaOperacao(tipo: string): boolean {
   const t = tipo.toLowerCase();
-  return t === "pagamento_pendente" || t === "parcial";
+  return (
+    t === "pagamento_pendente" ||
+    t === "parcial" ||
+    t === "visita_consolidada"
+  );
 }
+
+/** Tipos de pendência que representam dívida da operação a receber do ponto. */
+export const TIPOS_PENDENCIA_OPERACAO = [
+  "pagamento_pendente",
+  "parcial",
+  "visita_consolidada",
+] as const;
 
 /** Saldo cobrável: negativo usa abatimentos na descrição; demais usam valor atual. */
 export function saldoPendenciaCobravel(p: {

@@ -9,9 +9,16 @@ type ExpandableImageProps = {
   src: string;
   alt: string;
   className?: string;
+  /** false = miniatura (não estica na largura do card) */
+  fullWidth?: boolean;
 };
 
-export function ExpandableImage({ src, alt, className }: ExpandableImageProps) {
+export function ExpandableImage({
+  src,
+  alt,
+  className,
+  fullWidth = true,
+}: ExpandableImageProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -33,7 +40,10 @@ export function ExpandableImage({ src, alt, className }: ExpandableImageProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="group relative block w-full text-left"
+        className={cn(
+          "group relative block text-left",
+          fullWidth ? "w-full" : "w-fit max-w-full"
+        )}
         aria-label={`Ampliar foto: ${alt}`}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -41,7 +51,8 @@ export function ExpandableImage({ src, alt, className }: ExpandableImageProps) {
           src={src}
           alt={alt}
           className={cn(
-            "w-full rounded-lg border border-slate-700 object-cover transition group-hover:border-primary-neon/40 cursor-zoom-in",
+            "rounded-lg border border-slate-700 object-cover transition group-hover:border-primary-neon/40 cursor-zoom-in",
+            fullWidth && "w-full",
             className
           )}
         />

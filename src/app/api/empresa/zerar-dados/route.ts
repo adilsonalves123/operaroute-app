@@ -48,5 +48,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const { registrarAuditoria, requestMeta } = await import("@/lib/auditoria/registrar");
+  const meta = requestMeta(request);
+  await registrarAuditoria({
+    supabase,
+    empresaId: profile.empresa_id,
+    userId: profile.user_id,
+    userNome: profile.nome,
+    userEmail: profile.email,
+    acao: "empresa.zerar_dados",
+    tabela: "empresas",
+    registroId: profile.empresa_id,
+    dadosNovos: { removidos: data },
+    severidade: "critical",
+    categoria: "sistema",
+    modulo: "configuracoes",
+    titulo: "Zerou dados operacionais",
+    resumo: "Ação destrutiva confirmada com ZERAR.",
+    ip: meta.ip,
+    userAgent: meta.userAgent,
+    meta: { removidos: data },
+  });
+
   return NextResponse.json({ success: true, removidos: data });
 }

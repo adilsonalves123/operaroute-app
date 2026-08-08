@@ -4,6 +4,7 @@ import { hintMovimentoCaixa, valorMovimentoCaixa, type MovimentoCaixaDetalhe } f
 import { displayOperacaoNegativa } from "./resumo-visita";
 import { resumoTotalVisita, negativoFicaProximaColetaReais } from "./resumo-visita";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
+import { abrirImpressaoRelatorioTextoGenerico } from "@/lib/coletas/imprimir-relatorio-texto";
 import type { CalculoVisitaResult } from "./types";
 
 export interface RelatorioMaquinaLinha {
@@ -66,18 +67,80 @@ function hintBaseComissaoPositiva(c: CalculoVisitaResult): string | undefined {
   if (c.recuperacaoNegativoReais > 0.009) {
     partes.push(`negativo ${formatCurrency(c.recuperacaoNegativoReais)}`);
   }
+  if (c.recuperacaoHaverDeNegativoReais > 0.009) {
+    partes.push(
+      `haver (pagou ganhadores) ${formatCurrency(c.recuperacaoHaverDeNegativoReais)}`
+    );
+  }
   if (c.haverCompensadoReais > 0.009) {
-    partes.push(`haver ${formatCurrency(c.haverCompensadoReais)}`);
+    partes.push(`haver abatido ${formatCurrency(c.haverCompensadoReais)}`);
   }
   if (partes.length === 0) return undefined;
   return `Lucro − ${partes.join(" − ")}`;
 }
 
+/** Visita positiva simples e quitada — comprovante do cliente sem repetir o mesmo valor. */
+function isComprovanteClienteSimplesQuitado(c: CalculoVisitaResult): boolean {
+  if (c.saldoNegativo) return false;
+  if (c.debitoTotalReais > 0.009 || c.recuperacaoNegativoReais > 0.009) return false;
+  if (c.haverTotalReais > 0.009 || c.haverCompensadoReais > 0.009 || c.haverReais > 0.009) {
+    return false;
+  }
+  if (
+    c.pendenciaOperacaoIncluidaReais > 0.009 ||
+    c.pendenciaOperacaoAbatidaReais > 0.009 ||
+    c.pendenciaOperacaoTotalReais > 0.009
+  ) {
+    return false;
+  }
+  if (c.descontoRecebimentoReais > 0.009 || c.descontoManualReais > 0.009) return false;
+  if (c.restanteReais > 0.009 || c.restanteOperacaoReais > 0.009) return false;
+  if (c.valorPagoReais <= 0.009) return false;
+
+  const operacao =
+    c.valorOperacaoEfetivoReais > 0.009 ? c.valorOperacaoEfetivoReais : c.valorOperacaoReais;
+  if (operacao <= 0.009) return false;
+
+  return (
+    Math.abs(c.valorPagoReais - operacao) <= 0.02 &&
+    Math.abs(c.totalACobrarReais - operacao) <= 0.02
+  );
+}
+
 /** Visita positiva — seções enxutas (evita repetir negativo/base/pagamento). */
 function buildResumoFinanceiroPositivo(
   c: CalculoVisitaResult,
-  comissaoPercentual: number
+  comissaoPercentual: number,
+  options?: BuildResumoFinanceiroOptions
 ): ResumoFinanceiroLinha[] {
+  const clientFacing = options?.clientFacing === true;
+
+  if (clientFacing && isComprovanteClienteSimplesQuitado(c)) {
+    return [
+      {
+        label: "Lucro da visita",
+        valor: formatContador(c.totalLucroCentavos),
+      },
+      {
+        label: comissaoBloqueada(c)
+          ? "Comissão bloqueada"
+          : `Comissão (${comissaoPercentual}%)`,
+        valor: formatCurrency(c.valorClienteReais),
+        variant: "warning",
+      },
+      {
+        label: "Valor operação",
+        valor: formatCurrency(c.valorOperacaoReais),
+      },
+      {
+        label: "Valor recebido",
+        valor: formatCurrency(c.valorPagoReais),
+        variant: "highlight",
+        destaque: true,
+      },
+    ];
+  }
+
   const linhas: ResumoFinanceiroLinha[] = [
     {
       label: "Total entrada / Total saída",
@@ -107,7 +170,7 @@ function buildResumoFinanceiroPositivo(
       valor: formatCurrency(c.valorClienteReais),
       variant: "warning",
       hint: comissaoBloqueada(c)
-        ? "Comissão só sobre o lucro que sobra após compensar haver ou negativo"
+        ? "Comissão só no lucro que sobrar após negativo e haver de ganhadores"
         : undefined,
     },
     {
@@ -429,6 +492,7 @@ export function buildResumoFinanceiroLinhas(
         "Pendência anterior (coleta passada)": "Pendência de coleta anterior",
         "Pendência desta visita": "Pendência desta visita",
         "Você repôs no ponto": "Valor reposto hoje",
+        "Você deixou a mais": "Você deixou a mais (pendência)",
         "Ponto pagou os ganhadores": "Ponto pagou na máquina",
         "Crédito anterior usado": "Crédito anterior usado",
       };
@@ -514,6 +578,7 @@ export function buildResumoFinanceiroLinhas(
               : "highlight",
         hint:
           adiantHint ??
+          item.hint ??
           (item.tipo === "operador"
             ? "Recupera nas próximas coletas positivas"
             : item.tipo === "ponto"
@@ -564,7 +629,7 @@ export function buildResumoFinanceiroLinhas(
     return linhas;
   }
 
-  return buildResumoFinanceiroPositivo(c, comissaoPercentual);
+  return buildResumoFinanceiroPositivo(c, comissaoPercentual, options);
 }
 
 export function buildRelatorioMensagemWhatsApp(data: RelatorioColetaData): string {
@@ -644,4 +709,117 @@ export function downloadBlob(blob: Blob, filename: string) {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+/** Comprovante só texto/números — impressão térmica / papel comum (sem foto). */
+export function abrirImpressaoRelatorioTexto(data: RelatorioColetaData): boolean {
+  const { calculo: c, pontoNome, empresaNome, comissaoPercentual } = data;
+  const operacao =
+    c.valorOperacaoEfetivoReais > 0.009
+      ? c.valorOperacaoEfetivoReais
+      : c.valorOperacaoReais;
+
+  const titulo = c.saldoNegativo
+    ? "COLETA — OPERACAO NEGATIVA"
+    : "COMPROVANTE DE COLETA";
+
+  const resumo: {
+    label: string;
+    valor?: string;
+    secao?: boolean;
+    destaque?: boolean;
+  }[] = [];
+
+  if (!c.saldoNegativo) {
+    resumo.push(
+      { label: "Resultado", secao: true },
+      {
+        label:
+          c.totalACobrarReais > 0.009 ? "Receber do cliente" : "Sem cobranca",
+        valor: formatCurrency(c.totalACobrarReais),
+        destaque: true,
+      },
+      {
+        label: "Lucro",
+        valor: formatCurrency(centesimosToReais(c.totalLucroCentavos)),
+      },
+      {
+        label:
+          comissaoPercentual > 0
+            ? `Comissao (${comissaoPercentual}%)`
+            : "Comissao",
+        valor: formatCurrency(c.valorClienteReais),
+      },
+      { label: "Operacao", valor: formatCurrency(operacao) }
+    );
+
+    if (c.haverCompensadoReais > 0.009) {
+      resumo.push({
+        label: "Haver abatido",
+        valor: formatCurrency(c.haverCompensadoReais),
+      });
+    }
+    if (c.valorPagoReais > 0.009) {
+      resumo.push({
+        label: "Recebido",
+        valor: formatCurrency(c.valorPagoReais),
+      });
+    }
+    if (c.restanteReais > 0.009) {
+      resumo.push({
+        label: "Em aberto",
+        valor: formatCurrency(c.restanteReais),
+        destaque: true,
+      });
+    } else if (c.valorPagoReais > 0.009) {
+      resumo.push({ label: "Situacao", valor: "Quitada" });
+    }
+  } else {
+    const resumoNeg = buildResumoFinanceiroLinhas(
+      c,
+      comissaoPercentual,
+      data.adiantamento,
+      { clientFacing: true }
+    );
+    for (const item of resumoNeg) {
+      if (item.secao) {
+        resumo.push({ label: item.label, secao: true });
+      } else {
+        resumo.push({
+          label: item.label,
+          valor: item.valor,
+          destaque: item.destaque,
+        });
+      }
+    }
+  }
+
+  return abrirImpressaoRelatorioTextoGenerico({
+    titulo,
+    empresaNome,
+    pontoNome,
+    dataLabel: formatDateTime(data.data),
+    blocos: data.maquinas.map((m) => ({
+      titulo: m.nome,
+      linhas: [
+        { label: "Entrada ant.", valor: formatContador(m.entradaAnterior) },
+        { label: "Entrada atual", valor: formatContador(m.entradaAtual) },
+        {
+          label: "Entrada periodo",
+          valor: formatContador(m.entradaAtual - m.entradaAnterior),
+        },
+        { label: "Saida ant.", valor: formatContador(m.saidaAnterior) },
+        { label: "Saida atual", valor: formatContador(m.saidaAtual) },
+        {
+          label: "Saida periodo",
+          valor: formatContador(m.saidaAtual - m.saidaAnterior),
+        },
+        {
+          label: "Operacao",
+          valor: formatCurrency(centesimosToReais(m.lucroCentavos)),
+        },
+      ],
+    })),
+    resumo,
+  });
 }

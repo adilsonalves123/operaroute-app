@@ -1,222 +1,131 @@
 "use client";
 
-
-
 import Link from "next/link";
-
-import { usePathname } from "next/navigation";
-
 import { cn } from "@/lib/utils";
-
+import { SIDEBAR_COLLAPSED_KEY } from "@/components/layout/nav-items";
 import {
-
-  BarChart3,
-
-  Bot,
-
-  ClipboardList,
-
-  GraduationCap,
-
-  LayoutDashboard,
-
-  LineChart,
-
-  MapPin,
-
-  Package,
-
-  Route,
-
-  Settings,
-
-  Users,
-
-  Wallet,
-
-  AlertTriangle,
-
-  Boxes,
-
-  Award,
-
-  FileText,
-
-  ChevronLeft,
-
-  ChevronRight,
-
-} from "lucide-react";
-
-import { useState } from "react";
-
-
-
-const menuItems = [
-
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-
-  { href: "/analise", label: "Análise", icon: LineChart },
-
-  { href: "/pontos", label: "Pontos / Clientes", icon: MapPin },
-
-  { href: "/coletas", label: "Coletas", icon: Package },
-
-  { href: "/financeiro", label: "Financeiro", icon: Wallet },
-
-  { href: "/pendencias", label: "Pendências", icon: AlertTriangle },
-
-  { href: "/estoque", label: "Estoque", icon: Boxes },
-
-  { href: "/rotas", label: "Rotas", icon: Route },
-
-  { href: "/equipe", label: "Equipe", icon: Users },
-
-  { href: "/relatorios", label: "Relatórios", icon: BarChart3 },
-
-  { href: "/ia", label: "IA do Sistema", icon: Bot },
-
-  { href: "/universidade", label: "Universidade", icon: GraduationCap },
-
-  { href: "/certificados", label: "Certificados", icon: Award },
-
-  { href: "/materiais", label: "Materiais", icon: FileText },
-
-  { href: "/configuracoes", label: "Configurações", icon: Settings },
-
-];
-
-
+  AppNavLinks,
+  appNavDisplayFont,
+  appNavSansFont,
+} from "@/components/layout/AppNavLinks";
+import { Layers, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface AppSidebarProps {
-
   nomeOperacao?: string;
-
+  chamadosAbertos?: number;
+  nomeUsuario?: string;
 }
 
-
-
-export function AppSidebar({ nomeOperacao }: AppSidebarProps) {
-
-  const pathname = usePathname();
-
+export function AppSidebar({
+  nomeOperacao,
+  chamadosAbertos = 0,
+  nomeUsuario,
+}: AppSidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const [ready, setReady] = useState(false);
 
+  useEffect(() => {
+    try {
+      setCollapsed(localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === "1");
+    } catch {
+      // ignore
+    }
+    setReady(true);
+  }, []);
 
+  function toggleCollapsed() {
+    setCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_COLLAPSED_KEY, next ? "1" : "0");
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  }
 
   return (
-
     <aside
-
       className={cn(
-
-        "hidden lg:flex flex-col border-r border-blue-500/10 bg-slate-950/50 backdrop-blur-xl transition-all duration-300",
-
-        collapsed ? "w-16" : "w-64"
-
+        appNavDisplayFont.variable,
+        appNavSansFont.variable,
+        "hidden lg:flex shrink-0 flex-col border-r border-white/[0.06] bg-[#0a0e16]/90 backdrop-blur-md transition-all duration-300",
+        ready && collapsed ? "w-[68px]" : "w-[240px]"
       )}
-
+      style={{ fontFamily: "var(--font-app-nav-sans), system-ui, sans-serif" }}
     >
-
-      <div className="flex h-16 items-center justify-between border-b border-blue-500/10 px-4">
-
-        {!collapsed && (
-
-          <Link href="/dashboard" className="flex items-center gap-2">
-
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary-neon/20">
-
-              <Route className="h-4 w-4 text-primary-neon" />
-
-            </div>
-
-            <span className="font-bold text-white">
-
-              Opera<span className="text-primary-neon">Route</span>
-
-            </span>
-
-          </Link>
-
+      <div
+        className={cn(
+          "flex gap-2",
+          collapsed
+            ? "flex-col items-center px-2 py-4"
+            : "items-start justify-between px-4 py-5"
         )}
-
+      >
+        {!collapsed ? (
+          <Link href="/dashboard" className="flex min-w-0 flex-1 items-center gap-2.5">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#c4a574]/20 text-[#c4a574]">
+              <Layers className="h-4 w-4" />
+            </div>
+            <div className="min-w-0">
+              <p
+                className="truncate text-[17px] leading-none tracking-tight text-[#f4efe6]"
+                style={{
+                  fontFamily: "var(--font-app-nav-display), Georgia, serif",
+                }}
+              >
+                OperaRoute
+              </p>
+              <p className="mt-1.5 truncate text-[11px] text-slate-500">
+                {nomeOperacao?.trim() || "Sua operação"}
+              </p>
+            </div>
+          </Link>
+        ) : (
+          <Link
+            href="/dashboard"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#c4a574]/20 text-[#c4a574]"
+            title={nomeOperacao ?? "OperaRoute"}
+          >
+            <Layers className="h-4 w-4" />
+          </Link>
+        )}
         <button
-
-          onClick={() => setCollapsed(!collapsed)}
-
-          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
-
+          type="button"
+          onClick={toggleCollapsed}
+          className="rounded-lg p-1.5 text-slate-500 transition hover:bg-white/[0.05] hover:text-[#c4a574]"
+          title={collapsed ? "Expandir menu" : "Minimizar menu"}
+          aria-label={collapsed ? "Expandir menu" : "Minimizar menu"}
         >
-
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-
+          {collapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
         </button>
-
       </div>
 
-
-
-      {!collapsed && nomeOperacao && (
-
-        <div className="px-4 py-3 border-b border-blue-500/10">
-
-          <p className="text-xs text-slate-500">Operação</p>
-
-          <p className="text-sm font-medium text-white truncate">{nomeOperacao}</p>
-
-        </div>
-
-      )}
-
-
-
-      <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
-
-        {menuItems.map((item) => {
-
-          const Icon = item.icon;
-
-          const active = pathname === item.href || pathname.startsWith(item.href + "/");
-
-          return (
-
-            <Link
-
-              key={item.href}
-
-              href={item.href}
-
-              title={collapsed ? item.label : undefined}
-
-              className={cn(
-
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition",
-
-                active
-
-                  ? "bg-blue-500/15 text-primary-neon font-medium"
-
-                  : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
-
-              )}
-
-            >
-
-              <Icon className="h-4 w-4 shrink-0" />
-
-              {!collapsed && <span>{item.label}</span>}
-
-            </Link>
-
-          );
-
-        })}
-
+      <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        <AppNavLinks collapsed={collapsed} chamadosAbertos={chamadosAbertos} />
       </nav>
 
+      {!collapsed && (
+        <div className="border-t border-white/[0.06] px-4 py-4">
+          {nomeUsuario && (
+            <p className="truncate text-[12px] text-slate-500">{nomeUsuario}</p>
+          )}
+          <form action="/auth/signout" method="post">
+            <button
+              type="submit"
+              className="mt-1.5 text-[12px] text-slate-500 transition hover:text-[#c4a574]"
+            >
+              Sair da conta
+            </button>
+          </form>
+        </div>
+      )}
     </aside>
-
   );
-
 }
-

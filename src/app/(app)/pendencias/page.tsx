@@ -13,7 +13,7 @@ export default async function PendenciasPage() {
         .select("*, pontos(nome, whatsapp)")
         .eq("empresa_id", profile.empresa_id)
         .order("created_at", { ascending: false })
-        .limit(100)
+        .limit(2000)
     : { data: [] };
 
   return (
@@ -21,7 +21,7 @@ export default async function PendenciasPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-white">Pendências</h1>
-          <p className="text-slate-400 mt-1">Débitos, pagamentos pendentes e coletas fura-fura em aberto</p>
+          <p className="text-slate-400 mt-1">Débitos, visitas ao ponto, pagamentos pendentes e coletas fura-fura em aberto</p>
         </div>
         <Link
           href="/pendencias/nova"

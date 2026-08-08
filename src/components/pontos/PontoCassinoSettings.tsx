@@ -7,17 +7,14 @@ import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 interface PontoCassinoSettingsProps {
   pontoId: string;
   abaterAutomatico: boolean;
-  comissaoPercentual: number;
 }
 
 export function PontoCassinoSettings({
   pontoId,
   abaterAutomatico,
-  comissaoPercentual,
 }: PontoCassinoSettingsProps) {
   const router = useRouter();
   const [abater, setAbater] = useState(abaterAutomatico);
-  const [comissao, setComissao] = useState(String(comissaoPercentual));
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
@@ -31,7 +28,6 @@ export function PontoCassinoSettings({
         credentials: "include",
         body: JSON.stringify({
           abater_automatico: abater,
-          comissao_percentual: parseFloat(comissao) || 0,
         }),
       });
       if (res.ok) {
@@ -61,18 +57,6 @@ export function PontoCassinoSettings({
           Abater débito negativo automaticamente na próxima coleta
         </span>
       </label>
-      <div className="space-y-1.5">
-        <label className="block text-sm font-medium text-slate-300">Comissão do ponto (%)</label>
-        <input
-          type="number"
-          step="0.01"
-          min="0"
-          max="100"
-          value={comissao}
-          onChange={(e) => setComissao(e.target.value)}
-          className="w-full max-w-xs"
-        />
-      </div>
       <button
         type="button"
         onClick={save}

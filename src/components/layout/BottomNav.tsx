@@ -2,24 +2,23 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Home, MapPin, Package, Wallet, MoreHorizontal } from "lucide-react";
-
-const navItems = [
-  { href: "/dashboard", label: "Início", icon: Home },
-  { href: "/pontos", label: "Pontos", icon: MapPin },
-  { href: "/coletas", label: "Coleta", icon: Package },
-  { href: "/financeiro", label: "Financeiro", icon: Wallet },
-  { href: "/configuracoes", label: "Mais", icon: MoreHorizontal },
-];
+import { usePermissoes } from "@/components/layout/PermissoesProvider";
+import { MOBILE_TAB_ITEMS } from "@/components/layout/nav-items";
+import { useMobileMenu } from "@/components/layout/MobileMenuContext";
 
 export function BottomNav() {
   const pathname = usePathname();
+  const { podeVer } = usePermissoes();
+  const { open, openMenu, closeMenu } = useMobileMenu();
+
+  const visiveis = MOBILE_TAB_ITEMS.filter((item) => podeVer(item.modulo));
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-blue-500/10 bg-slate-950/95 backdrop-blur-xl">
-      <div className="flex items-center justify-around px-2 py-2">
-        {navItems.map((item) => {
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[#0a0e16]/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="flex items-center justify-around px-1 py-2">
+        {visiveis.map((item) => {
           const Icon = item.icon;
           const active =
             pathname === item.href ||
@@ -28,9 +27,10 @@ export function BottomNav() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={() => closeMenu()}
               className={cn(
-                "flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition min-w-[60px]",
-                active ? "text-primary-neon" : "text-slate-500"
+                "flex min-w-[56px] flex-col items-center gap-1 rounded-lg px-2 py-1.5 transition",
+                active ? "text-[#c4a574]" : "text-slate-500"
               )}
             >
               <Icon className="h-5 w-5" />
@@ -38,6 +38,19 @@ export function BottomNav() {
             </Link>
           );
         })}
+        <button
+          type="button"
+          onClick={() => (open ? closeMenu() : openMenu())}
+          className={cn(
+            "flex min-w-[56px] flex-col items-center gap-1 rounded-lg px-2 py-1.5 transition",
+            open ? "text-[#c4a574]" : "text-slate-500"
+          )}
+          aria-expanded={open}
+          aria-label="Abrir menu completo"
+        >
+          <MoreHorizontal className="h-5 w-5" />
+          <span className="text-[10px] font-medium">Mais</span>
+        </button>
       </div>
     </nav>
   );

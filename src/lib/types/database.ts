@@ -1,5 +1,13 @@
-export type Nicho = "fura_fura" | "maquinas_cassino" | "outros";
-export type FaixaPontos = "1-10" | "11-30" | "31-60" | "61-100" | "100+";
+export type Nicho =
+  | "fura_fura"
+  | "maquinas_cassino"
+  | "ursinho"
+  | "vending_ursinho"
+  | "diversao"
+  | "bolinha"
+  | "consignado"
+  | "outros";
+export type FaixaPontos = "1-10" | "11-50" | "51-100" | "100+";
 export type Plano = "start" | "pro" | "elite";
 export type UserRole = "admin" | "gerente" | "operador" | "visualizador";
 export type PontoStatus = "ativo" | "pausado" | "retirado" | "inadimplente";
@@ -37,8 +45,21 @@ export interface Empresa {
   status: string;
   limite_pontos: number;
   limite_usuarios: number;
+  /** Dias para manter fotos/relatórios. 0 = só exclusão manual. Padrão 90. */
+  retencao_midia_dias?: number | null;
+  /** Pesquisa rápida do onboarding (interesse em nichos, pontos, funcionários). */
+  pesquisa_onboarding?: {
+    quantidade_pontos?: string;
+    nichos_interesse?: Nicho[];
+    possui_funcionarios?: boolean;
+    respondido_em?: string;
+  } | null;
   created_at: string;
   nichos_ativos?: Nicho[];
+  assinatura_vence_em?: string | null;
+  ciclo_cobranca?: "mensal" | "anual" | null;
+  /** Chave Pix da operação — cobrança via WhatsApp. */
+  chave_pix?: string | null;
 }
 
 export interface EmpresaNicho {
@@ -47,22 +68,40 @@ export interface EmpresaNicho {
   nicho: Nicho;
   ativo: boolean;
   created_at: string;
+  /** Preenchido quando o cliente confirma o nicho; troca só via suporte. */
+  confirmado_em?: string | null;
 }
 
-export type EquipamentoTipo = "cassino" | "vending_ursinho" | "fura_fura";
+export type EquipamentoTipo =
+  | "cassino"
+  | "ursinho"
+  | "vending_ursinho"
+  | "fura_fura"
+  | "sinuca"
+  | "fliperama"
+  | "cadeira_massagem"
+  | "diversao"
+  | "bolinha"
+  | "consignado";
 
 export interface Equipamento {
   id: string;
   empresa_id: string;
-  ponto_id: string;
+  /** NULL = estoque central (não alocado) */
+  ponto_id: string | null;
   nome: string;
   numero_maquina: string | null;
+  numero_serie: string | null;
   tipo: EquipamentoTipo;
   numero_entrada: number | null;
   numero_saida: number | null;
   entrada_atual: number | null;
+  /** Bolinha: valor da jogada em reais (ex.: 2.00) */
+  preco_jogada?: number | null;
   status: string;
   observacao: string | null;
+  foto_url: string | null;
+  estoque_brindes?: { item_id?: string; nome: string; quantidade: number; custo_unitario?: number }[] | null;
   created_at: string;
 }
 
@@ -80,6 +119,8 @@ export interface Ponto {
   tipo_ponto: string | null;
   status: PontoStatus;
   comissao_percentual: number;
+  /** Comissão % por nicho: { maquinas_cassino, fura_fura, consignado, ... } */
+  comissao_por_nicho?: Record<string, number> | null;
   operador_id: string | null;
   observacoes: string | null;
   abater_automatico: boolean;
@@ -91,7 +132,59 @@ export interface Ponto {
   furos_estoque?: number | null;
   furos_minimo?: number | null;
   estoque_brindes?: { item_id?: string; nome: string; quantidade: number; custo_unitario?: number }[] | null;
+  kit_ativo_id?: string | null;
+  kit_instalado_em?: string | null;
+  /** Consignado: 'percentual' (usa comissao_por_nicho.consignado) ou 'tabela' (R$ fixo por produto) */
+  consignado_modo_comissao?: "percentual" | "tabela" | null;
   equipamentos?: Equipamento[];
+}
+
+export interface ProdutoConsignado {
+  id: string;
+  empresa_id: string;
+  codigo: string | null;
+  nome: string;
+  descricao: string | null;
+  categoria: string | null;
+  foto_url: string | null;
+  custo_unitario: number | null;
+  preco_venda: number | null;
+  comissao_fixa: number | null;
+  quantidade: number | null;
+  quantidade_minima: number | null;
+  fornecedor: string | null;
+  observacao: string | null;
+  ativo: boolean;
+  created_at: string;
+}
+
+export interface FuraKit {
+  id: string;
+  empresa_id: string;
+  nome: string;
+  descricao: string | null;
+  foto_url: string | null;
+  ativo: boolean;
+  ordem: number;
+  created_at: string;
+}
+
+export interface FuraKitReposicaoItem {
+  id: string;
+  kit_id: string;
+  estoque_item_id: string | null;
+  nome: string;
+  quantidade: number;
+  custo_unitario: number;
+}
+
+export interface FuraKitPremio {
+  id: string;
+  kit_id: string;
+  estoque_item_id: string | null;
+  nome: string;
+  custo_unitario: number;
+  ordem: number;
 }
 
 export interface Coleta {
@@ -128,12 +221,16 @@ export interface Coleta {
   desconto?: number | null;
   valor_a_receber?: number | null;
   valor_pago_recebido?: number | null;
+  valor_pix?: number | null;
+  valor_dinheiro?: number | null;
   custo_brindes?: number | null;
   lucro_real?: number | null;
   relatorio_enviado?: boolean | null;
   latitude?: number | null;
   longitude?: number | null;
   brindes_entregues?: BrindeEntregueColeta[] | null;
+  kit_id?: string | null;
+  kit_nome?: string | null;
   created_at: string;
   pontos?: Ponto;
 }
@@ -228,6 +325,7 @@ export interface EstoqueItem {
   id: string;
   empresa_id: string;
   nome_item: string;
+  descricao: string | null;
   categoria: string;
   custo_unitario: number;
   quantidade: number;
@@ -248,6 +346,7 @@ export interface EquipeMember {
   role: UserRole;
   comissao_percentual: number;
   status: string;
+  permissoes?: Record<string, unknown> | null;
   created_at: string;
 }
 

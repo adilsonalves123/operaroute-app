@@ -31,6 +31,7 @@ async function limparPendenciasCobrancaDaVisita(
       valor_operacao_efetivo?: number | null;
       valor_operacao?: number | null;
       valor_pago?: number | null;
+      debito_abatido?: number | null;
       saldo_negativo?: boolean | null;
     };
     visitaPontoIds: string[];
@@ -43,6 +44,7 @@ async function limparPendenciasCobrancaDaVisita(
       opts.visita.valor_operacao_efetivo ?? opts.visita.valor_operacao ?? null,
     valor_pago: opts.visita.valor_pago ?? null,
     restante: opts.visita.restante ?? null,
+    debito_abatido: opts.visita.debito_abatido ?? null,
   });
   const dataStr = new Date(opts.visita.created_at).toLocaleDateString("pt-BR");
   const visitaDia = new Date(opts.visita.created_at).toISOString().slice(0, 10);
@@ -173,6 +175,8 @@ function reverterPendenciaPelaVisita(
   status: string;
   resolvido_em: string | null;
   fallbackRestante: number;
+  /** Quanto desta baixa foi devolvido (para reverter sync da visita origem). */
+  valorAbatidoRevertido: number;
 } | null {
   if (!pendencia.descricao) return null;
 
@@ -188,9 +192,13 @@ function reverterPendenciaPelaVisita(
 
   for (const linha of pendencia.descricao.split("\n")) {
     const marcada = linha.includes(`[visita:${visitaId}]`);
+    /** Baixa já amarrada a outra visita — nunca reverter no fallback por data. */
+    const tagOutraVisita =
+      !marcada && /\[visita:[^\]]+\]/.test(linha);
     const temAbatimento = linhaTemAbatimento(linha);
     const fallbackPorDebito =
       !marcada &&
+      !tagOutraVisita &&
       fallbackRestante > 0.009 &&
       temAbatimento &&
       linha.includes(`na coleta de ${dataStr}`);
@@ -198,6 +206,7 @@ function reverterPendenciaPelaVisita(
     const fallbackPorData =
       permiteFallbackPorData &&
       !marcada &&
+      !tagOutraVisita &&
       temAbatimento &&
       linha.includes(`na coleta de ${dataStr}`);
     const fallback = fallbackPorDebito || fallbackPorData;
@@ -285,6 +294,7 @@ function reverterPendenciaPelaVisita(
     status,
     resolvido_em: status === "resolvida" ? new Date().toISOString() : null,
     fallbackRestante,
+    valorAbatidoRevertido: removido,
   };
 }
 
@@ -414,12 +424,16 @@ export async function DELETE(
   const debitoAbatido = Number(visita.debito_abatido ?? 0);
   const { data: pendenciasPonto } = await supabase
     .from("pendencias")
-    .select("id, tipo, valor, descricao")
+    .select("id, tipo, valor, descricao, visita_id")
     .eq("empresa_id", profile.empresa_id)
     .eq("ponto_id", visita.ponto_id);
 
   let fallbackRestante = debitoAbatido;
   const dataVisita = new Date(visita.created_at);
+
+  const { reverterSincronizacaoVisitaAposBaixaOperacao } = await import(
+    "@/lib/visitas-ponto/sync-visita-baixa"
+  );
 
   for (const pendencia of pendenciasPonto ?? []) {
     const rollback = reverterPendenciaPelaVisita(
@@ -432,6 +446,15 @@ export async function DELETE(
     if (!rollback) continue;
 
     fallbackRestante = rollback.fallbackRestante;
+
+    // Antes de reconciliar: devolve cobravel na visita de origem da pendência.
+    if (isOperacaoTipo(pendencia.tipo) && rollback.valorAbatidoRevertido > 0.009) {
+      await reverterSincronizacaoVisitaAposBaixaOperacao(supabase, {
+        empresaId: profile.empresa_id,
+        visitaId: pendencia.visita_id,
+        valorAbatidoReais: rollback.valorAbatidoRevertido,
+      });
+    }
 
     await supabase
       .from("pendencias")

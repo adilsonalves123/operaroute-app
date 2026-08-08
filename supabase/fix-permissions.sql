@@ -24,9 +24,16 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON financeiro TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON pendencias TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON estoque TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON estoque_movimentacoes TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON fura_kits TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON fura_kit_reposicao_itens TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON fura_kit_premios TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON fura_kit_instalacoes TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON fura_kits_estoque TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON fura_kit_montagens TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rotas TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON rota_pontos TO authenticated;
 GRANT SELECT, INSERT, UPDATE, DELETE ON auditoria TO authenticated;
+GRANT SELECT, INSERT, UPDATE, DELETE ON produtos_consignados TO authenticated;
 
 -- 3) Função de onboarding (contorna RLS)
 CREATE OR REPLACE FUNCTION complete_onboarding(
@@ -59,7 +66,7 @@ BEGIN
   WHERE id = v_user_id;
 
   INSERT INTO profiles (user_id, nome, email, trial_inicio, trial_fim, assinatura_ativa)
-  VALUES (v_user_id, v_nome, v_email, NOW(), NOW() + INTERVAL '7 days', TRUE)
+  VALUES (v_user_id, v_nome, v_email, NOW(), NOW() + INTERVAL '7 days', FALSE)
   ON CONFLICT (user_id) DO NOTHING;
 
   INSERT INTO empresas (
@@ -78,7 +85,9 @@ BEGIN
     nome_operacao = p_nome_operacao,
     empresa_id = v_empresa_id,
     plano = 'start',
-    assinatura_ativa = TRUE
+    assinatura_ativa = FALSE,
+    trial_inicio = COALESCE(trial_inicio, NOW()),
+    trial_fim = COALESCE(trial_fim, NOW() + INTERVAL '7 days')
   WHERE user_id = v_user_id;
 
   IF NOT EXISTS (

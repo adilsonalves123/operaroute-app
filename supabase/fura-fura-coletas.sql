@@ -17,6 +17,8 @@ ALTER TABLE coletas ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION;
 ALTER TABLE coletas ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION;
 ALTER TABLE coletas ADD COLUMN IF NOT EXISTS brindes_entregues JSONB DEFAULT '[]'::jsonb;
 ALTER TABLE coletas ADD COLUMN IF NOT EXISTS nicho_modulo TEXT;
+ALTER TABLE coletas ADD COLUMN IF NOT EXISTS valor_pix NUMERIC(12,2) DEFAULT 0;
+ALTER TABLE coletas ADD COLUMN IF NOT EXISTS valor_dinheiro NUMERIC(12,2) DEFAULT 0;
 
 CREATE TABLE IF NOT EXISTS coleta_pagamentos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -24,6 +26,8 @@ CREATE TABLE IF NOT EXISTS coleta_pagamentos (
   coleta_id UUID REFERENCES coletas(id) ON DELETE CASCADE NOT NULL,
   ponto_id UUID REFERENCES pontos(id) ON DELETE SET NULL,
   valor NUMERIC(12,2) NOT NULL,
+  valor_pix NUMERIC(12,2) DEFAULT 0,
+  valor_dinheiro NUMERIC(12,2) DEFAULT 0,
   forma_pagamento forma_pagamento DEFAULT 'dinheiro',
   observacao TEXT,
   operador_id UUID,
@@ -46,3 +50,6 @@ CREATE POLICY "Empresa scoped insert" ON coleta_pagamentos
   FOR INSERT TO authenticated WITH CHECK (empresa_id = get_user_empresa_id());
 
 GRANT SELECT, INSERT ON coleta_pagamentos TO authenticated;
+
+ALTER TABLE coleta_pagamentos ADD COLUMN IF NOT EXISTS valor_pix NUMERIC(12,2) DEFAULT 0;
+ALTER TABLE coleta_pagamentos ADD COLUMN IF NOT EXISTS valor_dinheiro NUMERIC(12,2) DEFAULT 0;

@@ -26,6 +26,7 @@ export type CalculoColetaFuraFuraResult = {
   lucroReal: number;
   valorPagoRecebido: number;
   saldoPendente: number;
+  haver: number;
   quitado: boolean;
 };
 
@@ -53,6 +54,7 @@ export function calcularColetaFuraFura(
   );
   const lucroReal = arredondar(valorAReceber - custoBrindes);
   const saldoPendente = arredondar(Math.max(0, valorAReceber - valorPagoRecebido));
+  const haver = arredondar(Math.max(0, valorPagoRecebido - valorAReceber));
   const quitado = saldoPendente <= 0.009;
 
   return {
@@ -67,6 +69,7 @@ export function calcularColetaFuraFura(
     lucroReal,
     valorPagoRecebido,
     saldoPendente,
+    haver,
     quitado,
   };
 }

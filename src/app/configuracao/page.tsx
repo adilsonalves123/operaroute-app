@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { FormInput } from "@/components/ui/FormInput";
 import { SelectCard } from "@/components/ui/SelectCard";
-import { NICHOS } from "@/lib/nicho";
+import { NichoCardsCarousel } from "@/components/nichos/NichoCardsCarousel";
+import {
+  clearPesquisaDraft,
+  loadPesquisaDraft,
+  savePesquisaDraft,
+  type PesquisaDraft,
+} from "@/lib/onboarding/pesquisa-draft";
 import type { Nicho } from "@/lib/types/database";
-import { Gamepad2, Building2, Sparkles } from "lucide-react";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
-
-const quantidadeOptions = [
-  { value: "1-10", label: "1–10 pontos" },
-  { value: "11-30", label: "11–30 pontos" },
-  { value: "31-60", label: "31–60 pontos" },
-  { value: "61-100", label: "61–100 pontos" },
-  { value: "100+", label: "100+ pontos" },
-];
+import { TrialGratisCard } from "@/components/onboarding/TrialGratisCard";
+import { resumoTrialPorFaixa } from "@/lib/onboarding/trial-resumo";
 
 const objetivoOptions = [
   { value: "financeiro", label: "Controlar financeiro" },
@@ -24,40 +24,87 @@ const objetivoOptions = [
   { value: "outro", label: "Outro" },
 ];
 
-const nichoIcons = {
-  fura_fura: <Gamepad2 className="h-5 w-5" />,
-  maquinas_cassino: <Building2 className="h-5 w-5" />,
-  outros: <Sparkles className="h-5 w-5" />,
+const PONTOS_LABEL: Record<PesquisaDraft["quantidade_pontos"], string> = {
+  "1-10": "1 a 10",
+  "11-50": "11 a 50",
+  "51-100": "50 ou mais",
 };
 
 export default function ConfiguracaoPage() {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    nome_operacao: "",
-    nicho: "" as Nicho | "",
-    quantidade_pontos: "",
-    possui_funcionarios: null as boolean | null,
-    objetivo_principal: "",
-  });
+  const [pesquisa, setPesquisa] = useState<PesquisaDraft | null>(null);
+  const [ready, setReady] = useState(false);
+  const [nomeOperacao, setNomeOperacao] = useState("");
+  const [objetivos, setObjetivos] = useState<string[]>([]);
+  const [nichos, setNichos] = useState<Nicho[]>([]);
+
+  useEffect(() => {
+    const draft = loadPesquisaDraft();
+    if (!draft) {
+      router.replace("/pesquisa");
+      return;
+    }
+    setPesquisa(draft);
+    setNichos(draft.nichos);
+    setReady(true);
+  }, [router]);
+
+  function toggleObjetivo(value: string) {
+    setObjetivos((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]
+    );
+  }
+
+  function onChangeNichos(next: Nicho[]) {
+    setNichos(next);
+    if (!pesquisa) return;
+    savePesquisaDraft({
+      quantidade_pontos: pesquisa.quantidade_pontos,
+      nichos: next,
+      possui_funcionarios: pesquisa.possui_funcionarios,
+    });
+    setPesquisa((p) => (p ? { ...p, nichos: next } : p));
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    if (!form.nome_operacao || !form.nicho || !form.quantidade_pontos || form.possui_funcionarios === null || !form.objetivo_principal) {
-      setError("Preencha todos os campos obrigatórios.");
+    if (!pesquisa) {
+      router.replace("/pesquisa");
+      return;
+    }
+    if (!nomeOperacao.trim()) {
+      setError("Informe o nome da operação.");
+      return;
+    }
+    if (nichos.length === 0) {
+      setError("Selecione pelo menos um nicho.");
+      return;
+    }
+    if (objetivos.length === 0) {
+      setError("Selecione pelo menos um objetivo.");
       return;
     }
 
-    setLoading(true);
+    const nichoPrincipal = nichos[0] as Nicho;
+    const objetivoPrincipal = objetivos.join(",");
 
+    setLoading(true);
     try {
       const res = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          nome_operacao: nomeOperacao.trim(),
+          nicho: nichoPrincipal,
+          nichos,
+          quantidade_pontos: pesquisa.quantidade_pontos,
+          possui_funcionarios: pesquisa.possui_funcionarios,
+          objetivo_principal: objetivoPrincipal,
+        }),
       });
 
       let data: { error?: string; success?: boolean } = {};
@@ -73,8 +120,13 @@ export default function ConfiguracaoPage() {
         return;
       }
 
-      // Navegação completa para evitar loop com middleware
-      window.location.href = "/dashboard";
+      clearPesquisaDraft();
+      try {
+        sessionStorage.setItem("or_trial_welcome", "1");
+      } catch {
+        // ignore
+      }
+      window.location.href = "/dashboard?bemvindo=1";
     } catch {
       setError("Não foi possível salvar. Recarregue a página e tente novamente.");
     } finally {
@@ -82,98 +134,114 @@ export default function ConfiguracaoPage() {
     }
   }
 
+  if (!ready || !pesquisa) {
+    return (
+      <div className="min-h-screen flex items-center justify-center text-slate-400 text-sm">
+        Carregando…
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-6">
-      <div className="w-full max-w-2xl space-y-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-white">Configure sua operação</h1>
+    <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
+      <div className="w-full max-w-4xl space-y-8">
+        <div className="text-center px-2">
+          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-primary-neon/80">
+            Passo 2 de 2
+          </p>
+          <h1 className="mt-2 text-3xl font-bold text-white">
+            Configure sua operação
+          </h1>
           <p className="text-slate-400 mt-2">
-            Personalize o app para o seu negócio em poucos passos.
+            Pode marcar mais de um nicho e mais de um objetivo.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="glass-card p-6 lg:p-8 space-y-6">
-          <FormInput
-            label="Nome da operação *"
-            placeholder="Ex: Operação Centro SP"
-            value={form.nome_operacao}
-            onChange={(e) => setForm((f) => ({ ...f, nome_operacao: e.target.value }))}
-            required
-          />
+        <TrialGratisCard
+          resumo={resumoTrialPorFaixa(pesquisa.quantidade_pontos, nichos)}
+        />
 
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-300">Nicho *</p>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {(Object.keys(NICHOS) as Nicho[]).map((key) => (
-                <SelectCard
-                  key={key}
-                  label={NICHOS[key].label}
-                  description={NICHOS[key].description}
-                  selected={form.nicho === key}
-                  onClick={() => setForm((f) => ({ ...f, nicho: key }))}
-                  icon={nichoIcons[key]}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-300">Quantidade de pontos *</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {quantidadeOptions.map((opt) => (
-                <SelectCard
-                  key={opt.value}
-                  label={opt.label}
-                  selected={form.quantidade_pontos === opt.value}
-                  onClick={() => setForm((f) => ({ ...f, quantidade_pontos: opt.value }))}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-300">Tem funcionários? *</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <SelectCard
-                label="Sim"
-                selected={form.possui_funcionarios === true}
-                onClick={() => setForm((f) => ({ ...f, possui_funcionarios: true }))}
-              />
-              <SelectCard
-                label="Não"
-                selected={form.possui_funcionarios === false}
-                onClick={() => setForm((f) => ({ ...f, possui_funcionarios: false }))}
-              />
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-sm font-medium text-slate-300">Principal objetivo *</p>
-            <div className="grid gap-2 sm:grid-cols-2">
-              {objetivoOptions.map((opt) => (
-                <SelectCard
-                  key={opt.value}
-                  label={opt.label}
-                  selected={form.objetivo_principal === opt.value}
-                  onClick={() => setForm((f) => ({ ...f, objetivo_principal: opt.value }))}
-                />
-              ))}
-            </div>
-          </div>
-
-          {error && (
-            <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
-              {error}
-            </div>
-          )}
-
+        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
+          <p>
+            Pontos:{" "}
+            <span className="text-slate-200">
+              {PONTOS_LABEL[pesquisa.quantidade_pontos]}
+            </span>
+            {" · "}
+            Funcionários:{" "}
+            <span className="text-slate-200">
+              {pesquisa.possui_funcionarios ? "Sim" : "Não"}
+            </span>
+          </p>
           <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-lg bg-primary-neon py-3 font-semibold text-slate-900 transition hover:bg-cyan-300 disabled:opacity-50"
+            type="button"
+            onClick={() => router.push("/pesquisa")}
+            className="mt-2 text-xs text-primary-neon hover:underline"
           >
-            {loading ? "Salvando..." : "Finalizar configuração"}
+            Alterar pesquisa
           </button>
+        </div>
+
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-6">
+          <div className="glass-card p-6 lg:p-8 space-y-6">
+            <FormInput
+              label="Nome da operação *"
+              placeholder="Ex: Operação Centro SP"
+              value={nomeOperacao}
+              onChange={(e) => setNomeOperacao(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="glass-card p-6 lg:p-8 overflow-hidden">
+            <NichoCardsCarousel
+              values={nichos}
+              onChangeMulti={onChangeNichos}
+              title="Nichos"
+              subtitle="Quais nichos essa operação vai usar? (pode marcar vários) *"
+            />
+            {nichos.length > 0 && (
+              <p className="mt-3 text-xs text-slate-500">
+                {nichos.length} nicho{nichos.length === 1 ? "" : "s"} selecionado
+                {nichos.length === 1 ? "" : "s"}
+              </p>
+            )}
+          </div>
+
+          <div className="glass-card p-6 lg:p-8 space-y-6">
+            <div className="space-y-3">
+              <p className="text-sm font-medium text-slate-300">
+                Objetivos *{" "}
+                <span className="font-normal text-slate-500">
+                  (pode marcar mais de um)
+                </span>
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {objetivoOptions.map((opt) => (
+                  <SelectCard
+                    key={opt.value}
+                    label={opt.label}
+                    selected={objetivos.includes(opt.value)}
+                    onClick={() => toggleObjetivo(opt.value)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {error && (
+              <div className="rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-3 text-sm text-red-400">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-primary-neon py-3 font-semibold text-slate-900 transition hover:bg-cyan-300 disabled:opacity-50"
+            >
+              {loading ? "Salvando..." : "Finalizar configuração"}
+            </button>
+          </div>
         </form>
       </div>
 

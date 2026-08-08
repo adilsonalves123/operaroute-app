@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 
-export function ZerarDadosButton() {
+export function ZerarDadosButton({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   const [confirmacao, setConfirmacao] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,7 @@ export function ZerarDadosButton() {
     if (!confirm(linhas.join("\n"))) return;
 
     if (confirmacao.trim().toUpperCase() !== "ZERAR") {
-      setError('Digite ZERAR no campo abaixo para confirmar.');
+      setError("Digite ZERAR no campo abaixo para confirmar.");
       return;
     }
 
@@ -60,18 +60,13 @@ export function ZerarDadosButton() {
 
   return (
     <>
-      <div className="rounded-lg border border-red-500/25 bg-red-500/5 p-4 space-y-4">
-        <div className="flex items-start gap-3">
-          <AlertTriangle className="h-5 w-5 shrink-0 text-red-400 mt-0.5" />
-          <div className="space-y-1 text-sm">
-            <p className="font-medium text-red-300">Zona de perigo</p>
-            <p className="text-slate-400 leading-relaxed">
-              Remove caixa, coletas, visitas e pendências. Pontos e máquinas cadastrados
-              permanecem.
-            </p>
-          </div>
-        </div>
-
+      <div
+        className={
+          embedded
+            ? "space-y-4"
+            : "rounded-lg border border-red-500/25 bg-red-500/5 p-4 space-y-4"
+        }
+      >
         <div className="space-y-1.5">
           <label htmlFor="confirmacao-zerar" className="block text-xs text-slate-500">
             Digite <strong className="text-slate-400">ZERAR</strong> para confirmar
@@ -87,9 +82,7 @@ export function ZerarDadosButton() {
           />
         </div>
 
-        {error && (
-          <p className="text-sm text-red-400">{error}</p>
-        )}
+        {error && <p className="text-sm text-red-400">{error}</p>}
 
         <button
           type="button"

@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/limpar-midia-antiga",
+      "schedule": "0 5 * * 1"
+    }
+  ]
+}

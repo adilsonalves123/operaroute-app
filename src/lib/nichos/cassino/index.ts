@@ -11,9 +11,16 @@ export {
 export {
   extrairTotalAbatido,
   saldoPendenciaReais,
+  saldoHaverReais,
   saldoPendenciaCobravel,
   isPendenciaOperacao,
+  isHaverDeNegativoCliente,
+  isHaverCreditoComum,
+  TIPOS_PENDENCIA_OPERACAO,
   totalDebitoAbertoReais,
+  totalHaverAbertoReais,
+  totalHaverDeNegativoAbertoReais,
+  totalHaverCreditoComumAbertoReais,
   calcularAbatimentos,
   calcularBaixasValorPendencia,
 } from "./pendencias";

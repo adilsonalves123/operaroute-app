@@ -104,3 +104,70 @@ export async function transferirEstoqueParaPonto(
 
   return {};
 }
+
+/** Devolve o saldo atual de brindes do ponto ao estoque central. */
+export async function devolverEstoqueBrindesPontoParaCentral(
+  supabase: SupabaseClient,
+  params: {
+    empresaId: string;
+    pontoId: string;
+    brindes: BrindePonto[];
+    observacao: string;
+    tipoMovimento?: string;
+  }
+): Promise<{ totalUnidades: number; error?: string }> {
+  const tipo = params.tipoMovimento ?? "devolucao_ponto";
+  let total = 0;
+
+  for (const brinde of params.brindes) {
+    const qty = Math.max(0, Math.floor(Number(brinde.quantidade) || 0));
+    if (qty <= 0) continue;
+
+    let estoqueId = brinde.item_id ?? undefined;
+
+    if (!estoqueId) {
+      const { data: rows } = await supabase
+        .from("estoque")
+        .select("id, nome_item")
+        .eq("empresa_id", params.empresaId);
+
+      const match = (rows ?? []).find(
+        (row) => row.nome_item.trim().toLowerCase() === brinde.nome.trim().toLowerCase()
+      );
+      estoqueId = match?.id;
+    }
+
+    if (!estoqueId) continue;
+
+    const { data: item } = await supabase
+      .from("estoque")
+      .select("id, quantidade")
+      .eq("id", estoqueId)
+      .eq("empresa_id", params.empresaId)
+      .maybeSingle();
+
+    if (!item) continue;
+
+    const novaQtd = (Number(item.quantidade) || 0) + qty;
+    const { error: updErr } = await supabase
+      .from("estoque")
+      .update({ quantidade: novaQtd })
+      .eq("id", item.id)
+      .eq("empresa_id", params.empresaId);
+
+    if (updErr) return { totalUnidades: total, error: updErr.message };
+
+    await supabase.from("estoque_movimentacoes").insert({
+      empresa_id: params.empresaId,
+      item_id: item.id,
+      tipo,
+      quantidade: qty,
+      ponto_id: params.pontoId,
+      observacao: params.observacao,
+    });
+
+    total += qty;
+  }
+
+  return { totalUnidades: total };
+}

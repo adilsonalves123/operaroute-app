@@ -94,7 +94,7 @@ export function EquipamentoTransferirButton({
           setErro("");
           setDestinoId("");
         }}
-        className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-primary-neon transition"
+        className="rounded-md p-2 text-slate-500 transition hover:bg-white/[0.04] hover:text-[#c4a574]"
         title="Transferir para outro ponto"
       >
         <ArrowRightLeft className="h-4 w-4" />

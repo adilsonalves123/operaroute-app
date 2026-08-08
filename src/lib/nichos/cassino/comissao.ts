@@ -7,9 +7,9 @@ export function parseComissaoPercentual(raw: unknown): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** Lucro restante após abater negativo/haver — base da comissão. */
+/** Lucro da visita (após negativo e haver de “pagou ganhadores”) — base da comissão. */
 export function baseComissaoReais(c: CalculoVisitaResult): number {
-  return c.saldoAposDebitoReais;
+  return Math.max(0, c.saldoAposDebitoReais);
 }
 
 /** Comissão não incide — visita negativa ou lucro insuficiente após haver/negativo. */

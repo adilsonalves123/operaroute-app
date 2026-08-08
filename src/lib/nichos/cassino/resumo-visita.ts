@@ -66,13 +66,28 @@ function linhasComposicaoPrejuizo(c: CalculoVisitaResult): LinhaQuemPagouNegativ
     });
   }
   if (c.valorDeixadoOperadorReais > 0.009) {
-    linhas.push({
-      id: "reposto",
-      label: "Você repôs no ponto",
-      hint: "Saiu do seu caixa hoje",
-      valorReais: c.valorDeixadoOperadorReais,
-      tipo: "operador",
-    });
+    const aplicadoNoPrejuizo = Math.max(
+      0,
+      c.valorDeixadoOperadorReais - (c.excedenteDeixadoReais ?? 0)
+    );
+    if (aplicadoNoPrejuizo > 0.009) {
+      linhas.push({
+        id: "reposto",
+        label: "Você repôs no ponto",
+        hint: "Saiu do seu caixa hoje",
+        valorReais: aplicadoNoPrejuizo,
+        tipo: "operador",
+      });
+    }
+    if ((c.excedenteDeixadoReais ?? 0) > 0.009) {
+      linhas.push({
+        id: "excedente",
+        label: "Você deixou a mais",
+        hint: "Vira pendência — ponto te deve",
+        valorReais: c.excedenteDeixadoReais,
+        tipo: "operador",
+      });
+    }
   }
   if (c.haverCompensadoReais > 0.009) {
     linhas.push({
@@ -106,13 +121,28 @@ export function linhasReceberDoPontoNegativo(c: CalculoVisitaResult): LinhaQuemP
   const linhas: LinhaQuemPagouNegativo[] = [];
 
   if (c.valorDeixadoOperadorReais > 0.009) {
-    linhas.push({
-      id: "receber-reposto",
-      label: "Você repôs hoje",
-      hint: "Valor que saiu do seu caixa",
-      valorReais: c.valorDeixadoOperadorReais,
-      tipo: "operador",
-    });
+    const aplicadoNoPrejuizo = Math.max(
+      0,
+      c.valorDeixadoOperadorReais - (c.excedenteDeixadoReais ?? 0)
+    );
+    if (aplicadoNoPrejuizo > 0.009) {
+      linhas.push({
+        id: "receber-reposto",
+        label: "Você repôs hoje",
+        hint: "Valor que saiu do seu caixa",
+        valorReais: aplicadoNoPrejuizo,
+        tipo: "operador",
+      });
+    }
+    if ((c.excedenteDeixadoReais ?? 0) > 0.009) {
+      linhas.push({
+        id: "receber-excedente",
+        label: "Excedente deixado",
+        hint: "Pendência — ponto te deve a mais",
+        valorReais: c.excedenteDeixadoReais,
+        tipo: "pendencia-operacao",
+      });
+    }
   }
   if (c.pendenciaOperacaoAbatidaReais > 0.009) {
     linhas.push({
@@ -203,11 +233,14 @@ export function valorReceberClienteVisitaReais(c: CalculoVisitaResult): number {
     c.valorOperacaoEfetivoReais > 0.009 ? c.valorOperacaoEfetivoReais : c.valorOperacaoReais;
 
   if (temNegativoRecuperado) {
-    return (
+    const totalSemHaver =
       c.recuperacaoNegativoReais +
       valorOperacaoCobranca +
-      c.pendenciaOperacaoIncluidaReais
-    );
+      c.pendenciaOperacaoIncluidaReais;
+    if (c.haverCompensadoReais > 0.009 && totalSemHaver > c.totalACobrarReais + 0.009) {
+      return c.totalACobrarReais;
+    }
+    return totalSemHaver;
   }
   return c.totalACobrarReais;
 }
@@ -222,21 +255,8 @@ function brlHint(n: number): string {
   return `R$ ${n.toFixed(2).replace(".", ",")}`;
 }
 
-/** Lucro cobre o haver → cobrar; lucro insuficiente → pagar haver restante. */
+/** Valor principal da visita positiva — sempre cobrança do cliente (haver só abate se optar). */
 export function resumoTotalVisita(c: CalculoVisitaResult): ResumoTotalVisita {
-  const lucroReais = centesimosToReais(c.totalLucroCentavos);
-  const temHaver = c.haverTotalReais > 0.009;
-  const lucroCobreHaver = temHaver && lucroReais + 0.009 >= c.haverTotalReais;
-
-  if (temHaver && !lucroCobreHaver) {
-    return {
-      label: "Total a pagar",
-      valorReais: c.haverRestanteReais,
-      hint: "Lucro insuficiente para quitar o haver — você deve ao ponto",
-      tipo: "pagar",
-    };
-  }
-
   const negativoProxima = negativoFicaProximaColetaReais(c);
   const valorCobrar = valorReceberClienteVisitaReais(c);
 
@@ -246,18 +266,21 @@ export function resumoTotalVisita(c: CalculoVisitaResult): ResumoTotalVisita {
     hint:
       negativoProxima > 0.009
         ? `${brlHint(negativoProxima)} de negativo anterior ficam para a próxima coleta`
-        : temHaver && lucroCobreHaver
-          ? "Descontando haver do ponto"
-          : undefined,
+        : c.haverCompensadoReais > 0.009 && valorCobrar <= 0.009
+          ? "Operação menor que o haver — cliente não paga (você deve ao ponto)"
+          : c.haverCompensadoReais > 0.009
+            ? "Descontando haver do ponto"
+            : undefined,
     tipo: "cobrar",
   };
 }
 
-/** Lucro não cobriu o haver — operador paga o ponto; cliente não acerta nesta visita. */
-export function somenteQuitarHaver(c: CalculoVisitaResult): boolean {
-  if (c.saldoNegativo || c.haverTotalReais <= 0.009) return false;
-  const lucroReais = centesimosToReais(c.totalLucroCentavos);
-  return lucroReais + 0.009 < c.haverTotalReais;
+/**
+ * @deprecated Fluxo de “só quitar haver” removido — lucro sempre gera comissão/operação;
+ * haver só abate se o operador optar na cobrança. Mantido para compatibilidade (sempre false).
+ */
+export function somenteQuitarHaver(_c: CalculoVisitaResult): boolean {
+  return false;
 }
 
 export type ItemCobrancaCliente = {
@@ -306,6 +329,13 @@ export function resumoCobrancaCliente(c: CalculoVisitaResult): ResumoCobrancaCli
     itens.push({
       label: "Sua operação",
       valorReais: valorOperacaoCobranca,
+    });
+  }
+
+  if (c.haverCompensadoReais > 0.009) {
+    itens.push({
+      label: "− Haver do ponto",
+      valorReais: -c.haverCompensadoReais,
     });
   }
 

@@ -33,5 +33,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: result.error }, { status: 400 });
   }
 
+  const { auditarAcao } = await import("@/lib/auditoria/auditar");
+  await auditarAcao(supabase, profile, {
+    acao: "estoque.transferir",
+    tabela: "estoque",
+    registroId: itemId,
+    dadosNovos: { ponto_id: pontoId, quantidade },
+    severidade: "medium",
+    categoria: "estoque",
+    modulo: "estoque",
+    titulo: "Transferiu estoque para ponto",
+    resumo: `${quantidade} un. · item ${itemId} → ponto ${pontoId}`,
+    request,
+  });
+
   return NextResponse.json({ success: true });
 }

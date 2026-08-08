@@ -5,7 +5,33 @@ import {
   type PulsoEvento,
   type PulsoOperacao,
 } from "@/lib/dashboard-pulso";
+import type { DashboardRankingPoint } from "@/components/dashboard/DashboardRanking";
 import { fetchCartelaPontos, type CartelaPontos } from "@/lib/dashboard-cartela-pontos";
+import { fetchDashboardPontosBase } from "@/lib/dashboard-pontos-base";
+import { fetchPendenciasAbertas, somarPendenciasPorNicho } from "@/lib/dashboard-pendencias-abertas";
+import {
+  buildSaudeResumoFromEventos,
+  visitasToEventosPonto,
+  type SaudePontosResumo,
+} from "@/lib/dashboard-saude-pontos";
+import { liquidoRecebidoCassinoVisita, lucroOperacaoCassinoVisita } from "@/lib/nichos/cassino/lucro-recebido";
+import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
+
+function isPendenciaOperacaoTipo(tipo: string | null | undefined): boolean {
+  const t = (tipo ?? "").toLowerCase();
+  return t === "pagamento_pendente" || t === "parcial";
+}
+
+function mapaPendenciaOperacaoAberta(
+  rows: { visita_id: string | null; tipo: string | null; valor: number | null }[]
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const p of rows) {
+    if (!p.visita_id || !isPendenciaOperacaoTipo(p.tipo)) continue;
+    map.set(p.visita_id, (map.get(p.visita_id) ?? 0) + Number(p.valor ?? 0));
+  }
+  return map;
+}
 
 export function visitasToPulsoEventos(
   visitas: {
@@ -45,50 +71,59 @@ function sparklineFromDailyValues(
 export async function getCassinoDashboardStats(
   supabase: SupabaseClient,
   empresaId: string,
-  startOfMonth: string
+  periodo: DashboardPeriodoFiltro
 ) {
+  const { inicioISO, fimISO } = periodo;
   const now = new Date();
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const thirtyFiveDaysAgo = new Date(now.getTime() - 35 * 24 * 60 * 60 * 1000).toISOString();
+  const lookbackISO =
+    inicioISO < new Date(now.getTime() - 35 * 24 * 60 * 60 * 1000).toISOString()
+      ? inicioISO
+      : new Date(now.getTime() - 35 * 24 * 60 * 60 * 1000).toISOString();
 
   const [
-    { data: visitas },
-    { data: visitasPulso },
-    { data: pontos },
-    { count: pendenciasCount },
+    { data: visitasRaw },
+    pontos,
+    pendenciasAbertas,
     { data: coletasMes },
   ] = await Promise.all([
     supabase
       .from("visitas")
-      .select("id, ponto_id, total_lucro_centavos, valor_operacao, valor_operacao_efetivo, valor_pago, saldo_negativo, created_at")
+      .select(
+        "id, ponto_id, total_lucro_centavos, valor_operacao, valor_operacao_efetivo, valor_pago, restante, saldo_negativo, desconto, adiantamento_pix, adiantamento_dinheiro, created_at, pontos(nome)"
+      )
       .eq("empresa_id", empresaId)
-      .gte("created_at", startOfMonth),
-    supabase
-      .from("visitas")
-      .select("created_at, total_lucro_centavos, saldo_negativo")
-      .eq("empresa_id", empresaId)
-      .gte("created_at", thirtyFiveDaysAgo),
-    supabase.from("pontos").select("*").eq("empresa_id", empresaId),
-    supabase
-      .from("pendencias")
-      .select("*", { count: "exact", head: true })
-      .eq("empresa_id", empresaId)
-      .eq("status", "aberta"),
+      .gte("created_at", lookbackISO)
+      .lte("created_at", fimISO),
+    fetchDashboardPontosBase(supabase, empresaId),
+    fetchPendenciasAbertas(supabase, empresaId),
     supabase
       .from("coletas")
       .select("entrada_periodo, saida_periodo, ponto_id")
       .eq("empresa_id", empresaId)
-      .gte("created_at", startOfMonth)
+      .gte("created_at", inicioISO)
+      .lte("created_at", fimISO)
       .not("visita_id", "is", null),
   ]);
 
-  const visitasList = visitas ?? [];
+  const visitasList = (visitasRaw ?? []).filter(
+    (v) => v.created_at >= inicioISO && v.created_at <= fimISO
+  );
+  const visitasPulso = visitasRaw ?? [];
+  const pendenciasCount = pendenciasAbertas.length;
+  const openOpByVisita = mapaPendenciaOperacaoAberta(pendenciasAbertas);
   const totalLucroReais = visitasList.reduce(
-    (s, v) => s + centesimosToReais(Number(v.total_lucro_centavos ?? 0)),
+    (s, v) => s + lucroOperacaoCassinoVisita(v),
     0
   );
-  const totalOperacao = visitasList.reduce(
+  const totalOperacaoGerada = visitasList.reduce(
     (s, v) => s + Number(v.valor_operacao ?? 0),
+    0
+  );
+  const totalOperacaoRecebida = visitasList.reduce(
+    (s, v) =>
+      s +
+      liquidoRecebidoCassinoVisita(v, openOpByVisita.get(v.id) ?? 0),
     0
   );
   const totalEntradaPeriodo =
@@ -107,7 +142,7 @@ export async function getCassinoDashboardStats(
     if (v.ponto_id) {
       rankingMap.set(
         v.ponto_id,
-        (rankingMap.get(v.ponto_id) ?? 0) + Number(v.valor_operacao ?? 0)
+        (rankingMap.get(v.ponto_id) ?? 0) + lucroOperacaoCassinoVisita(v)
       );
     }
   });
@@ -119,22 +154,28 @@ export async function getCassinoDashboardStats(
       ponto: pontos?.find((p) => p.id === pontoId),
       valor,
     }))
-    .filter((r) => r.ponto);
+    .filter((r): r is { ponto: DashboardRankingPoint; valor: number } => Boolean(r.ponto));
 
   const sparkline = sparklineFromDailyValues(
     visitasList.map((v) => ({
       created_at: v.created_at,
-      value: centesimosToReais(Math.abs(Number(v.total_lucro_centavos ?? 0))),
+      value: Math.abs(lucroOperacaoCassinoVisita(v)),
     }))
   );
 
   const saldoEntradaSaida = totalEntradaPeriodo - totalSaidaPeriodo;
+  const pendSums = somarPendenciasPorNicho(pendenciasAbertas);
 
   const pulso: PulsoOperacao = computePulsoOperacao(
-    visitasToPulsoEventos(visitasPulso ?? [])
+    visitasToPulsoEventos(visitasPulso)
   );
 
   const cartela: CartelaPontos = await fetchCartelaPontos(supabase, empresaId);
+
+  const saude: SaudePontosResumo = buildSaudeResumoFromEventos(
+    visitasToEventosPonto(visitasPulso, { usarValorOperacao: true }),
+    (pontos ?? []).filter((p) => p.status === "ativo").map((p) => ({ id: p.id, nome: p.nome }))
+  );
 
   return {
     stats: {
@@ -142,7 +183,9 @@ export async function getCassinoDashboardStats(
       saida_total: totalSaidaPeriodo,
       saldo_liquido: saldoEntradaSaida,
       total_mes: totalLucroReais,
-      lucro_estimado: totalOperacao,
+      // Lucro da operação (regra Fura): conta na coleta, mesmo sem pagamento.
+      // receita_mes = só o que já foi pago (usado na Análise).
+      lucro_estimado: totalLucroReais,
       coletas_realizadas: visitasList.length,
       visitas: visitasList.length,
       maquinas_ativas: pontosAtivos,
@@ -150,12 +193,16 @@ export async function getCassinoDashboardStats(
       pontos_ativos: pontosAtivos,
       pontos_pendentes: pontosSemColeta,
       pendencias: pendenciasCount ?? 0,
-      receita_mes: totalOperacao,
+      a_receber_pendente: pendSums.cassinoPendente,
+      haver_ponto: pendSums.cassinoHaver,
+      receita_mes: totalOperacaoRecebida,
+      operacao_gerada_mes: totalOperacaoGerada,
     },
     ranking,
     pontosSemColeta,
     sparkline,
     pulso,
     cartela,
+    saude,
   };
 }

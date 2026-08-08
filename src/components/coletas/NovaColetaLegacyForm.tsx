@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { getNichoConfig } from "@/lib/nicho";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
+import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import type { Nicho, Ponto } from "@/lib/types/database";
 
 export function NovaColetaLegacyForm() {
@@ -57,6 +58,7 @@ export function NovaColetaLegacyForm() {
 
   const config = getNichoConfig(nicho);
   const isFuraFura = nicho === "fura_fura";
+  const pontoSelecionado = pontos.find((p) => p.id === form.ponto_id) ?? null;
 
   const valorBruto = parseFloat(form.valor_bruto) || 0;
   const comissaoPct = parseFloat(form.comissao_percentual) || 0;
@@ -168,6 +170,20 @@ export function NovaColetaLegacyForm() {
             ...pontos.map((p) => ({ value: p.id, label: p.nome })),
           ]}
         />
+
+        {pontoSelecionado && (
+          <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2">
+            <div className="min-w-0">
+              <p className="text-xs text-slate-500">Ponto selecionado</p>
+              <p className="truncate text-sm font-medium text-white">{pontoSelecionado.nome}</p>
+            </div>
+            <AbrirChamadoButton
+              pontoId={pontoSelecionado.id}
+              equipamentoNome={pontoSelecionado.nome}
+              variant="icon"
+            />
+          </div>
+        )}
 
         <FormInput
           label="Valor bruto arrecadado"

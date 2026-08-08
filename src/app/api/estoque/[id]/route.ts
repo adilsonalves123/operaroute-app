@@ -16,6 +16,9 @@ export async function PATCH(
 
   const updates: Record<string, unknown> = {};
   if (body.nome_item != null) updates.nome_item = String(body.nome_item).trim();
+  if (body.descricao !== undefined) {
+    updates.descricao = body.descricao ? String(body.descricao).trim() : null;
+  }
   if (body.categoria != null) updates.categoria = String(body.categoria).trim();
   if (body.custo_unitario != null) updates.custo_unitario = Math.max(0, Number(body.custo_unitario) || 0);
   if (body.quantidade != null) updates.quantidade = Math.max(0, Math.floor(Number(body.quantidade) || 0));
@@ -28,6 +31,9 @@ export async function PATCH(
   if (body.observacao !== undefined) {
     updates.observacao = body.observacao ? String(body.observacao).trim() : null;
   }
+  if (body.foto_url !== undefined) {
+    updates.foto_url = body.foto_url ? String(body.foto_url).trim() : null;
+  }
 
   const { error } = await supabase
     .from("estoque")
@@ -36,8 +42,32 @@ export async function PATCH(
     .eq("empresa_id", profile.empresa_id);
 
   if (error) {
+    const msg = error.message ?? "";
+    if (msg.includes("descricao") || msg.includes("schema cache")) {
+      return NextResponse.json(
+        {
+          error:
+            "Coluna descricao ausente. Rode supabase/estoque-descricao.sql no Supabase SQL Editor.",
+        },
+        { status: 500 }
+      );
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const { auditarAcao } = await import("@/lib/auditoria/auditar");
+  await auditarAcao(supabase, profile, {
+    acao: "estoque.editar",
+    tabela: "estoque",
+    registroId: id,
+    dadosNovos: updates,
+    severidade: "quantidade" in updates ? "medium" : "low",
+    categoria: "estoque",
+    modulo: "estoque",
+    titulo: "Editou item de estoque",
+    resumo: Object.keys(updates).join(", ") || "atualização",
+    request,
+  });
 
   return NextResponse.json({ success: true });
 }
@@ -62,6 +92,18 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const { auditarAcao } = await import("@/lib/auditoria/auditar");
+  await auditarAcao(supabase, profile, {
+    acao: "estoque.excluir",
+    tabela: "estoque",
+    registroId: id,
+    severidade: "high",
+    categoria: "estoque",
+    modulo: "estoque",
+    titulo: "Removeu item de estoque",
+    resumo: `Item ${id}`,
+  });
 
   return NextResponse.json({ success: true });
 }

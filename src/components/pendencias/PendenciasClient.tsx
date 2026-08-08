@@ -8,7 +8,7 @@ import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur, p
 import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
 import { whatsAppUrl } from "@/lib/nichos/cassino/relatorio";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
-import { AlertTriangle, CheckCircle, ChevronDown, MessageCircle, Trash2 } from "lucide-react";
+import { AlertTriangle, CheckCircle, ChevronDown, MessageCircle, Pencil, Trash2, X } from "lucide-react";
 
 export interface PendenciaItem {
   id: string;
@@ -22,7 +22,12 @@ export interface PendenciaItem {
   ponto_id: string | null;
   visita_id: string | null;
   coleta_id: string | null;
+  visita_ponto_id: string | null;
   pontos: { nome: string; whatsapp: string | null } | null;
+}
+
+function isVisitaPontoPendencia(p: PendenciaItem): boolean {
+  return Boolean(p.visita_ponto_id) || p.tipo === "visita_consolidada";
 }
 
 function isFuraFuraPendencia(p: PendenciaItem): boolean {
@@ -57,6 +62,7 @@ const tipoLabels: Record<string, string> = {
   parcial: "Pagamento parcial",
   pagamento_pendente: "Pagamento pendente",
   haver: "Haver (crédito)",
+  visita_consolidada: "Visita ao ponto",
 };
 
 const tipoVariant: Record<string, "danger" | "warning" | "info" | "success"> = {
@@ -64,10 +70,12 @@ const tipoVariant: Record<string, "danger" | "warning" | "info" | "success"> = {
   parcial: "warning",
   pagamento_pendente: "warning",
   haver: "success",
+  visita_consolidada: "warning",
 };
 
 const filtrosTipo = [
   { id: "todos", label: "Todos" },
+  { id: "visita_ponto", label: "Visita ao ponto" },
   { id: "fura_fura", label: "Fura Fura" },
   { id: "parcial", label: "Pagamento parcial" },
   { id: "pagamento_pendente", label: "Pagamento pendente" },
@@ -83,11 +91,15 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>("todos");
   const [mostrarTodas, setMostrarTodas] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [forms, setForms] = useState<
     Record<
       string,
       { valor_pix: string; valor_dinheiro: string; observacao: string; erro?: string }
     >
+  >({});
+  const [editForms, setEditForms] = useState<
+    Record<string, { valor: string; titulo: string; observacao_edit: string; erro?: string }>
   >({});
 
   const lista = pendencias.filter((p) => {
@@ -97,7 +109,9 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
         ? true
         : filtroTipo === "fura_fura"
           ? isFuraFuraPendencia(p)
-          : p.tipo === filtroTipo;
+          : filtroTipo === "visita_ponto"
+            ? isVisitaPontoPendencia(p)
+            : p.tipo === filtroTipo;
     return statusOk && tipoOk;
   });
 
@@ -106,6 +120,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
       const statusOk = mostrarTodas || p.status === "aberta";
       if (tipo === "todos") return statusOk;
       if (tipo === "fura_fura") return statusOk && isFuraFuraPendencia(p);
+      if (tipo === "visita_ponto") return statusOk && isVisitaPontoPendencia(p);
       return statusOk && p.tipo === tipo;
     }).length;
   }
@@ -125,25 +140,126 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
     }));
   }
 
+  function emptyEditForm(p: PendenciaItem) {
+    const saldo = valorPendenciaAberta(p);
+    return {
+      valor: saldo > 0.009 ? saldo.toFixed(2).replace(".", ",") : "",
+      titulo: p.titulo,
+      observacao_edit: "",
+    };
+  }
+
+  function iniciarEdicao(p: PendenciaItem) {
+    setEditingId(p.id);
+    setEditForms((prev) => ({
+      ...prev,
+      [p.id]: { ...emptyEditForm(p), ...prev[p.id], erro: "" },
+    }));
+  }
+
+  function cancelarEdicao(id: string) {
+    setEditingId((current) => (current === id ? null : current));
+    setEditForms((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+  }
+
+  function updateEditForm(
+    id: string,
+    field: "valor" | "titulo" | "observacao_edit",
+    value: string
+  ) {
+    setEditForms((prev) => {
+      const p = pendencias.find((x) => x.id === id);
+      const base =
+        prev[id] ??
+        (p ? emptyEditForm(p) : { valor: "", titulo: "", observacao_edit: "" });
+      return {
+        ...prev,
+        [id]: { ...base, [field]: value, erro: "" },
+      };
+    });
+  }
+
+  async function salvarEdicao(id: string) {
+    const pendencia = pendencias.find((p) => p.id === id);
+    const form = editForms[id];
+    if (!pendencia || !form) return;
+
+    const valor = parseMoneyInput(form.valor);
+    if (!Number.isFinite(valor) || valor < 0) {
+      setEditForms((prev) => ({
+        ...prev,
+        [id]: { ...form, erro: "Informe um valor válido." },
+      }));
+      return;
+    }
+
+    if (!form.titulo.trim()) {
+      setEditForms((prev) => ({
+        ...prev,
+        [id]: { ...form, erro: "Título é obrigatório." },
+      }));
+      return;
+    }
+
+    setLoadingId(id);
+    try {
+      const res = await fetch(`/api/pendencias/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          action: "editar",
+          valor: form.valor,
+          titulo: form.titulo.trim(),
+          observacao_edit: form.observacao_edit.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        cancelarEdicao(id);
+        router.refresh();
+      } else {
+        setEditForms((prev) => ({
+          ...prev,
+          [id]: { ...form, erro: data.error ?? "Erro ao salvar." },
+        }));
+      }
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
   async function baixarFuraFura(p: PendenciaItem, valorOverride?: number) {
     const form = forms[p.id] ?? emptyForm();
-    const valorPix = parseMoneyInput(form.valor_pix);
-    const valorDinheiro = parseMoneyInput(form.valor_dinheiro);
-    const valor = valorOverride ?? valorPix + valorDinheiro;
+    let valorPix = parseMoneyInput(form.valor_pix);
+    let valorDinheiro = parseMoneyInput(form.valor_dinheiro);
+    let bodyPix = form.valor_pix;
+    let bodyDinheiro = form.valor_dinheiro;
+
+    if (valorOverride != null && valorPix + valorDinheiro <= 0.009) {
+      valorDinheiro = valorOverride;
+      valorPix = 0;
+      bodyPix = "";
+      bodyDinheiro = valorOverride.toFixed(2).replace(".", ",");
+    }
+
+    const valor = valorPix + valorDinheiro;
     if (!p.ponto_id || valor <= 0) {
       setForms((prev) => ({
         ...prev,
-        [p.id]: { ...form, erro: "Informe um valor válido." },
+        [p.id]: { ...form, erro: "Informe quanto foi Pix e/ou dinheiro." },
       }));
       return;
     }
 
     setLoadingId(p.id);
     try {
-    const forma =
-      valorOverride != null
-        ? "dinheiro"
-        : valorPix > 0.009 && valorDinheiro > 0.009
+      const forma =
+        valorPix > 0.009 && valorDinheiro > 0.009
           ? "misto"
           : valorPix > 0.009
             ? "pix"
@@ -154,7 +270,8 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
         credentials: "include",
         body: JSON.stringify({
           ponto_id: p.ponto_id,
-          valor,
+          valor_pix: bodyPix,
+          valor_dinheiro: bodyDinheiro,
           forma_pagamento: forma,
           observacao: form.observacao || "Baixa via pendências",
         }),
@@ -322,6 +439,9 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
               : null;
 
             const isFura = isFuraFuraPendencia(p);
+            const isVisita = isVisitaPontoPendencia(p);
+            const editando = editingId === p.id;
+            const editForm = editForms[p.id] ?? emptyEditForm(p);
 
             return (
               <div key={p.id} className="glass-card p-4 space-y-3">
@@ -333,13 +453,26 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium text-white">{p.titulo}</p>
-                      <AlertBadge variant={tipoVariant[p.tipo] ?? "info"}>
-                        {tipoLabels[p.tipo] ?? p.tipo}
+                      <AlertBadge
+                        variant={
+                          p.tipo === "haver" &&
+                          /pagou ganhadores/i.test(`${p.titulo ?? ""} ${p.descricao ?? ""}`)
+                            ? "info"
+                            : (tipoVariant[p.tipo] ?? "info")
+                        }
+                      >
+                        {p.tipo === "haver" &&
+                        /pagou ganhadores/i.test(`${p.titulo ?? ""} ${p.descricao ?? ""}`)
+                          ? "Haver (pagou negativo)"
+                          : p.tipo === "haver"
+                            ? "Haver (troco/crédito)"
+                            : (tipoLabels[p.tipo] ?? p.tipo)}
                       </AlertBadge>
                       {p.status === "resolvida" && (
                         <AlertBadge variant="success">Resolvida</AlertBadge>
                       )}
                       {isFura && <AlertBadge variant="info">Fura Fura</AlertBadge>}
+                      {isVisita && <AlertBadge variant="info">Visita unificada</AlertBadge>}
                     </div>
                     <p className="text-sm text-slate-400 mt-1">
                       {p.pontos?.nome ?? "—"} · {formatDate(p.created_at)}
@@ -352,11 +485,23 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                         Ver coleta
                       </a>
                     )}
+                    {isVisita && p.visita_ponto_id && (
+                      <a
+                        href={`/visitas-ponto/${p.visita_ponto_id}/resumo`}
+                        className="text-xs text-primary-neon hover:underline mt-1 inline-block"
+                      >
+                        Ver resumo da visita
+                      </a>
+                    )}
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <p
                       className={`font-semibold ${
-                        p.tipo === "haver" ? "text-cyan-400" : "text-amber-400"
+                        p.tipo === "haver"
+                          ? /pagou ganhadores/i.test(`${p.titulo ?? ""} ${p.descricao ?? ""}`)
+                            ? "text-violet-400"
+                            : "text-cyan-400"
+                          : "text-amber-400"
                       }`}
                     >
                       {p.tipo === "haver" ? "+" : ""}
@@ -381,7 +526,91 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                       </div>
                     )}
 
-                    {p.status === "aberta" && (
+                    {editando && (
+                      <div className="rounded-lg border border-primary-neon/25 bg-primary-neon/5 p-4 space-y-3">
+                        <p className="text-sm font-medium text-white">Editar pendência</p>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-slate-300">
+                              Saldo em aberto (R$)
+                            </label>
+                            <input
+                              inputMode="decimal"
+                              value={editForm.valor}
+                              onChange={(e) =>
+                                updateEditForm(p.id, "valor", formatMoneyInput(e.target.value))
+                              }
+                              onBlur={(e) =>
+                                updateEditForm(
+                                  p.id,
+                                  "valor",
+                                  formatMoneyInputOnBlur(e.target.value)
+                                )
+                              }
+                              className="w-full"
+                              placeholder="0,00"
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <label className="block text-sm font-medium text-slate-300">
+                              Título
+                            </label>
+                            <input
+                              value={editForm.titulo}
+                              onChange={(e) => updateEditForm(p.id, "titulo", e.target.value)}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-1.5">
+                          <label className="block text-sm font-medium text-slate-300">
+                            Motivo da alteração (opcional)
+                          </label>
+                          <input
+                            value={editForm.observacao_edit}
+                            onChange={(e) =>
+                              updateEditForm(p.id, "observacao_edit", e.target.value)
+                            }
+                            className="w-full"
+                            placeholder="Ex: corrigido após desconto do haver"
+                          />
+                        </div>
+                        {editForm.erro && <p className="text-xs text-red-400">{editForm.erro}</p>}
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            disabled={loadingId === p.id}
+                            onClick={() => salvarEdicao(p.id)}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-primary-neon px-3 py-1.5 text-xs font-semibold text-slate-900 disabled:opacity-50"
+                          >
+                            {loadingId === p.id ? "Salvando..." : "Salvar alterações"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={loadingId === p.id}
+                            onClick={() => cancelarEdicao(p.id)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {!editando && !isFura && (p.status === "aberta" || mostrarTodas) && (
+                      <button
+                        type="button"
+                        disabled={loadingId === p.id}
+                        onClick={() => iniciarEdicao(p)}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Editar valor
+                      </button>
+                    )}
+
+                    {p.status === "aberta" && !editando && (
                       <>
                         {isFura && (
                           <p className="text-xs text-amber-400/90">

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PontoStatus } from "@/lib/types/database";
+import { cache } from "react";
 
 export type CartelaPontoItem = {
   id: string;
@@ -174,10 +175,10 @@ export function computeCartelaPontos(
   };
 }
 
-export async function fetchCartelaPontos(
+export const fetchCartelaPontos = cache(async (
   supabase: SupabaseClient,
   empresaId: string
-): Promise<CartelaPontos> {
+): Promise<CartelaPontos> => {
   const thirtyFiveDaysAgo = new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString();
 
   let pontosRows: PontoRow[] = [];
@@ -217,7 +218,7 @@ export async function fetchCartelaPontos(
     movimentos as MovimentoRow[],
     pontosRows
   );
-}
+});
 
 export function labelMotivoCartela(motivo?: string): string {
   switch (motivo) {

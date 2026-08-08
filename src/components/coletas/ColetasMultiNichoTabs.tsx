@@ -3,68 +3,147 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Plus } from "lucide-react";
+import { Outfit, Instrument_Serif } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { VisitasListClient } from "@/components/coletas/cassino/VisitasListClient";
 import {
   FuraFuraColetasClient,
   type ColetaFuraListItem,
 } from "@/components/coletas/fura-fura/FuraFuraColetasClient";
+import { ColetasClient } from "@/app/(app)/coletas/ColetasClient";
+import type { DashboardNichoId } from "@/lib/dashboard-nichos-ativos";
+import type { Coleta } from "@/lib/types/database";
 
 type Visita = Parameters<typeof VisitasListClient>[0]["visitas"][number];
+type ColetaUrsinho = Coleta & { pontos?: { nome: string; cidade: string | null } | null };
 
-type Tab = "cassino" | "fura_fura";
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
 
-const tabs: { id: Tab; label: string }[] = [
-  { id: "cassino", label: "Cassino" },
-  { id: "fura_fura", label: "Fura Fura" },
-];
+const display = Instrument_Serif({
+  subsets: ["latin"],
+  weight: ["400"],
+  display: "swap",
+});
+
+const TAB_LABELS: Record<DashboardNichoId, string> = {
+  maquinas_cassino: "Cassino",
+  fura_fura: "Fura Fura",
+  ursinho: "Ursinho",
+  diversao: "Diversão",
+  bolinha: "Bolinha",
+  consignado: "Consignado",
+};
+
+const NOVA_COLETA: Record<DashboardNichoId, { href: string; label: string }> = {
+  maquinas_cassino: { href: "/coletas/nova/cassino", label: "Nova leitura" },
+  fura_fura: { href: "/coletas/nova/fura-fura", label: "Nova coleta" },
+  ursinho: { href: "/coletas/nova/ursinho", label: "Nova coleta" },
+  diversao: { href: "/coletas/nova/diversao", label: "Nova coleta" },
+  bolinha: { href: "/coletas/nova/bolinha", label: "Nova coleta" },
+  consignado: { href: "/coletas/nova/consignado", label: "Novo recolhe" },
+};
 
 export function ColetasMultiNichoTabs({
-  visitas,
-  coletasFura,
+  nichos,
+  visitas = [],
+  coletasFura = [],
+  coletasUrsinho = [],
+  coletasDiversao = [],
+  coletasBolinha = [],
+  coletasConsignado = [],
 }: {
-  visitas: Visita[];
-  coletasFura: ColetaFuraListItem[];
+  nichos: DashboardNichoId[];
+  visitas?: Visita[];
+  coletasFura?: ColetaFuraListItem[];
+  coletasUrsinho?: ColetaUrsinho[];
+  coletasDiversao?: ColetaUrsinho[];
+  coletasBolinha?: ColetaUrsinho[];
+  coletasConsignado?: ColetaUrsinho[];
 }) {
-  const [tab, setTab] = useState<Tab>("cassino");
+  const [tab, setTab] = useState<DashboardNichoId>(nichos[0]);
+  const nova = NOVA_COLETA[tab];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Coletas</h1>
-          <div className="flex gap-6 mt-4 border-b border-slate-800">
-            {tabs.map((t) => (
+    <div className={cn(outfit.className, "relative space-y-8")}>
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-0 -top-16 h-56 bg-[radial-gradient(ellipse_at_top,_rgba(34,211,238,0.14),_transparent_60%)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-10 top-24 h-52 w-52 rounded-full bg-teal-400/[0.06] blur-3xl"
+      />
+
+      <header className="relative space-y-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-300/70">
+              Operação diária
+            </p>
+            <h1
+              className={cn(
+                display.className,
+                "mt-2 text-[2.65rem] leading-none tracking-tight text-white sm:text-5xl"
+              )}
+            >
+              Coletas
+            </h1>
+          </div>
+
+          <Link
+            href={nova.href}
+            className="group inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition duration-200 hover:bg-cyan-200 hover:shadow-[0_12px_40px_-16px_rgba(34,211,238,0.9)] active:scale-[0.98]"
+          >
+            <Plus className="h-4 w-4 transition duration-300 group-hover:rotate-90" />
+            {nova.label}
+          </Link>
+        </div>
+
+        <nav
+          className="inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-white/[0.07] bg-slate-950/50 p-1.5 backdrop-blur-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Nichos"
+        >
+          {nichos.map((id) => {
+            const active = tab === id;
+            return (
               <button
-                key={t.id}
+                key={id}
                 type="button"
-                onClick={() => setTab(t.id)}
+                onClick={() => setTab(id)}
                 className={cn(
-                  "pb-2.5 text-sm font-medium transition border-b-2 -mb-px",
-                  tab === t.id
-                    ? "border-primary-neon text-white"
-                    : "border-transparent text-slate-500 hover:text-slate-300"
+                  "shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
+                  active
+                    ? "bg-cyan-300 text-slate-950 shadow-sm"
+                    : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
                 )}
               >
-                {t.label}
+                {TAB_LABELS[id]}
               </button>
-            ))}
-          </div>
-        </div>
-        <Link
-          href={tab === "cassino" ? "/coletas/nova/cassino" : "/coletas/nova/fura-fura"}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300 shrink-0"
-        >
-          <Plus className="h-4 w-4" />
-          {tab === "cassino" ? "Nova leitura" : "Nova coleta"}
-        </Link>
-      </div>
+            );
+          })}
+        </nav>
+      </header>
 
-      {tab === "cassino" ? (
-        <VisitasListClient visitas={visitas} />
-      ) : (
-        <FuraFuraColetasClient coletas={coletasFura} />
-      )}
+      <div className="relative">
+        {tab === "maquinas_cassino" && <VisitasListClient visitas={visitas} />}
+        {tab === "fura_fura" && <FuraFuraColetasClient coletas={coletasFura} />}
+        {tab === "ursinho" && (
+          <ColetasClient coletas={coletasUrsinho} novaColetaHref="/coletas/nova/ursinho" />
+        )}
+        {tab === "diversao" && (
+          <ColetasClient coletas={coletasDiversao} novaColetaHref="/coletas/nova/diversao" />
+        )}
+        {tab === "bolinha" && (
+          <ColetasClient coletas={coletasBolinha} novaColetaHref="/coletas/nova/bolinha" />
+        )}
+        {tab === "consignado" && (
+          <ColetasClient coletas={coletasConsignado} novaColetaHref="/coletas/nova/consignado" />
+        )}
+      </div>
     </div>
   );
 }
