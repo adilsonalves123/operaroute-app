@@ -1,46 +1,82 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, MessageCircle, Navigation, Plus, Trash2 } from "lucide-react";
-import { FormInput, FormSelect, FormTextarea } from "@/components/ui/FormInput";
+import { Navigation, Trash2, ImageIcon } from "lucide-react";
+import { FormInput, FormSelect } from "@/components/ui/FormInput";
+import { parseMoneyInput } from "@/lib/utils";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { ColetaFuraFuraResumo } from "./ColetaFuraFuraResumo";
-import { FotoColetaFuraFura } from "./FotoColetaFuraFura";
+import { FotoColetaFuraFura, type UltimaColetaFoto } from "./FotoColetaFuraFura";
 import { PontoFuraAlertas } from "./PontoFuraAlertas";
+import {
+  ColetaNovaPageShell,
+  ColetaPontoBar,
+  ColetaNovaGrid,
+  ColetaOperacaoSection,
+  FecharColetaPanel,
+  ColetaPreviaSection,
+} from "@/components/coletas/layout";
+import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
+import { PreviaRelatorioFuraFuraPanel } from "@/components/coletas/fura-fura/PreviaRelatorioFuraFuraPanel";
+import { ColetaFuraFuraSucessoModal } from "@/components/coletas/fura-fura/ColetaFuraFuraSucessoModal";
+import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
+import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
+import { totalCobrancaNicho } from "@/lib/coletas/total-cobranca-nicho";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { uploadFotoFuraFura } from "@/lib/storage/coleta-fotos";
+import { useVisitaPontoContext } from "@/components/visitas-ponto/useVisitaPontoContext";
+import { VisitaPontoNav } from "@/components/visitas-ponto/VisitaPontoNav";
+import {
+  VisitaColetaModoPagamento,
+  type VisitaColetaModoFechar,
+} from "@/components/visitas-ponto/VisitaColetaModoPagamento";
 import {
   calcularColetaFuraFura,
   linksNavegacaoPonto,
-  mensagemWhatsAppColeta,
+  NICHO_MODULO_FURA_FURA,
+  validarBrindesContraEstoquePonto,
+  validarQuantidadeFurosColeta,
+  quantidadeRestanteBrindeNoPonto,
+  maxQuantidadeLinhaBrinde,
+  agregarPendenciasPorPonto,
+  labelPontoComPendencia,
+  type ResumoPendenciaPonto,
   type BrindeEntregue,
+  type EstoqueBrindePonto,
+  type CalculoColetaFuraFuraResult,
 } from "@/lib/nichos/fura-fura";
+import type { RelatorioFuraFuraData } from "@/lib/nichos/fura-fura/relatorio";
+import {
+  estoqueAvulsosDoKit,
+  validarBrindesContraPremiosKit,
+  type FuraKitPremio,
+  type FuraKitReposicaoItem,
+} from "@/lib/nichos/fura-fura/kits";
 import type { Ponto } from "@/lib/types/database";
+import { getComissaoPercentualNicho } from "@/lib/pontos/comissao-nicho";
+import { cn, formatCurrency } from "@/lib/utils";
 
 type PontoFura = Ponto & {
   preco_furo?: number | null;
   furos_estoque?: number | null;
   furos_minimo?: number | null;
+  kit_ativo_id?: string | null;
   estoque_brindes?: { item_id?: string; nome: string; quantidade: number; custo_unitario?: number }[];
 };
-
-function whatsAppUrl(phone: string | null | undefined, text: string): string | null {
-  if (!phone) return null;
-  const digits = phone.replace(/\D/g, "");
-  if (digits.length < 10) return null;
-  const num = digits.startsWith("55") ? digits : `55${digits}`;
-  return `https://wa.me/${num}?text=${encodeURIComponent(text)}`;
-}
 
 export function NovaColetaFuraFuraForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
+  const submitLock = useSubmitLock();
   const [error, setError] = useState("");
   const [pontos, setPontos] = useState<PontoFura[]>([]);
+  const [pendenciasPorPonto, setPendenciasPorPonto] = useState<
+    Map<string, ResumoPendenciaPonto>
+  >(new Map());
   const [relatorioEnviado, setRelatorioEnviado] = useState(false);
   const [form, setForm] = useState({
     ponto_id: searchParams.get("ponto") ?? "",
@@ -48,18 +84,40 @@ export function NovaColetaFuraFuraForm() {
     preco_furo: "",
     comissao_percentual: "",
     desconto: "",
-    valor_pago_recebido: "",
-    forma_pagamento: "dinheiro",
+    valor_pix: "",
+    valor_dinheiro: "",
     brindes_repostos: "",
     brindes_restantes: "",
     observacao: "",
   });
+  const { visitaPontoId, emVisitaPonto, ensuringVisita, voltarAposColeta, finalizarVisitaAgora, confirmarReceberEncerrar } =
+    useVisitaPontoContext(form.ponto_id);
   const [brindes, setBrindes] = useState<BrindeEntregue[]>([]);
   const [empresaId, setEmpresaId] = useState<string | null>(null);
+  const [empresaNome, setEmpresaNome] = useState("Operação");
+  const [chavePix, setChavePix] = useState<string | null>(null);
   const [gps, setGps] = useState<{ latitude: number; longitude: number } | null>(null);
   const [fotoFile, setFotoFile] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [erroFoto, setErroFoto] = useState("");
+  const [ultimaColetaFoto, setUltimaColetaFoto] = useState<UltimaColetaFoto | null>(null);
+  const [kitAtivo, setKitAtivo] = useState<{ id: string; nome: string } | null>(null);
+  const [premiosKit, setPremiosKit] = useState<FuraKitPremio[]>([]);
+  const [reposicaoKit, setReposicaoKit] = useState<FuraKitReposicaoItem[]>([]);
+  const [fotosEstoque, setFotosEstoque] = useState<Map<string, string>>(new Map());
+  const [modoFecharVisita, setModoFecharVisita] =
+    useState<VisitaColetaModoFechar>("continuar");
+  const receberAgora = emVisitaPonto && modoFecharVisita === "receber";
+  const fecharVisitaAgora = receberAgora;
+  const [haverSaldo, setHaverSaldo] = useState(0);
+  const [descontarHaver, setDescontarHaver] = useState(false);
+  const [incluirPendencia, setIncluirPendencia] = useState(false);
+  const [sucesso, setSucesso] = useState<{
+    coletaId: string;
+    relatorioData: RelatorioFuraFuraData;
+    valorACobrar: number;
+    visitaJaFinalizada: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -80,27 +138,215 @@ export function NovaColetaFuraFuraForm() {
       const eid = await getEmpresaIdForUser(supabase);
       if (!eid) return;
       setEmpresaId(eid);
-      const { data } = await supabase
-        .from("pontos")
-        .select("*")
-        .eq("empresa_id", eid)
-        .eq("status", "ativo")
-        .order("nome");
+      const [{ data }, { data: coletasPend }, { data: empresa }] = await Promise.all([
+        supabase
+          .from("pontos")
+          .select("*")
+          .eq("empresa_id", eid)
+          .eq("status", "ativo")
+          .order("nome"),
+        supabase
+          .from("coletas")
+          .select("ponto_id, valor_a_receber, valor_pago_recebido")
+          .eq("empresa_id", eid)
+          .eq("nicho_modulo", NICHO_MODULO_FURA_FURA),
+        supabase.from("empresas").select("nome_operacao, chave_pix").eq("id", eid).maybeSingle(),
+      ]);
       setPontos((data as PontoFura[]) ?? []);
+      setPendenciasPorPonto(agregarPendenciasPorPonto(coletasPend ?? []));
+      if (empresa?.nome_operacao) setEmpresaNome(empresa.nome_operacao);
+      setChavePix(empresa?.chave_pix ?? null);
     }
     load();
   }, []);
 
   const ponto = pontos.find((p) => p.id === form.ponto_id);
+  const pendenciaPonto = form.ponto_id ? pendenciasPorPonto.get(form.ponto_id) : undefined;
 
   useEffect(() => {
     if (!ponto) return;
     setForm((prev) => ({
       ...prev,
-      comissao_percentual: String(ponto.comissao_percentual ?? 0),
+      comissao_percentual: String(getComissaoPercentualNicho(ponto, "fura_fura")),
       preco_furo: String(ponto.preco_furo ?? 1),
     }));
+    setBrindes([]);
+    setDescontarHaver(false);
+    setIncluirPendencia(false);
   }, [ponto?.id]);
+
+  useEffect(() => {
+    if (!form.ponto_id || !empresaId) {
+      setHaverSaldo(0);
+      return;
+    }
+    let cancelled = false;
+    async function loadHaver() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("pendencias")
+        .select("id, tipo, titulo, valor, status")
+        .eq("empresa_id", empresaId)
+        .eq("ponto_id", form.ponto_id)
+        .eq("status", "aberta")
+        .ilike("tipo", "haver");
+      if (cancelled) return;
+      setHaverSaldo(somarHaverNichoAberto(data ?? [], "fura-fura"));
+    }
+    void loadHaver();
+    return () => {
+      cancelled = true;
+    };
+  }, [form.ponto_id, empresaId]);
+
+  useEffect(() => {
+    if (!ponto?.kit_ativo_id) {
+      setKitAtivo(null);
+      setPremiosKit([]);
+      setReposicaoKit([]);
+      return;
+    }
+    let cancelled = false;
+    fetch(`/api/fura-kits/${ponto.kit_ativo_id}`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled || !data.kit) return;
+        setKitAtivo({ id: data.kit.id, nome: data.kit.nome });
+        setPremiosKit(data.kit.premios ?? []);
+        setReposicaoKit(data.kit.reposicao_itens ?? []);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [ponto?.kit_ativo_id]);
+
+  const poolBrindesPonto = useMemo((): EstoqueBrindePonto[] => {
+    if (!ponto?.estoque_brindes || !Array.isArray(ponto.estoque_brindes)) return [];
+    return ponto.estoque_brindes.map((e) => ({
+      item_id: e.item_id,
+      nome: e.nome,
+      quantidade: Math.max(0, Math.floor(Number(e.quantidade) || 0)),
+      custo_unitario: Number(e.custo_unitario ?? 0),
+    }));
+  }, [ponto?.estoque_brindes]);
+
+  const estoqueBrindes = useMemo((): EstoqueBrindePonto[] => {
+    if (kitAtivo) {
+      return estoqueAvulsosDoKit(premiosKit, poolBrindesPonto, reposicaoKit);
+    }
+    return poolBrindesPonto;
+  }, [kitAtivo, premiosKit, poolBrindesPonto, reposicaoKit]);
+
+  useEffect(() => {
+    if (!empresaId) return;
+    let cancelled = false;
+    async function loadFotos() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("estoque")
+        .select("id, foto_url")
+        .eq("empresa_id", empresaId)
+        .not("foto_url", "is", null);
+      if (cancelled) return;
+      const map = new Map<string, string>();
+      for (const row of data ?? []) {
+        if (row.foto_url) map.set(row.id, row.foto_url);
+      }
+      setFotosEstoque(map);
+    }
+    void loadFotos();
+    return () => {
+      cancelled = true;
+    };
+  }, [empresaId]);
+
+  useEffect(() => {
+    if (!form.ponto_id || !empresaId) {
+      setUltimaColetaFoto(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadUltimaFoto() {
+      const supabase = createClient();
+      const pontoId = form.ponto_id;
+      const eid = empresaId as string;
+
+      const aplicar = (foto_url: string | null | undefined, created_at: string) => {
+        const url = String(foto_url ?? "").trim();
+        if (!url || cancelled) return false;
+        setUltimaColetaFoto({ foto_url: url, created_at });
+        return true;
+      };
+
+      // 1) Última coleta fura-fura com foto
+      const { data: coletaNicho } = await supabase
+        .from("coletas")
+        .select("foto_url, created_at")
+        .eq("empresa_id", eid)
+        .eq("ponto_id", pontoId)
+        .eq("nicho_modulo", NICHO_MODULO_FURA_FURA)
+        .not("foto_url", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(8);
+
+      if (cancelled) return;
+      for (const row of coletaNicho ?? []) {
+        if (aplicar(row.foto_url, row.created_at)) return;
+      }
+
+      // 2) Legado: coletas do ponto com furos (antes do nicho_modulo)
+      const { data: coletaLegado } = await supabase
+        .from("coletas")
+        .select("foto_url, created_at, quantidade_furos, nicho_modulo")
+        .eq("empresa_id", eid)
+        .eq("ponto_id", pontoId)
+        .not("foto_url", "is", null)
+        .not("quantidade_furos", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(8);
+
+      if (cancelled) return;
+      for (const row of coletaLegado ?? []) {
+        const nicho = row.nicho_modulo;
+        if (nicho && nicho !== NICHO_MODULO_FURA_FURA) continue;
+        if (aplicar(row.foto_url, row.created_at)) return;
+      }
+
+      // 3) Fallback: foto salva no equipamento fura-fura do ponto
+      const { data: eqs } = await supabase
+        .from("equipamentos")
+        .select("foto_url, created_at")
+        .eq("empresa_id", eid)
+        .eq("ponto_id", pontoId)
+        .eq("tipo", "fura_fura")
+        .not("foto_url", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (cancelled) return;
+      for (const eq of eqs ?? []) {
+        if (aplicar(eq.foto_url, eq.created_at ?? new Date().toISOString())) {
+          return;
+        }
+      }
+
+      if (!cancelled) setUltimaColetaFoto(null);
+    }
+
+    void loadUltimaFoto();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [form.ponto_id, empresaId]);
+
+  const valorRecebido =
+    emVisitaPonto && !receberAgora
+      ? 0
+      : parseMoneyInput(form.valor_pix) + parseMoneyInput(form.valor_dinheiro);
 
   const calculo = useMemo(
     () =>
@@ -110,22 +356,43 @@ export function NovaColetaFuraFuraForm() {
         comissaoPercentual: Number(form.comissao_percentual) || 0,
         desconto: Number(form.desconto) || 0,
         brindes,
-        valorPagoRecebido: Number(form.valor_pago_recebido) || 0,
+        valorPagoRecebido: valorRecebido,
       }),
-    [form, brindes, ponto]
+    [form, brindes, ponto, valorRecebido]
   );
+
+  const totalACobrarAgora = useMemo(() => {
+    if (emVisitaPonto && !receberAgora) return calculo.valorAReceber;
+    return totalCobrancaNicho({
+      valorOperacao: calculo.valorAReceber,
+      pendenciaSaldo: pendenciaPonto?.totalPendente ?? 0,
+      incluirPendencia,
+      haverSaldo,
+      descontarHaver,
+    }).totalACobrar;
+  }, [
+    emVisitaPonto,
+    receberAgora,
+    calculo.valorAReceber,
+    pendenciaPonto?.totalPendente,
+    incluirPendencia,
+    haverSaldo,
+    descontarHaver,
+  ]);
 
   function update(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function addBrindeFromEstoque(item: NonNullable<PontoFura["estoque_brindes"]>[number]) {
+  function addBrindeFromEstoque(item: EstoqueBrindePonto) {
     setBrindes((prev) => {
-      const exists = prev.find((b) => b.item_id === item.item_id || b.nome === item.nome);
-      if (exists) {
-        return prev.map((b) =>
-          b.nome === item.nome ? { ...b, quantidade: b.quantidade + 1 } : b
-        );
+      const restante = quantidadeRestanteBrindeNoPonto(estoqueBrindes, prev, item);
+      if (restante <= 0) return prev;
+
+      const key = item.item_id ?? item.nome;
+      const idx = prev.findIndex((b) => (b.item_id ?? b.nome) === key);
+      if (idx >= 0) {
+        return prev.map((b, j) => (j === idx ? { ...b, quantidade: b.quantidade + 1 } : b));
       }
       return [
         ...prev,
@@ -139,11 +406,13 @@ export function NovaColetaFuraFuraForm() {
     });
   }
 
-  function addBrindeManual() {
-    setBrindes((prev) => [
-      ...prev,
-      { nome: `Brinde ${prev.length + 1}`, quantidade: 1, custo_unitario: 0 },
-    ]);
+  function updateBrindeQuantidade(index: number, raw: string) {
+    const max = maxQuantidadeLinhaBrinde(estoqueBrindes, brindes, index);
+    if (max <= 0) return;
+    const qty = Math.min(Math.max(1, Math.floor(Number(raw) || 1)), max);
+    setBrindes((prev) =>
+      prev.map((x, j) => (j === index ? { ...x, quantidade: qty } : x))
+    );
   }
 
   function handleFotoChange(file: File | null) {
@@ -173,8 +442,32 @@ export function NovaColetaFuraFuraForm() {
       return;
     }
 
+    const erroBrindes = kitAtivo
+      ? validarBrindesContraPremiosKit(brindes, premiosKit, poolBrindesPonto, reposicaoKit)
+      : validarBrindesContraEstoquePonto(brindes, estoqueBrindes);
+    if (erroBrindes) {
+      setError(erroBrindes);
+      return;
+    }
+
+    const erroFuros = validarQuantidadeFurosColeta(
+      calculo.quantidadeFuros,
+      ponto?.furos_estoque
+    );
+    if (erroFuros) {
+      setError(erroFuros);
+      return;
+    }
+
+    if (receberAgora) {
+      const ok = await confirmarReceberEncerrar();
+      if (!ok) return;
+    }
+
+    if (loading || !!sucesso || !submitLock.tryLock()) return;
     setLoading(true);
     setError("");
+    let concluido = false;
 
     try {
       const supabase = createClient();
@@ -185,11 +478,17 @@ export function NovaColetaFuraFuraForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
+          valor_pix: receberAgora ? form.valor_pix : "",
+          valor_dinheiro: receberAgora ? form.valor_dinheiro : "",
           brindes,
           relatorio_enviado: relatorioEnviado,
           foto_url: fotoUrl,
           latitude: gps?.latitude ?? null,
           longitude: gps?.longitude ?? null,
+          visita_ponto_id: visitaPontoId || null,
+          receber_agora: receberAgora,
+          descontar_haver_na_cobranca: receberAgora && descontarHaver,
+          incluir_pendencia_operacao: receberAgora && incluirPendencia,
         }),
       });
       const data = await res.json();
@@ -197,302 +496,463 @@ export function NovaColetaFuraFuraForm() {
         setError(data.error ?? "Erro ao registrar coleta.");
         return;
       }
-      router.push("/coletas");
-      router.refresh();
-    } catch {
-      setError("Erro de conexão.");
+
+      if (fecharVisitaAgora) {
+        await finalizarVisitaAgora({
+          pix: parseMoneyInput(form.valor_pix),
+          dinheiro: parseMoneyInput(form.valor_dinheiro),
+          desconto: parseMoneyInput(form.desconto),
+          somenteFechar: true,
+        });
+      }
+
+      const calculoSalvo: CalculoColetaFuraFuraResult =
+        data.calculo && typeof data.calculo === "object"
+          ? { ...calculo, ...data.calculo }
+          : calculo;
+
+      setSucesso({
+        coletaId: String(data.id ?? ""),
+        relatorioData: {
+          empresaNome,
+          pontoNome: ponto?.nome ?? data.ponto?.nome ?? "Ponto",
+          pontoWhatsapp: ponto?.whatsapp ?? data.ponto?.whatsapp ?? null,
+          data: new Date(),
+          previa: false,
+          calculo: calculoSalvo,
+          kitNome: kitAtivo?.nome ?? null,
+          fotoUrl,
+        },
+        valorACobrar: totalACobrarAgora,
+        visitaJaFinalizada: fecharVisitaAgora,
+      });
+      concluido = true;
+
+      // Evita F5 reabrir a coleta já salva.
+      {
+        const params = new URLSearchParams();
+        if (form.ponto_id) params.set("ponto", form.ponto_id);
+        if (visitaPontoId && !fecharVisitaAgora) {
+          params.set("visita_ponto", visitaPontoId);
+        }
+        router.replace(
+          params.toString()
+            ? `/coletas/nova/fura-fura?${params.toString()}`
+            : "/coletas/nova/fura-fura"
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro de conexão.");
     } finally {
       setLoading(false);
+      if (!concluido) submitLock.unlock();
     }
   }
 
-  const msgWhatsApp = ponto
-    ? mensagemWhatsAppColeta(ponto.nome, calculo)
-    : "";
-  const waLink = whatsAppUrl(ponto?.whatsapp, msgWhatsApp);
+  function handleConcluirSucesso() {
+    const jaFinalizada = sucesso?.visitaJaFinalizada === true;
+    setSucesso(null);
+    voltarAposColeta(jaFinalizada ? { visitaJaFinalizada: true } : undefined);
+  }
+
   const navLinks = ponto ? linksNavegacaoPonto(ponto) : null;
+  const maxFuros = ponto?.furos_estoque != null ? Math.max(0, ponto.furos_estoque) : null;
+  const erroFurosForm =
+    ponto && calculo.quantidadeFuros > 0
+      ? validarQuantidadeFurosColeta(calculo.quantidadeFuros, ponto.furos_estoque)
+      : null;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href="/coletas" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Nova coleta</h1>
-          <p className="text-sm text-slate-400">Fura-fura — furos, comissão e lucro real</p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="glass-card space-y-4 p-6">
-          <FormSelect
-            label="Ponto *"
-            value={form.ponto_id}
-            onChange={(e) => update("ponto_id", e.target.value)}
-            options={[
-              { value: "", label: "Selecione..." },
-              ...pontos.map((p) => ({ value: p.id, label: p.nome })),
-            ]}
-          />
-
-          {ponto && (
-            <>
-              <PontoFuraAlertas ponto={ponto} />
-              <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-500">
-                <span>
-                  Comissão:{" "}
-                  <strong className="text-slate-300">{form.comissao_percentual || 0}%</strong>
-                </span>
-                {ponto.furos_estoque != null && (
-                  <span>
-                    Furos na máquina:{" "}
-                    <strong className="text-slate-300">{ponto.furos_estoque}</strong>
-                  </span>
-                )}
-                {gps && <span className="text-green-500/80 text-xs">GPS capturado</span>}
-              </div>
-              {navLinks && (
-                <div className="flex flex-wrap gap-2">
-                  <a
-                    href={navLinks.waze}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-primary-neon/40 hover:text-primary-neon"
-                  >
-                    <Navigation className="h-3.5 w-3.5" />
-                    Waze
-                  </a>
-                  <a
-                    href={navLinks.google}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-primary-neon/40 hover:text-primary-neon"
-                  >
-                    <Navigation className="h-3.5 w-3.5" />
-                    Google Maps
-                  </a>
-                </div>
-              )}
-            </>
-          )}
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormInput
-              label="Furos utilizados *"
-              type="number"
-              min={0}
-              value={form.quantidade_furos}
-              onChange={(e) => update("quantidade_furos", e.target.value)}
-            />
-            <FormInput
-              label="Preço por furo (R$)"
-              type="number"
-              step="0.01"
-              min={0}
-              value={form.preco_furo}
-              onChange={(e) => update("preco_furo", e.target.value)}
-            />
+    <ColetaNovaPageShell
+      title="Coleta fura-fura"
+      subtitle={
+        ensuringVisita
+          ? "Entrando na visita do ponto…"
+          : emVisitaPonto
+            ? "Furos, foto e brindes — Salvar e seguir ou Receber e encerrar."
+            : "Furos, foto e brindes — pagamento opcional no painel à direita."
+      }
+      backHref={emVisitaPonto ? `/visitas-ponto/${visitaPontoId}` : "/coletas"}
+      topSlot={
+        emVisitaPonto ? (
+          <VisitaPontoNav visitaPontoId={visitaPontoId} pontoId={form.ponto_id || undefined} active="fura_fura" />
+        ) : ensuringVisita ? (
+          <div className="rounded-xl border border-primary-neon/20 bg-primary-neon/5 px-3 py-2 text-xs text-slate-400">
+            Preparando visita multi-nicho…
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
+        ) : undefined
+      }
+    >
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <ColetaPontoBar
+          pontoField={
+            <FormSelect
+              label="Ponto *"
+              value={form.ponto_id}
+              onChange={(e) => update("ponto_id", e.target.value)}
+              options={[
+                { value: "", label: "Selecione..." },
+                ...pontos.map((p) => ({
+                  value: p.id,
+                  label: labelPontoComPendencia(
+                    p.nome,
+                    pendenciasPorPonto.get(p.id),
+                    formatCurrency
+                  ),
+                })),
+              ]}
+            />
+          }
+          comissaoField={
             <FormInput
-              label="Comissão do ponto (%)"
+              label="Comissão (%)"
               type="number"
               step="0.01"
               value={form.comissao_percentual}
               onChange={(e) => update("comissao_percentual", e.target.value)}
             />
-            <FormInput
-              label="Desconto (R$)"
-              type="number"
-              step="0.01"
-              min={0}
-              value={form.desconto}
-              onChange={(e) => update("desconto", e.target.value)}
-            />
+          }
+          alert={
+            ponto ? (
+              <div className="mt-3 space-y-3">
+                <ColetaHaverPendenciaPanel
+                  variante="alertas"
+                  haverSaldo={haverSaldo}
+                  pendenciaSaldo={pendenciaPonto?.totalPendente ?? 0}
+                  pendenciaColetas={pendenciaPonto?.coletasAbertas ?? 0}
+                  descontarHaver={descontarHaver}
+                  onDescontarHaverChange={setDescontarHaver}
+                  incluirPendencia={incluirPendencia}
+                  onIncluirPendenciaChange={setIncluirPendencia}
+                />
+                <PontoFuraAlertas ponto={ponto} />
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
+                  {ponto.furos_estoque != null && (
+                    <span>
+                      Furos na máquina:{" "}
+                      <strong className="text-slate-300">{ponto.furos_estoque}</strong>
+                    </span>
+                  )}
+                  {gps && <span className="text-green-500/80 text-xs">GPS capturado</span>}
+                  <AbrirChamadoButton
+                    pontoId={ponto.id}
+                    equipamentoNome={ponto.nome}
+                    variant="icon"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
+                  />
+                </div>
+                {navLinks && (
+                  <div className="flex flex-wrap gap-2">
+                    <a
+                      href={navLinks.waze}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-primary-neon/40 hover:text-primary-neon"
+                    >
+                      <Navigation className="h-3.5 w-3.5" />
+                      Waze
+                    </a>
+                    <a
+                      href={navLinks.google}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-primary-neon/40 hover:text-primary-neon"
+                    >
+                      <Navigation className="h-3.5 w-3.5" />
+                      Google Maps
+                    </a>
+                  </div>
+                )}
+              </div>
+            ) : undefined
+          }
+        />
+
+        <ColetaNovaGrid
+          operacao={
+            <ColetaOperacaoSection title="Dados da coleta">
+              <div className="glass-card space-y-4 p-4 sm:p-5">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <FormInput
+                      label="Furos utilizados *"
+                      type="number"
+                      min={0}
+                      max={maxFuros ?? undefined}
+                      value={form.quantidade_furos}
+                      onChange={(e) => update("quantidade_furos", e.target.value)}
+                    />
+                    {maxFuros != null && (
+                      <p className="text-xs text-slate-500">
+                        Máximo: <strong className="text-slate-400">{maxFuros}</strong> furos na
+                        máquina
+                        {ponto?.furos_minimo != null && ponto.furos_minimo > 0 && (
+                          <> (mín. operacional: {ponto.furos_minimo})</>
+                        )}
+                      </p>
+                    )}
+                    {erroFurosForm && <p className="text-xs text-red-400">{erroFurosForm}</p>}
+                  </div>
+                  <FormInput
+                    label="Preço por furo (R$)"
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={form.preco_furo}
+                    onChange={(e) => update("preco_furo", e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="glass-card p-4 sm:p-5">
+                <FotoColetaFuraFura
+                  preview={fotoPreview}
+                  onChange={handleFotoChange}
+                  erro={erroFoto}
+                  ultimaColeta={ultimaColetaFoto}
+                />
+              </div>
+
+              <div className="glass-card space-y-4 p-4 sm:p-5">
+          <div>
+            <h3 className="text-sm font-medium text-slate-300">Prêmios entregues</h3>
+            {kitAtivo ? (
+              <p className="text-xs text-cyan-400/90 mt-1">
+                Kit ativo: {kitAtivo.nome} — toque no prêmio que o cliente ganhou (baixa no
+                pool do ponto).
+              </p>
+            ) : (
+              <p className="text-xs text-slate-500 mt-1">
+                Toque no item alocado no ponto. A quantidade não pode ultrapassar o estoque.
+              </p>
+            )}
           </div>
-        </div>
 
-        <div className="glass-card p-6">
-          <FotoColetaFuraFura
-            preview={fotoPreview}
-            onChange={handleFotoChange}
-            erro={erroFoto}
-          />
-        </div>
-
-        <div className="glass-card space-y-4 p-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-slate-300">Brindes entregues</h3>
-            <button
-              type="button"
-              onClick={addBrindeManual}
-              className="inline-flex items-center gap-1 text-xs text-primary-neon hover:underline"
-            >
-              <Plus className="h-3 w-3" /> Adicionar
-            </button>
-          </div>
-
-          {ponto?.estoque_brindes && Array.isArray(ponto.estoque_brindes) && (
+          {estoqueBrindes.length > 0 ? (
             <div className="flex flex-wrap gap-2">
-              {ponto.estoque_brindes
-                .filter((i) => (i.quantidade ?? 0) > 0)
-                .map((item) => (
+              {estoqueBrindes.map((item) => {
+                const restante = quantidadeRestanteBrindeNoPonto(estoqueBrindes, brindes, item);
+                const foto = item.item_id ? fotosEstoque.get(item.item_id) : undefined;
+                const semEstoque = item.quantidade <= 0 || restante <= 0;
+                return (
                   <button
                     key={item.item_id ?? item.nome}
                     type="button"
+                    disabled={semEstoque}
                     onClick={() => addBrindeFromEstoque(item)}
-                    className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-400 hover:border-primary-neon/40 hover:text-primary-neon"
+                    className={cn(
+                      "inline-flex items-center gap-2 rounded-lg border px-2 py-1.5 text-xs transition",
+                      semEstoque
+                        ? "cursor-not-allowed border-slate-800 text-slate-600"
+                        : "border-slate-700 text-slate-300 hover:border-primary-neon/40 hover:text-primary-neon"
+                    )}
                   >
-                    + {item.nome} ({item.quantidade})
+                    {foto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={foto}
+                        alt=""
+                        className="h-8 w-8 shrink-0 rounded-md object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-800 bg-slate-900">
+                        <ImageIcon className="h-3.5 w-3.5 text-slate-600" />
+                      </span>
+                    )}
+                    <span className="text-left leading-tight">
+                      <span className="block font-medium">+ {item.nome}</span>
+                      <span className="text-[10px] text-slate-500">
+                        {item.quantidade <= 0
+                          ? "0 no ponto"
+                          : `${restante}/${item.quantidade} no ponto`}
+                      </span>
+                    </span>
                   </button>
-                ))}
+                );
+              })}
             </div>
+          ) : (
+            <p className="text-xs italic text-slate-600">
+              {kitAtivo
+                ? "Este kit não tem itens na composição, ou o pool do ponto está vazio. Realoque o kit em Pontos."
+                : "Nenhum brinde alocado neste ponto. Alocar em Pontos → configuração fura-fura."}
+            </p>
           )}
 
           {brindes.length === 0 ? (
-            <p className="text-xs italic text-slate-600">Nenhum brinde nesta coleta.</p>
+            <p className="text-xs text-slate-500">
+              {estoqueBrindes.some((i) => i.quantidade > 0)
+                ? "Nenhum prêmio registrado ainda — toque em um item acima."
+                : "Nenhum brinde nesta coleta."}
+            </p>
           ) : (
             <div className="space-y-2">
-              {brindes.map((b, i) => (
-                <div key={i} className="grid gap-2 sm:grid-cols-4 items-end">
-                  <FormInput
-                    label="Item"
-                    value={b.nome}
-                    onChange={(e) =>
-                      setBrindes((prev) =>
-                        prev.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x))
-                      )
-                    }
-                  />
-                  <FormInput
-                    label="Qtd"
-                    type="number"
-                    min={1}
-                    value={String(b.quantidade)}
-                    onChange={(e) =>
-                      setBrindes((prev) =>
-                        prev.map((x, j) =>
-                          j === i ? { ...x, quantidade: Number(e.target.value) || 0 } : x
-                        )
-                      )
-                    }
-                  />
-                  <FormInput
-                    label="Custo un."
-                    type="number"
-                    step="0.01"
-                    value={String(b.custo_unitario)}
-                    onChange={(e) =>
-                      setBrindes((prev) =>
-                        prev.map((x, j) =>
-                          j === i ? { ...x, custo_unitario: Number(e.target.value) || 0 } : x
-                        )
-                      )
-                    }
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setBrindes((prev) => prev.filter((_, j) => j !== i))}
-                    className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
+              {brindes.map((b, i) => {
+                const maxQtd = maxQuantidadeLinhaBrinde(estoqueBrindes, brindes, i);
+                const foto = b.item_id ? fotosEstoque.get(b.item_id) : undefined;
+                return (
+                  <div key={i} className="grid gap-2 sm:grid-cols-[auto_1fr_1fr_1fr_auto] items-end">
+                    {foto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={foto}
+                        alt=""
+                        className="mb-0.5 h-10 w-10 rounded-md object-cover"
+                      />
+                    ) : (
+                      <span className="mb-0.5 flex h-10 w-10 items-center justify-center rounded-md border border-slate-800 bg-slate-900">
+                        <ImageIcon className="h-4 w-4 text-slate-600" />
+                      </span>
+                    )}
+                    <FormInput label="Item" value={b.nome} readOnly />
+                    <FormInput
+                      label={`Qtd (máx. ${maxQtd})`}
+                      type="number"
+                      min={1}
+                      max={maxQtd}
+                      value={String(b.quantidade)}
+                      onChange={(e) => updateBrindeQuantidade(i, e.target.value)}
+                    />
+                    <FormInput
+                      label="Custo un."
+                      type="number"
+                      step="0.01"
+                      value={String(b.custo_unitario)}
+                      readOnly
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setBrindes((prev) => prev.filter((_, j) => j !== i))}
+                      className="rounded-lg p-2 text-red-400 hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           )}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormInput
-              label="Brindes repostos"
-              type="number"
-              value={form.brindes_repostos}
-              onChange={(e) => update("brindes_repostos", e.target.value)}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormInput
+                    label="Brindes repostos"
+                    type="number"
+                    value={form.brindes_repostos}
+                    onChange={(e) => update("brindes_repostos", e.target.value)}
+                  />
+                  <FormInput
+                    label="Brindes restantes"
+                    type="number"
+                    value={form.brindes_restantes}
+                    onChange={(e) => update("brindes_restantes", e.target.value)}
+                  />
+                </div>
+              </div>
+            </ColetaOperacaoSection>
+          }
+          fechar={
+            <FecharColetaPanel
+              empty={
+                calculo.quantidadeFuros <= 0 ? (
+                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
+                    Informe a quantidade de furos para ver o resumo e registrar o pagamento.
+                  </p>
+                ) : undefined
+              }
+              resumo={
+                calculo.quantidadeFuros > 0 ? (
+                  <ColetaFuraFuraResumo
+                    calculo={calculo}
+                    pendenciaPonto={pendenciaPonto}
+                    haverSaldo={haverSaldo}
+                    descontarHaver={descontarHaver}
+                    onDescontarHaverChange={setDescontarHaver}
+                    incluirPendencia={incluirPendencia}
+                    onIncluirPendenciaChange={setIncluirPendencia}
+                    modoVisitaPonto={emVisitaPonto}
+                    receberAgora={receberAgora}
+                    modoFecharSlot={
+                      emVisitaPonto ? (
+                        <VisitaColetaModoPagamento
+                          value={modoFecharVisita === "finalizar" ? "continuar" : modoFecharVisita}
+                          onChange={(v) => {
+                            setModoFecharVisita(v);
+                            if (v !== "receber") {
+                              setDescontarHaver(false);
+                              setIncluirPendencia(false);
+                            }
+                          }}
+                          accent="amber"
+                          varianteSegundo="receber"
+                        />
+                      ) : undefined
+                    }
+                    recebimento={{
+                      desconto: form.desconto,
+                      pix: form.valor_pix,
+                      dinheiro: form.valor_dinheiro,
+                      onDescontoChange: (v) => update("desconto", v),
+                      onPixChange: (v) => update("valor_pix", v),
+                      onDinheiroChange: (v) => update("valor_dinheiro", v),
+                    }}
+                  />
+                ) : undefined
+              }
+              previa={
+                ponto && calculo.quantidadeFuros > 0 ? (
+                  <ColetaPreviaSection>
+                    <PreviaRelatorioFuraFuraPanel
+                      embedded
+                      chavePix={chavePix}
+                      valorACobrar={totalACobrarAgora}
+                      data={{
+                        empresaNome,
+                        pontoNome: ponto.nome,
+                        pontoWhatsapp: ponto.whatsapp,
+                        data: new Date(),
+                        previa: true,
+                        calculo,
+                        kitNome: kitAtivo?.nome ?? null,
+                        fotoUrl: fotoPreview,
+                      }}
+                    />
+                  </ColetaPreviaSection>
+                ) : undefined
+              }
+              observacao
+              observacaoValue={form.observacao}
+              onObservacaoChange={(v) => update("observacao", v)}
+              error={error}
+              submitLabel={
+                emVisitaPonto
+                  ? receberAgora
+                    ? "Receber e encerrar"
+                    : "Salvar e seguir"
+                  : "Salvar coleta fura-fura"
+              }
+              submitDisabled={Boolean(erroFurosForm) || !!sucesso}
+              loading={loading}
             />
-            <FormInput
-              label="Brindes restantes"
-              type="number"
-              value={form.brindes_restantes}
-              onChange={(e) => update("brindes_restantes", e.target.value)}
-            />
-          </div>
-        </div>
-
-        {calculo.quantidadeFuros > 0 && (
-          <div className="glass-card p-6">
-            <ColetaFuraFuraResumo calculo={calculo} />
-          </div>
-        )}
-
-        <div className="glass-card space-y-4 p-6">
-          <h3 className="text-sm font-medium text-slate-300">Pagamento</h3>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <FormInput
-              label="Valor recebido agora (R$)"
-              type="number"
-              step="0.01"
-              min={0}
-              value={form.valor_pago_recebido}
-              onChange={(e) => update("valor_pago_recebido", e.target.value)}
-            />
-            <FormSelect
-              label="Forma de recebimento"
-              value={form.forma_pagamento}
-              onChange={(e) => update("forma_pagamento", e.target.value)}
-              options={[
-                { value: "dinheiro", label: "Dinheiro" },
-                { value: "pix", label: "Pix" },
-                { value: "misto", label: "Misto" },
-              ]}
-            />
-          </div>
-          <p className="text-xs text-slate-500">
-            Deixe zero se o ponto não pagou agora — o saldo fica pendente para cobrança depois.
-          </p>
-        </div>
-
-        {waLink && calculo.quantidadeFuros > 0 && (
-          <div className="glass-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-sm text-slate-300">Enviar relatório no WhatsApp</p>
-              <p className="text-xs text-slate-500">Recomendado antes de registrar pagamento</p>
-            </div>
-            <a
-              href={waLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setRelatorioEnviado(true)}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-2 text-sm font-medium text-green-400 hover:bg-green-500/20"
-            >
-              <MessageCircle className="h-4 w-4" />
-              Enviar relatório
-            </a>
-          </div>
-        )}
-
-        <FormTextarea
-          label="Observação"
-          value={form.observacao}
-          onChange={(e) => update("observacao", e.target.value)}
+          }
         />
-
-        {error && <p className="text-sm text-red-400">{error}</p>}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-primary-neon py-3 font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-50"
-        >
-          {loading ? "Registrando..." : "Registrar coleta"}
-        </button>
       </form>
+
+      {sucesso && (
+        <ColetaFuraFuraSucessoModal
+          open
+          data={sucesso.relatorioData}
+          coletaId={sucesso.coletaId}
+          visitaPontoId={visitaPontoId || null}
+          chavePix={chavePix}
+          valorACobrar={sucesso.valorACobrar}
+          onClose={handleConcluirSucesso}
+        />
+      )}
 
       <LoadingOverlay
         show={loading}
         messages={["Enviando foto...", "Registrando coleta...", "Atualizando estoque..."]}
       />
-    </div>
+    </ColetaNovaPageShell>
   );
 }
