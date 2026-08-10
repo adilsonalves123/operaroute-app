@@ -24,6 +24,7 @@ import { mensagemPulso } from "@/lib/dashboard-pulso";
 import { DashboardSparkline } from "@/components/dashboard/DashboardSparkline";
 import { PesquisaUpgradeBanner } from "@/components/onboarding/PesquisaUpgradeBanner";
 import { TrialWelcomeGate } from "@/components/onboarding/TrialWelcomeGate";
+import { PushAtivarBanner } from "@/components/configuracoes/PushAtivarBanner";
 import { PeriodoAnaliseSelector } from "@/components/analise/PeriodoAnaliseSelector";
 import type { PeriodoAnaliseRange } from "@/lib/analise/periodo-analise";
 import type { DashboardNichoId } from "@/lib/dashboard-nichos-ativos";
@@ -261,6 +262,9 @@ export function DashboardPremiumClient({
 
       <div className="mx-auto max-w-6xl pt-6 sm:pt-10">
         {trialResumo && <TrialWelcomeGate resumo={trialResumo} />}
+        <div className="mb-6">
+          <PushAtivarBanner />
+        </div>
         {data.pesquisaUpgrade && (
           <div
             className={cn(

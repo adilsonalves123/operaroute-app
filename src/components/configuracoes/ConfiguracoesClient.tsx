@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import {
+  Bell,
   Building2,
   CreditCard,
   LifeBuoy,
@@ -26,6 +28,7 @@ import { ConfiguracoesAssinaturaCard } from "@/components/configuracoes/Configur
 import { CancelarAssinaturaCard } from "@/components/configuracoes/CancelarAssinaturaCard";
 import { ConfiguracoesContaCard } from "@/components/configuracoes/ConfiguracoesContaCard";
 import { ConfiguracoesAtalhosCard } from "@/components/configuracoes/ConfiguracoesAtalhosCard";
+import { PushNotificacoesCard } from "@/components/configuracoes/PushNotificacoesCard";
 import { ZerarDadosButton } from "@/components/configuracoes/ZerarDadosButton";
 import {
   ConfigHero,
@@ -52,6 +55,15 @@ type Props = {
 };
 
 export function ConfiguracoesClient(props: Props) {
+  useEffect(() => {
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash) return;
+    const t = window.setTimeout(() => {
+      document.getElementById(hash)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => window.clearTimeout(t);
+  }, []);
+
   const plano = getPlanoByFaixa(props.faixa, props.planos);
   const pagamentoOk = temPagamentoValido(props.acesso);
   const emTrial = estaEmTrial(props.acesso);
@@ -80,6 +92,7 @@ export function ConfiguracoesClient(props: Props) {
     { id: "operacao", label: "Operação" },
     { id: "assinatura", label: "Assinatura" },
     { id: "conta", label: "Conta" },
+    { id: "alertas", label: "Alertas" },
     { id: "atalhos", label: "Atalhos" },
   ];
   if (props.temCassino) navItems.push({ id: "cassino", label: "Cassino" });
@@ -176,6 +189,15 @@ export function ConfiguracoesClient(props: Props) {
           whatsapp={props.whatsapp}
           embedded
         />
+      </ConfigSection>
+
+      <ConfigSection
+        id="alertas"
+        title="Alertas push"
+        description="Avisos no celular ou PC quando a equipe opera em campo."
+        icon={Bell}
+      >
+        <PushNotificacoesCard embedded />
       </ConfigSection>
 
       <ConfigSection
