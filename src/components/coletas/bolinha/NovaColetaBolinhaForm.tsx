@@ -18,12 +18,12 @@ import {
   formatMoneyInput,
   formatMoneyInputOnBlur,
 } from "@/lib/utils";
-import { calcularColetaBolinha, NICHO_MODULO_BOLINHA } from "@/lib/nichos/bolinha";
+import { calcularColetaBolinha } from "@/lib/nichos/bolinha";
 import {
   normalizarEstoqueBrindesPonto,
   type EstoqueBrindePonto,
 } from "@/lib/estoque/brindes-ponto";
-import { agregarPendenciasPorPonto } from "@/lib/nichos/fura-fura/pendencia-ponto";
+import { agregarDividaCobravelPorPonto } from "@/lib/visitas-ponto/divida-ponto";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { ColetaBolinhaResumo } from "@/components/coletas/bolinha/ColetaBolinhaResumo";
@@ -83,8 +83,15 @@ export function NovaColetaBolinhaForm() {
   const searchParams = useSearchParams();
   const pontoInicial = searchParams.get("ponto") ?? "";
   const [pontoId, setPontoId] = useState(pontoInicial);
-  const { visitaPontoId, emVisitaPonto, ensuringVisita, voltarAposColeta, finalizarVisitaAgora, confirmarReceberEncerrar } =
-    useVisitaPontoContext(pontoId);
+  const {
+    visitaPontoId,
+    emVisitaPonto,
+    ensuringVisita,
+    voltarAposColeta,
+    finalizarVisitaAgora,
+    confirmarReceberEncerrar,
+    decisaoDialogEl,
+  } = useVisitaPontoContext(pontoId);
 
   const [loading, setLoading] = useState(false);
   const submitLock = useSubmitLock();
@@ -103,7 +110,6 @@ export function NovaColetaBolinhaForm() {
   const [modoFecharVisita, setModoFecharVisita] =
     useState<VisitaColetaModoFechar>("continuar");
   const receberAgora = emVisitaPonto && modoFecharVisita === "receber";
-  const fecharVisitaAgora = receberAgora;
   const [haverSaldo, setHaverSaldo] = useState(0);
   const [descontarHaver, setDescontarHaver] = useState(false);
   const [incluirPendencia, setIncluirPendencia] = useState(false);
@@ -132,7 +138,7 @@ export function NovaColetaBolinhaForm() {
       const eid = await getEmpresaIdForUser(supabase);
       if (!eid) return;
       setEmpresaId(eid);
-      const [{ data }, { data: coletasPend }, { data: empresa }] = await Promise.all([
+      const [{ data }, { data: pendRows }, { data: empresa }] = await Promise.all([
         supabase
           .from("pontos")
           .select("*")
@@ -140,14 +146,14 @@ export function NovaColetaBolinhaForm() {
           .eq("status", "ativo")
           .order("nome"),
         supabase
-          .from("coletas")
-          .select("ponto_id, valor_a_receber, valor_pago_recebido")
+          .from("pendencias")
+          .select("ponto_id, tipo, titulo, valor, descricao")
           .eq("empresa_id", eid)
-          .eq("nicho_modulo", NICHO_MODULO_BOLINHA),
+          .eq("status", "aberta"),
         supabase.from("empresas").select("nome_operacao, chave_pix").eq("id", eid).maybeSingle(),
       ]);
       setPontos(data ?? []);
-      setPendenciasPorPonto(agregarPendenciasPorPonto(coletasPend ?? []));
+      setPendenciasPorPonto(agregarDividaCobravelPorPonto(pendRows ?? []));
       if (empresa?.nome_operacao) setEmpresaNome(empresa.nome_operacao);
       setChavePix(empresa?.chave_pix ?? null);
     }
@@ -389,9 +395,11 @@ export function NovaColetaBolinhaForm() {
       return;
     }
 
+    let fecharVisitaAgora = false;
     if (receberAgora) {
-      const ok = await confirmarReceberEncerrar();
-      if (!ok) return;
+      const decisao = await confirmarReceberEncerrar();
+      if (decisao === "abortar") return;
+      fecharVisitaAgora = decisao === "encerrar";
     }
 
     if (loading || !submitLock.tryLock()) return;
@@ -473,7 +481,7 @@ export function NovaColetaBolinhaForm() {
         ensuringVisita
           ? "Entrando na visita do ponto…"
           : emVisitaPonto
-            ? "Dinheiro contado por máquina — Salvar e seguir ou Receber e encerrar."
+            ? "Dinheiro contado por máquina — Salvar e seguir ou Receber agora."
             : "Informe o dinheiro contado por máquina — pagamento opcional no painel à direita."
       }
       backHref={emVisitaPonto ? `/visitas-ponto/${visitaPontoId}` : "/coletas"}
@@ -787,7 +795,7 @@ export function NovaColetaBolinhaForm() {
               submitLabel={
                 emVisitaPonto
                   ? receberAgora
-                    ? "Receber e encerrar"
+                    ? "Receber agora"
                     : "Salvar e seguir"
                   : "Salvar coleta de Bolinha"
               }
@@ -799,6 +807,7 @@ export function NovaColetaBolinhaForm() {
       </form>
 
       <LoadingOverlay show={loading || loadingPonto} message="Salvando coleta de Bolinha..." />
+      {decisaoDialogEl}
     </ColetaNovaPageShell>
   );
 }

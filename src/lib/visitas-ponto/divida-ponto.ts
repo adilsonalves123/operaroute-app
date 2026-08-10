@@ -94,3 +94,47 @@ export async function totalDividaAnteriorPonto(
   const lista = await listarPendenciasCobraveisPonto(supabase, empresaId, pontoId, normalized);
   return Math.round(lista.reduce((s, p) => s + valorCobravelPendencia(p), 0) * 100) / 100;
 }
+
+/**
+ * Mapa ponto_id → total cobrável aberto (pendência universal do ponto).
+ * Usar nas UIs de coleta de qualquer nicho — mesmo total em fura, cassino, etc.
+ */
+export function agregarDividaCobravelPorPonto(
+  rows: Array<{
+    ponto_id?: string | null;
+    tipo?: string | null;
+    valor?: number | null;
+    descricao?: string | null;
+    titulo?: string | null;
+  }>
+): Map<string, { totalPendente: number; coletasAbertas: number }> {
+  const map = new Map<string, { totalPendente: number; coletasAbertas: number }>();
+
+  for (const p of rows) {
+    const pontoId = p.ponto_id;
+    if (!pontoId) continue;
+    if ((p.tipo ?? "").toLowerCase() === "haver") continue;
+
+    const cobravel: PendenciaCobravel = {
+      id: "",
+      tipo: p.tipo ?? "",
+      titulo: p.titulo ?? "",
+      valor: Number(p.valor ?? 0),
+      coleta_id: null,
+      visita_id: null,
+      visita_ponto_id: null,
+      descricao: p.descricao ?? null,
+      created_at: "",
+    };
+    const v = valorCobravelPendencia(cobravel);
+    if (v <= 0.009) continue;
+
+    const prev = map.get(pontoId) ?? { totalPendente: 0, coletasAbertas: 0 };
+    map.set(pontoId, {
+      totalPendente: Math.round((prev.totalPendente + v) * 100) / 100,
+      coletasAbertas: prev.coletasAbertas + 1,
+    });
+  }
+
+  return map;
+}

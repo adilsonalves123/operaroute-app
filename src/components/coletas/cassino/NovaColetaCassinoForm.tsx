@@ -110,7 +110,15 @@ export function NovaColetaCassinoForm() {
   const pontoInicial = searchParams.get("ponto") ?? "";
   const editarVisitaUrl = searchParams.get("editar_visita")?.trim() ?? "";
   const [pontoId, setPontoId] = useState(pontoInicial);
-  const { visitaPontoId, emVisitaPonto, ensuringVisita, voltarAposColeta, finalizarVisitaAgora, confirmarReceberEncerrar } =
+  const {
+    visitaPontoId,
+    emVisitaPonto,
+    ensuringVisita,
+    voltarAposColeta,
+    finalizarVisitaAgora,
+    confirmarReceberEncerrar,
+    decisaoDialogEl,
+  } =
     useVisitaPontoContext(pontoId);
 
   const [loading, setLoading] = useState(false);
@@ -160,8 +168,7 @@ export function NovaColetaCassinoForm() {
     useState<VisitaColetaModoFechar>("continuar");
   const receberAgora = emVisitaPonto && modoFecharVisita === "receber";
   const finalizarVisitaSemPagar = emVisitaPonto && modoFecharVisita === "finalizar";
-  /** Fecha a visita ao ponto agora (receber com pagamento OU finalizar negativa sem pagar). */
-  const fecharVisitaAgora = receberAgora || finalizarVisitaSemPagar;
+  /** Fecha no submit: finalizar negativa sempre; receber depende da escolha do diálogo. */
 
   const updateLeitura = useLeituraUpdater(setLeituras);
   const updateFoto = useFotoUpdater(setLeituras);
@@ -801,9 +808,11 @@ export function NovaColetaCassinoForm() {
       return;
     }
 
+    let fecharVisitaAposReceber = finalizarVisitaSemPagar;
     if (receberAgora) {
-      const ok = await confirmarReceberEncerrar();
-      if (!ok) return;
+      const decisao = await confirmarReceberEncerrar();
+      if (decisao === "abortar") return;
+      fecharVisitaAposReceber = decisao === "encerrar";
     }
 
     if (!submitLock.tryLock()) return;
@@ -828,7 +837,7 @@ export function NovaColetaCassinoForm() {
       const recebimentoPixReais = parseMoneyInput(pagamento.valor_pix);
       const recebimentoDinheiroReais = parseMoneyInput(pagamento.valor_dinheiro);
 
-      const finalizarDireto = emVisitaPonto && fecharVisitaAgora;
+      const finalizarDireto = emVisitaPonto && fecharVisitaAposReceber;
 
       if (editarVisitaId) {
         const delRes = await fetch(`/api/visitas/cassino/${editarVisitaId}`, {
@@ -2133,7 +2142,7 @@ export function NovaColetaCassinoForm() {
                     ? finalizarVisitaSemPagar
                       ? "Encerrar sem cobrar"
                       : receberAgora
-                        ? "Receber e encerrar"
+                        ? "Receber agora"
                         : editarVisitaId
                           ? "Salvar correção e seguir"
                           : "Salvar e seguir"
@@ -2158,6 +2167,8 @@ export function NovaColetaCassinoForm() {
           onClose={handleConcluir}
         />
       )}
+
+      {decisaoDialogEl}
 
       <LoadingOverlay
         show={loading}

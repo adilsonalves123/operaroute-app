@@ -71,10 +71,10 @@ export function VisitaColetaModoPagamento({
           >
             <span className="flex items-center gap-1.5 text-sm font-semibold">
               <Wallet className="h-3.5 w-3.5 shrink-0" />
-              Receber e encerrar
+              Receber agora
             </span>
             <span className="mt-1.5 block text-[11px] leading-snug text-slate-400">
-              Pix/dinheiro agora e fecha a visita
+              Pix/dinheiro deste nicho · depois escolhe se encerra ou segue
             </span>
           </button>
         ) : null}

@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { parseFetchJson } from "@/lib/http/parse-fetch-json";
+import { ReceberVisitaDecisaoDialog } from "@/components/visitas-ponto/ReceberVisitaDecisaoDialog";
+
+/** Resultado da escolha após “Receber” neste nicho. */
+export type DecisaoReceberVisita = "encerrar" | "continuar" | "abortar";
 
 /**
  * Quando a operação tem 2+ nichos e há um ponto selecionado,
@@ -17,6 +21,9 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
   const pontoId = (pontoIdSelecionado || pontoFromUrl).trim();
   const [ensuring, setEnsuring] = useState(false);
   const ensuringFor = useRef<string | null>(null);
+  const [decisaoResolve, setDecisaoResolve] = useState<{
+    resolve: (v: DecisaoReceberVisita) => void;
+  } | null>(null);
 
   useEffect(() => {
     if (visitaPontoId || !pontoId) return;
@@ -78,18 +85,24 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
     router.refresh();
   }
 
+  function fecharDecisao(valor: DecisaoReceberVisita) {
+    decisaoResolve?.resolve(valor);
+    setDecisaoResolve(null);
+  }
+
   /**
-   * Antes de Receber e encerrar: avisa se ainda há nichos disponíveis
-   * além do que já foi feito (+ o atual, que ainda não entrou no resumo).
+   * Antes de Receber: se ainda houver outros nichos (já feitos ou disponíveis),
+   * pergunta se encerra a visita ou continua com o restante.
+   * Este nicho é sempre cobrado; a diferença é só fechar ou não a visita.
    */
-  async function confirmarReceberEncerrar(): Promise<boolean> {
-    if (!visitaPontoId) return true;
+  async function confirmarReceberEncerrar(): Promise<DecisaoReceberVisita> {
+    if (!visitaPontoId) return "encerrar";
     try {
       const res = await fetch(`/api/visitas-ponto/${visitaPontoId}`, {
         credentials: "include",
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) return true;
+      if (!res.ok) return "encerrar";
       const disponiveis: string[] = Array.isArray(data.nichosDisponiveis)
         ? data.nichosDisponiveis
         : [];
@@ -98,16 +111,19 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
           .map((n) => n.nicho)
           .filter(Boolean) as string[]
       );
-      // Após salvar este nicho, ainda sobraria pelo menos outro?
-      if (disponiveis.length > feitos.size + 1) {
-        return window.confirm(
-          "Isso encerra a visita agora.\n\nOutros nichos ficam de fora desta cobrança. Deseja continuar?"
-        );
+      // Após salvar este nicho, ainda sobraria outro feito ou disponível?
+      const jaTemOutrosFeitos = feitos.size > 0;
+      const sobraDisponiveis = disponiveis.length > feitos.size + 1;
+      if (!jaTemOutrosFeitos && !sobraDisponiveis) {
+        return "encerrar";
       }
+
+      return await new Promise<DecisaoReceberVisita>((resolve) => {
+        setDecisaoResolve({ resolve });
+      });
     } catch {
-      /* segue */
+      return "encerrar";
     }
-    return true;
   }
 
   async function finalizarVisitaAgora(opts: {
@@ -145,6 +161,14 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
     return data;
   }
 
+  const decisaoDialogEl: ReactNode = decisaoResolve ? (
+    <ReceberVisitaDecisaoDialog
+      onContinuar={() => fecharDecisao("continuar")}
+      onEncerrar={() => fecharDecisao("encerrar")}
+      onCancelar={() => fecharDecisao("abortar")}
+    />
+  ) : null;
+
   return {
     visitaPontoId,
     emVisitaPonto: Boolean(visitaPontoId),
@@ -152,5 +176,6 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
     voltarAposColeta,
     confirmarReceberEncerrar,
     finalizarVisitaAgora,
+    decisaoDialogEl,
   };
 }

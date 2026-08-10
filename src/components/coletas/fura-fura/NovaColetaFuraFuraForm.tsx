@@ -42,13 +42,13 @@ import {
   validarQuantidadeFurosColeta,
   quantidadeRestanteBrindeNoPonto,
   maxQuantidadeLinhaBrinde,
-  agregarPendenciasPorPonto,
   labelPontoComPendencia,
   type ResumoPendenciaPonto,
   type BrindeEntregue,
   type EstoqueBrindePonto,
   type CalculoColetaFuraFuraResult,
 } from "@/lib/nichos/fura-fura";
+import { agregarDividaCobravelPorPonto } from "@/lib/visitas-ponto/divida-ponto";
 import type { RelatorioFuraFuraData } from "@/lib/nichos/fura-fura/relatorio";
 import {
   estoqueAvulsosDoKit,
@@ -91,8 +91,15 @@ export function NovaColetaFuraFuraForm() {
     brindes_restantes: "",
     observacao: "",
   });
-  const { visitaPontoId, emVisitaPonto, ensuringVisita, voltarAposColeta, finalizarVisitaAgora, confirmarReceberEncerrar } =
-    useVisitaPontoContext(form.ponto_id);
+  const {
+    visitaPontoId,
+    emVisitaPonto,
+    ensuringVisita,
+    voltarAposColeta,
+    finalizarVisitaAgora,
+    confirmarReceberEncerrar,
+    decisaoDialogEl,
+  } = useVisitaPontoContext(form.ponto_id);
   const [brindes, setBrindes] = useState<BrindeEntregue[]>([]);
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [empresaNome, setEmpresaNome] = useState("Operação");
@@ -109,7 +116,6 @@ export function NovaColetaFuraFuraForm() {
   const [modoFecharVisita, setModoFecharVisita] =
     useState<VisitaColetaModoFechar>("continuar");
   const receberAgora = emVisitaPonto && modoFecharVisita === "receber";
-  const fecharVisitaAgora = receberAgora;
   const [haverSaldo, setHaverSaldo] = useState(0);
   const [descontarHaver, setDescontarHaver] = useState(false);
   const [incluirPendencia, setIncluirPendencia] = useState(false);
@@ -139,7 +145,7 @@ export function NovaColetaFuraFuraForm() {
       const eid = await getEmpresaIdForUser(supabase);
       if (!eid) return;
       setEmpresaId(eid);
-      const [{ data }, { data: coletasPend }, { data: empresa }] = await Promise.all([
+      const [{ data }, { data: pendRows }, { data: empresa }] = await Promise.all([
         supabase
           .from("pontos")
           .select("*")
@@ -147,14 +153,14 @@ export function NovaColetaFuraFuraForm() {
           .eq("status", "ativo")
           .order("nome"),
         supabase
-          .from("coletas")
-          .select("ponto_id, valor_a_receber, valor_pago_recebido")
+          .from("pendencias")
+          .select("ponto_id, tipo, titulo, valor, descricao")
           .eq("empresa_id", eid)
-          .eq("nicho_modulo", NICHO_MODULO_FURA_FURA),
+          .eq("status", "aberta"),
         supabase.from("empresas").select("nome_operacao, chave_pix").eq("id", eid).maybeSingle(),
       ]);
       setPontos((data as PontoFura[]) ?? []);
-      setPendenciasPorPonto(agregarPendenciasPorPonto(coletasPend ?? []));
+      setPendenciasPorPonto(agregarDividaCobravelPorPonto(pendRows ?? []));
       if (empresa?.nome_operacao) setEmpresaNome(empresa.nome_operacao);
       setChavePix(empresa?.chave_pix ?? null);
     }
@@ -460,9 +466,11 @@ export function NovaColetaFuraFuraForm() {
       return;
     }
 
+    let fecharVisitaAgora = false;
     if (receberAgora) {
-      const ok = await confirmarReceberEncerrar();
-      if (!ok) return;
+      const decisao = await confirmarReceberEncerrar();
+      if (decisao === "abortar") return;
+      fecharVisitaAgora = decisao === "encerrar";
     }
 
     if (loading || !!sucesso || !submitLock.tryLock()) return;
@@ -575,7 +583,7 @@ export function NovaColetaFuraFuraForm() {
         ensuringVisita
           ? "Entrando na visita do ponto…"
           : emVisitaPonto
-            ? "Furos, foto e brindes — Salvar e seguir ou Receber e encerrar."
+            ? "Furos, foto e brindes — Salvar e seguir ou Receber agora."
             : "Furos, foto e brindes — pagamento opcional no painel à direita."
       }
       backHref={emVisitaPonto ? `/visitas-ponto/${visitaPontoId}` : "/coletas"}
@@ -932,7 +940,7 @@ export function NovaColetaFuraFuraForm() {
               submitLabel={
                 emVisitaPonto
                   ? receberAgora
-                    ? "Receber e encerrar"
+                    ? "Receber agora"
                     : "Salvar e seguir"
                   : "Salvar coleta fura-fura"
               }
@@ -954,6 +962,8 @@ export function NovaColetaFuraFuraForm() {
           onClose={handleConcluirSucesso}
         />
       )}
+
+      {decisaoDialogEl}
 
       <LoadingOverlay
         show={loading}
