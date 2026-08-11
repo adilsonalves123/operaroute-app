@@ -64,7 +64,9 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
       observacao: equipamento.observacao ?? "",
     });
     setError("");
-  }, [open, equipamento]);
+    // Só ao abrir / trocar máquina — não a cada re-render do objeto equipamento
+    // (isso derruba o teclado no tablet).
+  }, [open, equipamento.id]);
 
   async function salvar() {
     setLoading(true);
@@ -162,7 +164,7 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
             </div>
 
             <EquipamentoIdentificacaoFields
-              key={`${equipamento.id}-${form.numero_serie}-${form.numero_maquina}`}
+              key={equipamento.id}
               exigeSerie={exigeSerie}
               serieOpcional={permiteSerieOpcional}
               numeroSerie={form.numero_serie}
