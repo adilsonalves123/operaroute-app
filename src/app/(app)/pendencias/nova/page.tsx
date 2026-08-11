@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { FormInput, FormTextarea, FormSelect } from "@/components/ui/FormInput";
+import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import type { Ponto } from "@/lib/types/database";
@@ -76,14 +77,12 @@ export default function NovaPendenciaPage() {
       </div>
 
       <form onSubmit={handleSubmit} className="glass-card p-6 space-y-4">
-        <FormSelect
+        <ColetaPontoSearchSelect
           label="Ponto *"
           value={form.ponto_id}
-          onChange={(e) => setForm((f) => ({ ...f, ponto_id: e.target.value }))}
-          options={[
-            { value: "", label: "Selecione..." },
-            ...pontos.map((p) => ({ value: p.id, label: p.nome })),
-          ]}
+          onChange={(id) => setForm((f) => ({ ...f, ponto_id: id }))}
+          options={pontos.map((p) => ({ value: p.id, label: p.nome }))}
+          placeholder="Digite para buscar o ponto…"
         />
         <FormSelect
           label="Tipo *"
