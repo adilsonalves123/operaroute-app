@@ -120,7 +120,6 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
 
   const temErro = Boolean(erroEntrada || erroSaida || erroFoto);
   const pronta = leituraEstaPronta(leitura) && !temErro;
-  const temFoto = Boolean(leitura.fotoFile || leitura.fotoPreview);
 
   async function lerContadores() {
     if (!leitura.fotoFile) {
