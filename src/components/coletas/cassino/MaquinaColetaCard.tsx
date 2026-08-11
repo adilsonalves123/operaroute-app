@@ -335,37 +335,41 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         buttonClassName="py-6 rounded-xl"
       />
 
-      {temFoto ? (
-        <div className="space-y-2">
-          <button
-            type="button"
-            disabled={lendoIa || !leitura.fotoFile}
-            onClick={lerContadores}
-            className={cn(
-              "flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition",
-              "border-violet-500/35 bg-violet-500/10 text-violet-100 hover:bg-violet-500/15",
-              "disabled:cursor-not-allowed disabled:opacity-50"
-            )}
-          >
-            {lendoIa ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Lendo painel…
-              </>
-            ) : (
-              <>
-                <Sparkles className="h-4 w-4" />
-                Ler contadores com IA
-              </>
-            )}
-          </button>
-          {!leitura.fotoFile && leitura.fotoPreview ? (
-            <p className="text-[11px] text-slate-500">
-              Tire uma foto nova desta coleta para a IA ler (foto só de referência não envia).
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+      <div className="space-y-2">
+        <button
+          type="button"
+          disabled={lendoIa || !leitura.fotoFile}
+          onClick={lerContadores}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition",
+            "border-violet-500/35 bg-violet-500/10 text-violet-100 hover:bg-violet-500/15",
+            "disabled:cursor-not-allowed disabled:opacity-50"
+          )}
+        >
+          {lendoIa ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Lendo painel…
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4" />
+              Ler contadores com IA
+            </>
+          )}
+        </button>
+        {!leitura.fotoFile ? (
+          <p className="text-center text-[11px] text-slate-500">
+            {leitura.fotoPreview
+              ? "Tire uma foto nova desta coleta para a IA ler (foto só de referência não envia)."
+              : "Tire a foto do painel acima para liberar a leitura com IA."}
+          </p>
+        ) : (
+          <p className="text-center text-[11px] text-violet-300/70">
+            A IA sugere entrada/saída — você confirma antes de salvar.
+          </p>
+        )}
+      </div>
 
       {leitura.iaErro ? (
         <p className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
