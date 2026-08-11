@@ -344,12 +344,13 @@ export async function DELETE(
   }
 
   const supabase = await createClient();
+  const empresaId = profile.empresa_id;
 
   const { data: equipamento, error: eqError } = await supabase
     .from("equipamentos")
-    .select("id, nome, numero_maquina, ponto_id, estoque_brindes")
+    .select("id, nome, numero_maquina, ponto_id, tipo, estoque_brindes")
     .eq("id", equipamentoId)
-    .eq("empresa_id", profile.empresa_id)
+    .eq("empresa_id", empresaId)
     .maybeSingle();
 
   if (eqError) {
@@ -360,26 +361,68 @@ export async function DELETE(
     return NextResponse.json({ error: "Equipamento não encontrado." }, { status: 404 });
   }
 
+  // Devolve brindes ao ponto quando possível; se falhar, limpa para não bloquear a exclusão.
   const devolucao = await devolverTodoEstoqueMaquinaParaPonto(supabase, {
-    empresaId: profile.empresa_id,
+    empresaId,
     equipamentoId,
+    limparSeFalhar: true,
   });
 
   if (devolucao.error) {
     return NextResponse.json(
-      { error: `Não foi possível devolver brindes ao ponto: ${devolucao.error}` },
+      { error: `Não foi possível liberar o estoque da máquina: ${devolucao.error}` },
       { status: 500 }
     );
+  }
+
+  // Desvincula histórico antes do DELETE (evita FK / RLS no SET NULL automático).
+  const { error: unlinkColetasError } = await supabase
+    .from("coletas")
+    .update({ equipamento_id: null })
+    .eq("equipamento_id", equipamentoId)
+    .eq("empresa_id", empresaId);
+
+  if (unlinkColetasError) {
+    return NextResponse.json(
+      {
+        error: `Não foi possível desvincular as coletas desta máquina: ${unlinkColetasError.message}`,
+      },
+      { status: 500 }
+    );
+  }
+
+  const { error: unlinkChamadosError } = await supabase
+    .from("chamados")
+    .update({ equipamento_id: null })
+    .eq("equipamento_id", equipamentoId)
+    .eq("empresa_id", empresaId);
+
+  if (unlinkChamadosError) {
+    // Chamados podem não existir em bases antigas — só bloqueia se a tabela existir.
+    const msg = unlinkChamadosError.message ?? "";
+    if (!/does not exist|relation/i.test(msg)) {
+      return NextResponse.json(
+        {
+          error: `Não foi possível desvincular os chamados desta máquina: ${msg}`,
+        },
+        { status: 500 }
+      );
+    }
   }
 
   const { error: deleteError } = await supabase
     .from("equipamentos")
     .delete()
     .eq("id", equipamentoId)
-    .eq("empresa_id", profile.empresa_id);
+    .eq("empresa_id", empresaId);
 
   if (deleteError) {
-    return NextResponse.json({ error: deleteError.message }, { status: 500 });
+    const msg = deleteError.message ?? "";
+    const fk =
+      /foreign key|violates|referenc/i.test(msg)
+        ? " Ainda há registros ligados a esta máquina. Tente de novo ou fale com o suporte."
+        : "";
+    return NextResponse.json({ error: `${msg}${fk}` }, { status: 500 });
   }
 
   const nome =
@@ -388,11 +431,11 @@ export async function DELETE(
       : equipamento.nome;
 
   const session = await getSession();
-  const empresa = await getEmpresa(profile.empresa_id);
+  const empresa = await getEmpresa(empresaId);
   const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
   await registrarAuditoria({
     supabase,
-    empresaId: profile.empresa_id,
+    empresaId,
     userId: profile.user_id,
     userNome: profile.nome,
     userEmail: session?.email ?? profile.email,
@@ -410,6 +453,6 @@ export async function DELETE(
 
   return NextResponse.json({
     success: true,
-    mensagem: `${nome} removido do ponto. O histórico de coletas antigas permanece no sistema.`,
+    mensagem: `${nome} removido. O histórico de coletas antigas permanece no sistema.`,
   });
 }

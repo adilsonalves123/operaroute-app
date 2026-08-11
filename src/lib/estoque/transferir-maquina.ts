@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Ponto } from "@/lib/types/database";
+import { isEquipamentoTipoComBrindes } from "@/lib/equipamentos";
 import {
   deduzirEstoquePonto,
   normalizarEstoqueBrindesPonto,
@@ -8,8 +9,6 @@ import {
 import { mergeBrindeNoPonto } from "@/lib/estoque/transferir-ponto";
 
 type BrindeLinha = NonNullable<Ponto["estoque_brindes"]>[number];
-
-const TIPOS_COM_BRINDES = new Set(["ursinho", "vending_ursinho", "bolinha"]);
 
 function brindeKey(item: { item_id?: string; nome: string }): string {
   return item.item_id ?? item.nome;
@@ -36,7 +35,7 @@ export async function alocarBrindePontoParaMaquina(
 
   if (eqError) return { error: eqError.message };
   if (!equipamento) return { error: "Equipamento não encontrado." };
-  if (!TIPOS_COM_BRINDES.has(equipamento.tipo)) {
+  if (!isEquipamentoTipoComBrindes(equipamento.tipo)) {
     return { error: "Este equipamento não suporta estoque de brindes." };
   }
 
@@ -140,7 +139,7 @@ export async function alocarBrindeCentralParaMaquina(
   }
   if (!item) return { error: "Item de estoque não encontrado." };
   if (!equipamento) return { error: "Equipamento não encontrado." };
-  if (!TIPOS_COM_BRINDES.has(equipamento.tipo)) {
+  if (!isEquipamentoTipoComBrindes(equipamento.tipo)) {
     return { error: "Este equipamento não suporta estoque de brindes." };
   }
 
@@ -216,7 +215,7 @@ export async function devolverBrindeMaquinaParaPonto(
 
   if (eqError) return { error: eqError.message };
   if (!equipamento) return { error: "Equipamento não encontrado." };
-  if (!TIPOS_COM_BRINDES.has(equipamento.tipo)) {
+  if (!isEquipamentoTipoComBrindes(equipamento.tipo)) {
     return { error: "Este equipamento não suporta estoque de brindes." };
   }
 
@@ -289,11 +288,16 @@ export async function devolverBrindeMaquinaParaPonto(
 /** Devolve todo o estoque de brindes da máquina para o pool do ponto. */
 export async function devolverTodoEstoqueMaquinaParaPonto(
   supabase: SupabaseClient,
-  params: { empresaId: string; equipamentoId: string }
+  params: {
+    empresaId: string;
+    equipamentoId: string;
+    /** Se true, zera o estoque da máquina mesmo quando não dá para devolver ao ponto. */
+    limparSeFalhar?: boolean;
+  }
 ): Promise<{ totalUnidades: number; error?: string }> {
   const { data: equipamento, error: eqError } = await supabase
     .from("equipamentos")
-    .select("id, ponto_id, estoque_brindes")
+    .select("id, ponto_id, tipo, estoque_brindes")
     .eq("id", params.equipamentoId)
     .eq("empresa_id", params.empresaId)
     .maybeSingle();
@@ -302,6 +306,25 @@ export async function devolverTodoEstoqueMaquinaParaPonto(
   if (!equipamento) return { totalUnidades: 0, error: "Equipamento não encontrado." };
 
   const brindes = normalizarEstoqueBrindesPonto(equipamento.estoque_brindes);
+  if (brindes.length === 0) return { totalUnidades: 0 };
+
+  // Tipos sem brindes (ou sem ponto): só limpa o JSON se pedido.
+  if (!isEquipamentoTipoComBrindes(equipamento.tipo) || !equipamento.ponto_id) {
+    if (params.limparSeFalhar) {
+      const { error } = await supabase
+        .from("equipamentos")
+        .update({ estoque_brindes: [] })
+        .eq("id", params.equipamentoId)
+        .eq("empresa_id", params.empresaId);
+      if (error) return { totalUnidades: 0, error: error.message };
+      return { totalUnidades: 0 };
+    }
+    if (!isEquipamentoTipoComBrindes(equipamento.tipo)) {
+      return { totalUnidades: 0 };
+    }
+    return { totalUnidades: 0, error: "Ponto não encontrado." };
+  }
+
   let total = 0;
 
   for (const brinde of brindes) {
@@ -316,7 +339,18 @@ export async function devolverTodoEstoqueMaquinaParaPonto(
       quantidade: qty,
     });
 
-    if (result.error) return { totalUnidades: total, error: result.error };
+    if (result.error) {
+      if (params.limparSeFalhar) {
+        const { error } = await supabase
+          .from("equipamentos")
+          .update({ estoque_brindes: [] })
+          .eq("id", params.equipamentoId)
+          .eq("empresa_id", params.empresaId);
+        if (error) return { totalUnidades: total, error: error.message };
+        return { totalUnidades: total };
+      }
+      return { totalUnidades: total, error: result.error };
+    }
     total += qty;
   }
 
