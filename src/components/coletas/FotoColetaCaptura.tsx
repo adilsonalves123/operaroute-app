@@ -19,10 +19,8 @@ type Props = {
 };
 
 /**
- * Captura de foto na coleta: câmera OU galeria.
- *
- * Importante: o `input.click()` precisa rodar no mesmo gesto do usuário
- * (sem setTimeout), senão iOS/Android ignoram a abertura da galeria.
+ * Um botão "Foto" → escolhe Câmera ou Galeria.
+ * `input.click()` no mesmo gesto do usuário (obrigatório no mobile).
  */
 export function FotoColetaCaptura({
   preview,
@@ -40,6 +38,7 @@ export function FotoColetaCaptura({
   const galeriaRef = useRef<HTMLInputElement>(null);
   const lockUntilRef = useRef(0);
   const [abrindo, setAbrindo] = useState<"camera" | "galeria" | null>(null);
+  const [menuAberto, setMenuAberto] = useState(false);
 
   useEffect(() => {
     function liberar() {
@@ -67,11 +66,11 @@ export function FotoColetaCaptura({
     const input = modo === "camera" ? cameraRef.current : galeriaRef.current;
     if (!input) return;
 
+    setMenuAberto(false);
     lockUntilRef.current = Date.now() + LOCK_MS;
     setAbrindo(modo);
     input.value = "";
 
-    // Síncrono no gesto do usuário — obrigatório para galeria no mobile.
     try {
       input.click();
     } catch {
@@ -80,12 +79,9 @@ export function FotoColetaCaptura({
       return;
     }
 
-    // Se o usuário cancelar o picker, libera em alguns segundos.
     window.setTimeout(() => {
       setAbrindo((atual) => (atual === modo ? null : atual));
-      if (Date.now() >= lockUntilRef.current) {
-        lockUntilRef.current = 0;
-      }
+      if (Date.now() >= lockUntilRef.current) lockUntilRef.current = 0;
     }, 12_000);
   }
 
@@ -93,6 +89,7 @@ export function FotoColetaCaptura({
     const file = e.target.files?.[0] ?? null;
     lockUntilRef.current = 0;
     setAbrindo(null);
+    setMenuAberto(false);
     onChange(file);
     e.target.value = "";
   }
@@ -103,10 +100,8 @@ export function FotoColetaCaptura({
     if (galeriaRef.current) galeriaRef.current.value = "";
     lockUntilRef.current = 0;
     setAbrindo(null);
+    setMenuAberto(false);
   }
-
-  const btnBase =
-    "flex flex-col items-center justify-center gap-2 rounded-xl border border-dashed py-6 text-sm transition disabled:cursor-wait disabled:opacity-60";
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -144,59 +139,72 @@ export function FotoColetaCaptura({
           >
             <X className="h-4 w-4" />
           </button>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              disabled={abrindo != null}
-              onClick={() => abrir("camera")}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-600 px-2 py-2.5 text-xs text-slate-300 hover:border-cyan-500/40 hover:text-cyan-300 disabled:opacity-50"
-            >
-              <Camera className="h-3.5 w-3.5" />
-              Nova foto
-            </button>
-            <button
-              type="button"
-              disabled={abrindo != null}
-              onClick={() => abrir("galeria")}
-              className="flex items-center justify-center gap-1.5 rounded-lg border border-violet-500/35 bg-violet-500/10 px-2 py-2.5 text-xs font-medium text-violet-200 hover:bg-violet-500/15 disabled:opacity-50"
-            >
-              <ImageIcon className="h-3.5 w-3.5" />
-              Galeria
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={abrindo != null}
+            onClick={() => setMenuAberto((v) => !v)}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-600 px-3 py-2.5 text-sm text-slate-300 hover:border-cyan-500/40 hover:text-cyan-300 disabled:opacity-50"
+          >
+            <Camera className="h-4 w-4" />
+            Trocar foto
+          </button>
         </div>
       ) : (
-        <div className={cn("grid grid-cols-2 gap-2.5", buttonClassName)}>
+        <button
+          type="button"
+          disabled={abrindo != null}
+          onClick={() => setMenuAberto((v) => !v)}
+          className={cn(
+            "flex w-full items-center justify-center gap-2 rounded-xl border border-dashed py-8 text-sm transition disabled:cursor-wait disabled:opacity-60",
+            erro
+              ? "border-red-500/50 text-red-400"
+              : "border-slate-600 text-slate-400 hover:border-cyan-500/40 hover:text-cyan-300",
+            buttonClassName
+          )}
+        >
+          <Camera className="h-5 w-5" />
+          {abrindo ? "Abrindo…" : "Foto"}
+        </button>
+      )}
+
+      {menuAberto ? (
+        <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl">
+          <p className="border-b border-white/[0.06] px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            Como quer adicionar a foto?
+          </p>
           <button
             type="button"
             disabled={abrindo != null}
             onClick={() => abrir("camera")}
-            className={cn(
-              btnBase,
-              erro
-                ? "border-red-500/50 text-red-400"
-                : "border-slate-600 text-slate-400 hover:border-cyan-500/40 hover:text-cyan-300"
-            )}
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-slate-100 transition hover:bg-white/[0.04] disabled:opacity-50"
           >
-            <Camera className="h-5 w-5" />
-            {abrindo === "camera" ? "Abrindo…" : "Câmera"}
+            <Camera className="h-4 w-4 text-cyan-400" />
+            <span>
+              <span className="block font-medium">Câmera</span>
+              <span className="block text-[11px] text-slate-500">Tirar foto agora</span>
+            </span>
           </button>
           <button
             type="button"
             disabled={abrindo != null}
             onClick={() => abrir("galeria")}
-            className={cn(
-              btnBase,
-              erro
-                ? "border-red-500/50 text-red-400"
-                : "border-violet-500/40 bg-violet-500/[0.06] text-violet-200 hover:border-violet-400/50 hover:bg-violet-500/10"
-            )}
+            className="flex w-full items-center gap-3 border-t border-white/[0.06] px-4 py-3.5 text-left text-sm text-slate-100 transition hover:bg-violet-500/10 disabled:opacity-50"
           >
-            <ImageIcon className="h-5 w-5" />
-            {abrindo === "galeria" ? "Abrindo…" : "Galeria"}
+            <ImageIcon className="h-4 w-4 text-violet-300" />
+            <span>
+              <span className="block font-medium">Galeria</span>
+              <span className="block text-[11px] text-slate-500">Escolher foto salva</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setMenuAberto(false)}
+            className="w-full border-t border-white/[0.06] px-4 py-2.5 text-center text-xs text-slate-500 hover:text-slate-300"
+          >
+            Cancelar
           </button>
         </div>
-      )}
+      ) : null}
 
       {erro ? <p className="text-xs text-red-400">{erro}</p> : null}
     </div>

@@ -113,9 +113,13 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
 
   const entradaAtual = getCentesimos(leitura.entradaAtualInput, leitura.entradaAnterior);
   const saidaAtual = getCentesimos(leitura.saidaAtualInput, leitura.saidaAnterior);
+  const temLeituras =
+    Boolean(leitura.entradaAtualInput.trim()) && Boolean(leitura.saidaAtualInput.trim());
+  const entradaPeriodo = temLeituras ? entradaAtual - leitura.entradaAnterior : null;
+  const saidaPeriodo = temLeituras ? saidaAtual - leitura.saidaAnterior : null;
   const lucro =
-    leitura.entradaAtualInput && leitura.saidaAtualInput
-      ? entradaAtual - leitura.entradaAnterior - (saidaAtual - leitura.saidaAnterior)
+    temLeituras && entradaPeriodo != null && saidaPeriodo != null
+      ? entradaPeriodo - saidaPeriodo
       : null;
 
   const temErro = Boolean(erroEntrada || erroSaida || erroFoto);
@@ -310,6 +314,61 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         </div>
       </div>
 
+      {entradaPeriodo != null && saidaPeriodo != null && !erroEntrada && !erroSaida ? (
+        <div className="grid grid-cols-2 gap-2.5">
+          <div
+            className={cn(
+              "rounded-xl border px-3 py-2.5",
+              entradaPeriodo < 0
+                ? "border-red-500/40 bg-red-500/10"
+                : "border-cyan-500/20 bg-cyan-500/[0.06]"
+            )}
+          >
+            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+              Entrada no período
+            </p>
+            <p
+              className={cn(
+                "mt-0.5 text-sm font-semibold tabular-nums",
+                entradaPeriodo < 0 ? "text-red-400" : "text-cyan-300"
+              )}
+            >
+              {formatContador(entradaPeriodo)}
+            </p>
+            {entradaPeriodo < 0 ? (
+              <p className="mt-1 text-[10px] leading-snug text-red-300/90">
+                Menor que a anterior — leitura suspeita
+              </p>
+            ) : null}
+          </div>
+          <div
+            className={cn(
+              "rounded-xl border px-3 py-2.5",
+              saidaPeriodo < 0
+                ? "border-red-500/40 bg-red-500/10"
+                : "border-cyan-500/20 bg-cyan-500/[0.06]"
+            )}
+          >
+            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
+              Saída no período
+            </p>
+            <p
+              className={cn(
+                "mt-0.5 text-sm font-semibold tabular-nums",
+                saidaPeriodo < 0 ? "text-red-400" : "text-cyan-300"
+              )}
+            >
+              {formatContador(saidaPeriodo)}
+            </p>
+            {saidaPeriodo < 0 ? (
+              <p className="mt-1 text-[10px] leading-snug text-red-300/90">
+                Menor que a anterior — leitura suspeita
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
       {lucro !== null && !erroEntrada && !erroSaida ? (
         <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3.5 py-2.5 text-sm">
           <span className="text-slate-400">Lucro da máquina</span>
@@ -329,7 +388,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         onChange={(file) => onFotoChange(leitura.equipamentoId, file)}
         erro={erroFoto}
         label="Foto do painel *"
-        hint="Câmera ou galeria — depois use Ler contadores com IA."
+        hint="Toque em Foto → Câmera ou Galeria. Depois use a IA."
         alt={`Foto ${leitura.nome}`}
         buttonClassName="py-6 rounded-xl"
       />
@@ -394,8 +453,34 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               ? ` (${Math.round(leitura.iaConfianca * 100)}%)`
               : ""}
           </p>
+          {entradaPeriodo != null && saidaPeriodo != null ? (
+            <div className="grid grid-cols-2 gap-2 text-[12px]">
+              <div>
+                <span className="text-amber-100/60">Entrada período</span>
+                <p
+                  className={cn(
+                    "font-semibold tabular-nums",
+                    entradaPeriodo < 0 ? "text-red-300" : "text-amber-50"
+                  )}
+                >
+                  {formatContador(entradaPeriodo)}
+                </p>
+              </div>
+              <div>
+                <span className="text-amber-100/60">Saída período</span>
+                <p
+                  className={cn(
+                    "font-semibold tabular-nums",
+                    saidaPeriodo < 0 ? "text-red-300" : "text-amber-50"
+                  )}
+                >
+                  {formatContador(saidaPeriodo)}
+                </p>
+              </div>
+            </div>
+          ) : null}
           <p className="text-[12px] leading-snug text-amber-100/70">
-            Confira entrada e saída no visor. Sem confirmar, esta máquina não fica pronta.
+            Confira no visor. Se o período ficou negativo, a leitura provavelmente está errada.
           </p>
           {leitura.iaAvisos && leitura.iaAvisos.length > 0 ? (
             <ul className="list-inside list-disc text-[11px] text-amber-200/80">
