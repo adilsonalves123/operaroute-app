@@ -6,7 +6,7 @@ import { Edit3, Loader2, X } from "lucide-react";
 import { FormInput, FormTextarea } from "@/components/ui/FormInput";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { EquipamentoIdentificacaoFields } from "@/components/pontos/EquipamentoIdentificacaoFields";
-import { getEquipamentoTipoLabel, isEquipamentoTipoComBrindes, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
+import { getEquipamentoTipoLabel, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
 import { formatContador, formatContadorInput } from "@/lib/nichos/cassino";
 import type { Equipamento } from "@/lib/types/database";
 
@@ -22,6 +22,9 @@ function subtituloEdicao(tipo: Equipamento["tipo"]) {
   }
   if (isEquipamentoTipoDiversao(tipo)) {
     return "Informe o nº no ponto e a entrada do visor. A série do painel é opcional para esse tipo.";
+  }
+  if (tipo === "consignado") {
+    return "Expositor: identificação e nome. Não usa entrada — só itens vendidos no recolhe.";
   }
   return "Em fura-fura, use o nº no ponto e o nome da máquina.";
 }
@@ -90,7 +93,8 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
       if (equipamento.tipo === "bolinha") {
         body.preco_jogada = form.preco_jogada;
       } else if (
-        isEquipamentoTipoComBrindes(equipamento.tipo) ||
+        equipamento.tipo === "ursinho" ||
+        equipamento.tipo === "vending_ursinho" ||
         isEquipamentoTipoDiversao(equipamento.tipo)
       ) {
         body.entrada_atual = form.entrada_atual;
@@ -136,7 +140,7 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
       {open && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
           <div
-            className="glass-card w-full max-w-xl space-y-4 border border-blue-500/20 p-6 shadow-2xl"
+            className="w-full max-w-xl space-y-4 rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl"
             role="dialog"
             aria-modal="true"
             aria-labelledby={`editar-equipamento-${equipamento.id}`}
