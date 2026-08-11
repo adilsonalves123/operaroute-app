@@ -337,12 +337,22 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       <div className="space-y-2">
         <button
           type="button"
-          disabled={lendoIa || !leitura.fotoFile}
-          onClick={lerContadores}
+          disabled={lendoIa}
+          onClick={() => {
+            if (!leitura.fotoFile) {
+              onIaErro(
+                leitura.equipamentoId,
+                "Escolha uma foto na Galeria (ou tire na Câmera) antes de ler com a IA."
+              );
+              return;
+            }
+            void lerContadores();
+          }}
           className={cn(
             "flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition",
             "border-violet-500/35 bg-violet-500/10 text-violet-100 hover:bg-violet-500/15",
-            "disabled:cursor-not-allowed disabled:opacity-50"
+            "disabled:cursor-not-allowed disabled:opacity-50",
+            !leitura.fotoFile && "opacity-80"
           )}
         >
           {lendoIa ? (
