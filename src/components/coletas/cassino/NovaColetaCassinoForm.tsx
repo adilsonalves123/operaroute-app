@@ -9,8 +9,10 @@ import {
   MaquinaColetaCard,
   leituraToInput,
   leiturasToCalculoInput,
+  leituraEstaPronta,
   useLeituraUpdater,
   useFotoUpdater,
+  useIaLeituraHandlers,
 } from "@/components/coletas/cassino/MaquinaColetaCard";
 import { PreviaRelatorioPanel } from "@/components/coletas/cassino/PreviaRelatorioPanel";
 import { ResumoOperacaoNegativaView } from "@/components/coletas/cassino/ResumoOperacaoNegativaView";
@@ -173,6 +175,7 @@ export function NovaColetaCassinoForm() {
 
   const updateLeitura = useLeituraUpdater(setLeituras);
   const updateFoto = useFotoUpdater(setLeituras);
+  const { onIaSugestao, onConfirmarIa, onIaErro } = useIaLeituraHandlers(setLeituras);
   /** Evita reaplicar edição/rascunho e apagar o que o operador está digitando. */
   const contextoVisitaAplicadoRef = useRef("");
 
@@ -209,6 +212,13 @@ export function NovaColetaCassinoForm() {
       const exigeFoto = exigirPreenchimento || leituraPreenchida;
       if (exigeFoto && !l.fotoFile && !l.fotoPreview) {
         errosFotoMap.set(l.equipamentoId, "Foto obrigatória");
+      }
+      if (exigirPreenchimento && l.iaPendenteConfirmacao) {
+        errosFotoMap.set(
+          l.equipamentoId,
+          errosFotoMap.get(l.equipamentoId) ??
+            "Confirme a leitura da IA nesta máquina"
+        );
       }
     }
 
@@ -773,10 +783,7 @@ export function NovaColetaCassinoForm() {
   );
 
   const leiturasCompletas =
-    leituras.length > 0 &&
-    leituras.every(
-      (l) => l.entradaAtualInput && l.saidaAtualInput && (l.fotoFile || l.fotoPreview)
-    );
+    leituras.length > 0 && leituras.every((l) => leituraEstaPronta(l));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -794,13 +801,14 @@ export function NovaColetaCassinoForm() {
     const { errosLeitura, errosFotoMap } = validarFormulario(true);
 
     if (
-      !leituras.every(
-        (l) => l.entradaAtualInput && l.saidaAtualInput && (l.fotoFile || l.fotoPreview)
-      ) ||
+      !leituras.every((l) => leituraEstaPronta(l)) ||
       errosLeitura.size > 0 ||
       errosFotoMap.size > 0
     ) {
       scrollParaPrimeiroErro(errosLeitura, errosFotoMap);
+      if (leituras.some((l) => l.iaPendenteConfirmacao)) {
+        setError("Confirme a leitura da IA em todas as máquinas sugeridas.");
+      }
       return;
     }
 
@@ -1189,7 +1197,7 @@ export function NovaColetaCassinoForm() {
                 title="Máquinas"
                 subtitle={
                   leituras.length > 0
-                    ? `${leituras.filter((l) => l.entradaAtualInput.trim() && l.saidaAtualInput.trim() && l.fotoFile).length}/${leituras.length} prontas`
+                    ? `${leituras.filter((l) => leituraEstaPronta(l)).length}/${leituras.length} prontas`
                     : undefined
                 }
                 loading={loadingPonto}
@@ -1212,6 +1220,9 @@ export function NovaColetaCassinoForm() {
                       index={index}
                       onUpdate={updateLeitura}
                       onFotoChange={updateFoto}
+                      onIaSugestao={onIaSugestao}
+                      onConfirmarIa={onConfirmarIa}
+                      onIaErro={onIaErro}
                       erroEntrada={erros?.entrada}
                       erroSaida={erros?.saida}
                       erroFoto={errosFoto.get(l.equipamentoId)}
