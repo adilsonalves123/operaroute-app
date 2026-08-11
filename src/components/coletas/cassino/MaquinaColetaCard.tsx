@@ -329,7 +329,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         onChange={(file) => onFotoChange(leitura.equipamentoId, file)}
         erro={erroFoto}
         label="Foto do painel *"
-        hint="Registre o visor agora — depois use Ler contadores."
+        hint="Câmera ou galeria — depois use Ler contadores com IA."
         alt={`Foto ${leitura.nome}`}
         buttonClassName="py-6 rounded-xl"
       />
