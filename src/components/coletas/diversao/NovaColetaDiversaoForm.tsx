@@ -34,6 +34,7 @@ import {
   coletaInputClass,
 } from "@/components/coletas/layout";
 import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
+import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
 import { totalCobrancaNicho } from "@/lib/coletas/total-cobranca-nicho";
 import type { RelatorioDiversaoData } from "@/lib/nichos/diversao/relatorio";
@@ -445,21 +446,13 @@ export function NovaColetaDiversaoForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <ColetaPontoBar
           pontoField={
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-300">Ponto *</label>
-              <select
-                value={pontoId}
-                onChange={(e) => setPontoId(e.target.value)}
-                className={inputClass(false)}
-              >
-                <option value="">Selecione...</option>
-                {pontos.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <ColetaPontoSearchSelect
+              label="Ponto *"
+              value={pontoId}
+              onChange={setPontoId}
+              options={pontos.map((item) => ({ value: item.id, label: item.nome }))}
+              inputClassName={inputClass(false)}
+            />
           }
           comissaoField={
             <div className="space-y-1.5">

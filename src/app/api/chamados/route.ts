@@ -124,5 +124,21 @@ export async function POST(request: Request) {
     request,
   });
 
+  const { data: pontoRow } = await supabase
+    .from("pontos")
+    .select("nome")
+    .eq("id", body.ponto_id)
+    .maybeSingle();
+  const { pushChamadoAberto } = await import("@/lib/push/events");
+  pushChamadoAberto({
+    empresaId: profile.empresa_id!,
+    autorUserId: profile.user_id,
+    autorNome: profile.nome,
+    pontoNome: pontoRow?.nome ?? null,
+    titulo: body.titulo.trim(),
+    prioridade,
+    chamadoId: chamado.id,
+  });
+
   return NextResponse.json({ success: true, id: chamado.id });
 }

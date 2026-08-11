@@ -5,8 +5,9 @@ import { ArrowLeft, MapPin } from "lucide-react";
 import { AlertBadge } from "@/components/ui/AlertBadge";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { ColetaFuraFuraResumo } from "@/components/coletas/fura-fura/ColetaFuraFuraResumo";
-import { ExcluirColetaFuraFuraButton } from "@/components/coletas/fura-fura/ExcluirColetaFuraFuraButton";
 import { CompartilharColetaHistoricoActions } from "@/components/coletas/CompartilharColetaHistoricoActions";
+import { CorrigirPagamentoButton } from "@/components/coletas/CorrigirPagamentoButton";
+import { ExcluirColetaFuraFuraButton } from "@/components/coletas/fura-fura/ExcluirColetaFuraFuraButton";
 import {
   calculoFromColetaSalva,
   parseBrindesSalvos,
@@ -200,6 +201,13 @@ export default async function ColetaFuraFuraDetailPage({
       )}
 
       <div className="flex flex-wrap gap-3">
+        <CorrigirPagamentoButton
+          tipo="coleta"
+          id={id}
+          valorAReceber={Number(coleta.valor_a_receber ?? 0)}
+          valorPixInicial={Number(coleta.valor_pix ?? 0)}
+          valorDinheiroInicial={Number(coleta.valor_dinheiro ?? 0)}
+        />
         <CompartilharColetaHistoricoActions
           snapshot={snapshot}
           telefone={ponto?.whatsapp}

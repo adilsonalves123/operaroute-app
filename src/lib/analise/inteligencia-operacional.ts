@@ -1948,7 +1948,8 @@ export async function fetchInteligenciaOperacional(
       Math.max(diversaoBlock?.caixa.pendenteReceber ?? 0, pendSums.diversaoPendente) +
       Math.max(bolinhaBlock?.caixa.pendenteReceber ?? 0, pendSums.bolinhaPendente) +
       Math.max(consignadoBlock?.caixa.pendenteReceber ?? 0, pendSums.consignadoPendente) +
-      pendSums.cassinoPendente
+      pendSums.cassinoPendente +
+      pendSums.pontoPendente
   );
   const haver = round2(
     pendSums.cassinoHaver +

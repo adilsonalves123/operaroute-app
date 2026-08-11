@@ -222,6 +222,8 @@ export function buildConsolidadoFromStats(input: {
     (acc, linha) => sumLinhas(acc, linha),
     emptyLinha()
   );
+  // Dívida universal (visita ao ponto) entra no total, sem ratear por nicho.
+  total.aReceber = round2(total.aReceber + (input.pendencias.pontoPendente ?? 0));
 
   return {
     linhas,

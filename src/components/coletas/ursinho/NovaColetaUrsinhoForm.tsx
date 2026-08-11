@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, ImageIcon } from "lucide-react";
 import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
@@ -41,6 +41,7 @@ import {
   coletaInputClass,
 } from "@/components/coletas/layout";
 import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
+import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
 import { totalCobrancaNicho } from "@/lib/coletas/total-cobranca-nicho";
 import type { RelatorioUrsinhoData } from "@/lib/nichos/ursinho/relatorio";
@@ -137,6 +138,30 @@ export function NovaColetaUrsinhoForm() {
   );
   const [observacao, setObservacao] = useState("");
   const [gps, setGps] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [fotosEstoque, setFotosEstoque] = useState<Map<string, string>>(new Map());
+
+  useEffect(() => {
+    if (!empresaId) return;
+    let cancelled = false;
+    async function loadFotos() {
+      const supabase = createClient();
+      const { data } = await supabase
+        .from("estoque")
+        .select("id, foto_url")
+        .eq("empresa_id", empresaId)
+        .not("foto_url", "is", null);
+      if (cancelled) return;
+      const map = new Map<string, string>();
+      for (const row of data ?? []) {
+        if (row.foto_url) map.set(row.id, row.foto_url);
+      }
+      setFotosEstoque(map);
+    }
+    void loadFotos();
+    return () => {
+      cancelled = true;
+    };
+  }, [empresaId]);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -568,21 +593,13 @@ export function NovaColetaUrsinhoForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <ColetaPontoBar
           pontoField={
-            <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-300">Ponto *</label>
-              <select
-                value={pontoId}
-                onChange={(e) => setPontoId(e.target.value)}
-                className={inputClass(false)}
-              >
-                <option value="">Selecione...</option>
-                {pontos.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <ColetaPontoSearchSelect
+              label="Ponto *"
+              value={pontoId}
+              onChange={setPontoId}
+              options={pontos.map((item) => ({ value: item.id, label: item.nome }))}
+              inputClassName={inputClass(false)}
+            />
           }
           comissaoField={
             <div className="space-y-1.5">
@@ -716,6 +733,7 @@ export function NovaColetaUrsinhoForm() {
                               [{ equipamentoId: maquina.equipamentoId, brindes: maquina.brindes }],
                               item
                             );
+                            const foto = item.item_id ? fotosEstoque.get(item.item_id) : undefined;
                             return (
                               <button
                                 key={item.item_id ?? item.nome}
@@ -723,13 +741,30 @@ export function NovaColetaUrsinhoForm() {
                                 disabled={restante <= 0}
                                 onClick={() => addBrindeFromEstoque(maquina.equipamentoId, item)}
                                 className={cn(
-                                  "rounded-md border px-2 py-1 text-xs",
+                                  "inline-flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs",
                                   restante <= 0
-                                    ? "border-slate-800 text-slate-600 cursor-not-allowed"
+                                    ? "cursor-not-allowed border-slate-800 text-slate-600"
                                     : "border-pink-500/25 text-pink-300 hover:bg-pink-500/10"
                                 )}
                               >
-                                + {item.nome} ({restante}/{item.quantidade})
+                                {foto ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={foto}
+                                    alt=""
+                                    className="h-8 w-8 shrink-0 rounded object-cover"
+                                  />
+                                ) : (
+                                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-slate-800 bg-slate-900">
+                                    <ImageIcon className="h-3.5 w-3.5 text-slate-600" />
+                                  </span>
+                                )}
+                                <span className="text-left leading-tight">
+                                  <span className="block font-medium">+ {item.nome}</span>
+                                  <span className="text-[10px] opacity-70">
+                                    {restante}/{item.quantidade}
+                                  </span>
+                                </span>
                               </button>
                             );
                           })}
@@ -753,11 +788,26 @@ export function NovaColetaUrsinhoForm() {
                             maquina.equipamentoId,
                             brinde.id
                           );
+                          const foto = brinde.item_id
+                            ? fotosEstoque.get(brinde.item_id)
+                            : undefined;
                           return (
                             <div
                               key={brinde.id}
-                              className="grid gap-2 rounded-lg border border-slate-800 bg-slate-950/40 p-3 sm:grid-cols-[minmax(0,1fr)_90px_100px_36px] items-end"
+                              className="grid gap-2 rounded-lg border border-slate-800 bg-slate-950/40 p-3 sm:grid-cols-[auto_minmax(0,1fr)_90px_100px_36px] items-end"
                             >
+                              {foto ? (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img
+                                  src={foto}
+                                  alt=""
+                                  className="mb-0.5 h-10 w-10 rounded-md object-cover"
+                                />
+                              ) : (
+                                <span className="mb-0.5 flex h-10 w-10 items-center justify-center rounded-md border border-slate-800 bg-slate-900">
+                                  <ImageIcon className="h-4 w-4 text-slate-600" />
+                                </span>
+                              )}
                               <div>
                                 <p className="text-xs text-slate-500">Item</p>
                                 <p className="text-sm font-medium text-white">{brinde.nome}</p>

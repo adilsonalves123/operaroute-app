@@ -24,6 +24,7 @@ import {
 } from "@/lib/assinatura-simulacao";
 import { LogOut } from "lucide-react";
 import { AuditoriaSessaoBeacon } from "@/components/auditoria/AuditoriaSessaoBeacon";
+import { PushNativeInit } from "@/components/push/PushNativeInit";
 import { cookies } from "next/headers";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
@@ -127,6 +128,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             </header>
             <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-24 lg:pb-6">
+              <PushNativeInit />
               <TrialAccessBody bloqueado={bloqueado}>{children}</TrialAccessBody>
             </main>
             <BottomNav />

@@ -8,6 +8,7 @@ import { labelFormaPagamento } from "@/lib/financeiro/forma-pagamento";
 import { saldoPendenteColeta } from "@/lib/nichos/fura-fura";
 import { snapshotFromColetaRow } from "@/lib/comprovantes/from-relatorio-nicho";
 import { CompartilharColetaHistoricoActions } from "@/components/coletas/CompartilharColetaHistoricoActions";
+import { CorrigirPagamentoButton } from "@/components/coletas/CorrigirPagamentoButton";
 
 export default async function ColetaDiversaoDetalhePage({
   params,
@@ -212,10 +213,19 @@ export default async function ColetaDiversaoDetalhePage({
         )}
       </div>
 
-      <CompartilharColetaHistoricoActions
-        snapshot={snapshot}
-        telefone={ponto?.whatsapp}
-      />
+      <div className="flex flex-wrap gap-3">
+        <CorrigirPagamentoButton
+          tipo="coleta"
+          id={id}
+          valorAReceber={valorAReceber}
+          valorPixInicial={Number(coleta.valor_pix ?? 0)}
+          valorDinheiroInicial={Number(coleta.valor_dinheiro ?? 0)}
+        />
+        <CompartilharColetaHistoricoActions
+          snapshot={snapshot}
+          telefone={ponto?.whatsapp}
+        />
+      </div>
     </div>
   );
 }

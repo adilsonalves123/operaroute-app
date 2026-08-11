@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Loader2, Clock, HandCoins } from "lucide-react";
 import { FormInput } from "@/components/ui/FormInput";
-import { FormSelect } from "@/components/ui/FormInput";
+import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import {
   MaquinaColetaCard,
   leituraToInput,
@@ -16,6 +16,7 @@ import { PreviaRelatorioPanel } from "@/components/coletas/cassino/PreviaRelator
 import { ResumoOperacaoNegativaView } from "@/components/coletas/cassino/ResumoOperacaoNegativaView";
 import { CobrancaClienteResumo } from "@/components/coletas/cassino/CobrancaClienteResumo";
 import { PagamentoCaixaFields } from "@/components/coletas/cassino/PagamentoCaixaFields";
+import { ColetaStatusFaixa } from "@/components/coletas/ColetaHaverPendenciaPanel";
 import { ColetaCassinoSucessoModal } from "@/components/coletas/cassino/ColetaCassinoSucessoModal";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import {
@@ -1011,14 +1012,12 @@ export function NovaColetaCassinoForm() {
                 "border-rose-500/35 ring-1 ring-rose-500/15"
             )}
             pontoField={
-              <FormSelect
+              <ColetaPontoSearchSelect
                 label="Ponto *"
                 value={pontoId}
-                onChange={(e) => setPontoId(e.target.value)}
-                options={[
-                  { value: "", label: "Selecione o ponto..." },
-                  ...pontos.map((p) => ({ value: p.id, label: p.nome })),
-                ]}
+                onChange={setPontoId}
+                options={pontos.map((p) => ({ value: p.id, label: p.nome }))}
+                placeholder="Digite para buscar o ponto…"
               />
             }
             alert={
@@ -1107,87 +1106,62 @@ export function NovaColetaCassinoForm() {
                         </div>
                       )}
                       {haverDeNegativoAberto > 0.009 && (
-                        <div className="flex items-center gap-3 rounded-xl border border-violet-500/40 bg-violet-500/[0.08] px-4 py-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-500/20">
-                            <HandCoins className="h-5 w-5 text-violet-400" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-violet-400/90">
-                              Haver — cliente pagou o negativo
-                            </p>
-                            <p className="text-xl font-bold tabular-nums text-violet-300">
-                              {formatCurrency(haverDeNegativoAberto)}
-                            </p>
-                            <p className="mt-0.5 text-xs text-violet-300/80">
-                              Ponto pagou ganhadores — comissão bloqueada até o lucro superar este
-                              valor. Zera sozinho no cálculo (sem descontar/pagar haver).
-                            </p>
-                          </div>
-                        </div>
+                        <ColetaStatusFaixa
+                          tom="negativo"
+                          titulo="Haver — cliente pagou o negativo"
+                          valor={formatCurrency(haverDeNegativoAberto)}
+                          icon={<HandCoins className="h-4 w-4" />}
+                          descricao="Ponto pagou ganhadores — comissão bloqueada até o lucro superar este valor. Zera sozinho no cálculo (sem descontar/pagar haver)."
+                        />
                       )}
                       {haverCreditoAberto > 0.009 && (
-                        <div className="flex items-center gap-3 rounded-xl border border-cyan-500/40 bg-cyan-500/[0.08] px-4 py-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/20">
-                            <HandCoins className="h-5 w-5 text-cyan-400" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-cyan-400/90">
-                              Haver — crédito (troco / a mais)
-                            </p>
-                            <p className="text-xl font-bold tabular-nums text-cyan-300">
-                              {formatCurrency(haverCreditoAberto)}
-                            </p>
-                            <p className="mt-0.5 text-xs text-cyan-400/75">
-                              {haverCompensadoAnterior > 0.009 && haverDeNegativoAberto <= 0.009
-                                ? `Registrado ${formatCurrency(haverRegistrado)} · já compensado ${formatCurrency(haverCompensadoAnterior)}`
-                                : "Cliente pagou a mais ou sem troco — abate da cobrança ou você devolve"}
-                            </p>
-                          </div>
-                        </div>
+                        <ColetaStatusFaixa
+                          tom="haver"
+                          titulo="Haver — crédito (troco / a mais)"
+                          valor={formatCurrency(haverCreditoAberto)}
+                          icon={<HandCoins className="h-4 w-4" />}
+                          descricao={
+                            haverCompensadoAnterior > 0.009 && haverDeNegativoAberto <= 0.009
+                              ? `Registrado ${formatCurrency(haverRegistrado)} · já compensado ${formatCurrency(haverCompensadoAnterior)}`
+                              : "Cliente pagou a mais ou sem troco — abate da cobrança ou você devolve"
+                          }
+                        />
                       )}
                       {pendenciaOperacaoAberta > 0.009 && (
-                        <div className="space-y-2 rounded-xl border border-rose-500/40 bg-rose-500/[0.08] px-4 py-3">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/20">
-                              <Clock className="h-5 w-5 text-rose-400" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-400/90">
-                                {temPagamentoParcial
-                                  ? "Pagamento parcial em aberto"
-                                  : "Pagamento pendente"}
-                              </p>
-                              <p className="text-xl font-bold tabular-nums text-rose-300">
-                                {formatCurrency(pendenciaOperacaoAberta)}
-                              </p>
-                              <p className="mt-0.5 text-xs text-rose-400/75">
-                                Dívida da operação de coletas anteriores — pode incluir na cobrança
-                              </p>
-                            </div>
-                          </div>
+                        <ColetaStatusFaixa
+                          tom={temPagamentoParcial ? "alerta" : "pendencia"}
+                          titulo={
+                            temPagamentoParcial
+                              ? "Pagamento parcial em aberto"
+                              : "Pagamento pendente"
+                          }
+                          valor={formatCurrency(pendenciaOperacaoAberta)}
+                          icon={<Clock className="h-4 w-4" />}
+                          descricao="Dívida da operação de coletas anteriores — pode incluir na cobrança"
+                        >
                           {pendenciasOperacao.length > 0 && (
-                            <div className="space-y-1.5 border-t border-rose-500/20 pt-2 text-xs">
+                            <div className="space-y-1.5 text-[12px]">
                               {pendenciasOperacao.map((p) => (
                                 <div
                                   key={p.id}
-                                  className="flex justify-between gap-3 text-slate-400"
+                                  className="flex justify-between gap-3 text-white/85"
                                 >
                                   <span className="min-w-0 truncate">
                                     {p.titulo ?? "Dívida da operação"}
                                     {p.descricao && (
-                                      <span className="block truncate text-[10px] text-slate-500">
+                                      <span className="block truncate text-[11px] text-white/70">
                                         {p.descricao.split("\n")[0]}
                                       </span>
                                     )}
                                   </span>
-                                  <span className="shrink-0 font-semibold tabular-nums text-rose-300">
+                                  <span className="shrink-0 tabular-nums text-white">
                                     {formatCurrency(Number(p.valor ?? 0))}
                                   </span>
                                 </div>
                               ))}
                             </div>
                           )}
-                        </div>
+                        </ColetaStatusFaixa>
                       )}
                     </div>
                   )}
@@ -1480,7 +1454,7 @@ export function NovaColetaCassinoForm() {
                             calculo.haverQuitadoReais > 0.009) && (
                             <div>
                               <p className="text-slate-500">Haver restante</p>
-                              <p className="font-semibold text-cyan-400">
+                              <p className="font-semibold text-slate-200">
                                 {formatCurrency(calculo.haverRestanteReais)}
                               </p>
                             </div>
@@ -1492,13 +1466,10 @@ export function NovaColetaCassinoForm() {
 
           {calculo && calculo.saldoNegativo && calculo.pendenciaOperacaoTotalReais > 0.009 && (
             <div className="space-y-4 border-t border-slate-800 pt-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-4 w-4 text-rose-400" />
-                <h2 className="font-semibold text-white">Pendência da coleta anterior</h2>
-              </div>
+              <h2 className="text-sm font-medium text-slate-200">Pendência da coleta anterior</h2>
               <p className="text-xs text-slate-400">
                 Ponto deve{" "}
-                <strong className="text-rose-300">
+                <strong className="tabular-nums text-slate-100">
                   {formatCurrency(calculo.pendenciaOperacaoTotalReais)}
                 </strong>
                 {abaterPendenciaOperacaoNegativa
@@ -1522,8 +1493,8 @@ export function NovaColetaCassinoForm() {
                 />
                 <div className="min-w-0 flex-1 space-y-1.5">
                   <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                    <span className="flex items-center gap-2 text-sm font-medium text-white">
-                      <Clock className="h-4 w-4 shrink-0 text-emerald-400" />
+                    <span className="flex items-center gap-2 text-sm text-slate-200">
+                      <Clock className="h-3.5 w-3.5 shrink-0 text-slate-500" />
                       Quer abater da pendência?
                     </span>
                   </div>
@@ -1754,8 +1725,8 @@ export function NovaColetaCassinoForm() {
                   htmlFor="descontar-haver-cobranca"
                   className={`flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors ${
                     descontarHaverNaCobranca
-                      ? "border-cyan-500/35 bg-cyan-500/5"
-                      : "border-slate-700/60 bg-slate-900/30 hover:border-slate-600"
+                      ? "border-[#c4a574]/35 bg-[#c4a574]/[0.06]"
+                      : "border-white/[0.08] bg-transparent hover:border-white/15"
                   }`}
                 >
                   <input
@@ -1807,11 +1778,11 @@ export function NovaColetaCassinoForm() {
                   />
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                      <span className="flex items-center gap-2 text-sm font-medium text-white">
-                        <HandCoins className="h-4 w-4 shrink-0 text-cyan-400" />
+                      <span className="flex items-center gap-2 text-sm text-slate-200">
+                        <HandCoins className="h-3.5 w-3.5 shrink-0 text-slate-500" />
                         Descontar haver nesta cobrança?
                       </span>
-                      <span className="text-sm font-semibold tabular-nums text-cyan-400">
+                      <span className="text-sm tabular-nums text-slate-300">
                         {formatCurrency(haverCreditoAberto)}
                       </span>
                     </div>
@@ -1881,8 +1852,8 @@ export function NovaColetaCassinoForm() {
                       htmlFor="pagar-haver-restante"
                       className={`flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors ${
                         pagarHaverRestante
-                          ? "border-cyan-500/35 bg-cyan-500/5"
-                          : "border-slate-700/60 bg-slate-900/30 hover:border-slate-600"
+                          ? "border-[#c4a574]/35 bg-[#c4a574]/[0.06]"
+                          : "border-white/[0.08] bg-transparent hover:border-white/15"
                       }`}
                     >
                       <input
@@ -1914,11 +1885,11 @@ export function NovaColetaCassinoForm() {
                       />
                       <div className="min-w-0 flex-1 space-y-1.5">
                         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                          <span className="flex items-center gap-2 text-sm font-medium text-white">
-                            <HandCoins className="h-4 w-4 shrink-0 text-cyan-400" />
+                          <span className="flex items-center gap-2 text-sm text-slate-200">
+                            <HandCoins className="h-3.5 w-3.5 shrink-0 text-slate-500" />
                             Pagar haver restante ao ponto?
                           </span>
-                          <span className="text-sm font-semibold tabular-nums text-cyan-400">
+                          <span className="text-sm tabular-nums text-slate-300">
                             {formatCurrency(haverAposCobranca)}
                           </span>
                         </div>
@@ -1930,7 +1901,7 @@ export function NovaColetaCassinoForm() {
                     </label>
 
                     {pagarHaverRestante && (
-                      <div className="space-y-3 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.03] p-4">
+                      <div className="space-y-3 border border-white/[0.08] bg-white/[0.02] p-4">
                         <p className="text-xs text-slate-500">
                           Saída do seu caixa para o ponto — não é pagamento do cliente.
                         </p>
@@ -1962,7 +1933,7 @@ export function NovaColetaCassinoForm() {
                           }
                         />
                         {calculo.haverQuitadoReais > 0.009 && (
-                          <p className="text-sm text-cyan-400">
+                          <p className="text-sm text-slate-300">
                             Haver quitado agora: {formatCurrency(calculo.haverQuitadoReais)}
                             {haverParaPagar > 0.009
                               ? ` · ainda resta ${formatCurrency(calculo.haverRestanteReais)}`
@@ -1989,8 +1960,8 @@ export function NovaColetaCassinoForm() {
                   htmlFor="incluir-pendencia-operacao"
                   className={`flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors ${
                     incluirPendenciaOperacao
-                      ? "border-primary-neon/35 bg-primary-neon/5"
-                      : "border-slate-700/60 bg-slate-900/30 hover:border-slate-600"
+                      ? "border-amber-600/40 bg-amber-950/20"
+                      : "border-white/[0.08] bg-transparent hover:border-white/15"
                   }`}
                 >
                   <input
@@ -2002,11 +1973,11 @@ export function NovaColetaCassinoForm() {
                   />
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                      <span className="flex items-center gap-2 text-sm font-medium text-white">
-                        <Clock className="h-4 w-4 shrink-0 text-amber-400" />
+                      <span className="flex items-center gap-2 text-sm text-slate-200">
+                        <Clock className="h-3.5 w-3.5 shrink-0 text-slate-500" />
                         Incluir pendência nesta cobrança
                       </span>
-                      <span className="text-sm font-semibold tabular-nums text-amber-400">
+                      <span className="text-sm tabular-nums text-slate-300">
                         {formatCurrency(calculo.pendenciaOperacaoTotalReais)}
                       </span>
                     </div>

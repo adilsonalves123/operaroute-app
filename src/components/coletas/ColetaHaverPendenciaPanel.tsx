@@ -1,7 +1,98 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { Clock, HandCoins } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
+
+/** Faixa de status financeiro — cor sólida polida (sem neon). */
+export function ColetaStatusFaixa({
+  tom,
+  titulo,
+  valor,
+  descricao,
+  icon,
+  children,
+  className,
+}: {
+  /** laranja = pendência · azul = haver crédito · roxo = haver de negativo · vermelho = alerta forte */
+  tom: "pendencia" | "haver" | "negativo" | "alerta";
+  titulo: string;
+  valor: string;
+  descricao?: ReactNode;
+  icon?: ReactNode;
+  children?: ReactNode;
+  className?: string;
+}) {
+  const paleta =
+    tom === "pendencia"
+      ? {
+          shell: "from-orange-500 to-orange-600 shadow-orange-950/40",
+          valor: "bg-orange-800/55",
+        }
+      : tom === "haver"
+        ? {
+            shell: "from-blue-500 to-blue-700 shadow-blue-950/40",
+            valor: "bg-blue-900/50",
+          }
+        : tom === "negativo"
+          ? {
+              shell: "from-violet-500 to-violet-800 shadow-violet-950/40",
+              valor: "bg-violet-950/45",
+            }
+          : {
+              shell: "from-red-500 to-red-700 shadow-red-950/40",
+              valor: "bg-red-900/55",
+            };
+
+  return (
+    <div
+      className={cn(
+        "relative overflow-hidden rounded-xl bg-gradient-to-br px-3.5 py-3.5 text-white shadow-md",
+        paleta.shell,
+        className
+      )}
+      role="status"
+    >
+      {/* brilho suave no canto — profundidade, sem glow neon */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-6 -top-8 h-24 w-24 rounded-full bg-white/10"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -bottom-10 -left-4 h-20 w-28 rounded-full bg-black/10"
+      />
+
+      <div className="relative flex items-center justify-between gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-3">
+          {icon ? (
+            <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white/20 text-white ring-1 ring-inset ring-white/25">
+              {icon}
+            </span>
+          ) : null}
+          <div className="min-w-0 pt-0.5">
+            <p className="text-[13px] font-semibold leading-snug tracking-tight text-white">
+              {titulo}
+            </p>
+            {descricao ? (
+              <p className="mt-1 text-[12px] leading-relaxed text-white/80">{descricao}</p>
+            ) : null}
+          </div>
+        </div>
+        <p
+          className={cn(
+            "shrink-0 rounded-lg px-2.5 py-1.5 text-[16px] font-bold tabular-nums tracking-tight text-white",
+            paleta.valor
+          )}
+        >
+          {valor}
+        </p>
+      </div>
+
+      {children ? <div className="relative mt-3 border-t border-white/20 pt-2.5">{children}</div> : null}
+    </div>
+  );
+}
 
 type Props = {
   haverSaldo: number;
@@ -23,10 +114,7 @@ type Props = {
 };
 
 /**
- * Alertas + opções alinhados ao Cassino (copy neutra — sem “ganhadores”).
- * - Haver do ponto (cyan)
- * - Pagamento pendente (rose)
- * - Descontar haver / Incluir pendência
+ * Avisos de haver / pendência — visual padrão (ledger), sem neon.
  */
 export function ColetaHaverPendenciaPanel({
   haverSaldo,
@@ -40,68 +128,47 @@ export function ColetaHaverPendenciaPanel({
   mostrarOpcoesCobranca = false,
   className,
 }: Props) {
-  const mode =
-    variante ?? (mostrarOpcoesCobranca ? "tudo" : "alertas");
+  const mode = variante ?? (mostrarOpcoesCobranca ? "tudo" : "alertas");
   const showAlertas = mode === "alertas" || mode === "tudo";
   const showOpcoes = mode === "opcoes" || mode === "tudo";
 
   const temHaver = haverSaldo > 0.009;
   const temPendencia = pendenciaSaldo > 0.009;
   if (!temHaver && !temPendencia) return null;
-  if (mode === "opcoes" && !temHaver && !temPendencia) return null;
-  if (mode === "alertas" && !temHaver && !temPendencia) return null;
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn("space-y-2.5", className)}>
       {showAlertas && temHaver && (
-        <div className="flex items-center gap-3 rounded-lg border border-cyan-500/45 bg-cyan-500/12 px-4 py-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cyan-500/20">
-            <HandCoins className="h-5 w-5 text-cyan-400" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium uppercase tracking-wide text-cyan-400/90">
-              Haver do ponto
-            </p>
-            <p className="text-xl font-bold tabular-nums text-cyan-300">
-              {formatCurrency(haverSaldo)}
-            </p>
-            <p className="mt-0.5 text-xs text-cyan-400/75">
-              Crédito do ponto — abate na cobrança (agora ou no Cobrar)
-            </p>
-          </div>
-        </div>
+        <ColetaStatusFaixa
+          tom="haver"
+          titulo="Haver do ponto"
+          valor={formatCurrency(haverSaldo)}
+          icon={<HandCoins className="h-4 w-4" />}
+          descricao="Crédito em aberto — pode abater nesta cobrança."
+        />
       )}
 
       {showAlertas && temPendencia && (
-        <div className="rounded-lg border border-rose-500/45 bg-rose-500/12 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-500/20">
-              <Clock className="h-5 w-5 text-rose-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium uppercase tracking-wide text-rose-400/90">
-                Pagamento pendente
-              </p>
-              <p className="text-xl font-bold tabular-nums text-rose-300">
-                {formatCurrency(pendenciaSaldo)}
-              </p>
-              <p className="mt-0.5 text-xs text-rose-400/75">
-                {pendenciaColetas > 0
-                  ? `${pendenciaColetas} coleta${pendenciaColetas === 1 ? "" : "s"} anterior${pendenciaColetas === 1 ? "" : "es"} sem quitar — inclui na cobrança quando for receber`
-                  : "Dívida de coletas anteriores — inclui na cobrança quando for receber"}
-              </p>
-            </div>
-          </div>
-        </div>
+        <ColetaStatusFaixa
+          tom="pendencia"
+          titulo="Pendência do ponto"
+          valor={formatCurrency(pendenciaSaldo)}
+          icon={<Clock className="h-4 w-4" />}
+          descricao={
+            pendenciaColetas > 0
+              ? `${pendenciaColetas} em aberto — inclui na cobrança ao receber`
+              : "Dívida em aberto — inclui na cobrança ao receber"
+          }
+        />
       )}
 
       {showOpcoes && temHaver && (
         <label
           className={cn(
-            "flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors",
+            "flex cursor-pointer gap-3 border px-3.5 py-3 transition-colors",
             descontarHaver
-              ? "border-cyan-500/35 bg-cyan-500/5"
-              : "border-slate-700/60 bg-slate-900/30 hover:border-slate-600"
+              ? "border-[#c4a574]/35 bg-[#c4a574]/[0.06]"
+              : "border-white/[0.08] bg-transparent hover:border-white/15"
           )}
         >
           <input
@@ -110,18 +177,18 @@ export function ColetaHaverPendenciaPanel({
             onChange={(e) => onDescontarHaverChange(e.target.checked)}
             className="mt-0.5"
           />
-          <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <span className="flex items-center gap-2 text-sm font-medium text-white">
-                <HandCoins className="h-4 w-4 shrink-0 text-cyan-400" />
+              <span className="flex items-center gap-2 text-sm text-slate-200">
+                <HandCoins className="h-3.5 w-3.5 shrink-0 text-slate-500" />
                 Descontar haver nesta cobrança?
               </span>
-              <span className="text-sm font-semibold tabular-nums text-cyan-400">
+              <span className="text-sm tabular-nums text-slate-300">
                 {formatCurrency(haverSaldo)}
               </span>
             </div>
-            <p className="text-xs leading-relaxed text-slate-400">
-              Se marcar, o cliente paga menos esse crédito nesta cobrança.
+            <p className="text-[12px] leading-relaxed text-slate-500">
+              Se marcar, o cliente paga menos esse crédito.
             </p>
           </div>
         </label>
@@ -130,10 +197,10 @@ export function ColetaHaverPendenciaPanel({
       {showOpcoes && temPendencia && (
         <label
           className={cn(
-            "flex cursor-pointer gap-3 rounded-lg border p-4 transition-colors",
+            "flex cursor-pointer gap-3 border px-3.5 py-3 transition-colors",
             incluirPendencia
-              ? "border-primary-neon/35 bg-primary-neon/5"
-              : "border-slate-700/60 bg-slate-900/30 hover:border-slate-600"
+              ? "border-amber-600/40 bg-amber-950/20"
+              : "border-white/[0.08] bg-transparent hover:border-white/15"
           )}
         >
           <input
@@ -142,19 +209,19 @@ export function ColetaHaverPendenciaPanel({
             onChange={(e) => onIncluirPendenciaChange(e.target.checked)}
             className="mt-0.5"
           />
-          <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <span className="flex items-center gap-2 text-sm font-medium text-white">
-                <Clock className="h-4 w-4 shrink-0 text-amber-400" />
+              <span className="flex items-center gap-2 text-sm text-slate-200">
+                <Clock className="h-3.5 w-3.5 shrink-0 text-slate-500" />
                 Incluir pendência nesta cobrança
               </span>
-              <span className="text-sm font-semibold tabular-nums text-amber-400">
+              <span className="text-sm tabular-nums text-slate-300">
                 {formatCurrency(pendenciaSaldo)}
               </span>
             </div>
-            <p className="text-xs leading-relaxed text-slate-400">
-              Soma ao total a cobrar agora. Se não marcar, o excedente do pagamento ainda pode
-              abater a pendência automaticamente.
+            <p className="text-[12px] leading-relaxed text-slate-500">
+              Soma ao total a cobrar agora. Se não marcar, o excedente ainda pode abater a
+              pendência.
             </p>
           </div>
         </label>

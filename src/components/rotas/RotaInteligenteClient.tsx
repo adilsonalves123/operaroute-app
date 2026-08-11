@@ -49,6 +49,7 @@ import { RotasBoard } from "./RotasBoard";
 import { MinhaRotaPainel } from "./MinhaRotaPainel";
 import { EnviarRotaModal, EnviarRotaWizardFields } from "./EnviarRotaModal";
 import { ParadasOrdenaveisList } from "./ParadasOrdenaveisList";
+import { RotaDoDiaExecute } from "./RotaDoDiaExecute";
 import type { Ponto } from "@/lib/types/database";
 import { cn, formatDate } from "@/lib/utils";
 import { buscarRotaOsrm } from "@/lib/rotas/osrm";
@@ -77,7 +78,7 @@ export type PontoRotaEnriquecido = Ponto & {
 };
 
 type ModoGestor = "board" | "wizard" | "detalhe";
-type WizardStep = 1 | 2 | 3;
+type WizardStep = 1 | 2;
 
 function toInput(p: PontoRotaEnriquecido): PontoRotaInput {
   const chamados = p.chamadosAbertos ?? [];
@@ -132,6 +133,8 @@ export function RotaInteligenteClient({
   const [operadorNova, setOperadorNova] = useState("");
   const [salvando, setSalvando] = useState(false);
   const [msgWizard, setMsgWizard] = useState("");
+  const [buscaPontos, setBuscaPontos] = useState("");
+  const [showAjusteOrdem, setShowAjusteOrdem] = useState(false);
 
   useEffect(() => {
     setPortalReady(true);
@@ -148,6 +151,31 @@ export function RotaInteligenteClient({
 
   useEffect(() => {
     setRotasSalvas(rotasSalvasInicial);
+  }, [rotasSalvasInicial]);
+
+  // Ao voltar da coleta, atualiza status das paradas (auto-conclusão no servidor).
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === "visible") router.refresh();
+    };
+    document.addEventListener("visibilitychange", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      document.removeEventListener("visibilitychange", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, [router]);
+
+  useEffect(() => {
+    if (!rotaAtiva) return;
+    const atualizada = rotasSalvasInicial.find((r) => r.id === rotaAtiva.id);
+    if (!atualizada) return;
+    const mudou =
+      atualizada.status !== rotaAtiva.status ||
+      atualizada.paradas.some((p, i) => p.status !== rotaAtiva.paradas[i]?.status);
+    if (!mudou) return;
+    carregarRotaSalva(atualizada);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync from server payload only
   }, [rotasSalvasInicial]);
 
   const cidades = useMemo(() => {
@@ -172,16 +200,23 @@ export function RotaInteligenteClient({
     return map;
   }, [pontos]);
 
-  const pontosFiltrados = useMemo(
-    () => (filtroCidade ? pontos.filter((p) => p.cidade === filtroCidade) : []),
-    [pontos, filtroCidade]
-  );
+  const pontosFiltrados = useMemo(() => {
+    const base = filtroCidade ? pontos.filter((p) => p.cidade === filtroCidade) : [];
+    const q = buscaPontos.trim().toLowerCase();
+    if (!q) return base;
+    return base.filter(
+      (p) =>
+        p.nome.toLowerCase().includes(q) ||
+        (p.endereco ?? "").toLowerCase().includes(q)
+    );
+  }, [pontos, filtroCidade, buscaPontos]);
 
   function mudarCidade(cidade: string) {
     setFiltroCidade(cidade);
     setSelecionados(new Set(pontos.filter((p) => p.cidade === cidade).map((p) => p.id)));
     setParadas(null);
     setRotaAtiva(null);
+    setBuscaPontos("");
   }
 
   const capturarGps = useCallback(() => {
@@ -229,15 +264,18 @@ export function RotaInteligenteClient({
     setParadas(null);
   }
 
-  function otimizar() {
-    const escolhidos = pontosFiltrados.filter((p) => selecionados.has(p.id)).map(toInput);
-    if (escolhidos.length === 0) return;
-    const resultado = otimizarRota(escolhidos, inicio);
+  function continuarMontagem() {
+    const daCidade = pontos.filter(
+      (p) => p.cidade === filtroCidade && selecionados.has(p.id)
+    );
+    if (daCidade.length === 0) return;
+    const resultado = otimizarRota(daCidade.map(toInput), inicio);
     setParadas(resultado.paradas);
     setDistanciaKm(resultado.distanciaTotalKm);
     setParadaAtiva(null);
     setRotaRuas(null);
     setRotaAtiva(null);
+    setShowAjusteOrdem(false);
     setWizardStep(2);
   }
 
@@ -249,6 +287,8 @@ export function RotaInteligenteClient({
     setNomeNova(`Rota ${new Date().toLocaleDateString("pt-BR")}`);
     setOperadorNova("");
     setMsgWizard("");
+    setBuscaPontos("");
+    setShowAjusteOrdem(false);
     if (filtroCidade) {
       setSelecionados(new Set(pontos.filter((p) => p.cidade === filtroCidade).map((p) => p.id)));
     }
@@ -261,6 +301,8 @@ export function RotaInteligenteClient({
     setRotaAtiva(null);
     setNavegando(false);
     setMsgWizard("");
+    setShowAjusteOrdem(false);
+    setBuscaPontos("");
   }
 
   function carregarRotaSalva(rota: RotaSalva) {
@@ -290,6 +332,7 @@ export function RotaInteligenteClient({
 
   function executarRota(rota: RotaSalva, abrirNavegacao = false) {
     carregarRotaSalva(rota);
+    setShowAjusteOrdem(false);
     if (podeGerenciarRotas) setModo("detalhe");
     if (abrirNavegacao) setNavegando(true);
   }
@@ -645,7 +688,7 @@ export function RotaInteligenteClient({
     );
   }
 
-  // —— Operador: só Minha rota + detalhe ao executar ——
+  // —— Operador: só Minha rota + execução de campo ——
   if (!podeGerenciarRotas) {
     return (
       <div className="space-y-6">
@@ -658,31 +701,21 @@ export function RotaInteligenteClient({
             hero
             onIniciar={(rota) => executarRota(rota, false)}
             onContinuar={(rota) => executarRota(rota, false)}
-            onNavegar={(rota) => executarRota(rota, true)}
           />
         )}
 
         {rotaAtiva && paradas && (
-          <div className="space-y-4">
-            <button
-              type="button"
-              onClick={() => {
-                setRotaAtiva(null);
-                setParadas(null);
-              }}
-              className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Voltar às minhas rotas
-            </button>
-            <div>
-              <h2 className="text-xl font-semibold tracking-tight text-white">{rotaAtiva.nome}</h2>
-              <p className="text-sm text-slate-400 mt-0.5">
-                {rotaAtiva.cidade} · {paradasPendentes.length} paradas restantes
-              </p>
-            </div>
-            {renderMapaELista()}
-          </div>
+          <RotaDoDiaExecute
+            rota={rotaAtiva}
+            paradas={paradas}
+            pontos={pontos}
+            onVoltar={() => {
+              setRotaAtiva(null);
+              setParadas(null);
+            }}
+            onMarcarParada={marcarParadaAvancada}
+            onVerMapa={podeNavegar ? () => setNavegando(true) : undefined}
+          />
         )}
       </div>
     );
@@ -699,6 +732,7 @@ export function RotaInteligenteClient({
             onNovaRota={iniciarWizard}
             onAbrir={(rota) => {
               carregarRotaSalva(rota);
+              setShowAjusteOrdem(false);
               setModo("detalhe");
             }}
             onEnviar={(rota) => setEnviarRota(rota)}
@@ -723,13 +757,14 @@ export function RotaInteligenteClient({
                 hero={false}
                 onIniciar={(rota) => {
                   carregarRotaSalva(rota);
+                  setShowAjusteOrdem(false);
                   setModo("detalhe");
                 }}
                 onContinuar={(rota) => {
                   carregarRotaSalva(rota);
+                  setShowAjusteOrdem(false);
                   setModo("detalhe");
                 }}
-                onNavegar={(rota) => executarRota(rota, true)}
               />
             </div>
           )}
@@ -748,7 +783,7 @@ export function RotaInteligenteClient({
               Quadro de rotas
             </button>
             <div className="flex items-center gap-2 text-xs">
-              {([1, 2, 3] as const).map((s) => (
+              {([1, 2] as const).map((s) => (
                 <span
                   key={s}
                   className={cn(
@@ -760,18 +795,18 @@ export function RotaInteligenteClient({
                         : "border-slate-700 text-slate-500"
                   )}
                 >
-                  {s === 1 ? "1 · Pontos" : s === 2 ? "2 · Ordem" : "3 · Enviar"}
+                  {s === 1 ? "1 · Cidade e pontos" : "2 · Iniciar"}
                 </span>
               ))}
             </div>
           </div>
 
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">Nova rota</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">Rota do dia</h1>
             <p className="text-sm text-slate-400 mt-1">
-              {wizardStep === 1 && "Escolha a cidade e os pontos do dia."}
-              {wizardStep === 2 && "Ajuste a ordem no mapa e na lista."}
-              {wizardStep === 3 && "Nomeie e envie para o ajudante."}
+              {wizardStep === 1
+                ? "Escolha a cidade e marque os pontos — mesmo sem endereço cadastrado."
+                : "Nomeie, atribua o operador e salve no app."}
             </p>
           </div>
 
@@ -813,28 +848,45 @@ export function RotaInteligenteClient({
                         ? "Localizando…"
                         : gpsStatus === "ok"
                           ? "GPS ativo"
-                          : "Usar minha posição"}
+                          : "Usar minha posição (opcional)"}
                     </button>
                     <button
                       type="button"
-                      onClick={otimizar}
-                      disabled={selecionados.size === 0 || !filtroCidade}
+                      onClick={continuarMontagem}
+                      disabled={
+                        !filtroCidade ||
+                        pontos.filter((p) => p.cidade === filtroCidade && selecionados.has(p.id))
+                          .length === 0
+                      }
                       className="ml-auto inline-flex items-center gap-2 rounded-xl bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-40"
                     >
-                      <Sparkles className="h-4 w-4" />
-                      Otimizar e continuar (
-                      {pontosFiltrados.filter((p) => selecionados.has(p.id)).length})
+                      Continuar (
+                      {
+                        pontos.filter((p) => p.cidade === filtroCidade && selecionados.has(p.id))
+                          .length
+                      }
+                      )
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-sm font-medium text-slate-400">Pontos em {filtroCidade}</h2>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input
+                      type="search"
+                      value={buscaPontos}
+                      onChange={(e) => setBuscaPontos(e.target.value)}
+                      placeholder="Buscar ponto…"
+                      className="min-w-[12rem] flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-600"
+                    />
+                    <h2 className="text-sm font-medium text-slate-400">
+                      Pontos em {filtroCidade}
+                    </h2>
                     <button
                       type="button"
                       onClick={toggleTodos}
-                      className="text-xs text-primary-neon hover:underline"
+                      className="ml-auto text-xs text-primary-neon hover:underline"
                     >
-                      {pontosFiltrados.every((p) => selecionados.has(p.id))
+                      {pontosFiltrados.length > 0 &&
+                      pontosFiltrados.every((p) => selecionados.has(p.id))
                         ? "Desmarcar todos"
                         : "Marcar todos"}
                     </button>
@@ -898,74 +950,63 @@ export function RotaInteligenteClient({
               )}
 
               {wizardStep === 2 && paradas && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setWizardStep(1);
-                        setParadas(null);
-                      }}
-                      className="rounded-lg border border-slate-700 px-3 py-2 text-sm text-slate-400 hover:text-white"
-                    >
-                      Voltar aos pontos
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setWizardStep(3)}
-                      className="ml-auto inline-flex items-center gap-2 rounded-xl bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900"
-                    >
-                      Continuar para enviar
-                      <Send className="h-4 w-4" />
-                    </button>
+                <div className="space-y-5">
+                  <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-slate-900/40 p-5">
+                    <EnviarRotaWizardFields
+                      nome={nomeNova}
+                      onNomeChange={setNomeNova}
+                      operadorId={operadorNova}
+                      onOperadorChange={setOperadorNova}
+                      operadores={operadores}
+                      cidade={filtroCidade}
+                      totalParadas={paradas.length}
+                      msg={msgWizard}
+                    />
+                    <div className="flex flex-col gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setWizardStep(1);
+                            setShowAjusteOrdem(false);
+                          }}
+                          className="rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-400"
+                        >
+                          Voltar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={salvando}
+                          onClick={() => void salvarNovaRota(false)}
+                          className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary-neon py-3 text-sm font-semibold text-slate-900 disabled:opacity-50"
+                        >
+                          {salvando ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Send className="h-4 w-4" />
+                          )}
+                          Salvar no app
+                        </button>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={salvando}
+                        onClick={() => void salvarNovaRota(true)}
+                        className="inline-flex items-center justify-center gap-1.5 py-2 text-sm text-slate-500 hover:text-emerald-300 disabled:opacity-50"
+                      >
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Salvar e avisar no WhatsApp
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowAjusteOrdem((v) => !v)}
+                        className="text-sm text-slate-500 hover:text-primary-neon"
+                      >
+                        {showAjusteOrdem ? "Ocultar ajuste de ordem" : "Ajustar ordem (opcional)"}
+                      </button>
+                    </div>
                   </div>
-                  {renderMapaELista()}
-                </div>
-              )}
-
-              {wizardStep === 3 && paradas && (
-                <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-slate-900/40 p-5">
-                  <EnviarRotaWizardFields
-                    nome={nomeNova}
-                    onNomeChange={setNomeNova}
-                    operadorId={operadorNova}
-                    onOperadorChange={setOperadorNova}
-                    operadores={operadores}
-                    cidade={filtroCidade}
-                    totalParadas={paradas.length}
-                    msg={msgWizard}
-                  />
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setWizardStep(2)}
-                      className="rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-400"
-                    >
-                      Voltar
-                    </button>
-                    <button
-                      type="button"
-                      disabled={salvando}
-                      onClick={() => void salvarNovaRota(false)}
-                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-primary-neon py-3 text-sm font-semibold text-slate-900 disabled:opacity-50"
-                    >
-                      {salvando ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                      Salvar e enviar no app
-                    </button>
-                    <button
-                      type="button"
-                      disabled={salvando}
-                      onClick={() => void salvarNovaRota(true)}
-                      className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 py-3 text-sm font-semibold text-emerald-300 disabled:opacity-50"
-                    >
-                      <MessageCircle className="h-4 w-4" />
-                      Salvar + WhatsApp
-                    </button>
-                  </div>
+                  {showAjusteOrdem && renderMapaELista()}
                 </div>
               )}
             </>
@@ -975,35 +1016,59 @@ export function RotaInteligenteClient({
 
       {modo === "detalhe" && rotaAtiva && paradas && (
         <div className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={voltarBoard}
-              className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Quadro de rotas
-            </button>
-            <button
-              type="button"
-              onClick={() => setEnviarRota(rotaAtiva)}
-              className="inline-flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-300"
-            >
-              <Send className="h-4 w-4" />
-              Enviar / reatribuir
-            </button>
-          </div>
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-white">{rotaAtiva.nome}</h1>
-            <p className="text-sm text-slate-400 mt-1">
-              {rotaAtiva.cidade}
-              {rotaAtiva.operador_nome ? ` · ${rotaAtiva.operador_nome}` : " · sem responsável"}
-            </p>
-          </div>
-          {renderMapaELista()}
+          {showAjusteOrdem ? (
+            <>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAjusteOrdem(false)}
+                  className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Voltar à execução
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEnviarRota(rotaAtiva)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-slate-300"
+                >
+                  <Send className="h-4 w-4" />
+                  Enviar / reatribuir
+                </button>
+              </div>
+              {renderMapaELista()}
+            </>
+          ) : (
+            <>
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setEnviarRota(rotaAtiva)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-white"
+                >
+                  <Send className="h-3.5 w-3.5" />
+                  Enviar / reatribuir
+                </button>
+              </div>
+              <RotaDoDiaExecute
+                rota={rotaAtiva}
+                paradas={paradas}
+                pontos={pontos}
+                onVoltar={voltarBoard}
+                onMarcarParada={marcarParadaAvancada}
+                onVerMapa={podeNavegar ? () => setNavegando(true) : undefined}
+              />
+              <button
+                type="button"
+                onClick={() => setShowAjusteOrdem(true)}
+                className="w-full rounded-xl border border-white/10 py-2.5 text-sm text-slate-500 hover:bg-white/[0.03] hover:text-slate-300"
+              >
+                Ajustar ordem no mapa
+              </button>
+            </>
+          )}
         </div>
       )}
-
       {enviarRota && (
         <EnviarRotaModal
           rota={enviarRota}

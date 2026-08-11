@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { formatPagamentoDetalhe } from "@/lib/financeiro/forma-pagamento";
 import {
-  aplicarPagamentoFifoColetas,
   calcularRecebimentoComPendencia,
   parseRecebimentoPixDinheiro,
-  saldoPendenteColeta,
   splitExcedentePagamento,
 } from "@/lib/nichos/fura-fura";
 import {
@@ -22,6 +20,8 @@ import {
   validarBrindesContraEstoquePonto,
 } from "@/lib/estoque/brindes-ponto";
 import { parseVisitaPontoId, vincularItemVisitaPonto } from "@/lib/visitas-ponto/vincular-item";
+import { aplicarPagamentoDividaAnterior } from "@/lib/visitas-ponto/checkout";
+import { totalDividaAnteriorPonto } from "@/lib/visitas-ponto/divida-ponto";
 
 function parseBrindes(raw: unknown): BrindeUrsinho[] {
   if (!Array.isArray(raw)) return [];
@@ -146,22 +146,10 @@ export async function POST(request: Request) {
       }
     }
 
-    const { data: coletasAnteriores } = await supabase
-      .from("coletas")
-      .select("id, created_at, valor_a_receber, valor_pago_recebido")
-      .eq("empresa_id", profile.empresa_id)
-      .eq("ponto_id", pontoId)
-      .eq("nicho_modulo", NICHO_MODULO_URSINHO)
-      .order("created_at", { ascending: true });
-
-    const dividaColetas = Math.round(
-      (coletasAnteriores ?? []).reduce((sum, coleta) => sum + saldoPendenteColeta(coleta), 0) *
-        100
-    ) / 100;
-
-    // Ao cobrar: dívida entra no rateio (excedente abate pendência, como no cassino).
-    // O checkbox "incluir pendência" só muda o total sugerido na UI.
-    const pendenciaAnterior = cobrandoAgora ? dividaColetas : 0;
+    // Dívida universal do ponto (visita consolidada + demais cobráveis) — mesmo total em todo nicho.
+    const pendenciaAnterior = cobrandoAgora
+      ? await totalDividaAnteriorPonto(supabase, profile.empresa_id, pontoId)
+      : 0;
 
     let haverAbatido = 0;
     if (cobrandoAgora && descontarHaverNaCobranca) {
@@ -309,34 +297,24 @@ export async function POST(request: Request) {
 
     let haverGerado = 0;
 
-    // Abate dívida anterior + haver também ao "Receber" na visita-ponto.
+    // Abate dívida universal do ponto + haver também ao "Receber" na visita-ponto.
     if (cobrandoAgora) {
       if (recebimentoRateado.aplicadoDividaAnterior > 0.009) {
-        const coletasPendentes = (coletasAnteriores ?? []).filter(
-          (coleta) => saldoPendenteColeta(coleta) > 0.009
-        );
-
-        const { valorSobra } = await aplicarPagamentoFifoColetas(supabase, {
+        const aplicado = await aplicarPagamentoDividaAnterior(supabase, {
           empresaId: profile.empresa_id,
           pontoId,
           pontoNome: ponto.nome,
-          coletas: coletasPendentes.map((coleta) => ({
-            id: coleta.id,
-            created_at: coleta.created_at,
-            valor_a_receber: Number(coleta.valor_a_receber ?? 0),
-            valor_pago_recebido: Number(coleta.valor_pago_recebido ?? 0),
-          })),
           valor: recebimentoRateado.aplicadoDividaAnterior,
           pixRestante,
           dinheiroRestante,
           formaPagamento: recebimento.data.forma,
           operadorId: user?.id ?? null,
-          observacao: modoVisitaPonto
-            ? "Quitação na visita (receber agora)"
-            : "Quitação na nova coleta",
+          excluirVisitaPontoId: visitaPontoId ?? undefined,
         });
 
-        haverGerado = valorSobra;
+        haverGerado = Math.round(
+          Math.max(0, recebimentoRateado.aplicadoDividaAnterior - aplicado) * 100
+        ) / 100;
       }
 
       if (recebimentoRateado.haver > 0.009) {
@@ -401,6 +379,11 @@ export async function POST(request: Request) {
       });
     }
 
+    const { marcarParadasConcluidasPorPonto } = await import(
+      "@/lib/rotas/marcar-paradas-concluidas"
+    );
+    await marcarParadasConcluidasPorPonto(supabase, profile.empresa_id!, pontoId);
+
     const { auditarAcao } = await import("@/lib/auditoria/auditar");
     await auditarAcao(supabase, profile, {
       acao: "coleta.criar",
@@ -423,6 +406,16 @@ export async function POST(request: Request) {
       titulo: `Coleta ursinho · ${calculo.maquinas.length} máquina(s)`,
       resumo: `A receber R$ ${Number(calculo.valorAReceber).toFixed(2)} · pago R$ ${Number(recebimentoRateado.aplicadoColetaAtual).toFixed(2)} · pendente R$ ${Number(recebimentoRateado.saldoPendenteColeta).toFixed(2)}`,
       request,
+    });
+
+    const { pushColetaRegistrada } = await import("@/lib/push/events");
+    pushColetaRegistrada({
+      empresaId: profile.empresa_id!,
+      autorUserId: profile.user_id,
+      autorNome: profile.nome,
+      pontoNome: ponto.nome,
+      nichoLabel: "Ursinho",
+      valor: Number(calculo.valorAReceber) || 0,
     });
 
     return NextResponse.json({

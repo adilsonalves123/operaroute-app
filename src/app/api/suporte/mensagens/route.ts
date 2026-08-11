@@ -177,6 +177,15 @@ export async function POST(request: Request) {
     ? await listarMensagens(supabase, conversaAtual.id)
     : await listarMensagens(supabase, conversa.id);
 
+  const { pushSuporteMensagem } = await import("@/lib/push/events");
+  pushSuporteMensagem({
+    empresaId: profile.empresa_id,
+    autorUserId: profile.user_id,
+    autorNome: profile.nome,
+    preview: texto || (file ? "Anexo enviado" : "Nova mensagem"),
+    conversaId: (conversaAtual ?? conversa).id,
+  });
+
   return NextResponse.json({
     conversa: conversaAtual ?? { ...conversa, modo: escalado ? "humano" : conversa.modo },
     mensagens,

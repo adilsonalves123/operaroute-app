@@ -151,7 +151,7 @@ async function carregarItensCobraveis(
   return itensCobraveis.filter((i) => i.valorCobravel > 0.009);
 }
 
-async function aplicarPagamentoDividaAnterior(
+export async function aplicarPagamentoDividaAnterior(
   supabase: SupabaseClient,
   opts: {
     empresaId: string;
@@ -385,6 +385,54 @@ async function aplicarCreditoHaverItensVisita(
             .eq("id", p.id);
         }
       }
+    }
+  }
+}
+
+async function absorverSaldosItensVisitaNaConsolidada(
+  supabase: SupabaseClient,
+  opts: { empresaId: string; visitaPontoId: string }
+) {
+  const itens = await carregarItensCobraveis(supabase, opts.empresaId, opts.visitaPontoId);
+  const agora = new Date().toISOString();
+
+  for (const item of itens) {
+    const saldo = round2(Math.max(0, item.valorCobravel - item.valorPago));
+    if (saldo <= 0.009) continue;
+
+    if (item.kind === "coleta") {
+      // Dívida da visita migrou para pendência universal do ponto — zera saldo da coleta.
+      await supabase
+        .from("coletas")
+        .update({ valor_pago_recebido: item.valorCobravel })
+        .eq("id", item.id)
+        .eq("empresa_id", opts.empresaId);
+
+      await sincronizarPendenciaDaColeta(supabase, {
+        empresaId: opts.empresaId,
+        coletaId: item.id,
+      });
+    } else {
+      await supabase
+        .from("visitas")
+        .update({
+          valor_pago: item.valorCobravel,
+          restante: 0,
+        })
+        .eq("id", item.id)
+        .eq("empresa_id", opts.empresaId);
+
+      await supabase
+        .from("pendencias")
+        .update({
+          valor: 0,
+          status: "resolvida",
+          resolvido_em: agora,
+        })
+        .eq("empresa_id", opts.empresaId)
+        .eq("visita_id", item.id)
+        .eq("status", "aberta")
+        .in("tipo", ["pagamento_pendente", "parcial"]);
     }
   }
 }
@@ -652,6 +700,12 @@ export async function finalizarVisitaPontoComCheckout(
       .eq("id", opts.visitaPontoId);
 
     const resumoFinal = await fetchVisitaPontoResumo(supabase, opts.empresaId, opts.visitaPontoId);
+
+    const { marcarParadasConcluidasPorPonto } = await import(
+      "@/lib/rotas/marcar-paradas-concluidas"
+    );
+    await marcarParadasConcluidasPorPonto(supabase, opts.empresaId, resumo.pontoId);
+
     return {
       calculo: {
         ...calcularCheckoutVisita({
@@ -740,48 +794,43 @@ export async function finalizarVisitaPontoComCheckout(
   }
 
   let pendenciaId: string | null = null;
-  if (calculo.restante > 0.009) {
-    // Divida anterior já existe como pendência aberta — não recriar em visita_consolidada.
-    // Operação da visita de hoje também pode já ter pagamento_pendente/parcial.
-    let opsVisitaAtual = 0;
-    if (cassinoVisitaIds.length > 0) {
-      const { data: pendOps } = await supabase
-        .from("pendencias")
-        .select("valor")
-        .eq("empresa_id", opts.empresaId)
-        .eq("status", "aberta")
-        .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"])
-        .in("visita_id", cassinoVisitaIds);
-      opsVisitaAtual = round2(
-        (pendOps ?? []).reduce((s, p) => s + Number(p.valor ?? 0), 0)
-      );
-    }
-    const jaRegistrado = round2(dividaAnteriorTotal + opsVisitaAtual);
-    const restanteNovo = round2(Math.max(0, calculo.restante - jaRegistrado));
+  // Pendência universal do ponto = só o que faltou da visita de hoje.
+  // Dívida antiga já existe em outras linhas; não ratear o restante por nicho.
+  const unpaidVisitaHoje = round2(
+    Math.max(0, calculo.subtotalAposDesconto - calculo.aplicadoVisita)
+  );
 
-    if (restanteNovo > 0.009) {
-      const linhas = resumo.nichos.map(
-        (n) => `${n.label}: ${n.totalCobravel.toFixed(2).replace(".", ",")}`
-      );
-      const { data: pend } = await supabase
-        .from("pendencias")
-        .insert({
-          empresa_id: opts.empresaId,
-          ponto_id: resumo.pontoId,
-          visita_ponto_id: opts.visitaPontoId,
-          tipo: calculo.valorPago > 0.009 ? "parcial" : "visita_consolidada",
-          titulo: `Visita ao ponto — ${new Date().toLocaleDateString("pt-BR")}`,
-          descricao: [pontoNome, ...linhas, `Total: R$ ${calculo.totalACobrar.toFixed(2)}`].join(
-            " · "
-          ),
-          valor: restanteNovo,
-          status: "aberta",
-          prioridade: "media",
-        })
-        .select("id")
-        .single();
-      pendenciaId = pend?.id ?? null;
-    }
+  if (unpaidVisitaHoje > 0.009) {
+    const linhas = resumo.nichos.map(
+      (n) => `${n.label}: ${n.totalCobravel.toFixed(2).replace(".", ",")}`
+    );
+    const { data: pend } = await supabase
+      .from("pendencias")
+      .insert({
+        empresa_id: opts.empresaId,
+        ponto_id: resumo.pontoId,
+        visita_ponto_id: opts.visitaPontoId,
+        tipo: calculo.valorPago > 0.009 ? "parcial" : "visita_consolidada",
+        titulo: `Visita ao ponto — ${new Date().toLocaleDateString("pt-BR")}`,
+        descricao: [
+          pontoNome,
+          ...linhas,
+          `Total visita: R$ ${calculo.subtotalAposDesconto.toFixed(2)}`,
+          `Pago: R$ ${calculo.valorPago.toFixed(2)}`,
+          `Pendência universal: R$ ${unpaidVisitaHoje.toFixed(2)}`,
+        ].join(" · "),
+        valor: unpaidVisitaHoje,
+        status: "aberta",
+        prioridade: "media",
+      })
+      .select("id")
+      .single();
+    pendenciaId = pend?.id ?? null;
+
+    await absorverSaldosItensVisitaNaConsolidada(supabase, {
+      empresaId: opts.empresaId,
+      visitaPontoId: opts.visitaPontoId,
+    });
   }
 
   if (calculo.haver > 0.009) {
@@ -816,6 +865,11 @@ export async function finalizarVisitaPontoComCheckout(
     .eq("id", opts.visitaPontoId);
 
   const resumoFinal = await fetchVisitaPontoResumo(supabase, opts.empresaId, opts.visitaPontoId);
+
+  const { marcarParadasConcluidasPorPonto } = await import(
+    "@/lib/rotas/marcar-paradas-concluidas"
+  );
+  await marcarParadasConcluidasPorPonto(supabase, opts.empresaId, resumo.pontoId);
 
   return { calculo, pendenciaId, resumo: resumoFinal };
 }

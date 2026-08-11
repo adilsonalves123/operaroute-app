@@ -28,6 +28,8 @@ export type PendenciasPorNicho = {
   bolinhaHaver: number;
   consignadoPendente: number;
   consignadoHaver: number;
+  /** Dívida universal (visita ao ponto consolidada) — não ratear por nicho. */
+  pontoPendente: number;
 };
 
 function round2(n: number): number {
@@ -47,11 +49,22 @@ type NichoPendenciaKey =
   | "bolinha_haver"
   | "consignado_debt"
   | "consignado_haver"
+  | "ponto_debt"
   | "ignore";
 
 function classificarPendencia(p: PendenciaAbertaRow): NichoPendenciaKey {
   const titulo = (p.titulo ?? "").toLowerCase();
-  const isHaver = (p.tipo ?? "").toLowerCase() === "haver";
+  const tipo = (p.tipo ?? "").toLowerCase();
+  const isHaver = tipo === "haver";
+
+  // Pendência universal de visita multi-nicho — não ratear como cassino.
+  if (
+    tipo === "visita_consolidada" ||
+    titulo.includes("visita ao ponto") ||
+    (tipo === "parcial" && titulo.includes("visita"))
+  ) {
+    return "ponto_debt";
+  }
 
   const isFura = titulo.includes("fura-fura") || titulo.includes("fura fura");
   const isUrsinho = titulo.includes("ursinho");
@@ -74,6 +87,7 @@ function classificarPendencia(p: PendenciaAbertaRow): NichoPendenciaKey {
   if (isDiversao) return "diversao_debt";
   if (isBolinha) return "bolinha_debt";
   if (isConsignado) return "consignado_debt";
+
   if (p.visita_id) return "cassino_debt";
   if (titulo.includes("visita") || titulo.includes("operação") || titulo.includes("operacao")) {
     return "cassino_debt";
@@ -115,6 +129,7 @@ export function somarPendenciasPorNicho(rows: PendenciaAbertaRow[]): PendenciasP
     bolinhaHaver: 0,
     consignadoPendente: 0,
     consignadoHaver: 0,
+    pontoPendente: 0,
   };
 
   for (const p of rows) {
@@ -157,6 +172,9 @@ export function somarPendenciasPorNicho(rows: PendenciaAbertaRow[]): PendenciasP
         break;
       case "consignado_haver":
         out.consignadoHaver += valor;
+        break;
+      case "ponto_debt":
+        out.pontoPendente += valor;
         break;
       default:
         break;

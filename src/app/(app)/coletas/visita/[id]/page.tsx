@@ -10,6 +10,7 @@ import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
 import { ExcluirVisitaButton } from "@/components/coletas/cassino/ExcluirVisitaButton";
 import { ImprimirColetaCassinoButton } from "@/components/coletas/cassino/ImprimirColetaCassinoButton";
 import { CompartilharColetaHistoricoActions } from "@/components/coletas/CompartilharColetaHistoricoActions";
+import { CorrigirPagamentoButton } from "@/components/coletas/CorrigirPagamentoButton";
 import { VisitaNegativaResumo } from "@/components/coletas/cassino/VisitaNegativaResumo";
 import { VisitaPositivaResumo } from "@/components/coletas/cassino/VisitaPositivaResumo";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
@@ -302,6 +303,13 @@ export default async function VisitaDetailPage({
         </div>
 
         <div className="flex flex-wrap gap-2 print:hidden">
+          <CorrigirPagamentoButton
+            tipo="visita"
+            id={id}
+            valorAReceber={Number(visita.valor_pago ?? 0) + Number(visita.restante ?? 0)}
+            valorPixInicial={Number(visita.valor_pix ?? 0)}
+            valorDinheiroInicial={Number(visita.valor_dinheiro ?? 0)}
+          />
           <CompartilharColetaHistoricoActions
             snapshot={snapshot}
             telefone={ponto?.whatsapp}

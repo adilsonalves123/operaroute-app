@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Loader2,
   MapPin,
-  Navigation,
   Play,
   Route,
 } from "lucide-react";
@@ -25,7 +24,6 @@ type Props = {
   pontosPorId: Map<string, { nome: string; cidade?: string | null; endereco?: string | null }>;
   onIniciar: (rota: RotaSalva) => void;
   onContinuar: (rota: RotaSalva) => void;
-  onNavegar?: (rota: RotaSalva) => void;
   rotaAtivaId?: string | null;
   /** Quando true, mostra hero completo (tela só do operador) */
   hero?: boolean;
@@ -37,7 +35,6 @@ export function MinhaRotaPainel({
   pontosPorId,
   onIniciar,
   onContinuar,
-  onNavegar,
   rotaAtivaId,
   hero = true,
 }: Props) {
@@ -120,11 +117,24 @@ export function MinhaRotaPainel({
           <div className="relative">
             <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">Hoje em campo</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Minha rota</h1>
-            <p className="mt-1.5 text-sm text-slate-400">
-              {rotaEmAndamento
-                ? "Continue de onde parou — próxima parada em destaque."
-                : `${rotasPendentes.length} rota(s) aguardando início.`}
-            </p>
+            {rotaEmAndamento ? (
+              <div className="mt-3 flex flex-wrap items-center gap-3">
+                <div className="rounded-xl bg-amber-600 px-3 py-2 text-white">
+                  <span className="text-[10px] uppercase tracking-wide text-white/80">Faltam</span>
+                  <p className="text-xl font-bold tabular-nums leading-none">
+                    {progressoRota(rotaEmAndamento).pendentes}
+                  </p>
+                </div>
+                <p className="text-sm text-slate-400 max-w-sm">
+                  Continue de onde parou. Ao coletar um ponto, ele entra como feito
+                  automaticamente.
+                </p>
+              </div>
+            ) : (
+              <p className="mt-1.5 text-sm text-slate-400">
+                {rotasPendentes.length} rota(s) aguardando início.
+              </p>
+            )}
           </div>
         </header>
       )}
@@ -143,8 +153,7 @@ export function MinhaRotaPainel({
           loading={loadingId === rotaEmAndamento.id}
           ativa={rotaAtivaId === rotaEmAndamento.id}
           onAcao={() => onContinuar(rotaEmAndamento)}
-          onNavegar={onNavegar ? () => onNavegar(rotaEmAndamento) : undefined}
-          labelAcao="Continuar rota"
+          labelAcao="Continuar"
         />
       )}
 
@@ -168,7 +177,7 @@ export function MinhaRotaPainel({
               loading={loadingId === rota.id}
               ativa={rotaAtivaId === rota.id}
               onAcao={() => void iniciarRota(rota)}
-              labelAcao="Iniciar rota"
+              labelAcao="Iniciar"
             />
           ))}
         </section>
@@ -203,7 +212,6 @@ function RotaOperadorCard({
   loading,
   ativa,
   onAcao,
-  onNavegar,
   labelAcao,
 }: {
   rota: RotaSalva;
@@ -213,7 +221,6 @@ function RotaOperadorCard({
   loading?: boolean;
   ativa?: boolean;
   onAcao: () => void;
-  onNavegar?: () => void;
   labelAcao: string;
 }) {
   const prog = progressoRota(rota);
@@ -235,24 +242,32 @@ function RotaOperadorCard({
           <p className="text-lg font-semibold tracking-tight text-white">{rota.nome}</p>
           <p className="text-xs text-slate-500 mt-0.5">{formatDate(rota.created_at)}</p>
           {rota.cidade && (
-            <p className="text-xs text-cyan-400/90 mt-1.5 flex items-center gap-1">
+            <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
               <MapPin className="h-3 w-3" />
               {rota.cidade}
             </p>
           )}
         </div>
-        <span
-          className={cn(
-            "shrink-0 rounded-md px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-            rota.status === "concluida"
-              ? "bg-green-500/20 text-green-400"
-              : rota.status === "em_andamento"
-                ? "bg-cyan-500/20 text-cyan-300"
-                : "bg-slate-500/20 text-slate-400"
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          {!concluida && prog.pendentes > 0 && (
+            <span className="rounded-lg bg-amber-600 px-2.5 py-1 text-center text-white">
+              <span className="block text-[9px] uppercase tracking-wide text-white/80">Faltam</span>
+              <span className="text-lg font-bold tabular-nums leading-none">{prog.pendentes}</span>
+            </span>
           )}
-        >
-          {statusRotaLabel(rota.status)}
-        </span>
+          <span
+            className={cn(
+              "rounded-md px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+              rota.status === "concluida"
+                ? "bg-green-500/20 text-green-400"
+                : rota.status === "em_andamento"
+                  ? "bg-cyan-500/20 text-cyan-300"
+                  : "bg-slate-500/20 text-slate-400"
+            )}
+          >
+            {statusRotaLabel(rota.status)}
+          </span>
+        </div>
       </div>
 
       <div className="space-y-2">
@@ -312,25 +327,9 @@ function RotaOperadorCard({
                 : "bg-slate-800 text-white hover:bg-slate-700"
             )}
           >
-            {loading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : destaque || rota.status === "em_andamento" ? (
-              <Navigation className="h-4 w-4" />
-            ) : (
-              <Play className="h-4 w-4" />
-            )}
+            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             {labelAcao}
           </button>
-          {onNavegar && (destaque || rota.status === "em_andamento") && (
-            <button
-              type="button"
-              onClick={onNavegar}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-green-500/35 bg-green-500/10 py-2.5 text-sm font-medium text-green-300 hover:bg-green-500/15"
-            >
-              <Navigation className="h-4 w-4" />
-              Abrir navegação GPS
-            </button>
-          )}
         </div>
       )}
     </article>

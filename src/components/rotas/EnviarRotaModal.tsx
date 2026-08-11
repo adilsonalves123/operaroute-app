@@ -158,7 +158,7 @@ export function EnviarRotaModal({
 
           <p className="text-xs text-slate-500 leading-relaxed">
             A rota aparece em <strong className="text-slate-400">Minha rota</strong> no app dele.
-            WhatsApp envia o resumo das paradas e o link do Maps.
+            WhatsApp é opcional, só o resumo das paradas.
           </p>
 
           {msg && (
@@ -175,16 +175,16 @@ export function EnviarRotaModal({
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary-neon py-3 text-sm font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-50"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-              Enviar no app
+              Atribuir no app
             </button>
             <button
               type="button"
               disabled={loading || !operadorId}
               onClick={() => void handleWhatsApp()}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-500/35 bg-emerald-500/10 py-3 text-sm font-semibold text-emerald-300 hover:bg-emerald-500/15 disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-1.5 py-2 text-sm text-slate-500 hover:text-emerald-300 disabled:opacity-50"
             >
-              <MessageCircle className="h-4 w-4" />
-              Enviar no app + WhatsApp
+              <MessageCircle className="h-3.5 w-3.5" />
+              Também avisar no WhatsApp
             </button>
             <button
               type="button"
@@ -232,7 +232,7 @@ export function EnviarRotaWizardFields({
     <div className="space-y-4">
       <p className="text-sm text-slate-400">
         Salvar <strong className="text-white">{totalParadas}</strong> paradas em{" "}
-        <strong className="text-cyan-300">{cidade || "—"}</strong> e enviar para a equipe.
+        <strong className="text-cyan-300">{cidade || "—"}</strong> e atribuir no app.
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <FormInput

@@ -117,7 +117,7 @@ export async function POST(request: Request) {
     }
   }
 
-  // Evita clique duplo em "Receber e encerrar" gravar 2 visitas + 2 entradas no caixa.
+  // Evita clique duplo em "Receber agora" gravar 2 visitas + 2 entradas no caixa.
   if (visitaPontoId) {
     const { data: cassinoJaNaVisita } = await supabase
       .from("visita_ponto_itens")
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Cassino já foi registrado nesta visita. Não é necessário tocar em Receber e encerrar de novo.",
+            "Cassino já foi registrado nesta visita. Não é necessário tocar em Receber agora de novo.",
           visita_id: cassinoJaNaVisita.cassino_visita_id,
           already_done: true,
         },
@@ -717,6 +717,15 @@ export async function POST(request: Request) {
     });
   }
 
+  const { marcarParadasConcluidasPorPonto } = await import(
+    "@/lib/rotas/marcar-paradas-concluidas"
+  );
+  await marcarParadasConcluidasPorPonto(
+    supabase,
+    profile.empresa_id!,
+    String(body.ponto_id ?? "")
+  );
+
   const { auditarAcao } = await import("@/lib/auditoria/auditar");
   const { detectarDiffFinanceiro } = await import("@/lib/auditoria/anomalias");
   await auditarAcao(supabase, profile, {
@@ -765,6 +774,22 @@ export async function POST(request: Request) {
         request,
       });
     }
+  }
+
+  {
+    const { pushColetaRegistrada } = await import("@/lib/push/events");
+    const valorPush = calculo.saldoNegativo
+      ? centesimosToReais(calculo.totalLucroCentavos)
+      : calculo.valorOperacaoEfetivoReais || calculo.totalACobrarReais;
+    pushColetaRegistrada({
+      empresaId: profile.empresa_id!,
+      autorUserId: profile.user_id,
+      autorNome: profile.nome,
+      pontoNome: ponto?.nome ?? null,
+      nichoLabel: "Cassino",
+      valor: valorPush,
+      url: `/coletas/visita/${visita.id}`,
+    });
   }
 
   return NextResponse.json({

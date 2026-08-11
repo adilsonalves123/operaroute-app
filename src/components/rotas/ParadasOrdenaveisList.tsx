@@ -131,7 +131,8 @@ export function ParadasOrdenaveisList({
                   )}
                 </div>
                 <p className="text-xs text-slate-500 truncate">
-                  {[parada.endereco, parada.cidade].filter(Boolean).join(" · ") || "Sem endereço"}
+                  {[parada.endereco, parada.cidade].filter(Boolean).join(" · ") ||
+                    "Sem endereço — ok para checklist da rota"}
                 </p>
                 {parada.distanciaAnteriorKm != null && (
                   <p className="text-xs text-slate-600 mt-0.5">
@@ -158,6 +159,12 @@ export function ParadasOrdenaveisList({
                   <Package className="h-3.5 w-3.5" />
                   Coletar
                 </Link>
+              )}
+              {concluida && parada.statusParada === "concluida" && (
+                <span className="shrink-0 self-start inline-flex items-center gap-1 rounded-lg bg-emerald-600/90 px-2.5 py-1.5 text-xs font-semibold text-white">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Feito
+                </span>
               )}
               {concluida && parada.statusParada === "pulada" && (
                 <SkipForward className="h-4 w-4 text-slate-500 shrink-0 mt-2" />

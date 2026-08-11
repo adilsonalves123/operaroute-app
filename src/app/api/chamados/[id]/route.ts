@@ -76,7 +76,7 @@ export async function PATCH(
 
   const { data: chamado, error: fetchErr } = await supabase
     .from("chamados")
-    .select("id, status, titulo")
+    .select("id, status, titulo, ponto_id, pontos(nome)")
     .eq("id", id)
     .eq("empresa_id", profile.empresa_id!)
     .single();
@@ -221,6 +221,21 @@ export async function PATCH(
       titulo: "Concluiu chamado",
       resumo: textoFinal.slice(0, 180),
       request,
+    });
+
+    const pontoJoin = chamado.pontos as { nome?: string } | { nome?: string }[] | null;
+    const pontoNome = Array.isArray(pontoJoin)
+      ? pontoJoin[0]?.nome
+      : pontoJoin?.nome;
+    const { pushChamadoConcluido } = await import("@/lib/push/events");
+    pushChamadoConcluido({
+      empresaId: profile.empresa_id!,
+      autorUserId: profile.user_id,
+      autorNome: profile.nome,
+      pontoNome: pontoNome ?? null,
+      titulo: chamado.titulo,
+      resumo: textoFinal,
+      chamadoId: id,
     });
 
     return NextResponse.json({

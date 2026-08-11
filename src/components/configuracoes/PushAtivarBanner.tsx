@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
+import { isNativeAndroidApp } from "@/lib/push/client";
 
 /**
  * Aviso no dashboard: admin/gerente ainda não ativou push neste aparelho.
@@ -17,9 +18,11 @@ export function PushAtivarBanner() {
         const res = await fetch("/api/push/subscribe");
         const data = await res.json().catch(() => ({}));
         if (cancelled || !res.ok) return;
-        if (data.configured && data.allowed && !data.subscribed) {
-          setMostrar(true);
-        }
+        const pode =
+          data.allowed &&
+          !data.subscribed &&
+          (data.configured || isNativeAndroidApp());
+        if (pode) setMostrar(true);
       } catch {
         /* ignore */
       }
@@ -40,7 +43,7 @@ export function PushAtivarBanner() {
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white">Ative os alertas push</p>
           <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">
-            Receba no celular/PC quando o operador fizer coleta, manutenção, equipamento
+            Receba no celular/PC quando o operador fizer coleta, manutencao, equipamento
             arrumado ou suporte.
           </p>
         </div>

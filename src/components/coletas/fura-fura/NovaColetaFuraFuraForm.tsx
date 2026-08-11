@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navigation, Trash2, ImageIcon } from "lucide-react";
-import { FormInput, FormSelect } from "@/components/ui/FormInput";
+import { FormInput } from "@/components/ui/FormInput";
+import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { parseMoneyInput } from "@/lib/utils";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { ColetaFuraFuraResumo } from "./ColetaFuraFuraResumo";
@@ -600,21 +601,18 @@ export function NovaColetaFuraFuraForm() {
       <form onSubmit={handleSubmit} className="space-y-5">
         <ColetaPontoBar
           pontoField={
-            <FormSelect
+            <ColetaPontoSearchSelect
               label="Ponto *"
               value={form.ponto_id}
-              onChange={(e) => update("ponto_id", e.target.value)}
-              options={[
-                { value: "", label: "Selecione..." },
-                ...pontos.map((p) => ({
-                  value: p.id,
-                  label: labelPontoComPendencia(
-                    p.nome,
-                    pendenciasPorPonto.get(p.id),
-                    formatCurrency
-                  ),
-                })),
-              ]}
+              onChange={(id) => update("ponto_id", id)}
+              options={pontos.map((p) => ({
+                value: p.id,
+                label: labelPontoComPendencia(
+                  p.nome,
+                  pendenciasPorPonto.get(p.id),
+                  formatCurrency
+                ),
+              }))}
             />
           }
           comissaoField={

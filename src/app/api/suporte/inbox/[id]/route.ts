@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { getProfile, getSession } from "@/lib/supabase/server";
 import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
 import { isSuporteStaff } from "@/lib/suporte/staff";
@@ -13,10 +13,10 @@ export async function GET(_request: Request, ctx: Ctx) {
   const user = await getSession();
   const profile = await getProfile();
   if (!user || !isSuporteStaff(user, profile)) {
-    return NextResponse.json({ error: "Sem permissão de staff." }, { status: 403 });
+    return NextResponse.json({ error: "Sem permissÃ£o de staff." }, { status: 403 });
   }
   if (!isAdminConfigured()) {
-    return NextResponse.json({ error: "Admin não configurado." }, { status: 503 });
+    return NextResponse.json({ error: "Admin nÃ£o configurado." }, { status: 503 });
   }
 
   const { id } = await ctx.params;
@@ -28,7 +28,7 @@ export async function GET(_request: Request, ctx: Ctx) {
     .maybeSingle();
 
   if (error || !conversa) {
-    return NextResponse.json({ error: "Conversa não encontrada." }, { status: 404 });
+    return NextResponse.json({ error: "Conversa nÃ£o encontrada." }, { status: 404 });
   }
 
   const mensagens = await listarMensagens(admin, id);
@@ -39,10 +39,10 @@ export async function POST(request: Request, ctx: Ctx) {
   const user = await getSession();
   const profile = await getProfile();
   if (!user || !isSuporteStaff(user, profile)) {
-    return NextResponse.json({ error: "Sem permissão de staff." }, { status: 403 });
+    return NextResponse.json({ error: "Sem permissÃ£o de staff." }, { status: 403 });
   }
   if (!isAdminConfigured()) {
-    return NextResponse.json({ error: "Admin não configurado." }, { status: 503 });
+    return NextResponse.json({ error: "Admin nÃ£o configurado." }, { status: 503 });
   }
 
   const { id } = await ctx.params;
@@ -71,10 +71,12 @@ export async function POST(request: Request, ctx: Ctx) {
     .maybeSingle();
 
   if (!conversa) {
-    return NextResponse.json({ error: "Conversa não encontrada." }, { status: 404 });
+    return NextResponse.json({ error: "Conversa nÃ£o encontrada." }, { status: 404 });
   }
 
   const c = conversa as SuporteConversa;
+
+  let anexo: Awaited<ReturnType<typeof uploadAnexoSuporte>> | null = null;
 
   if (acao === "resolver") {
     await admin
@@ -99,7 +101,6 @@ export async function POST(request: Request, ctx: Ctx) {
       return NextResponse.json({ error: "Digite a resposta ou anexe um arquivo." }, { status: 400 });
     }
 
-    let anexo = null;
     if (file) {
       try {
         anexo = await uploadAnexoSuporte(admin, c.empresa_id, id, file);
@@ -131,5 +132,16 @@ export async function POST(request: Request, ctx: Ctx) {
 
   const { data: atual } = await admin.from("suporte_conversas").select("*").eq("id", id).single();
   const mensagens = await listarMensagens(admin, id);
+
+  if (atual?.empresa_id) {
+    const { pushSuporteMensagem } = await import("@/lib/push/events");
+    pushSuporteMensagem({
+      empresaId: String(atual.empresa_id),
+      autorNome: "Suporte OperaRoute",
+      preview: texto || (anexo ? `Arquivo: ${anexo.nome}` : "Nova resposta do suporte"),
+      conversaId: id,
+    });
+  }
+
   return NextResponse.json({ conversa: atual, mensagens });
 }
