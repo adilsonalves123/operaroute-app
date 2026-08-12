@@ -117,13 +117,13 @@ export function PontosClient({ pontos }: PontosClientProps) {
         <div className="mt-8 space-y-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative min-w-0 w-full flex-1">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+              <Search className="pointer-events-none absolute left-3.5 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-slate-500" />
               <input
                 placeholder="Nome ou cidade…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label="Buscar por nome ou cidade"
-                className="w-full min-w-0 rounded-sm border border-white/[0.08] bg-white/[0.03] py-2.5 pl-10 pr-4 text-[14px] text-[#f4efe6] placeholder:truncate placeholder:text-slate-500 outline-none transition focus:border-[#c4a574]/35"
+                className="w-full min-w-0 rounded-sm border border-white/[0.08] bg-white/[0.03] py-2.5 !pl-11 pr-4 text-[14px] text-[#f4efe6] placeholder:truncate placeholder:text-slate-500 outline-none transition focus:border-[#c4a574]/35"
               />
             </div>
           </div>
