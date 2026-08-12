@@ -140,9 +140,9 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+        <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/90 p-4">
           <div
-            className="w-full max-w-xl space-y-4 rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl"
+            className="w-full max-w-xl space-y-4 rounded-2xl border border-slate-700 bg-[#070b14] p-6 shadow-2xl [&_input]:bg-slate-900 [&_textarea]:bg-slate-900"
             role="dialog"
             aria-modal="true"
             aria-labelledby={`editar-equipamento-${equipamento.id}`}
