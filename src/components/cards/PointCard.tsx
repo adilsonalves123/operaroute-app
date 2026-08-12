@@ -37,13 +37,15 @@ export function PointCard({ ponto }: PointCardProps) {
   return (
     <Link
       href={`/pontos/${ponto.id}`}
-      className="group flex items-center gap-4 py-4 transition hover:bg-white/[0.02] sm:gap-5"
+      className="group flex items-center gap-4 py-4 transition [content-visibility:auto] [contain-intrinsic-size:auto_88px] hover:bg-white/[0.02] sm:gap-5"
     >
       {(ponto.foto_url ?? "").trim() ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={ponto.foto_url!}
           alt={ponto.nome}
+          loading="lazy"
+          decoding="async"
           className="h-14 w-14 shrink-0 rounded-sm object-cover border border-white/[0.08] bg-[#0c1018]"
         />
       ) : (

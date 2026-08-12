@@ -39,6 +39,9 @@ export default async function PontoDetailPage({
   const isConsignado = nichosPainel.includes("consignado");
   const isOutros = nichosPainel.includes("outros");
   const mostraVisitaUnificada = visitaPontoDisponivel(nichosAtivos);
+  // Estoque central só entra em nichos que alocam itens — evita query pesada no cassino puro
+  const precisaEstoqueCentral =
+    isUrsinho || isVending || isFuraFura || isBolinha || isConsignado;
 
   const { data: ponto } = await supabase
     .from("pontos")
@@ -84,7 +87,7 @@ export default async function PontoDetailPage({
           .eq("empresa_id", profile.empresa_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
-    profile?.empresa_id
+    precisaEstoqueCentral && profile?.empresa_id
       ? supabase
           .from("estoque")
           .select("id, nome_item, custo_unitario, quantidade, foto_url")
