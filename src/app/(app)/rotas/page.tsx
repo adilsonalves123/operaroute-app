@@ -47,48 +47,29 @@ export default async function RotasPage() {
   const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
   const podeGerenciarRotas = acesso.podeGerenciarRotas;
   const pontos = pontosResult.data ?? [];
-  const pontosSemFoto = pontos.filter((p) => !(p.foto_url ?? "").trim());
   const pontosSemGps = pontos.filter((p) => p.latitude == null || p.longitude == null);
-  const limiteFotosColeta = Math.min(Math.max(pontosSemFoto.length * 8, 300), 2000);
   const limiteGpsColeta = Math.min(Math.max(pontosSemGps.length * 8, 300), 2000);
 
-  const [coletasFotosResult, coletasPendResult, coletasGpsResult, chamadosResumo, rotasSalvas] =
-    await Promise.all([
-      pontosSemFoto.length > 0
-        ? supabase
-            .from("coletas")
-            .select("ponto_id, foto_url, created_at")
-            .eq("empresa_id", profile.empresa_id)
-            .not("foto_url", "is", null)
-            .order("created_at", { ascending: false })
-            .limit(limiteFotosColeta)
-        : Promise.resolve({ data: [] }),
-      supabase
-        .from("coletas")
-        .select("ponto_id, valor_a_receber, valor_pago_recebido")
-        .eq("empresa_id", profile.empresa_id)
-        .eq("nicho_modulo", NICHO_MODULO_FURA_FURA)
-        .or("valor_a_receber.gt.0,valor_pago_recebido.gt.0"),
-      pontosSemGps.length > 0
-        ? supabase
-            .from("coletas")
-            .select("ponto_id, latitude, longitude, created_at")
-            .eq("empresa_id", profile.empresa_id)
-            .not("latitude", "is", null)
-            .not("longitude", "is", null)
-            .order("created_at", { ascending: false })
-            .limit(limiteGpsColeta)
-        : Promise.resolve({ data: [] }),
-      fetchChamadosAbertosResumo(profile.empresa_id),
-      listarRotasSalvas(supabase, profile.empresa_id, profile.user_id, podeGerenciarRotas),
-    ]);
-
-  const fotoPorPonto = new Map<string, string>();
-  for (const c of coletasFotosResult.data ?? []) {
-    if (c.ponto_id && !fotoPorPonto.has(c.ponto_id) && c.foto_url) {
-      fotoPorPonto.set(c.ponto_id, c.foto_url);
-    }
-  }
+  const [coletasPendResult, coletasGpsResult, chamadosResumo, rotasSalvas] = await Promise.all([
+    supabase
+      .from("coletas")
+      .select("ponto_id, valor_a_receber, valor_pago_recebido")
+      .eq("empresa_id", profile.empresa_id)
+      .eq("nicho_modulo", NICHO_MODULO_FURA_FURA)
+      .or("valor_a_receber.gt.0,valor_pago_recebido.gt.0"),
+    pontosSemGps.length > 0
+      ? supabase
+          .from("coletas")
+          .select("ponto_id, latitude, longitude, created_at")
+          .eq("empresa_id", profile.empresa_id)
+          .not("latitude", "is", null)
+          .not("longitude", "is", null)
+          .order("created_at", { ascending: false })
+          .limit(limiteGpsColeta)
+      : Promise.resolve({ data: [] }),
+    fetchChamadosAbertosResumo(profile.empresa_id),
+    listarRotasSalvas(supabase, profile.empresa_id, profile.user_id, podeGerenciarRotas),
+  ]);
 
   const gpsPorPonto = new Map<string, { latitude: number; longitude: number }>();
   for (const c of coletasGpsResult.data ?? []) {
@@ -112,7 +93,8 @@ export default async function RotasPage() {
       ...p,
       latitude: p.latitude ?? gpsFallback?.latitude ?? null,
       longitude: p.longitude ?? gpsFallback?.longitude ?? null,
-      fotoExibir: p.foto_url ?? fotoPorPonto.get(p.id) ?? null,
+      // Só foto cadastrada do ponto/cliente — foto de coleta não substitui
+      fotoExibir: p.foto_url ?? null,
       pendente: pendencias.get(p.id)?.totalPendente ?? 0,
       chamadosAbertos: chamadosResumo.porPonto.get(p.id) ?? [],
     };
