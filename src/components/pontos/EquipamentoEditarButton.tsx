@@ -68,6 +68,15 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
     // (isso derruba o teclado no tablet).
   }, [open, equipamento.id]);
 
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   async function salvar() {
     setLoading(true);
     setError("");
@@ -140,14 +149,20 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[10050] flex items-center justify-center bg-black/90 p-4">
+        <div
+          className="fixed inset-0 z-[10050] flex items-end justify-center bg-black/90 p-0 sm:items-center sm:p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setOpen(false);
+          }}
+        >
           <div
-            className="w-full max-w-xl space-y-4 rounded-2xl border border-slate-700 bg-[#070b14] p-6 shadow-2xl [&_input]:bg-slate-900 [&_textarea]:bg-slate-900"
+            className="flex max-h-[min(94dvh,720px)] w-full max-w-xl flex-col overflow-hidden rounded-t-2xl border border-slate-700 bg-[#070b14] shadow-2xl sm:rounded-2xl [&_input]:bg-slate-900 [&_textarea]:bg-slate-900"
             role="dialog"
             aria-modal="true"
             aria-labelledby={`editar-equipamento-${equipamento.id}`}
+            onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-800 px-5 py-4">
               <div>
                 <h3 id={`editar-equipamento-${equipamento.id}`} className="font-semibold text-white">
                   Editar máquina · {getEquipamentoTipoLabel(equipamento.tipo)}
@@ -163,86 +178,88 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
               </button>
             </div>
 
-            <EquipamentoIdentificacaoFields
-              key={equipamento.id}
-              exigeSerie={exigeSerie}
-              serieOpcional={permiteSerieOpcional}
-              numeroSerie={form.numero_serie}
-              numeroMaquina={form.numero_maquina}
-              onSerieChange={(v) => setForm((prev) => ({ ...prev, numero_serie: v }))}
-              onNumeroChange={(v) => setForm((prev) => ({ ...prev, numero_maquina: v }))}
-            />
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-5 py-4">
+              <EquipamentoIdentificacaoFields
+                key={equipamento.id}
+                exigeSerie={exigeSerie}
+                serieOpcional={permiteSerieOpcional}
+                numeroSerie={form.numero_serie}
+                numeroMaquina={form.numero_maquina}
+                onSerieChange={(v) => setForm((prev) => ({ ...prev, numero_serie: v }))}
+                onNumeroChange={(v) => setForm((prev) => ({ ...prev, numero_maquina: v }))}
+              />
 
-            <FormInput
-              label="Nome *"
-              value={form.nome}
-              onChange={(e) => setForm((prev) => ({ ...prev, nome: e.target.value }))}
-            />
+              <FormInput
+                label="Nome *"
+                value={form.nome}
+                onChange={(e) => setForm((prev) => ({ ...prev, nome: e.target.value }))}
+              />
 
-            {equipamento.tipo === "cassino" && (
-              <div className="grid gap-4 sm:grid-cols-2">
+              {equipamento.tipo === "cassino" && (
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormInput
+                    label="Entrada atual"
+                    inputMode="numeric"
+                    placeholder="0,00"
+                    value={form.numero_entrada}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        numero_entrada: formatContadorInput(e.target.value),
+                      }))
+                    }
+                  />
+                  <FormInput
+                    label="Saída atual"
+                    inputMode="numeric"
+                    placeholder="0,00"
+                    value={form.numero_saida}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        numero_saida: formatContadorInput(e.target.value),
+                      }))
+                    }
+                  />
+                </div>
+              )}
+
+              {(equipamento.tipo === "ursinho" || equipamento.tipo === "vending_ursinho") && (
                 <FormInput
-                  label="Entrada atual"
+                  label="Entrada atual (visor)"
                   inputMode="numeric"
                   placeholder="0,00"
-                  value={form.numero_entrada}
+                  value={form.entrada_atual}
                   onChange={(e) =>
                     setForm((prev) => ({
                       ...prev,
-                      numero_entrada: formatContadorInput(e.target.value),
+                      entrada_atual: formatContadorInput(e.target.value),
                     }))
                   }
                 />
+              )}
+
+              {equipamento.tipo === "bolinha" && (
                 <FormInput
-                  label="Saída atual"
-                  inputMode="numeric"
-                  placeholder="0,00"
-                  value={form.numero_saida}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      numero_saida: formatContadorInput(e.target.value),
-                    }))
-                  }
+                  label="Valor da jogada (R$) *"
+                  inputMode="decimal"
+                  placeholder="2,00"
+                  value={form.preco_jogada}
+                  onChange={(e) => setForm((prev) => ({ ...prev, preco_jogada: e.target.value }))}
+                  hint="Ex.: R$ 3 a jogada · R$ 30 contados = 10 cápsulas"
                 />
-              </div>
-            )}
+              )}
 
-            {(equipamento.tipo === "ursinho" || equipamento.tipo === "vending_ursinho") && (
-              <FormInput
-                label="Entrada atual (visor)"
-                inputMode="numeric"
-                placeholder="0,00"
-                value={form.entrada_atual}
-                onChange={(e) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    entrada_atual: formatContadorInput(e.target.value),
-                  }))
-                }
+              <FormTextarea
+                label="Observação"
+                value={form.observacao}
+                onChange={(e) => setForm((prev) => ({ ...prev, observacao: e.target.value }))}
               />
-            )}
 
-            {equipamento.tipo === "bolinha" && (
-              <FormInput
-                label="Valor da jogada (R$) *"
-                inputMode="decimal"
-                placeholder="2,00"
-                value={form.preco_jogada}
-                onChange={(e) => setForm((prev) => ({ ...prev, preco_jogada: e.target.value }))}
-                hint="Ex.: R$ 3 a jogada · R$ 30 contados = 10 cápsulas"
-              />
-            )}
+              {error && <p className="text-sm text-red-400">{error}</p>}
+            </div>
 
-            <FormTextarea
-              label="Observação"
-              value={form.observacao}
-              onChange={(e) => setForm((prev) => ({ ...prev, observacao: e.target.value }))}
-            />
-
-            {error && <p className="text-sm text-red-400">{error}</p>}
-
-            <div className="flex justify-end gap-2">
+            <div className="flex shrink-0 justify-end gap-2 border-t border-slate-800 px-5 py-4">
               <button
                 type="button"
                 onClick={() => setOpen(false)}
