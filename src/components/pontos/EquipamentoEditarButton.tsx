@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { Edit3, Loader2, X } from "lucide-react";
 import { FormInput, FormTextarea } from "@/components/ui/FormInput";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
+import { FotoEquipamento } from "@/components/pontos/FotoEquipamento";
 import { EquipamentoIdentificacaoFields } from "@/components/pontos/EquipamentoIdentificacaoFields";
 import { getEquipamentoTipoLabel, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
+import { salvarFotoEquipamento } from "@/lib/equipamentos/salvar-foto-equipamento";
 import { formatContador, formatContadorInput } from "@/lib/nichos/cassino";
 import type { Equipamento } from "@/lib/types/database";
 
@@ -40,6 +42,9 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fotoFile, setFotoFile] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(equipamento.foto_url ?? null);
+  const [fotoRemovida, setFotoRemovida] = useState(false);
   const [form, setForm] = useState({
     nome: equipamento.nome ?? "",
     numero_maquina: equipamento.numero_maquina ?? "",
@@ -69,10 +74,32 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
         equipamento.preco_jogada != null ? String(equipamento.preco_jogada).replace(".", ",") : "",
       observacao: equipamento.observacao ?? "",
     });
+    setFotoFile(null);
+    setFotoPreview(equipamento.foto_url ?? null);
+    setFotoRemovida(false);
     setError("");
     // Só ao abrir / trocar máquina — não a cada re-render do objeto equipamento
     // (isso derruba o teclado no tablet).
   }, [open, equipamento.id]);
+
+  useEffect(() => {
+    return () => {
+      if (fotoPreview?.startsWith("blob:")) URL.revokeObjectURL(fotoPreview);
+    };
+  }, [fotoPreview]);
+
+  function handleFotoChange(file: File | null) {
+    if (fotoPreview?.startsWith("blob:")) URL.revokeObjectURL(fotoPreview);
+    if (file) {
+      setFotoFile(file);
+      setFotoPreview(URL.createObjectURL(file));
+      setFotoRemovida(false);
+      return;
+    }
+    setFotoFile(null);
+    setFotoPreview(null);
+    setFotoRemovida(true);
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -120,6 +147,10 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
         body.entrada_atual = form.entrada_atual;
       }
 
+      if (fotoRemovida && !fotoFile) {
+        body.foto_url = null;
+      }
+
       const res = await fetch(`/api/equipamentos/${equipamento.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -131,6 +162,15 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
         setError(data.error ?? "Erro ao salvar equipamento.");
         return;
       }
+
+      if (fotoFile) {
+        const foto = await salvarFotoEquipamento(equipamento.id, fotoFile);
+        if (!foto.ok) {
+          setError(foto.error);
+          return;
+        }
+      }
+
       setOpen(false);
       router.refresh();
     } catch {
@@ -203,6 +243,8 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
                   value={form.nome}
                   onChange={(e) => setForm((prev) => ({ ...prev, nome: e.target.value }))}
                 />
+
+                <FotoEquipamento preview={fotoPreview} onChange={handleFotoChange} />
 
                 {equipamento.tipo === "cassino" && (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

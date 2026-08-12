@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { Camera, X } from "lucide-react";
+import { Camera, ImagePlus, X } from "lucide-react";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { cn } from "@/lib/utils";
 
@@ -21,7 +21,7 @@ export function FotoEquipamento({ preview, onChange, compact = false }: Props) {
       </label>
       {!compact && (
         <p className="text-xs text-slate-500">
-          Ajuda a identificar cada máquina na hora da coleta.
+          Ajuda a identificar cada máquina na hora da coleta. Toque na foto para ampliar.
         </p>
       )}
       <input
@@ -33,24 +33,35 @@ export function FotoEquipamento({ preview, onChange, compact = false }: Props) {
         onChange={(e) => onChange(e.target.files?.[0] ?? null)}
       />
       {preview ? (
-        <div className="relative w-fit">
-          <ExpandableImage
-            src={preview}
-            alt="Foto da máquina"
-            className={cn(
-              "rounded-lg object-cover ring-1 ring-white/10",
-              compact ? "h-16 w-16" : "h-24 w-24"
-            )}
-          />
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="relative w-fit">
+            <ExpandableImage
+              src={preview}
+              alt="Foto da máquina"
+              className={cn(
+                "rounded-lg object-cover ring-1 ring-white/10",
+                compact ? "h-16 w-16" : "h-24 w-24"
+              )}
+            />
+            <button
+              type="button"
+              onClick={() => {
+                onChange(null);
+                if (inputRef.current) inputRef.current.value = "";
+              }}
+              className="absolute -top-2 -right-2 z-10 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80"
+              aria-label="Remover foto"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
           <button
             type="button"
-            onClick={() => {
-              onChange(null);
-              if (inputRef.current) inputRef.current.value = "";
-            }}
-            className="absolute -top-2 -right-2 z-10 rounded-full bg-black/60 p-1.5 text-white hover:bg-black/80"
+            onClick={() => inputRef.current?.click()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-300 hover:border-primary-neon/40 hover:text-primary-neon"
           >
-            <X className="h-3.5 w-3.5" />
+            <ImagePlus className="h-3.5 w-3.5" />
+            Trocar foto
           </button>
         </div>
       ) : (
