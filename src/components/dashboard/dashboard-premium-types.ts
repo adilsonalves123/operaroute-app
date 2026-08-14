@@ -83,6 +83,21 @@ export type DashboardPremiumData = {
   } | null;
   /** Consolidado bruto (multi) — opcional, para detalhe */
   consolidado: DashboardConsolidadoData | null;
+  /** Comissão do ajudante (% da Equipe sobre o livre da coleta). Só exibição. */
+  comissaoStaff: {
+    total: number;
+    totalVales: number;
+    totalAPagar: number;
+    /** True quando o card é a comissão de quem está logado. */
+    propria: boolean;
+    linhas: {
+      nome: string;
+      percentual: number;
+      valor: number;
+      vales: number;
+      aPagar: number;
+    }[];
+  } | null;
   /** Upgrade sugerido com base na pesquisa de onboarding */
   pesquisaUpgrade: {
     mensagem: string;

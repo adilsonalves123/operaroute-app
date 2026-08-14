@@ -635,7 +635,7 @@ export function EquipeClient({
               onChange={(e) =>
                 setForm((f) => ({ ...f, comissao_percentual: e.target.value }))
               }
-              hint="% sobre o lucro da coleta depois do custo dos brindes"
+              hint="% do que sobrou livre na coleta (depois da comissão do ponto e do brinde)"
             />
             <FormSelect
               label="Status"

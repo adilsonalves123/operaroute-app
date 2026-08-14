@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -10,9 +10,10 @@ import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { formatPagamentoDetalhe } from "@/lib/financeiro/forma-pagamento";
 import { formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
+import { ehCategoriaVale, montarDescricaoVale } from "@/lib/equipe/vale-staff";
 
 const categorias = [
-  "Coleta", "Comissão", "Estoque", "Combustível", "Manutenção", "Funcionário", "Marketing", "Outros",
+  "Coleta", "Comissão", "Estoque", "Combustível", "Manutenção", "Funcionário", "Vale", "Marketing", "Outros",
 ];
 
 export default function NovoFinanceiroPage() {
@@ -28,8 +29,34 @@ export default function NovoFinanceiroPage() {
     data: new Date().toISOString().split("T")[0],
     descricao: "",
     forma_pagamento: "pix",
+    ajudante_id: "",
   });
   const ehMisto = form.forma_pagamento === "misto";
+  const ehVale = form.tipo === "saida" && ehCategoriaVale(form.categoria);
+  const [ajudantes, setAjudantes] = useState<{ userId: string; nome: string }[]>([]);
+
+  useEffect(() => {
+    let cancel = false;
+    (async () => {
+      const supabase = createClient();
+      const empresaId = await getEmpresaIdForUser(supabase);
+      if (!empresaId) return;
+      const { data } = await supabase
+        .from("equipe")
+        .select("user_id, nome, status")
+        .eq("empresa_id", empresaId)
+        .eq("status", "ativo");
+      if (cancel) return;
+      setAjudantes(
+        (data ?? [])
+          .filter((m) => m.user_id)
+          .map((m) => ({ userId: String(m.user_id), nome: String(m.nome ?? "Ajudante") }))
+      );
+    })();
+    return () => {
+      cancel = true;
+    };
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,12 +121,22 @@ export default function NovoFinanceiroPage() {
       }
     }
 
+    if (ehCategoriaVale(form.categoria) && form.tipo === "saida" && !form.ajudante_id) {
+      setError("Selecione o ajudante que recebeu o vale.");
+      setLoading(false);
+      return;
+    }
+
     const descricaoUsuario = form.descricao.trim();
-    const descricao = detalheMisto
+    const ajudante = ajudantes.find((a) => a.userId === form.ajudante_id);
+    let descricao = detalheMisto
       ? descricaoUsuario
         ? `${descricaoUsuario} (${detalheMisto})`
         : detalheMisto
       : descricaoUsuario || null;
+    if (form.tipo === "saida" && ehCategoriaVale(form.categoria) && ajudante) {
+      descricao = montarDescricaoVale(ajudante.userId, ajudante.nome, descricao ?? "");
+    }
 
     const { error: insertError } = await supabase.from("financeiro").insert({
       empresa_id: empresaId,
@@ -165,9 +202,27 @@ export default function NovoFinanceiroPage() {
         <FormSelect
           label="Categoria"
           value={form.categoria}
-          onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))}
+          onChange={(e) => {
+            const categoria = e.target.value;
+            setForm((f) => ({
+              ...f,
+              categoria,
+              tipo: ehCategoriaVale(categoria) ? "saida" : f.tipo,
+            }));
+          }}
           options={categorias.map((c) => ({ value: c, label: c }))}
         />
+        {ehVale && (
+          <FormSelect
+            label="Ajudante *"
+            value={form.ajudante_id}
+            onChange={(e) => setForm((f) => ({ ...f, ajudante_id: e.target.value }))}
+            options={[
+              { value: "", label: "Quem recebeu o vale" },
+              ...ajudantes.map((a) => ({ value: a.userId, label: a.nome })),
+            ]}
+          />
+        )}
         <FormSelect
           label="Forma de pagamento"
           value={form.forma_pagamento}

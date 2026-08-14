@@ -18,6 +18,11 @@ import { dashboardGreeting } from "@/lib/dashboard-greeting";
 import { resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
 import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
 import { fetchChamadosAbertosResumo } from "@/lib/chamados/fetch-resumo";
+import { getAcessoUsuario } from "@/lib/equipe/acesso";
+import {
+  fetchComissaoStaffPeriodo,
+  filtrarComissaoStaffParaViewer,
+} from "@/lib/equipe/comissao-staff-periodo";
 import type { DashboardRankingPoint } from "@/components/dashboard/DashboardRanking";
 import type { DashSlice } from "@/components/dashboard/DashboardMultiNichoTabs";
 import { getDashboardConsolidado } from "@/lib/dashboard-consolidado";
@@ -625,6 +630,39 @@ export default async function DashboardPage({
     ? dashboardNichosLabel(dashboardNichos)
     : singleConfig.label;
 
+  let comissaoStaff: DashboardPremiumData["comissaoStaff"] = null;
+  if (profile?.empresa_id) {
+    const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
+    const raw = await fetchComissaoStaffPeriodo(
+      supabase,
+      profile.empresa_id,
+      periodoFiltro.inicioISO,
+      periodoFiltro.fimISO
+    );
+    const visivel = filtrarComissaoStaffParaViewer(raw, {
+      userId: profile.user_id,
+      isOwner: acesso.isOwner,
+      role: acesso.role,
+    });
+    if (visivel.linhas.length > 0) {
+      comissaoStaff = {
+        total: visivel.total,
+        totalVales: visivel.totalVales,
+        totalAPagar: visivel.totalAPagar,
+        propria:
+          visivel.linhas.length === 1 &&
+          visivel.linhas[0].userId === String(profile.user_id).toLowerCase(),
+        linhas: visivel.linhas.map((l) => ({
+          nome: l.nome,
+          percentual: l.percentual,
+          valor: l.valor,
+          vales: l.vales,
+          aPagar: l.aPagar,
+        })),
+      };
+    }
+  }
+
   let premium: DashboardPremiumData;
 
   if (isMultiNicho && multiSlices && consolidado) {
@@ -712,6 +750,7 @@ export default async function DashboardPage({
       quickActions: mergeQuickActions(configs),
       comparativo: null,
       consolidado,
+      comissaoStaff,
       pesquisaUpgrade,
     };
   } else {
@@ -771,6 +810,7 @@ export default async function DashboardPage({
           }
         : null,
       consolidado: null,
+      comissaoStaff,
       pesquisaUpgrade,
     };
   }

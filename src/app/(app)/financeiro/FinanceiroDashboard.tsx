@@ -5,6 +5,7 @@ import Link from "next/link";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AlertBadge } from "@/components/ui/AlertBadge";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { descricaoValeVisivel } from "@/lib/equipe/vale-staff";
 import type { Financeiro } from "@/lib/types/database";
 import {
   breakdownLancamento,
@@ -308,7 +309,9 @@ export function FinanceiroDashboard({
                 className="glass-card p-4 flex items-start justify-between gap-4"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-white">{l.descricao ?? l.categoria}</p>
+                  <p className="font-medium text-white">
+                    {descricaoValeVisivel(l.descricao) || l.descricao || l.categoria}
+                  </p>
                   <p className="text-sm text-slate-400">
                     {formatDate(l.data)} · {l.categoria}
                   </p>

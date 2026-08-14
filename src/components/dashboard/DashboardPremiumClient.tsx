@@ -413,6 +413,44 @@ export function DashboardPremiumClient({
                   <KpiCell key={kpi.label} kpi={kpi} />
                 ))}
               </div>
+              {data.comissaoStaff && data.comissaoStaff.linhas.length > 0 && (
+                <div className="col-span-2 bg-violet-500/[0.08] px-4 py-3.5">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-violet-300/90">
+                    {data.comissaoStaff.propria && data.comissaoStaff.linhas.length === 1
+                      ? `Sua comissão (${data.comissaoStaff.linhas[0].percentual}%)`
+                      : data.comissaoStaff.linhas.length === 1
+                        ? `Comissão do ajudante (${data.comissaoStaff.linhas[0].percentual}%)`
+                        : "Comissão do ajudante"}
+                  </p>
+                  <p className="mt-1.5 text-[15px] font-medium tabular-nums text-violet-200">
+                    {formatCurrency(
+                      data.comissaoStaff.linhas.length === 1
+                        ? data.comissaoStaff.linhas[0].aPagar
+                        : data.comissaoStaff.totalAPagar
+                    )}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-600">
+                    {(() => {
+                      const unica = data.comissaoStaff.linhas.length === 1
+                        ? data.comissaoStaff.linhas[0]
+                        : null;
+                      const ganho = unica ? unica.valor : data.comissaoStaff.total;
+                      const vales = unica ? unica.vales : data.comissaoStaff.totalVales;
+                      if (vales > 0.009) {
+                        return `Ganho ${formatCurrency(ganho)} · vales ${formatCurrency(vales)} · a pagar`;
+                      }
+                      return unica
+                        ? "A pagar · do que sobrou livre (coleta − ponto − brinde)"
+                        : data.comissaoStaff.linhas
+                            .map(
+                              (l) =>
+                                `${l.nome} a pagar ${formatCurrency(l.aPagar)}`
+                            )
+                            .join(" · ");
+                    })()}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 

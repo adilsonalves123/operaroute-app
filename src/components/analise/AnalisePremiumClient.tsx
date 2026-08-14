@@ -68,6 +68,18 @@ const ACCENT = "#c4a574";
 type Props = {
   data: InteligenciaOperacional;
   periodo: PeriodoAnaliseRange;
+  comissaoStaff?: {
+    total: number;
+    totalVales: number;
+    totalAPagar: number;
+    linhas: {
+      nome: string;
+      percentual: number;
+      valor: number;
+      vales: number;
+      aPagar: number;
+    }[];
+  } | null;
 };
 
 function moneyTone(n: number) {
@@ -363,7 +375,7 @@ function MaquinaRankRow({
   );
 }
 
-export function AnalisePremiumClient({ data, periodo }: Props) {
+export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Props) {
   const [ativo, setAtivo] = useState(false);
   const modulosRef = useRef<HTMLElement | null>(null);
   const v = data.visaoGeral;
@@ -647,6 +659,30 @@ export function AnalisePremiumClient({ data, periodo }: Props) {
                     {formatCurrency(v.custoBrindesMes)}
                   </span>
                 </span>
+                {comissaoStaff && comissaoStaff.linhas.length > 0 && (
+                  <span>
+                    Ajudante{" "}
+                    <span className="tabular-nums text-violet-200">
+                      {formatCurrency(
+                        comissaoStaff.linhas.length === 1
+                          ? comissaoStaff.linhas[0].valor
+                          : comissaoStaff.total
+                      )}
+                    </span>
+                    {(comissaoStaff.totalVales > 0.009 || comissaoStaff.totalAPagar > 0.009) && (
+                      <>
+                        <span className="text-slate-600"> · vales </span>
+                        <span className="tabular-nums text-amber-200/90">
+                          {formatCurrency(comissaoStaff.totalVales)}
+                        </span>
+                        <span className="text-slate-600"> · a pagar </span>
+                        <span className="tabular-nums text-violet-200">
+                          {formatCurrency(comissaoStaff.totalAPagar)}
+                        </span>
+                      </>
+                    )}
+                  </span>
+                )}
                 {cmp && (
                   <span className="text-slate-600">
                     Mov. {cmp.movimentosDelta >= 0 ? "+" : ""}
