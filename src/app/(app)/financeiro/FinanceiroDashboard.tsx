@@ -197,12 +197,16 @@ export function FinanceiroDashboard({
         <div className="grid gap-3 grid-cols-2 items-stretch">
           <StatCard
             label="Pix"
-            value={formatCurrency(Math.max(0, metrics.totalPix))}
+            value={formatCurrency(
+              saldoCaixaExibido <= 0.009 ? 0 : Math.max(0, metrics.totalPix)
+            )}
             color="border-cyan-500/20"
           />
           <StatCard
             label="Dinheiro"
-            value={formatCurrency(Math.max(0, metrics.totalDinheiro))}
+            value={formatCurrency(
+              saldoCaixaExibido <= 0.009 ? 0 : Math.max(0, metrics.totalDinheiro)
+            )}
             color="border-amber-500/20"
           />
         </div>
