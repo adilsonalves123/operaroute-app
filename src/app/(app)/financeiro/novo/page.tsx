@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { formatPagamentoDetalhe } from "@/lib/financeiro/forma-pagamento";
+import { formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
 
 const categorias = [
   "Coleta", "Comissão", "Estoque", "Combustível", "Manutenção", "Funcionário", "Marketing", "Outros",
@@ -43,15 +44,13 @@ export default function NovoFinanceiroPage() {
       return;
     }
 
-    const pixMisto = parseFloat(String(form.valor_pix).replace(",", "."));
-    const dinheiroMisto = parseFloat(String(form.valor_dinheiro).replace(",", "."));
+    const pixMisto = parseMoneyInput(form.valor_pix);
+    const dinheiroMisto = parseMoneyInput(form.valor_dinheiro);
     let valor: number;
     let detalheMisto = "";
 
     if (form.forma_pagamento === "misto") {
-      const pixOk = Number.isFinite(pixMisto) && pixMisto > 0.009;
-      const dinheiroOk = Number.isFinite(dinheiroMisto) && dinheiroMisto > 0.009;
-      if (!pixOk || !dinheiroOk) {
+      if (pixMisto <= 0.009 || dinheiroMisto <= 0.009) {
         setError("No misto, informe quanto saiu (ou entrou) em Pix e quanto em dinheiro.");
         setLoading(false);
         return;
@@ -59,7 +58,7 @@ export default function NovoFinanceiroPage() {
       valor = pixMisto + dinheiroMisto;
       detalheMisto = formatPagamentoDetalhe(pixMisto, dinheiroMisto);
     } else {
-      valor = parseFloat(String(form.valor).replace(",", "."));
+      valor = parseMoneyInput(form.valor);
     }
 
     if (!Number.isFinite(valor) || valor <= 0) {
@@ -184,25 +183,23 @@ export default function NovoFinanceiroPage() {
             <div className="grid gap-3 grid-cols-2">
               <FormInput
                 label="Pix *"
-                type="number"
-                step="0.01"
-                min="0.01"
+                type="text"
                 required
-                inputMode="decimal"
+                inputMode="numeric"
                 placeholder="0,00"
                 value={form.valor_pix}
-                onChange={(e) => setForm((f) => ({ ...f, valor_pix: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, valor_pix: formatMoneyInput(e.target.value) }))}
+                onBlur={(e) => setForm((f) => ({ ...f, valor_pix: formatMoneyInputOnBlur(e.target.value) }))}
               />
               <FormInput
                 label="Dinheiro *"
-                type="number"
-                step="0.01"
-                min="0.01"
+                type="text"
                 required
-                inputMode="decimal"
+                inputMode="numeric"
                 placeholder="0,00"
                 value={form.valor_dinheiro}
-                onChange={(e) => setForm((f) => ({ ...f, valor_dinheiro: e.target.value }))}
+                onChange={(e) => setForm((f) => ({ ...f, valor_dinheiro: formatMoneyInput(e.target.value) }))}
+                onBlur={(e) => setForm((f) => ({ ...f, valor_dinheiro: formatMoneyInputOnBlur(e.target.value) }))}
               />
             </div>
             <p className="text-xs text-slate-500">
@@ -212,11 +209,13 @@ export default function NovoFinanceiroPage() {
         ) : (
           <FormInput
             label="Valor"
-            type="number"
-            step="0.01"
+            type="text"
             required
+            inputMode="numeric"
+            placeholder="0,00"
             value={form.valor}
-            onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))}
+            onChange={(e) => setForm((f) => ({ ...f, valor: formatMoneyInput(e.target.value) }))}
+            onBlur={(e) => setForm((f) => ({ ...f, valor: formatMoneyInputOnBlur(e.target.value) }))}
           />
         )}
         <FormInput label="Data" type="date" value={form.data} onChange={(e) => setForm((f) => ({ ...f, data: e.target.value }))} />
