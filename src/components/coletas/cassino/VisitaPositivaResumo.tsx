@@ -347,6 +347,32 @@ export function VisitaPositivaResumo({
 
         {detalheAberto && (
           <div className="border-t border-slate-800/80 px-4 pb-4 pt-1">
+            <div className="mb-3 mt-2 grid grid-cols-3 gap-2">
+              <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-2 py-2">
+                <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                  Entrada
+                </p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-400">
+                  {formatCurrency(centesimosToReais(calculo.totalEntradaPeriodo))}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-2 py-2">
+                <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                  Saída
+                </p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums text-rose-400">
+                  {formatCurrency(centesimosToReais(calculo.totalSaidaPeriodo))}
+                </p>
+              </div>
+              <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-2 py-2">
+                <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                  Bruto
+                </p>
+                <p className="mt-0.5 text-sm font-semibold tabular-nums text-white">
+                  {formatCurrency(centesimosToReais(totalLucroCentavos))}
+                </p>
+              </div>
+            </div>
             <ol className="space-y-0.5">
               {passos.map((passo, idx) => {
                 const destaque = passo.id === "resultado" || passo.id === "operacao";
