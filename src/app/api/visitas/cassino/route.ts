@@ -22,6 +22,8 @@ interface LeituraBody {
   equipamento_id: string;
   entrada_atual: number | string;
   saida_atual: number | string;
+  ia_reading_id?: string | null;
+  ia_status_final?: "approved_ai" | "approved_manual" | null;
   foto_url?: string | null;
 }
 
@@ -408,6 +410,23 @@ export async function POST(request: Request) {
         numero_saida: m.saidaAtual,
       })
       .eq("id", m.equipamentoId);
+
+    if (leituraBody?.ia_reading_id && coleta?.id) {
+      await supabase
+        .from("ai_readings")
+        .update({
+          visita_id: visita.id,
+          coleta_id: coleta.id,
+          entrada_final: m.entradaAtual,
+          saida_final: m.saidaAtual,
+          final_status: leituraBody.ia_status_final ?? "approved_ai",
+          corrected_by:
+            leituraBody.ia_status_final === "approved_manual" ? profile.user_id : null,
+          finalized_at: new Date().toISOString(),
+        })
+        .eq("id", leituraBody.ia_reading_id)
+        .eq("empresa_id", profile.empresa_id);
+    }
   }
 
   for (const ab of calculo.abatimentosHaver) {

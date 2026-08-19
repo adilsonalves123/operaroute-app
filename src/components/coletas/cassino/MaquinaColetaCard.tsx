@@ -28,6 +28,7 @@ export interface LeituraFormState {
   fotoReferenciaUrl: string | null;
   fotoFile: File | null;
   fotoPreview: string | null;
+  iaReadingId?: string | null;
   /** Valores vieram da IA e ainda não foram confirmados pelo operador. */
   iaPendenteConfirmacao?: boolean;
   iaAvisos?: string[];
@@ -97,6 +98,7 @@ interface MaquinaColetaCardProps {
     data: {
       entrada: string;
       saida: string;
+      readingId?: string | null;
       confianca: number;
       score?: number;
       status?: "approved_ai" | "needs_review" | "rejected";
@@ -211,6 +213,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       body.append("foto", foto);
       if (fotoEntradaCrop) body.append("foto_entrada", fotoEntradaCrop);
       if (fotoSaidaCrop) body.append("foto_saida", fotoSaidaCrop);
+      body.append("ponto_id", pontoId);
       body.append("equipamento_id", leitura.equipamentoId);
       body.append("entrada_anterior", String(leitura.entradaAnterior));
       body.append("saida_anterior", String(leitura.saidaAnterior));
@@ -253,6 +256,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               String(data.saida ?? "") ||
               alternativas.saida[0] ||
               leitura.saidaAtualInput,
+            readingId: typeof data.reading_id === "string" ? data.reading_id : null,
             confianca: Number(data.confianca) || 0,
             score: Number(data.score) || 0,
             status:
@@ -284,6 +288,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       onIaSugestao(leitura.equipamentoId, {
         entrada: String(data.entrada ?? ""),
         saida: String(data.saida ?? ""),
+        readingId: typeof data.reading_id === "string" ? data.reading_id : null,
         confianca: Number(data.confianca) || 0,
         score: Number(data.score) || 0,
         status:
@@ -747,6 +752,7 @@ export function leituraToInput(eq: {
     fotoReferenciaUrl: eq.foto_url ?? null,
     fotoFile: null,
     fotoPreview: null,
+    iaReadingId: null,
     iaPendenteConfirmacao: false,
     iaAvisos: [],
     iaConfianca: null,
@@ -786,6 +792,7 @@ export function useFotoUpdater(setLeituras: Dispatch<SetStateAction<LeituraFormS
             ...l,
             fotoFile: file,
             fotoPreview: file ? URL.createObjectURL(file) : null,
+            iaReadingId: null,
             iaPendenteConfirmacao: false,
             iaAvisos: [],
             iaConfianca: null,
@@ -811,6 +818,7 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
       data: {
         entrada: string;
         saida: string;
+        readingId?: string | null;
         confianca: number;
         score?: number;
         status?: "approved_ai" | "needs_review" | "rejected";
@@ -831,6 +839,7 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
                 ...l,
                 entradaAtualInput: data.entrada,
                 saidaAtualInput: data.saida,
+                iaReadingId: data.readingId ?? l.iaReadingId ?? null,
                 iaPendenteConfirmacao: true,
                 iaConfianca: data.confianca,
                 iaScore: data.score ?? null,

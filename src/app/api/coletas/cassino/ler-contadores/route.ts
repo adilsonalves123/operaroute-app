@@ -31,6 +31,11 @@ function parseEquipamentoId(raw: FormDataEntryValue | null): string | null {
   return value || null;
 }
 
+function parsePontoId(raw: FormDataEntryValue | null): string | null {
+  const value = String(raw ?? "").trim();
+  return value || null;
+}
+
 type HistoricoColetaMini = {
   entrada_periodo: number | null;
   saida_periodo: number | null;
@@ -160,6 +165,7 @@ export async function POST(request: Request) {
   const entradaAnterior = parseAnterior(form.get("entrada_anterior"));
   const saidaAnterior = parseAnterior(form.get("saida_anterior"));
   const equipamentoId = parseEquipamentoId(form.get("equipamento_id"));
+  const pontoId = parsePontoId(form.get("ponto_id"));
   const fotoEntrada = form.get("foto_entrada");
   const fotoSaida = form.get("foto_saida");
 
@@ -215,6 +221,42 @@ export async function POST(request: Request) {
     !aplicar && historicoAnalise.bloquearAplicacao
       ? "Movimentação muito fora do padrão histórico desta máquina. Confira o visor e digite manualmente."
       : r.motivoRecusa ?? null;
+  let readingId: string | null = null;
+
+  try {
+    const { data: inserted } = await auth.supabase
+      .from("ai_readings")
+      .insert({
+        empresa_id: auth.profile.empresa_id,
+        equipamento_id: equipamentoId,
+        ponto_id: pontoId,
+        operador_id: auth.profile.user_id,
+        entrada_anterior: entradaAnterior,
+        saida_anterior: saidaAnterior,
+        entrada_sugerida: r.entradaCentesimos || null,
+        saida_sugerida: r.saidaCentesimos || null,
+        entrada_final: null,
+        saida_final: null,
+        confidence: r.confianca,
+        score,
+        status,
+        final_status: null,
+        flags,
+        avisos,
+        motivo_recusa: motivoRecusa,
+        modelos: r.modelosUsados,
+        divergencia_digitos: r.divergenciaDigitos ?? null,
+        historico_resumo: historicoAnalise.resumo,
+        usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
+        alternativas: r.alternativas ?? null,
+        imagem_nome: foto.name || null,
+        imagem_tipo: tipo,
+        imagem_tamanho: foto.size,
+      })
+      .select("id")
+      .maybeSingle();
+    readingId = inserted?.id ?? null;
+  } catch {}
 
   const { auditarAcao } = await import("@/lib/auditoria/auditar");
   await auditarAcao(auth.supabase, auth.profile, {
@@ -252,6 +294,7 @@ export async function POST(request: Request) {
       historico_resumo: historicoAnalise.resumo,
       usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
       alternativas: r.alternativas ?? null,
+      reading_id: readingId,
     },
     meta: {
       equipamento_id: equipamentoId,
@@ -279,6 +322,7 @@ export async function POST(request: Request) {
     historico_resumo: historicoAnalise.resumo,
     usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
     alternativas: r.alternativas ?? null,
+    reading_id: readingId,
     /** Sempre true nesta feature — UI obriga confirmação antes de marcar pronta. */
     exige_confirmacao: true,
   });

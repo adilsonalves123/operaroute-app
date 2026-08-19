@@ -870,6 +870,13 @@ export function NovaColetaCassinoForm() {
             equipamento_id: l.equipamentoId,
             entrada_atual: l.entradaAtualInput.replace(/\D/g, ""),
             saida_atual: l.saidaAtualInput.replace(/\D/g, ""),
+            ia_reading_id: l.iaReadingId ?? null,
+            ia_status_final:
+              l.iaReadingId
+                ? l.iaRevisaoObrigatoria || l.iaStatus === "rejected"
+                  ? "approved_manual"
+                  : "approved_ai"
+                : null,
             foto_url:
               fotoUrls.get(l.equipamentoId) ??
               (l.fotoPreview && /^https?:\/\//i.test(l.fotoPreview) ? l.fotoPreview : null),
