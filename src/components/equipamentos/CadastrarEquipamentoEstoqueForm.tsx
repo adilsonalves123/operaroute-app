@@ -70,6 +70,12 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
     if (loading) return;
     setOpen(false);
     setError("");
+    document.body.style.overflow = "";
+  }
+
+  function abrir() {
+    setOpen(true);
+    document.body.style.overflow = "hidden";
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -133,7 +139,7 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        onClick={abrir}
         className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-4 py-2.5 text-[13px] font-medium text-[#c4a574] transition hover:bg-[#c4a574]/22"
       >
         <Plus className="h-4 w-4" />
@@ -142,13 +148,13 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-black/60 p-4 sm:items-center"
           onClick={fechar}
         >
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="glass-card max-h-[90vh] w-full max-w-2xl space-y-4 overflow-y-auto border border-cyan-500/20 p-5 shadow-xl"
+            className="glass-card max-h-[90vh] w-full max-w-2xl space-y-4 overflow-y-auto overscroll-contain border border-cyan-500/20 p-5 shadow-xl"
           >
             <div className="flex items-center justify-between">
               <div>
