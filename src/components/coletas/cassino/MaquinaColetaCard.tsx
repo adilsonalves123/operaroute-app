@@ -10,6 +10,7 @@ import {
 } from "@/lib/nichos/cassino";
 import { formatCurrency, cn } from "@/lib/utils";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
+import { cropFileByNormalizedBox } from "@/lib/ia/crop-image";
 import { analyzePhotoQuality } from "@/lib/ia/photo-quality";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
@@ -150,8 +151,45 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       }
 
       const foto = await comprimirFotoParaIa(leitura.fotoFile);
+      let fotoEntradaCrop: File | null = null;
+      let fotoSaidaCrop: File | null = null;
+
+      try {
+        const localizarBody = new FormData();
+        localizarBody.append("foto", foto);
+
+        const localizarRes = await fetch("/api/coletas/cassino/localizar-contadores", {
+          method: "POST",
+          credentials: "include",
+          body: localizarBody,
+        });
+        const localizarData = await localizarRes.json().catch(() => ({}));
+        if (
+          localizarRes.ok &&
+          localizarData?.localizar === true &&
+          localizarData?.entradaBox &&
+          localizarData?.saidaBox
+        ) {
+          fotoEntradaCrop = await cropFileByNormalizedBox(
+            leitura.fotoFile,
+            localizarData.entradaBox,
+            "entrada-crop.jpg"
+          );
+          fotoSaidaCrop = await cropFileByNormalizedBox(
+            leitura.fotoFile,
+            localizarData.saidaBox,
+            "saida-crop.jpg"
+          );
+        }
+      } catch {
+        fotoEntradaCrop = null;
+        fotoSaidaCrop = null;
+      }
+
       const body = new FormData();
       body.append("foto", foto);
+      if (fotoEntradaCrop) body.append("foto_entrada", fotoEntradaCrop);
+      if (fotoSaidaCrop) body.append("foto_saida", fotoSaidaCrop);
       body.append("equipamento_id", leitura.equipamentoId);
       body.append("entrada_anterior", String(leitura.entradaAnterior));
       body.append("saida_anterior", String(leitura.saidaAnterior));

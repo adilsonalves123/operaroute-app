@@ -96,6 +96,44 @@ PASSO EXTRA:
 - Não tente manter consistência com uma leitura anterior; valide apenas o que consegue ver.`;
 }
 
+function montarPromptCampo(
+  campo: "entrada" | "saida",
+  anterior: number,
+  variante: 1 | 2
+): string {
+  const nome = campo === "entrada" ? "ENTRADA" : "SAÍDA";
+  const labels =
+    campo === "entrada"
+      ? "ENTRADA, IN, CREDIT, CR, CREDITO, DI, DIN, TOTAL IN, IN CREDITS"
+      : "SAIDA, SAÍDA, OUT, PAY, PAYOUT, DS, DOUT, TOTAL OUT, OUT CREDITS, PAID";
+  return `Você está lendo SOMENTE o contador de ${nome} em um recorte da foto do painel de uma máquina de cassino.
+
+TAREFA:
+- Leia apenas o valor atual deste contador.
+- Ignore qualquer outro número secundário.
+- Use o rótulo visual quando existir.
+- Se houver dúvida real, marque ambiguo=true e não invente.
+
+RÓTULOS ESPERADOS:
+${labels}
+
+ÂNCORA:
+- valor_anterior: ${formatContador(anterior)} (digitos=${String(anterior)})
+
+PASSO EXTRA:
+${variante === 1 ? "- Faça a leitura principal do recorte." : "- Releia o recorte do zero e revise os últimos 3 dígitos."}
+
+Responda APENAS JSON:
+{
+  "digitos": "string",
+  "confianca": 0.0,
+  "rotulo": "string|null",
+  "avisos": ["string"],
+  "ambiguo": false,
+  "motivo": "string"
+}`;
+}
+
 function validarContraAnterior(
   entrada: number,
   saida: number,
@@ -207,6 +245,62 @@ async function executarLeitura(imageDataUrl: string, prompt: string) {
   };
 }
 
+async function executarLeituraCampo(args: {
+  imageDataUrl: string;
+  campo: "entrada" | "saida";
+  anterior: number;
+  variante: 1 | 2;
+}) {
+  const llm = await chatCompletionVision(
+    [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: montarPromptCampo(args.campo, args.anterior, args.variante) },
+          { type: "image_url", image_url: { url: args.imageDataUrl, detail: "high" } },
+        ],
+      },
+    ],
+    { maxTokens: 220, temperature: 0, json: true }
+  );
+
+  if (!llm.ok) {
+    return { ok: false as const, message: llm.message };
+  }
+
+  const CampoSchema = z.object({
+    digitos: z.string().optional().nullable(),
+    confianca: z.number().min(0).max(1).optional().nullable(),
+    rotulo: z.string().optional().nullable(),
+    avisos: z.array(z.string()).optional().nullable(),
+    ambiguo: z.boolean().optional().nullable(),
+    motivo: z.string().optional().nullable(),
+  });
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(llm.text);
+  } catch {
+    return { ok: false as const, message: "A IA não retornou JSON válido no recorte." };
+  }
+
+  const parsed = CampoSchema.safeParse(raw);
+  if (!parsed.success) {
+    return { ok: false as const, message: "A IA retornou um recorte fora do formato esperado." };
+  }
+
+  const data = parsed.data;
+  return {
+    ok: true as const,
+    model: llm.model,
+    digitos: soDigitos(data.digitos),
+    confianca: Math.max(0, Math.min(1, Number(data.confianca) || 0)),
+    avisos: Array.isArray(data.avisos) ? data.avisos.map((a) => String(a)).filter(Boolean) : [],
+    ambiguo: Boolean(data.ambiguo),
+    motivo: data.motivo?.trim() || null,
+  };
+}
+
 /**
  * Lê entrada/saída de uma foto do painel via GPT-4o vision.
  * Nunca grava sozinho — a UI exige confirmação do operador.
@@ -215,10 +309,173 @@ export async function lerContadoresCassinoDaFoto(opts: {
   imageDataUrl: string;
   entradaAnterior: number;
   saidaAnterior: number;
+  entradaCropDataUrl?: string | null;
+  saidaCropDataUrl?: string | null;
 }): Promise<
   | { ok: true; result: LeituraContadoresIaResult }
   | { ok: false; message: string }
 > {
+  const usarRecortes = Boolean(opts.entradaCropDataUrl && opts.saidaCropDataUrl);
+
+  if (usarRecortes) {
+    const entrada1 = await executarLeituraCampo({
+      imageDataUrl: opts.entradaCropDataUrl!,
+      campo: "entrada",
+      anterior: opts.entradaAnterior,
+      variante: 1,
+    });
+    if (!entrada1.ok) return { ok: false, message: entrada1.message };
+
+    const saida1 = await executarLeituraCampo({
+      imageDataUrl: opts.saidaCropDataUrl!,
+      campo: "saida",
+      anterior: opts.saidaAnterior,
+      variante: 1,
+    });
+    if (!saida1.ok) return { ok: false, message: saida1.message };
+
+    const entrada2 = await executarLeituraCampo({
+      imageDataUrl: opts.entradaCropDataUrl!,
+      campo: "entrada",
+      anterior: opts.entradaAnterior,
+      variante: 2,
+    });
+    if (!entrada2.ok) return { ok: false, message: entrada2.message };
+
+    const saida2 = await executarLeituraCampo({
+      imageDataUrl: opts.saidaCropDataUrl!,
+      campo: "saida",
+      anterior: opts.saidaAnterior,
+      variante: 2,
+    });
+    if (!saida2.ok) return { ok: false, message: saida2.message };
+
+    const avisos = [...entrada1.avisos, ...saida1.avisos, ...entrada2.avisos, ...saida2.avisos];
+    const confianca = Math.max(entrada1.confianca, saida1.confianca, entrada2.confianca, saida2.confianca);
+
+    if (
+      entrada1.ambiguo ||
+      saida1.ambiguo ||
+      entrada2.ambiguo ||
+      saida2.ambiguo ||
+      !entrada1.digitos ||
+      !saida1.digitos ||
+      !entrada2.digitos ||
+      !saida2.digitos
+    ) {
+      const score = calcularScore({
+        confianca1: (entrada1.confianca + saida1.confianca) / 2,
+        confianca2: (entrada2.confianca + saida2.confianca) / 2,
+        flags: ["leitura_ambigua"],
+        divergenciaEntrada: [],
+        divergenciaSaida: [],
+      });
+      return {
+        ok: true,
+        result: {
+          entradaCentesimos: 0,
+          saidaCentesimos: 0,
+          entradaFormatada: "",
+          saidaFormatada: "",
+          confianca,
+          score,
+          status: "rejected",
+          flags: ["leitura_ambigua"],
+          avisos: avisos.length ? avisos : ["Recortes ambíguos ou incompletos."],
+          modelo: entrada1.model,
+          modelosUsados: [entrada1.model, saida1.model, entrada2.model, saida2.model],
+          aplicar: false,
+          motivoRecusa:
+            entrada1.motivo ||
+            saida1.motivo ||
+            entrada2.motivo ||
+            saida2.motivo ||
+            "Não foi possível ler os recortes de entrada e saída com segurança.",
+        },
+      };
+    }
+
+    const entrada = parseContadorInput(entrada1.digitos);
+    const saida = parseContadorInput(saida1.digitos);
+    const divergenciaEntrada = compararDigitos(entrada1.digitos, entrada2.digitos);
+    const divergenciaSaida = compararDigitos(saida1.digitos, saida2.digitos);
+    const flags = new Set<string>(["recorte_campos"]);
+
+    if (
+      entrada1.confianca < CONF_MIN ||
+      saida1.confianca < CONF_MIN ||
+      entrada2.confianca < CONF_MIN ||
+      saida2.confianca < CONF_MIN
+    ) {
+      flags.add("baixa_confianca");
+    }
+    if (divergenciaEntrada.length > 0 || divergenciaSaida.length > 0) {
+      flags.add("divergencia_entre_leituras");
+      avisos.push("A segunda leitura dos recortes não bateu exatamente com a primeira.");
+    }
+
+    const avisosValidacao = validarContraAnterior(
+      entrada,
+      saida,
+      opts.entradaAnterior,
+      opts.saidaAnterior
+    );
+    if (entrada < opts.entradaAnterior) flags.add("entrada_menor_que_anterior");
+    if (saida < opts.saidaAnterior) flags.add("saida_menor_que_anterior");
+    if (avisosValidacao.some((a) => a.includes("Salto de entrada muito alto"))) {
+      flags.add("salto_entrada_alto");
+    }
+    if (avisosValidacao.some((a) => a.includes("Salto de saída muito alto"))) {
+      flags.add("salto_saida_alto");
+    }
+
+    const score = calcularScore({
+      confianca1: (entrada1.confianca + saida1.confianca) / 2,
+      confianca2: (entrada2.confianca + saida2.confianca) / 2,
+      flags: Array.from(flags),
+      divergenciaEntrada,
+      divergenciaSaida,
+    });
+    const regressao = entrada < opts.entradaAnterior || saida < opts.saidaAnterior;
+    const aplicarBase =
+      !regressao &&
+      divergenciaEntrada.length === 0 &&
+      divergenciaSaida.length === 0 &&
+      !Array.from(flags).includes("baixa_confianca");
+    const status = classificarStatus(score, Array.from(flags), aplicarBase);
+    const aplicar = aplicarBase && score >= SCORE_MIN_APLICAR;
+    const motivoRecusa = regressao
+      ? "Valor menor que a leitura anterior — confira e digite se estiver certo."
+      : divergenciaEntrada.length > 0 || divergenciaSaida.length > 0
+        ? "Encontramos divergência entre duas leituras dos recortes. Confira o visor e digite manualmente."
+        : score < SCORE_MIN_APLICAR
+          ? `Score de segurança baixo (${score}/100). Confira e digite manualmente.`
+          : `Confiança baixa (${Math.round(confianca * 100)}%). Digite manualmente.`;
+
+    return {
+      ok: true,
+      result: {
+        entradaCentesimos: entrada,
+        saidaCentesimos: saida,
+        entradaFormatada: formatContador(entrada),
+        saidaFormatada: formatContador(saida),
+        confianca,
+        score,
+        status,
+        flags: Array.from(flags),
+        avisos: [...avisos, ...avisosValidacao],
+        modelo: entrada1.model,
+        modelosUsados: [entrada1.model, saida1.model, entrada2.model, saida2.model],
+        aplicar,
+        motivoRecusa: aplicar ? undefined : motivoRecusa,
+        divergenciaDigitos:
+          divergenciaEntrada.length > 0 || divergenciaSaida.length > 0
+            ? { entrada: divergenciaEntrada, saida: divergenciaSaida }
+            : undefined,
+      },
+    };
+  }
+
   const leitura1 = await executarLeitura(
     opts.imageDataUrl,
     montarPromptLeitura1(opts.entradaAnterior, opts.saidaAnterior)

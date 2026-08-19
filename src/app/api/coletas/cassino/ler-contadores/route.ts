@@ -14,6 +14,14 @@ function parseAnterior(raw: FormDataEntryValue | null): number {
   return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
 }
 
+async function fileToDataUrl(file: File): Promise<string> {
+  const tipo = (file.type || "image/jpeg").toLowerCase();
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const b64 = buffer.toString("base64");
+  const mime = tipo === "image/png" ? "image/png" : "image/jpeg";
+  return `data:${mime};base64,${b64}`;
+}
+
 function clampScore(score: number) {
   return Math.max(0, Math.min(100, Math.round(score)));
 }
@@ -152,16 +160,21 @@ export async function POST(request: Request) {
   const entradaAnterior = parseAnterior(form.get("entrada_anterior"));
   const saidaAnterior = parseAnterior(form.get("saida_anterior"));
   const equipamentoId = parseEquipamentoId(form.get("equipamento_id"));
+  const fotoEntrada = form.get("foto_entrada");
+  const fotoSaida = form.get("foto_saida");
 
-  const buffer = Buffer.from(await foto.arrayBuffer());
-  const b64 = buffer.toString("base64");
-  const mime = tipo === "image/png" ? "image/png" : "image/jpeg";
-  const imageDataUrl = `data:${mime};base64,${b64}`;
+  const imageDataUrl = await fileToDataUrl(foto);
+  const entradaCropDataUrl =
+    fotoEntrada instanceof File && fotoEntrada.size > 0 ? await fileToDataUrl(fotoEntrada) : null;
+  const saidaCropDataUrl =
+    fotoSaida instanceof File && fotoSaida.size > 0 ? await fileToDataUrl(fotoSaida) : null;
 
   const leitura = await lerContadoresCassinoDaFoto({
     imageDataUrl,
     entradaAnterior,
     saidaAnterior,
+    entradaCropDataUrl,
+    saidaCropDataUrl,
   });
 
   if (!leitura.ok) {
@@ -237,6 +250,7 @@ export async function POST(request: Request) {
       modelos: r.modelosUsados,
       divergencia_digitos: r.divergenciaDigitos ?? null,
       historico_resumo: historicoAnalise.resumo,
+      usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
     },
     meta: {
       equipamento_id: equipamentoId,
@@ -262,6 +276,7 @@ export async function POST(request: Request) {
     modelos: r.modelosUsados,
     divergencia_digitos: r.divergenciaDigitos ?? null,
     historico_resumo: historicoAnalise.resumo,
+    usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
     /** Sempre true nesta feature — UI obriga confirmação antes de marcar pronta. */
     exige_confirmacao: true,
   });
