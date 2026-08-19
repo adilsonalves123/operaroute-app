@@ -1,0 +1,43 @@
+export const CASSINO_IA_THRESHOLDS = {
+  reading: {
+    confidenceMin: 0.78,
+    scoreMinApply: 88,
+    scoreApprovedAi: 96,
+    jumpMultiplier: 35,
+    jumpAbsoluteFloor: 3_500_000,
+  },
+  scoring: {
+    lowConfidencePenalty: 16,
+    regressionPenalty: 42,
+    highJumpPenalty: 10,
+    divergenceBasePenalty: 26,
+    divergencePerDigitPenalty: 4,
+  },
+  photoQuality: {
+    minImageSide: 820,
+    maxSampleSide: 320,
+    darkPixelThreshold: 28,
+    brightPixelThreshold: 235,
+    minAverageLuminance: 62,
+    maxDarkRatio: 0.54,
+    maxBrightRatio: 0.18,
+    maxAverageLuminance: 208,
+    minFocusScore: 16,
+  },
+  history: {
+    minSamples: 3,
+    warningAverageMultiplier: 3.4,
+    warningMaxMultiplier: 2.2,
+    warningAbsoluteFloor: 120_000,
+    blockAverageMultiplier: 5.8,
+    blockMaxMultiplier: 3.2,
+    blockAbsoluteFloor: 240_000,
+    warningPenalty: 10,
+    blockPenalty: 16,
+  },
+  preprocess: {
+    scaleMultiplier: 2.2,
+    sharpenCenterWeight: 1.48,
+    sharpenNeighborWeight: 0.12,
+  },
+} as const;

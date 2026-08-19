@@ -1,3 +1,5 @@
+import { CASSINO_IA_THRESHOLDS } from "@/lib/nichos/cassino/ia-thresholds";
+
 export type PhotoQualityAnalysis = {
   ok: boolean;
   reasons: string[];
@@ -36,7 +38,7 @@ export async function analyzePhotoQuality(file: File): Promise<PhotoQualityAnaly
 
   const width = bitmap.width;
   const height = bitmap.height;
-  const maxSide = 320;
+  const maxSide = CASSINO_IA_THRESHOLDS.photoQuality.maxSampleSide;
   const scale = Math.min(1, maxSide / Math.max(width, height, 1));
   const sampleW = Math.max(32, Math.round(width * scale));
   const sampleH = Math.max(32, Math.round(height * scale));
@@ -77,8 +79,8 @@ export async function analyzePhotoQuality(file: File): Promise<PhotoQualityAnaly
     const y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
     gray[p] = y;
     luminanceSum += y;
-    if (y < 28) darkCount += 1;
-    if (y > 235) brightCount += 1;
+    if (y < CASSINO_IA_THRESHOLDS.photoQuality.darkPixelThreshold) darkCount += 1;
+    if (y > CASSINO_IA_THRESHOLDS.photoQuality.brightPixelThreshold) brightCount += 1;
   }
 
   let focusAccumulator = 0;
@@ -101,16 +103,22 @@ export async function analyzePhotoQuality(file: File): Promise<PhotoQualityAnaly
   const focusScore = focusPixels > 0 ? focusAccumulator / focusPixels : 0;
 
   const reasons: string[] = [];
-  if (Math.min(width, height) < 720) {
+  if (Math.min(width, height) < CASSINO_IA_THRESHOLDS.photoQuality.minImageSide) {
     reasons.push("Resolução baixa para ler o visor com segurança.");
   }
-  if (averageLuminance < 55 || darkRatio > 0.58) {
+  if (
+    averageLuminance < CASSINO_IA_THRESHOLDS.photoQuality.minAverageLuminance ||
+    darkRatio > CASSINO_IA_THRESHOLDS.photoQuality.maxDarkRatio
+  ) {
     reasons.push("Imagem escura demais.");
   }
-  if (brightRatio > 0.22 || averageLuminance > 215) {
+  if (
+    brightRatio > CASSINO_IA_THRESHOLDS.photoQuality.maxBrightRatio ||
+    averageLuminance > CASSINO_IA_THRESHOLDS.photoQuality.maxAverageLuminance
+  ) {
     reasons.push("Reflexo ou luz estourada no visor.");
   }
-  if (focusScore < 14) {
+  if (focusScore < CASSINO_IA_THRESHOLDS.photoQuality.minFocusScore) {
     reasons.push("Foto borrada ou sem nitidez suficiente.");
   }
 

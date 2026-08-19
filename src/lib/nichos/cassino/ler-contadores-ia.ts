@@ -1,4 +1,5 @@
 import { formatContador, parseContadorInput } from "@/lib/nichos/cassino/contadores";
+import { CASSINO_IA_THRESHOLDS } from "@/lib/nichos/cassino/ia-thresholds";
 import { chatCompletionVision } from "@/lib/ia/openai-client";
 import { z } from "zod";
 
@@ -40,8 +41,8 @@ const IaJsonSchema = z.object({
 
 type IaJson = z.infer<typeof IaJsonSchema>;
 
-const CONF_MIN = 0.75;
-const SCORE_MIN_APLICAR = 85;
+const CONF_MIN = CASSINO_IA_THRESHOLDS.reading.confidenceMin;
+const SCORE_MIN_APLICAR = CASSINO_IA_THRESHOLDS.reading.scoreMinApply;
 
 function soDigitos(raw: unknown): string {
   return String(raw ?? "").replace(/\D/g, "");
@@ -152,8 +153,14 @@ function validarContraAnterior(
     avisos.push("Saída lida menor que a anterior.");
   }
   // Salto absurdo (> 50x o valor anterior + 100000) — proteção grossa
-  const limEntrada = Math.max(entradaAnterior * 50, entradaAnterior + 5_000_000);
-  const limSaida = Math.max(saidaAnterior * 50, saidaAnterior + 5_000_000);
+  const limEntrada = Math.max(
+    entradaAnterior * CASSINO_IA_THRESHOLDS.reading.jumpMultiplier,
+    entradaAnterior + CASSINO_IA_THRESHOLDS.reading.jumpAbsoluteFloor
+  );
+  const limSaida = Math.max(
+    saidaAnterior * CASSINO_IA_THRESHOLDS.reading.jumpMultiplier,
+    saidaAnterior + CASSINO_IA_THRESHOLDS.reading.jumpAbsoluteFloor
+  );
   if (entradaAnterior > 0 && entrada > limEntrada) {
     avisos.push("Salto de entrada muito alto — confira com atenção.");
   }
@@ -189,7 +196,11 @@ function classificarStatus(score: number, flags: string[], aplicarBase: boolean)
   if (!aplicarBase || flags.includes("divergencia_entre_leituras")) {
     return "rejected" as const;
   }
-  if (score >= 95 && !flags.includes("salto_entrada_alto") && !flags.includes("salto_saida_alto")) {
+  if (
+    score >= CASSINO_IA_THRESHOLDS.reading.scoreApprovedAi &&
+    !flags.includes("salto_entrada_alto") &&
+    !flags.includes("salto_saida_alto")
+  ) {
     return "approved_ai" as const;
   }
   return "needs_review" as const;
@@ -203,15 +214,17 @@ function calcularScore(args: {
   divergenciaSaida: number[];
 }) {
   let score = Math.round(((args.confianca1 + args.confianca2) / 2) * 100);
-  if (args.flags.includes("baixa_confianca")) score -= 18;
-  if (args.flags.includes("entrada_menor_que_anterior")) score -= 45;
-  if (args.flags.includes("saida_menor_que_anterior")) score -= 45;
-  if (args.flags.includes("salto_entrada_alto")) score -= 12;
-  if (args.flags.includes("salto_saida_alto")) score -= 12;
+  if (args.flags.includes("baixa_confianca")) score -= CASSINO_IA_THRESHOLDS.scoring.lowConfidencePenalty;
+  if (args.flags.includes("entrada_menor_que_anterior")) score -= CASSINO_IA_THRESHOLDS.scoring.regressionPenalty;
+  if (args.flags.includes("saida_menor_que_anterior")) score -= CASSINO_IA_THRESHOLDS.scoring.regressionPenalty;
+  if (args.flags.includes("salto_entrada_alto")) score -= CASSINO_IA_THRESHOLDS.scoring.highJumpPenalty;
+  if (args.flags.includes("salto_saida_alto")) score -= CASSINO_IA_THRESHOLDS.scoring.highJumpPenalty;
   if (args.flags.includes("divergencia_entre_leituras")) {
-    score -= 30;
-    score -= args.divergenciaEntrada.length * 5;
-    score -= args.divergenciaSaida.length * 5;
+    score -= CASSINO_IA_THRESHOLDS.scoring.divergenceBasePenalty;
+    score -=
+      args.divergenciaEntrada.length * CASSINO_IA_THRESHOLDS.scoring.divergencePerDigitPenalty;
+    score -=
+      args.divergenciaSaida.length * CASSINO_IA_THRESHOLDS.scoring.divergencePerDigitPenalty;
   }
   return Math.max(0, Math.min(100, score));
 }

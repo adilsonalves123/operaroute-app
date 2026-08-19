@@ -1,3 +1,5 @@
+import { CASSINO_IA_THRESHOLDS } from "@/lib/nichos/cassino/ia-thresholds";
+
 function clampByte(value: number) {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
@@ -12,7 +14,7 @@ function clampByte(value: number) {
 export async function preprocessOcrCrop(
   file: File,
   outputName: string,
-  scaleMultiplier = 2
+  scaleMultiplier = CASSINO_IA_THRESHOLDS.preprocess.scaleMultiplier
 ): Promise<File> {
   const bitmap = await createImageBitmap(file);
   try {
@@ -62,7 +64,9 @@ export async function preprocessOcrCrop(
           normalized[i + 1] +
           normalized[i - width] +
           normalized[i + width];
-        sharpened[i] = center * 1.55 - neighbors * 0.1375;
+        sharpened[i] =
+          center * CASSINO_IA_THRESHOLDS.preprocess.sharpenCenterWeight -
+          neighbors * CASSINO_IA_THRESHOLDS.preprocess.sharpenNeighborWeight;
       }
     }
 

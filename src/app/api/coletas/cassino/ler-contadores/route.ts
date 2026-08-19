@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { iaDisponivel } from "@/lib/ia/openai-client";
+import { CASSINO_IA_THRESHOLDS } from "@/lib/nichos/cassino/ia-thresholds";
 import { lerContadoresCassinoDaFoto } from "@/lib/nichos/cassino/ler-contadores-ia";
 
 export const runtime = "nodejs";
@@ -59,7 +60,7 @@ function analisarHistoricoMaquina(args: {
     .map((row) => Number(row.saida_periodo ?? 0))
     .filter((n) => n > 0);
 
-  if (Math.max(entradaHist.length, saidaHist.length) < 3) {
+  if (Math.max(entradaHist.length, saidaHist.length) < CASSINO_IA_THRESHOLDS.history.minSamples) {
     return {
       flags: [] as string[],
       avisos: [] as string[],
@@ -82,10 +83,26 @@ function analisarHistoricoMaquina(args: {
   const maxEntrada = Math.max(...entradaHist, 0);
   const maxSaida = Math.max(...saidaHist, 0);
 
-  const thresholdEntradaAviso = Math.max(mediaEntrada * 4, maxEntrada * 2.5, 150_000);
-  const thresholdSaidaAviso = Math.max(mediaSaida * 4, maxSaida * 2.5, 150_000);
-  const thresholdEntradaBloqueio = Math.max(mediaEntrada * 7, maxEntrada * 4, 300_000);
-  const thresholdSaidaBloqueio = Math.max(mediaSaida * 7, maxSaida * 4, 300_000);
+  const thresholdEntradaAviso = Math.max(
+    mediaEntrada * CASSINO_IA_THRESHOLDS.history.warningAverageMultiplier,
+    maxEntrada * CASSINO_IA_THRESHOLDS.history.warningMaxMultiplier,
+    CASSINO_IA_THRESHOLDS.history.warningAbsoluteFloor
+  );
+  const thresholdSaidaAviso = Math.max(
+    mediaSaida * CASSINO_IA_THRESHOLDS.history.warningAverageMultiplier,
+    maxSaida * CASSINO_IA_THRESHOLDS.history.warningMaxMultiplier,
+    CASSINO_IA_THRESHOLDS.history.warningAbsoluteFloor
+  );
+  const thresholdEntradaBloqueio = Math.max(
+    mediaEntrada * CASSINO_IA_THRESHOLDS.history.blockAverageMultiplier,
+    maxEntrada * CASSINO_IA_THRESHOLDS.history.blockMaxMultiplier,
+    CASSINO_IA_THRESHOLDS.history.blockAbsoluteFloor
+  );
+  const thresholdSaidaBloqueio = Math.max(
+    mediaSaida * CASSINO_IA_THRESHOLDS.history.blockAverageMultiplier,
+    maxSaida * CASSINO_IA_THRESHOLDS.history.blockMaxMultiplier,
+    CASSINO_IA_THRESHOLDS.history.blockAbsoluteFloor
+  );
 
   const flags: string[] = [];
   const avisos: string[] = [];
@@ -95,22 +112,22 @@ function analisarHistoricoMaquina(args: {
   if (args.entradaPeriodoAtual > thresholdEntradaAviso) {
     flags.push("historico_entrada_fora_do_padrao");
     avisos.push("Entrada do período muito acima do histórico desta máquina.");
-    scorePenalty += 12;
+    scorePenalty += CASSINO_IA_THRESHOLDS.history.warningPenalty;
   }
   if (args.saidaPeriodoAtual > thresholdSaidaAviso) {
     flags.push("historico_saida_fora_do_padrao");
     avisos.push("Saída do período muito acima do histórico desta máquina.");
-    scorePenalty += 12;
+    scorePenalty += CASSINO_IA_THRESHOLDS.history.warningPenalty;
   }
   if (args.entradaPeriodoAtual > thresholdEntradaBloqueio) {
     flags.push("historico_entrada_anomalia_severa");
     bloquearAplicacao = true;
-    scorePenalty += 18;
+    scorePenalty += CASSINO_IA_THRESHOLDS.history.blockPenalty;
   }
   if (args.saidaPeriodoAtual > thresholdSaidaBloqueio) {
     flags.push("historico_saida_anomalia_severa");
     bloquearAplicacao = true;
-    scorePenalty += 18;
+    scorePenalty += CASSINO_IA_THRESHOLDS.history.blockPenalty;
   }
 
   return {
