@@ -67,6 +67,47 @@ export async function POST(request: Request) {
   }
 
   const r = leitura.result;
+  const { auditarAcao } = await import("@/lib/auditoria/auditar");
+  await auditarAcao(auth.supabase, auth.profile, {
+    request,
+    acao: "ler_ia_cassino",
+    tabela: "coletas_ia_cassino",
+    severidade:
+      r.status === "approved_ai"
+        ? "info"
+        : r.status === "needs_review"
+          ? "medium"
+          : "high",
+    categoria: r.flags.length > 0 ? "anomalia" : "coleta",
+    modulo: "coletas",
+    titulo: "Leitura IA de contadores de cassino",
+    resumo: r.aplicar
+      ? `Leitura aplicada com score ${r.score}/100.`
+      : `Leitura recusada para aplicação automática com score ${r.score}/100.`,
+    dadosNovos: {
+      entrada_anterior: entradaAnterior,
+      saida_anterior: saidaAnterior,
+      entrada_centesimos: r.entradaCentesimos,
+      saida_centesimos: r.saidaCentesimos,
+      entrada_formatada: r.entradaFormatada,
+      saida_formatada: r.saidaFormatada,
+      aplicar: r.aplicar,
+      confianca: r.confianca,
+      score: r.score,
+      status: r.status,
+      flags: r.flags,
+      avisos: r.avisos,
+      motivo_recusa: r.motivoRecusa ?? null,
+      modelos: r.modelosUsados,
+      divergencia_digitos: r.divergenciaDigitos ?? null,
+    },
+    meta: {
+      arquivo_nome: foto.name || null,
+      arquivo_tipo: tipo,
+      arquivo_tamanho: foto.size,
+    },
+  });
+
   return NextResponse.json({
     aplicar: r.aplicar,
     entrada: r.entradaFormatada,
@@ -74,9 +115,14 @@ export async function POST(request: Request) {
     entrada_centesimos: r.entradaCentesimos,
     saida_centesimos: r.saidaCentesimos,
     confianca: r.confianca,
+    score: r.score,
+    status: r.status,
+    flags: r.flags,
     avisos: r.avisos,
     motivo_recusa: r.motivoRecusa ?? null,
     modelo: r.modelo,
+    modelos: r.modelosUsados,
+    divergencia_digitos: r.divergenciaDigitos ?? null,
     /** Sempre true nesta feature — UI obriga confirmação antes de marcar pronta. */
     exige_confirmacao: true,
   });

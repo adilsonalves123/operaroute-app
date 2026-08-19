@@ -29,6 +29,9 @@ export interface LeituraFormState {
   iaPendenteConfirmacao?: boolean;
   iaAvisos?: string[];
   iaConfianca?: number | null;
+  iaScore?: number | null;
+  iaStatus?: "approved_ai" | "needs_review" | "rejected" | null;
+  iaFlags?: string[];
   iaErro?: string | null;
 }
 
@@ -86,6 +89,9 @@ interface MaquinaColetaCardProps {
       entrada: string;
       saida: string;
       confianca: number;
+      score?: number;
+      status?: "approved_ai" | "needs_review" | "rejected";
+      flags?: string[];
       avisos: string[];
     }
   ) => void;
@@ -167,6 +173,14 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         entrada: String(data.entrada ?? ""),
         saida: String(data.saida ?? ""),
         confianca: Number(data.confianca) || 0,
+        score: Number(data.score) || 0,
+        status:
+          data.status === "approved_ai" ||
+          data.status === "needs_review" ||
+          data.status === "rejected"
+            ? data.status
+            : "needs_review",
+        flags: Array.isArray(data.flags) ? data.flags.map(String) : [],
         avisos: Array.isArray(data.avisos) ? data.avisos.map(String) : [],
       });
     } catch {
@@ -453,6 +467,24 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               ? ` (${Math.round(leitura.iaConfianca * 100)}%)`
               : ""}
           </p>
+          {(leitura.iaScore != null || leitura.iaStatus) && (
+            <div className="flex flex-wrap gap-2 text-[11px]">
+              {leitura.iaScore != null ? (
+                <span className="rounded-full bg-black/20 px-2 py-1 text-amber-50">
+                  Score {Math.round(leitura.iaScore)}/100
+                </span>
+              ) : null}
+              {leitura.iaStatus ? (
+                <span className="rounded-full bg-black/20 px-2 py-1 text-amber-50">
+                  {leitura.iaStatus === "approved_ai"
+                    ? "Alta confiança"
+                    : leitura.iaStatus === "needs_review"
+                      ? "Revisão rápida"
+                      : "Revisão obrigatória"}
+                </span>
+              ) : null}
+            </div>
+          )}
           {entradaPeriodo != null && saidaPeriodo != null ? (
             <div className="grid grid-cols-2 gap-2 text-[12px]">
               <div>
@@ -489,6 +521,11 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               ))}
             </ul>
           ) : null}
+          {leitura.iaFlags && leitura.iaFlags.length > 0 ? (
+            <p className="text-[11px] leading-snug text-amber-100/70">
+              Validações ativas: {leitura.iaFlags.join(", ")}.
+            </p>
+          ) : null}
           <button
             type="button"
             onClick={() => onConfirmarIa(leitura.equipamentoId)}
@@ -524,6 +561,9 @@ export function leituraToInput(eq: {
     iaPendenteConfirmacao: false,
     iaAvisos: [],
     iaConfianca: null,
+    iaScore: null,
+    iaStatus: null,
+    iaFlags: [],
     iaErro: null,
   };
 }
@@ -557,6 +597,9 @@ export function useFotoUpdater(setLeituras: Dispatch<SetStateAction<LeituraFormS
             iaPendenteConfirmacao: false,
             iaAvisos: [],
             iaConfianca: null,
+            iaScore: null,
+            iaStatus: null,
+            iaFlags: [],
             iaErro: null,
           };
         })
@@ -570,7 +613,15 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
   const onIaSugestao = useCallback(
     (
       id: string,
-      data: { entrada: string; saida: string; confianca: number; avisos: string[] }
+      data: {
+        entrada: string;
+        saida: string;
+        confianca: number;
+        score?: number;
+        status?: "approved_ai" | "needs_review" | "rejected";
+        flags?: string[];
+        avisos: string[];
+      }
     ) => {
       setLeituras((prev) =>
         prev.map((l) =>
@@ -581,6 +632,9 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
                 saidaAtualInput: data.saida,
                 iaPendenteConfirmacao: true,
                 iaConfianca: data.confianca,
+                iaScore: data.score ?? null,
+                iaStatus: data.status ?? "needs_review",
+                iaFlags: data.flags ?? [],
                 iaAvisos: data.avisos,
                 iaErro: null,
               }
@@ -599,6 +653,7 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
             ? {
                 ...l,
                 iaPendenteConfirmacao: false,
+                iaStatus: l.iaStatus ?? "approved_ai",
                 iaErro: null,
               }
             : l
@@ -617,7 +672,7 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
                 ...l,
                 iaErro: erro,
                 ...(erro
-                  ? { iaPendenteConfirmacao: false }
+                  ? { iaPendenteConfirmacao: false, iaStatus: "rejected" as const }
                   : {}),
               }
             : l
