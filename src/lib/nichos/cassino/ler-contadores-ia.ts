@@ -21,6 +21,10 @@ export type LeituraContadoresIaResult = {
     entrada: number[];
     saida: number[];
   };
+  alternativas?: {
+    entrada: string[];
+    saida: string[];
+  };
 };
 
 const IaJsonSchema = z.object({
@@ -169,6 +173,16 @@ function compararDigitos(a: string, b: string): number[] {
     for (let i = len; i < Math.max(a.length, b.length); i += 1) diffs.push(i);
   }
   return diffs;
+}
+
+function alternativasFormatadas(...valores: number[]) {
+  return Array.from(
+    new Set(
+      valores
+        .filter((n) => Number.isFinite(n) && n > 0)
+        .map((n) => formatContador(Math.round(n)))
+    )
+  );
 }
 
 function classificarStatus(score: number, flags: string[], aplicarBase: boolean) {
@@ -391,6 +405,16 @@ export async function lerContadoresCassinoDaFoto(opts: {
             entrada2.motivo ||
             saida2.motivo ||
             "Não foi possível ler os recortes de entrada e saída com segurança.",
+        alternativas: {
+          entrada: alternativasFormatadas(
+            parseContadorInput(entrada1.digitos),
+            parseContadorInput(entrada2.digitos)
+          ),
+          saida: alternativasFormatadas(
+            parseContadorInput(saida1.digitos),
+            parseContadorInput(saida2.digitos)
+          ),
+        },
         },
       };
     }
@@ -472,6 +496,16 @@ export async function lerContadoresCassinoDaFoto(opts: {
           divergenciaEntrada.length > 0 || divergenciaSaida.length > 0
             ? { entrada: divergenciaEntrada, saida: divergenciaSaida }
             : undefined,
+        alternativas: {
+          entrada: alternativasFormatadas(
+            parseContadorInput(entrada1.digitos),
+            parseContadorInput(entrada2.digitos)
+          ),
+          saida: alternativasFormatadas(
+            parseContadorInput(saida1.digitos),
+            parseContadorInput(saida2.digitos)
+          ),
+        },
       },
     };
   }
@@ -531,6 +565,16 @@ export async function lerContadoresCassinoDaFoto(opts: {
           leitura1.data.motivo?.trim() ||
           leitura2.data.motivo?.trim() ||
           "Não foi possível identificar entrada e saída com segurança. Digite manualmente.",
+        alternativas: {
+          entrada: alternativasFormatadas(
+            parseContadorInput(leitura1.entradaDigitos),
+            parseContadorInput(leitura2.entradaDigitos)
+          ),
+          saida: alternativasFormatadas(
+            parseContadorInput(leitura1.saidaDigitos),
+            parseContadorInput(leitura2.saidaDigitos)
+          ),
+        },
       },
     };
   }
@@ -562,6 +606,10 @@ export async function lerContadoresCassinoDaFoto(opts: {
         modelosUsados: [leitura1.model, leitura2.model],
         aplicar: false,
         motivoRecusa: "Números lidos inválidos. Digite manualmente.",
+        alternativas: {
+          entrada: alternativasFormatadas(entrada),
+          saida: alternativasFormatadas(saida),
+        },
       },
     };
   }
@@ -640,6 +688,16 @@ export async function lerContadoresCassinoDaFoto(opts: {
         divergenciaEntrada.length > 0 || divergenciaSaida.length > 0
           ? { entrada: divergenciaEntrada, saida: divergenciaSaida }
           : undefined,
+      alternativas: {
+        entrada: alternativasFormatadas(
+          parseContadorInput(leitura1.entradaDigitos),
+          parseContadorInput(leitura2.entradaDigitos)
+        ),
+        saida: alternativasFormatadas(
+          parseContadorInput(leitura1.saidaDigitos),
+          parseContadorInput(leitura2.saidaDigitos)
+        ),
+      },
     },
   };
 }

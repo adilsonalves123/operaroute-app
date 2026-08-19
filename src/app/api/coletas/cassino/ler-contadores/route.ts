@@ -251,6 +251,7 @@ export async function POST(request: Request) {
       divergencia_digitos: r.divergenciaDigitos ?? null,
       historico_resumo: historicoAnalise.resumo,
       usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
+      alternativas: r.alternativas ?? null,
     },
     meta: {
       equipamento_id: equipamentoId,
@@ -277,6 +278,7 @@ export async function POST(request: Request) {
     divergencia_digitos: r.divergenciaDigitos ?? null,
     historico_resumo: historicoAnalise.resumo,
     usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
+    alternativas: r.alternativas ?? null,
     /** Sempre true nesta feature — UI obriga confirmação antes de marcar pronta. */
     exige_confirmacao: true,
   });

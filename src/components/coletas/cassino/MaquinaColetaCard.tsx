@@ -35,6 +35,12 @@ export interface LeituraFormState {
   iaScore?: number | null;
   iaStatus?: "approved_ai" | "needs_review" | "rejected" | null;
   iaFlags?: string[];
+  iaRevisaoObrigatoria?: boolean;
+  iaMotivo?: string | null;
+  iaAlternativas?: {
+    entrada: string[];
+    saida: string[];
+  };
   iaErro?: string | null;
 }
 
@@ -95,6 +101,12 @@ interface MaquinaColetaCardProps {
       score?: number;
       status?: "approved_ai" | "needs_review" | "rejected";
       flags?: string[];
+      revisaoObrigatoria?: boolean;
+      motivo?: string | null;
+      alternativas?: {
+        entrada: string[];
+        saida: string[];
+      };
       avisos: string[];
     }
   ) => void;
@@ -218,12 +230,54 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       }
 
       if (!data.aplicar) {
-        onIaErro(
-          leitura.equipamentoId,
-          typeof data.motivo_recusa === "string"
-            ? data.motivo_recusa
-            : "IA não aplicou a leitura. Digite manualmente."
-        );
+        const alternativas =
+          data.alternativas &&
+          typeof data.alternativas === "object" &&
+          Array.isArray(data.alternativas.entrada) &&
+          Array.isArray(data.alternativas.saida)
+            ? {
+                entrada: data.alternativas.entrada.map(String),
+                saida: data.alternativas.saida.map(String),
+              }
+            : null;
+        if (
+          alternativas &&
+          (alternativas.entrada.length > 0 || alternativas.saida.length > 0)
+        ) {
+          onIaSugestao(leitura.equipamentoId, {
+            entrada:
+              String(data.entrada ?? "") ||
+              alternativas.entrada[0] ||
+              leitura.entradaAtualInput,
+            saida:
+              String(data.saida ?? "") ||
+              alternativas.saida[0] ||
+              leitura.saidaAtualInput,
+            confianca: Number(data.confianca) || 0,
+            score: Number(data.score) || 0,
+            status:
+              data.status === "approved_ai" ||
+              data.status === "needs_review" ||
+              data.status === "rejected"
+                ? data.status
+                : "rejected",
+            flags: Array.isArray(data.flags) ? data.flags.map(String) : [],
+            revisaoObrigatoria: true,
+            motivo:
+              typeof data.motivo_recusa === "string"
+                ? data.motivo_recusa
+                : "Encontramos dúvida na leitura. Escolha a opção correta abaixo.",
+            alternativas,
+            avisos: Array.isArray(data.avisos) ? data.avisos.map(String) : [],
+          });
+        } else {
+          onIaErro(
+            leitura.equipamentoId,
+            typeof data.motivo_recusa === "string"
+              ? data.motivo_recusa
+              : "IA não aplicou a leitura. Digite manualmente."
+          );
+        }
         return;
       }
 
@@ -239,6 +293,18 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
             ? data.status
             : "needs_review",
         flags: Array.isArray(data.flags) ? data.flags.map(String) : [],
+        revisaoObrigatoria: false,
+        motivo: null,
+        alternativas:
+          data.alternativas &&
+          typeof data.alternativas === "object" &&
+          Array.isArray(data.alternativas.entrada) &&
+          Array.isArray(data.alternativas.saida)
+            ? {
+                entrada: data.alternativas.entrada.map(String),
+                saida: data.alternativas.saida.map(String),
+              }
+            : undefined,
         avisos: Array.isArray(data.avisos) ? data.avisos.map(String) : [],
       });
     } catch {
@@ -295,6 +361,10 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-400">
                 <AlertCircle className="h-3 w-3" />
                 Corrigir
+              </span>
+            ) : leitura.iaRevisaoObrigatoria ? (
+              <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-medium text-rose-300">
+                Revisão IA
               </span>
             ) : leitura.iaPendenteConfirmacao ? (
               <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-medium text-amber-300">
@@ -517,10 +587,17 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         </p>
       ) : null}
 
-      {leitura.iaPendenteConfirmacao ? (
-        <div className="space-y-2.5 rounded-xl border border-amber-400/30 bg-amber-500/[0.08] p-3.5">
+      {leitura.iaPendenteConfirmacao || leitura.iaRevisaoObrigatoria ? (
+        <div
+          className={cn(
+            "space-y-2.5 rounded-xl border p-3.5",
+            leitura.iaRevisaoObrigatoria
+              ? "border-rose-400/30 bg-rose-500/[0.08]"
+              : "border-amber-400/30 bg-amber-500/[0.08]"
+          )}
+        >
           <p className="text-sm font-medium text-amber-100">
-            Confirme a leitura da IA
+            {leitura.iaRevisaoObrigatoria ? "Revise a leitura da IA" : "Confirme a leitura da IA"}
             {leitura.iaConfianca != null
               ? ` (${Math.round(leitura.iaConfianca * 100)}%)`
               : ""}
@@ -570,8 +647,62 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
             </div>
           ) : null}
           <p className="text-[12px] leading-snug text-amber-100/70">
-            Confira no visor. Se o período ficou negativo, a leitura provavelmente está errada.
+            {leitura.iaMotivo ||
+              "Confira no visor. Se o período ficou negativo, a leitura provavelmente está errada."}
           </p>
+          {leitura.iaAlternativas &&
+          (leitura.iaAlternativas.entrada.length > 0 || leitura.iaAlternativas.saida.length > 0) ? (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {leitura.iaAlternativas.entrada.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-medium text-amber-100/80">Escolha a Entrada</p>
+                  <div className="flex flex-wrap gap-2">
+                    {leitura.iaAlternativas.entrada.map((opcao) => (
+                      <button
+                        key={`entrada-${opcao}`}
+                        type="button"
+                        onClick={() =>
+                          onUpdate(leitura.equipamentoId, "entradaAtualInput", opcao)
+                        }
+                        className={cn(
+                          "rounded-lg border px-3 py-1.5 text-[11px] font-medium transition",
+                          leitura.entradaAtualInput === opcao
+                            ? "border-amber-300 bg-amber-300/20 text-amber-50"
+                            : "border-white/10 bg-black/20 text-amber-100/80 hover:bg-black/30"
+                        )}
+                      >
+                        {opcao}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+              {leitura.iaAlternativas.saida.length > 0 ? (
+                <div className="space-y-2">
+                  <p className="text-[11px] font-medium text-amber-100/80">Escolha a Saída</p>
+                  <div className="flex flex-wrap gap-2">
+                    {leitura.iaAlternativas.saida.map((opcao) => (
+                      <button
+                        key={`saida-${opcao}`}
+                        type="button"
+                        onClick={() =>
+                          onUpdate(leitura.equipamentoId, "saidaAtualInput", opcao)
+                        }
+                        className={cn(
+                          "rounded-lg border px-3 py-1.5 text-[11px] font-medium transition",
+                          leitura.saidaAtualInput === opcao
+                            ? "border-amber-300 bg-amber-300/20 text-amber-50"
+                            : "border-white/10 bg-black/20 text-amber-100/80 hover:bg-black/30"
+                        )}
+                      >
+                        {opcao}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
           {leitura.iaAvisos && leitura.iaAvisos.length > 0 ? (
             <ul className="list-inside list-disc text-[11px] text-amber-200/80">
               {leitura.iaAvisos.map((a) => (
@@ -590,7 +721,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
           >
             <CheckCircle2 className="h-4 w-4" />
-            Confirmar leitura
+            {leitura.iaRevisaoObrigatoria ? "Confirmar revisão" : "Confirmar leitura"}
           </button>
         </div>
       ) : null}
@@ -622,6 +753,9 @@ export function leituraToInput(eq: {
     iaScore: null,
     iaStatus: null,
     iaFlags: [],
+    iaRevisaoObrigatoria: false,
+    iaMotivo: null,
+    iaAlternativas: { entrada: [], saida: [] },
     iaErro: null,
   };
 }
@@ -658,6 +792,9 @@ export function useFotoUpdater(setLeituras: Dispatch<SetStateAction<LeituraFormS
             iaScore: null,
             iaStatus: null,
             iaFlags: [],
+            iaRevisaoObrigatoria: false,
+            iaMotivo: null,
+            iaAlternativas: { entrada: [], saida: [] },
             iaErro: null,
           };
         })
@@ -678,6 +815,12 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
         score?: number;
         status?: "approved_ai" | "needs_review" | "rejected";
         flags?: string[];
+        revisaoObrigatoria?: boolean;
+        motivo?: string | null;
+        alternativas?: {
+          entrada: string[];
+          saida: string[];
+        };
         avisos: string[];
       }
     ) => {
@@ -693,6 +836,9 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
                 iaScore: data.score ?? null,
                 iaStatus: data.status ?? "needs_review",
                 iaFlags: data.flags ?? [],
+                iaRevisaoObrigatoria: data.revisaoObrigatoria ?? false,
+                iaMotivo: data.motivo ?? null,
+                iaAlternativas: data.alternativas ?? { entrada: [], saida: [] },
                 iaAvisos: data.avisos,
                 iaErro: null,
               }
@@ -711,6 +857,7 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
             ? {
                 ...l,
                 iaPendenteConfirmacao: false,
+                iaRevisaoObrigatoria: false,
                 iaStatus: l.iaStatus ?? "approved_ai",
                 iaErro: null,
               }
@@ -730,7 +877,11 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
                 ...l,
                 iaErro: erro,
                 ...(erro
-                  ? { iaPendenteConfirmacao: false, iaStatus: "rejected" as const }
+                  ? {
+                      iaPendenteConfirmacao: false,
+                      iaRevisaoObrigatoria: false,
+                      iaStatus: "rejected" as const,
+                    }
                   : {}),
               }
             : l
