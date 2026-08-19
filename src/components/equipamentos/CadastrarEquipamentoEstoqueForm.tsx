@@ -154,15 +154,15 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-black/60 p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-black/60 p-0 sm:p-4 sm:items-center"
           onClick={fechar}
         >
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="glass-card flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden border border-cyan-500/20 shadow-xl"
+            className="glass-card flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden rounded-none border-0 shadow-xl sm:h-auto sm:max-h-[90vh] sm:rounded-xl sm:border sm:border-cyan-500/20"
           >
-            <div className="overflow-y-auto overscroll-contain px-5 pb-4 pt-5">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-[max(1.25rem,env(safe-area-inset-top,0px))]">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-semibold text-white">Novo equipamento no estoque</h2>
@@ -282,7 +282,7 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
               {error && <p className="mt-4 text-sm text-rose-400">{error}</p>}
             </div>
 
-            <div className="border-t border-slate-800 bg-slate-950/95 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-4">
+            <div className="sticky bottom-0 border-t border-slate-800 bg-slate-950/95 px-5 pb-[max(1rem,calc(env(safe-area-inset-bottom,0px)+0.9rem))] pt-4">
               <div className="flex gap-2">
               <button
                 type="submit"
