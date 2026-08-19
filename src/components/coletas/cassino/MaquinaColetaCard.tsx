@@ -10,6 +10,7 @@ import {
 } from "@/lib/nichos/cassino";
 import { formatCurrency, cn } from "@/lib/utils";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
+import { analyzePhotoQuality } from "@/lib/ia/photo-quality";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
@@ -139,6 +140,15 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
     setLendoIa(true);
     onIaErro(leitura.equipamentoId, null);
     try {
+      const quality = await analyzePhotoQuality(leitura.fotoFile);
+      if (!quality.ok) {
+        onIaErro(
+          leitura.equipamentoId,
+          `Não conseguimos ler esta imagem com segurança. Tire outra foto. ${quality.reasons.join(" ")}`
+        );
+        return;
+      }
+
       const foto = await comprimirFotoParaIa(leitura.fotoFile);
       const body = new FormData();
       body.append("foto", foto);
@@ -448,7 +458,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           </p>
         ) : (
           <p className="text-center text-[11px] text-violet-300/70">
-            A IA sugere entrada/saída — você confirma antes de salvar.
+            A IA sugere entrada/saída — você confirma antes de salvar. Foto muito escura, borrada ou estourada é bloqueada antes da leitura.
           </p>
         )}
       </div>
