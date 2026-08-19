@@ -215,38 +215,46 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
               />
             )}
 
-            {form.tipo === "cassino" && (
+            {form.tipo && form.tipo !== "bolinha" && form.tipo !== "consignado" && (
               <div className="grid gap-3 sm:grid-cols-2">
                 <FormInput
                   label="Entrada atual (opcional)"
-                  value={form.numero_entrada}
-                  onChange={(e) =>
-                    update({ numero_entrada: formatContadorInput(e.target.value) })
+                  inputMode="numeric"
+                  value={
+                    form.tipo === "cassino"
+                      ? form.numero_entrada
+                      : form.tipo === "ursinho" ||
+                        form.tipo === "vending_ursinho" ||
+                        isEquipamentoTipoDiversao(form.tipo)
+                      ? form.entrada_atual
+                      : form.numero_entrada
                   }
+                  onChange={(e) => {
+                    const v = formatContadorInput(e.target.value);
+                    if (
+                      form.tipo === "ursinho" ||
+                      form.tipo === "vending_ursinho" ||
+                      isEquipamentoTipoDiversao(form.tipo ?? "")
+                    ) {
+                      update({ entrada_atual: v });
+                    } else {
+                      update({ numero_entrada: v });
+                    }
+                  }}
                   placeholder="0"
+                  hint="Leitura atual do painel"
                 />
                 <FormInput
                   label="Saída atual (opcional)"
+                  inputMode="numeric"
                   value={form.numero_saida}
                   onChange={(e) =>
                     update({ numero_saida: formatContadorInput(e.target.value) })
                   }
                   placeholder="0"
+                  hint="Leitura atual do painel"
                 />
               </div>
-            )}
-
-            {(form.tipo === "ursinho" ||
-              form.tipo === "vending_ursinho" ||
-              (form.tipo && isEquipamentoTipoDiversao(form.tipo))) && (
-              <FormInput
-                label="Entrada atual (opcional)"
-                value={form.entrada_atual}
-                onChange={(e) =>
-                  update({ entrada_atual: formatContadorInput(e.target.value) })
-                }
-                placeholder="0"
-              />
             )}
 
             <FormInput
