@@ -154,7 +154,7 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
 
       {open && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center overflow-hidden bg-black/60 p-0 sm:p-4 sm:items-center"
+          className="fixed inset-0 z-[10050] flex items-end justify-center overflow-hidden bg-black/60 p-0 sm:p-4 sm:items-center"
           onClick={fechar}
         >
           <form
