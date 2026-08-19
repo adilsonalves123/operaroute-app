@@ -12,6 +12,7 @@ import { formatCurrency, cn } from "@/lib/utils";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
 import { cropFileByNormalizedBox } from "@/lib/ia/crop-image";
 import { analyzePhotoQuality } from "@/lib/ia/photo-quality";
+import { preprocessOcrCrop } from "@/lib/ia/preprocess-ocr-image";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
@@ -170,15 +171,23 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           localizarData?.entradaBox &&
           localizarData?.saidaBox
         ) {
-          fotoEntradaCrop = await cropFileByNormalizedBox(
+          const entradaCropBruto = await cropFileByNormalizedBox(
             leitura.fotoFile,
             localizarData.entradaBox,
             "entrada-crop.jpg"
           );
-          fotoSaidaCrop = await cropFileByNormalizedBox(
+          const saidaCropBruto = await cropFileByNormalizedBox(
             leitura.fotoFile,
             localizarData.saidaBox,
             "saida-crop.jpg"
+          );
+          fotoEntradaCrop = await preprocessOcrCrop(
+            entradaCropBruto,
+            "entrada-crop-ocr.jpg"
+          );
+          fotoSaidaCrop = await preprocessOcrCrop(
+            saidaCropBruto,
+            "saida-crop-ocr.jpg"
           );
         }
       } catch {
