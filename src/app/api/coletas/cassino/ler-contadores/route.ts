@@ -14,6 +14,107 @@ function parseAnterior(raw: FormDataEntryValue | null): number {
   return Number.isFinite(n) && n >= 0 ? Math.round(n) : 0;
 }
 
+function clampScore(score: number) {
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function parseEquipamentoId(raw: FormDataEntryValue | null): string | null {
+  const value = String(raw ?? "").trim();
+  return value || null;
+}
+
+type HistoricoColetaMini = {
+  entrada_periodo: number | null;
+  saida_periodo: number | null;
+  created_at: string;
+};
+
+function media(nums: number[]) {
+  if (!nums.length) return 0;
+  return nums.reduce((sum, n) => sum + n, 0) / nums.length;
+}
+
+function analisarHistoricoMaquina(args: {
+  entradaPeriodoAtual: number;
+  saidaPeriodoAtual: number;
+  historico: HistoricoColetaMini[];
+}) {
+  const entradaHist = args.historico
+    .map((row) => Number(row.entrada_periodo ?? 0))
+    .filter((n) => n > 0);
+  const saidaHist = args.historico
+    .map((row) => Number(row.saida_periodo ?? 0))
+    .filter((n) => n > 0);
+
+  if (Math.max(entradaHist.length, saidaHist.length) < 3) {
+    return {
+      flags: [] as string[],
+      avisos: [] as string[],
+      scorePenalty: 0,
+      bloquearAplicacao: false,
+      resumo: null as
+        | {
+            amostras: number;
+            mediaEntrada: number;
+            mediaSaida: number;
+            maxEntrada: number;
+            maxSaida: number;
+          }
+        | null,
+    };
+  }
+
+  const mediaEntrada = media(entradaHist);
+  const mediaSaida = media(saidaHist);
+  const maxEntrada = Math.max(...entradaHist, 0);
+  const maxSaida = Math.max(...saidaHist, 0);
+
+  const thresholdEntradaAviso = Math.max(mediaEntrada * 4, maxEntrada * 2.5, 150_000);
+  const thresholdSaidaAviso = Math.max(mediaSaida * 4, maxSaida * 2.5, 150_000);
+  const thresholdEntradaBloqueio = Math.max(mediaEntrada * 7, maxEntrada * 4, 300_000);
+  const thresholdSaidaBloqueio = Math.max(mediaSaida * 7, maxSaida * 4, 300_000);
+
+  const flags: string[] = [];
+  const avisos: string[] = [];
+  let scorePenalty = 0;
+  let bloquearAplicacao = false;
+
+  if (args.entradaPeriodoAtual > thresholdEntradaAviso) {
+    flags.push("historico_entrada_fora_do_padrao");
+    avisos.push("Entrada do período muito acima do histórico desta máquina.");
+    scorePenalty += 12;
+  }
+  if (args.saidaPeriodoAtual > thresholdSaidaAviso) {
+    flags.push("historico_saida_fora_do_padrao");
+    avisos.push("Saída do período muito acima do histórico desta máquina.");
+    scorePenalty += 12;
+  }
+  if (args.entradaPeriodoAtual > thresholdEntradaBloqueio) {
+    flags.push("historico_entrada_anomalia_severa");
+    bloquearAplicacao = true;
+    scorePenalty += 18;
+  }
+  if (args.saidaPeriodoAtual > thresholdSaidaBloqueio) {
+    flags.push("historico_saida_anomalia_severa");
+    bloquearAplicacao = true;
+    scorePenalty += 18;
+  }
+
+  return {
+    flags,
+    avisos,
+    scorePenalty,
+    bloquearAplicacao,
+    resumo: {
+      amostras: Math.max(entradaHist.length, saidaHist.length),
+      mediaEntrada: Math.round(mediaEntrada),
+      mediaSaida: Math.round(mediaSaida),
+      maxEntrada,
+      maxSaida,
+    },
+  };
+}
+
 export async function POST(request: Request) {
   const auth = await requireAcesso("coletas", "criar");
   if (!auth.ok) return auth.response;
@@ -50,6 +151,7 @@ export async function POST(request: Request) {
 
   const entradaAnterior = parseAnterior(form.get("entrada_anterior"));
   const saidaAnterior = parseAnterior(form.get("saida_anterior"));
+  const equipamentoId = parseEquipamentoId(form.get("equipamento_id"));
 
   const buffer = Buffer.from(await foto.arrayBuffer());
   const b64 = buffer.toString("base64");
@@ -66,24 +168,58 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: leitura.message }, { status: 502 });
   }
 
+  const historico =
+    equipamentoId
+      ? (
+          await auth.supabase
+            .from("coletas")
+            .select("entrada_periodo, saida_periodo, created_at")
+            .eq("empresa_id", auth.profile.empresa_id)
+            .eq("equipamento_id", equipamentoId)
+            .order("created_at", { ascending: false })
+            .limit(8)
+        ).data ?? []
+      : [];
+
   const r = leitura.result;
+  const historicoAnalise = analisarHistoricoMaquina({
+    entradaPeriodoAtual: Math.max(0, r.entradaCentesimos - entradaAnterior),
+    saidaPeriodoAtual: Math.max(0, r.saidaCentesimos - saidaAnterior),
+    historico,
+  });
+
+  const score = clampScore(r.score - historicoAnalise.scorePenalty);
+  const flags = Array.from(new Set([...r.flags, ...historicoAnalise.flags]));
+  const avisos = Array.from(new Set([...r.avisos, ...historicoAnalise.avisos]));
+  const aplicar = r.aplicar && !historicoAnalise.bloquearAplicacao;
+  const status =
+    !aplicar && historicoAnalise.bloquearAplicacao
+      ? "rejected"
+      : flags.some((flag) => flag.startsWith("historico_"))
+        ? "needs_review"
+        : r.status;
+  const motivoRecusa =
+    !aplicar && historicoAnalise.bloquearAplicacao
+      ? "Movimentação muito fora do padrão histórico desta máquina. Confira o visor e digite manualmente."
+      : r.motivoRecusa ?? null;
+
   const { auditarAcao } = await import("@/lib/auditoria/auditar");
   await auditarAcao(auth.supabase, auth.profile, {
     request,
     acao: "ler_ia_cassino",
     tabela: "coletas_ia_cassino",
     severidade:
-      r.status === "approved_ai"
+      status === "approved_ai"
         ? "info"
-        : r.status === "needs_review"
+        : status === "needs_review"
           ? "medium"
           : "high",
-    categoria: r.flags.length > 0 ? "anomalia" : "coleta",
+    categoria: flags.length > 0 ? "anomalia" : "coleta",
     modulo: "coletas",
     titulo: "Leitura IA de contadores de cassino",
-    resumo: r.aplicar
-      ? `Leitura aplicada com score ${r.score}/100.`
-      : `Leitura recusada para aplicação automática com score ${r.score}/100.`,
+    resumo: aplicar
+      ? `Leitura aplicada com score ${score}/100.`
+      : `Leitura recusada para aplicação automática com score ${score}/100.`,
     dadosNovos: {
       entrada_anterior: entradaAnterior,
       saida_anterior: saidaAnterior,
@@ -91,17 +227,19 @@ export async function POST(request: Request) {
       saida_centesimos: r.saidaCentesimos,
       entrada_formatada: r.entradaFormatada,
       saida_formatada: r.saidaFormatada,
-      aplicar: r.aplicar,
+      aplicar,
       confianca: r.confianca,
-      score: r.score,
-      status: r.status,
-      flags: r.flags,
-      avisos: r.avisos,
-      motivo_recusa: r.motivoRecusa ?? null,
+      score,
+      status,
+      flags,
+      avisos,
+      motivo_recusa: motivoRecusa,
       modelos: r.modelosUsados,
       divergencia_digitos: r.divergenciaDigitos ?? null,
+      historico_resumo: historicoAnalise.resumo,
     },
     meta: {
+      equipamento_id: equipamentoId,
       arquivo_nome: foto.name || null,
       arquivo_tipo: tipo,
       arquivo_tamanho: foto.size,
@@ -109,20 +247,21 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({
-    aplicar: r.aplicar,
+    aplicar,
     entrada: r.entradaFormatada,
     saida: r.saidaFormatada,
     entrada_centesimos: r.entradaCentesimos,
     saida_centesimos: r.saidaCentesimos,
     confianca: r.confianca,
-    score: r.score,
-    status: r.status,
-    flags: r.flags,
-    avisos: r.avisos,
-    motivo_recusa: r.motivoRecusa ?? null,
+    score,
+    status,
+    flags,
+    avisos,
+    motivo_recusa: motivoRecusa,
     modelo: r.modelo,
     modelos: r.modelosUsados,
     divergencia_digitos: r.divergenciaDigitos ?? null,
+    historico_resumo: historicoAnalise.resumo,
     /** Sempre true nesta feature — UI obriga confirmação antes de marcar pronta. */
     exige_confirmacao: true,
   });

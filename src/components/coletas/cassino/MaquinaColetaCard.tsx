@@ -152,6 +152,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       const foto = await comprimirFotoParaIa(leitura.fotoFile);
       const body = new FormData();
       body.append("foto", foto);
+      body.append("equipamento_id", leitura.equipamentoId);
       body.append("entrada_anterior", String(leitura.entradaAnterior));
       body.append("saida_anterior", String(leitura.saidaAnterior));
 
