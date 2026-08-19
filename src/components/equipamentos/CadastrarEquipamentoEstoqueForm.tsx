@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { FormInput } from "@/components/ui/FormInput";
@@ -78,6 +78,12 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
     document.body.style.overflow = "hidden";
   }
 
+  useEffect(() => {
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const err = validateEquipamento(form, { modoEstoque: true });
@@ -154,125 +160,130 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="glass-card max-h-[90vh] w-full max-w-2xl space-y-4 overflow-y-auto overscroll-contain border border-cyan-500/20 p-5 shadow-xl"
+            className="glass-card flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden border border-cyan-500/20 shadow-xl"
           >
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="font-semibold text-white">Novo equipamento no estoque</h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Só máquinas e expositores. Produtos e itens ficam em Estoque / Produtos consignados.
-                </p>
+            <div className="overflow-y-auto overscroll-contain px-5 pb-4 pt-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="font-semibold text-white">Novo equipamento no estoque</h2>
+                  <p className="mt-0.5 text-xs text-slate-500">
+                    Só máquinas e expositores. Produtos e itens ficam em Estoque / Produtos consignados.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={fechar}
+                  disabled={loading}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800"
+                >
+                  <X className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={fechar}
-                disabled={loading}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
 
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-slate-300">Nicho / tipo *</p>
-              <div className="grid gap-2 sm:grid-cols-2">
-                {tipos.map((t) => (
-                  <SelectCard
-                    key={t.id}
-                    selected={form.tipo === t.id}
-                    onClick={() =>
-                      update({ tipo: t.id, preco_jogada: t.id === "bolinha" ? form.preco_jogada : "" })
-                    }
-                    icon={tipoIcons[t.id]}
-                    label={t.label}
+              <div className="mt-4 space-y-2">
+                <p className="text-sm font-medium text-slate-300">Nicho / tipo *</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {tipos.map((t) => (
+                    <SelectCard
+                      key={t.id}
+                      selected={form.tipo === t.id}
+                      onClick={() =>
+                        update({ tipo: t.id, preco_jogada: t.id === "bolinha" ? form.preco_jogada : "" })
+                      }
+                      icon={tipoIcons[t.id]}
+                      label={t.label}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-end">
+                <FotoEquipamento
+                  preview={form.fotoPreview ?? null}
+                  onChange={updateFoto}
+                  compact
+                />
+                <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
+                  <FormInput
+                    label="Nome *"
+                    value={form.nome}
+                    onChange={(e) => update({ nome: e.target.value })}
+                    placeholder="Ex.: Máquina 01 / Expositor A"
                   />
-                ))}
+                  <FormInput
+                    label="Número de série *"
+                    value={form.numero_serie}
+                    onChange={(e) => update({ numero_serie: e.target.value })}
+                    placeholder="Série do painel / etiqueta"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-              <FotoEquipamento
-                preview={form.fotoPreview ?? null}
-                onChange={updateFoto}
-                compact
-              />
-              <div className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
+              {form.tipo === "bolinha" && (
                 <FormInput
-                  label="Nome *"
-                  value={form.nome}
-                  onChange={(e) => update({ nome: e.target.value })}
-                  placeholder="Ex.: Máquina 01 / Expositor A"
+                  label="Valor da jogada (R$) *"
+                  value={form.preco_jogada}
+                  onChange={(e) => update({ preco_jogada: e.target.value })}
+                  placeholder="2,00"
                 />
-                <FormInput
-                  label="Número de série *"
-                  value={form.numero_serie}
-                  onChange={(e) => update({ numero_serie: e.target.value })}
-                  placeholder="Série do painel / etiqueta"
-                />
-              </div>
-            </div>
+              )}
 
-            {form.tipo === "bolinha" && (
-              <FormInput
-                label="Valor da jogada (R$) *"
-                value={form.preco_jogada}
-                onChange={(e) => update({ preco_jogada: e.target.value })}
-                placeholder="2,00"
-              />
-            )}
-
-            {form.tipo && form.tipo !== "bolinha" && form.tipo !== "consignado" && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <FormInput
-                  label="Entrada atual (opcional)"
-                  inputMode="numeric"
-                  value={
-                    form.tipo === "cassino"
-                      ? form.numero_entrada
-                      : form.tipo === "ursinho" ||
-                        form.tipo === "vending_ursinho" ||
-                        isEquipamentoTipoDiversao(form.tipo)
-                      ? form.entrada_atual
-                      : form.numero_entrada
-                  }
-                  onChange={(e) => {
-                    const v = formatContadorInput(e.target.value);
-                    if (
-                      form.tipo === "ursinho" ||
-                      form.tipo === "vending_ursinho" ||
-                      isEquipamentoTipoDiversao(form.tipo ?? "")
-                    ) {
-                      update({ entrada_atual: v });
-                    } else {
-                      update({ numero_entrada: v });
+              {form.tipo && form.tipo !== "bolinha" && form.tipo !== "consignado" && (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  <FormInput
+                    label="Entrada atual (opcional)"
+                    inputMode="numeric"
+                    value={
+                      form.tipo === "cassino"
+                        ? form.numero_entrada
+                        : form.tipo === "ursinho" ||
+                          form.tipo === "vending_ursinho" ||
+                          isEquipamentoTipoDiversao(form.tipo)
+                        ? form.entrada_atual
+                        : form.numero_entrada
                     }
-                  }}
-                  placeholder="0"
-                  hint="Leitura atual do painel"
-                />
+                    onChange={(e) => {
+                      const v = formatContadorInput(e.target.value);
+                      if (
+                        form.tipo === "ursinho" ||
+                        form.tipo === "vending_ursinho" ||
+                        isEquipamentoTipoDiversao(form.tipo ?? "")
+                      ) {
+                        update({ entrada_atual: v });
+                      } else {
+                        update({ numero_entrada: v });
+                      }
+                    }}
+                    placeholder="0"
+                    hint="Leitura atual do painel"
+                  />
+                  <FormInput
+                    label="Saída atual (opcional)"
+                    inputMode="numeric"
+                    value={form.numero_saida}
+                    onChange={(e) =>
+                      update({ numero_saida: formatContadorInput(e.target.value) })
+                    }
+                    placeholder="0"
+                    hint="Leitura atual do painel"
+                  />
+                </div>
+              )}
+
+              <div className="mt-4">
                 <FormInput
-                  label="Saída atual (opcional)"
-                  inputMode="numeric"
-                  value={form.numero_saida}
-                  onChange={(e) =>
-                    update({ numero_saida: formatContadorInput(e.target.value) })
-                  }
-                  placeholder="0"
-                  hint="Leitura atual do painel"
+                  label="Observação"
+                  value={form.observacao}
+                  onChange={(e) => update({ observacao: e.target.value })}
+                  placeholder="Opcional"
                 />
               </div>
-            )}
 
-            <FormInput
-              label="Observação"
-              value={form.observacao}
-              onChange={(e) => update({ observacao: e.target.value })}
-              placeholder="Opcional"
-            />
+              {error && <p className="mt-4 text-sm text-rose-400">{error}</p>}
+            </div>
 
-            {error && <p className="text-sm text-rose-400">{error}</p>}
-
-            <div className="flex gap-2">
+            <div className="border-t border-slate-800 bg-slate-950/95 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-4">
+              <div className="flex gap-2">
               <button
                 type="submit"
                 disabled={loading}
@@ -288,6 +299,7 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
               >
                 Cancelar
               </button>
+              </div>
             </div>
           </form>
         </div>
