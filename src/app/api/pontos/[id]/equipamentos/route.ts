@@ -92,6 +92,24 @@ export async function POST(
 
   const precoJogada = tipo === "bolinha" ? parsePrecoJogada(body.preco_jogada) : null;
 
+  const numeroSerie = String(body.numero_serie ?? "").trim();
+  if (numeroSerie) {
+    const { encontrarSerieEmUso, mensagemSerieJaCadastrada } = await import(
+      "@/lib/equipamentos/serie-unica"
+    );
+    const serieEmUso = await encontrarSerieEmUso(
+      supabase,
+      profile.empresa_id,
+      numeroSerie
+    );
+    if (serieEmUso) {
+      return NextResponse.json(
+        { error: mensagemSerieJaCadastrada(numeroSerie, serieEmUso) },
+        { status: 400 }
+      );
+    }
+  }
+
   const { data, error } = await supabase
     .from("equipamentos")
     .insert({
@@ -99,7 +117,7 @@ export async function POST(
       ponto_id: pontoId,
       nome: body.nome.trim(),
       numero_maquina: body.numero_maquina.trim(),
-      numero_serie: String(body.numero_serie ?? "").trim() || null,
+      numero_serie: numeroSerie || null,
       tipo,
       numero_entrada:
         tipo === "cassino" && body.numero_entrada

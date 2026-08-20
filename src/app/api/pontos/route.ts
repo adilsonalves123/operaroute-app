@@ -140,6 +140,36 @@ export async function POST(request: Request) {
     }
   }
 
+  const {
+    encontrarSerieDuplicadaNoLote,
+    encontrarSerieEmUso,
+    mensagemSerieJaCadastrada,
+  } = await import("@/lib/equipamentos/serie-unica");
+
+  const serieDuplicadaNoLote = encontrarSerieDuplicadaNoLote(
+    equipamentos.map((eq) => eq.numero_serie)
+  );
+  if (serieDuplicadaNoLote) {
+    return NextResponse.json(
+      {
+        error: `Número de série "${serieDuplicadaNoLote}" repetido neste cadastro. Cada máquina precisa de série única.`,
+      },
+      { status: 400 }
+    );
+  }
+
+  for (const eq of equipamentos) {
+    const serie = eq.numero_serie?.trim();
+    if (!serie) continue;
+    const serieEmUso = await encontrarSerieEmUso(supabase, empresaId, serie);
+    if (serieEmUso) {
+      return NextResponse.json(
+        { error: mensagemSerieJaCadastrada(serie, serieEmUso) },
+        { status: 400 }
+      );
+    }
+  }
+
   const { data: ponto, error: pontoError } = await supabase
     .from("pontos")
     .insert({

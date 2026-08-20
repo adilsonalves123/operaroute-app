@@ -173,6 +173,19 @@ export function EquipamentosSection({
 
     try {
       const nextItems = [...items];
+      const { encontrarSerieDuplicadaNoLote } = await import(
+        "@/lib/equipamentos/serie-unica"
+      );
+      const serieDup = encontrarSerieDuplicadaNoLote(
+        nextItems.map((eq) => eq.numero_serie)
+      );
+      if (serieDup) {
+        setError(
+          `Número de série "${serieDup}" repetido neste formulário. Cada máquina precisa de série única.`
+        );
+        setLoading(false);
+        return;
+      }
 
       for (let i = 0; i < nextItems.length; i++) {
         const eq = nextItems[i];

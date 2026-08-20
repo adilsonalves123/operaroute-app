@@ -241,6 +241,9 @@ export function HistoricoNumeroSerie({
                   ? "Quer trazer esta máquina do estoque para cá?"
                   : `Quer trazer esta máquina de "${ultimoEquipamento?.ponto_nome ?? "outro ponto"}" para cá?`}
               </p>
+              <p className="text-[11px] text-emerald-100/70">
+                Não dá para cadastrar a mesma série de novo — traga ou transfira esta ficha.
+              </p>
               <FormInput
                 label="Nº neste ponto *"
                 value={numeroNoPonto}
@@ -274,16 +277,6 @@ export function HistoricoNumeroSerie({
               className="text-xs font-medium text-primary-neon hover:underline"
             >
               Usar nome e últimas leituras do histórico
-            </button>
-          )}
-
-          {onAplicarSugestao && ultimoEquipamento && podeTrazer && (
-            <button
-              type="button"
-              onClick={aplicarSugestao}
-              className="text-xs font-medium text-slate-400 hover:text-cyan-300 hover:underline"
-            >
-              Ou só preencher nome/leituras (cadastrar outra ficha)
             </button>
           )}
 

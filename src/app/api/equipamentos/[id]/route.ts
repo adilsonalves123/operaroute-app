@@ -162,7 +162,25 @@ export async function PATCH(
     isEquipamentoTipoDiversao(atual.tipo)
   ) {
     if ("numero_serie" in body) {
-      patch.numero_serie = String(body.numero_serie ?? "").trim() || null;
+      const novaSerie = String(body.numero_serie ?? "").trim() || null;
+      patch.numero_serie = novaSerie;
+      if (novaSerie) {
+        const { encontrarSerieEmUso, mensagemSerieJaCadastrada } = await import(
+          "@/lib/equipamentos/serie-unica"
+        );
+        const serieEmUso = await encontrarSerieEmUso(
+          supabase,
+          profile.empresa_id!,
+          novaSerie,
+          { excetoEquipamentoId: equipamentoId }
+        );
+        if (serieEmUso) {
+          return NextResponse.json(
+            { error: mensagemSerieJaCadastrada(novaSerie, serieEmUso) },
+            { status: 400 }
+          );
+        }
+      }
     }
   }
 

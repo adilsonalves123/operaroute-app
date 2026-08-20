@@ -53,22 +53,17 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient();
-  const { normalizarNumeroSerie } = await import("@/lib/equipamentos/numero-serie");
-  const serieNorm = normalizarNumeroSerie(numeroSerie);
-
-  const { data: seriesExistentes } = await supabase
-    .from("equipamentos")
-    .select("id, numero_serie, ponto_id, status")
-    .eq("empresa_id", profile.empresa_id)
-    .not("numero_serie", "is", null);
-
-  const serieExistente = (seriesExistentes ?? []).find(
-    (e) => normalizarNumeroSerie(String(e.numero_serie ?? "")) === serieNorm
+  const { encontrarSerieEmUso, mensagemSerieJaCadastrada } = await import(
+    "@/lib/equipamentos/serie-unica"
   );
-
-  if (serieExistente) {
+  const serieEmUso = await encontrarSerieEmUso(
+    supabase,
+    profile.empresa_id,
+    numeroSerie
+  );
+  if (serieEmUso) {
     return NextResponse.json(
-      { error: `Já existe um equipamento com a série "${numeroSerie}".` },
+      { error: mensagemSerieJaCadastrada(numeroSerie, serieEmUso) },
       { status: 400 }
     );
   }
