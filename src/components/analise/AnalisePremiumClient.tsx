@@ -400,18 +400,22 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
     [comMovimento]
   );
 
+  const RANK_TOP = 10;
+
   const maiorMovimento = useMemo(
-    () => [...comEntrada].sort((a, b) => entradaPonto(b) - entradaPonto(a)).slice(0, 8),
+    () => [...comEntrada].sort((a, b) => entradaPonto(b) - entradaPonto(a)).slice(0, RANK_TOP),
     [comEntrada]
   );
 
   const menorMovimento = useMemo(() => {
     if (comEntrada.length < 2) return [];
-    const idsTop = new Set(maiorMovimento.slice(0, Math.min(3, maiorMovimento.length)).map((p) => p.pontoId));
+    const idsTop = new Set(
+      maiorMovimento.slice(0, Math.min(3, maiorMovimento.length)).map((p) => p.pontoId)
+    );
     return [...comEntrada]
       .sort((a, b) => entradaPonto(a) - entradaPonto(b))
       .filter((p) => !idsTop.has(p.pontoId))
-      .slice(0, 8);
+      .slice(0, RANK_TOP);
   }, [comEntrada, maiorMovimento]);
 
   const comPctPago = useMemo(
@@ -423,36 +427,40 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
   );
 
   const maisPaga = useMemo(
-    () => [...comPctPago].sort((a, b) => b.pct - a.pct).slice(0, 8).map((x) => x.p),
+    () => [...comPctPago].sort((a, b) => b.pct - a.pct).slice(0, RANK_TOP).map((x) => x.p),
     [comPctPago]
   );
 
   const menosPaga = useMemo(() => {
     if (comPctPago.length < 2) return [];
-    const idsTop = new Set(maisPaga.slice(0, Math.min(3, maisPaga.length)).map((p) => p.pontoId));
+    const idsTop = new Set(
+      maisPaga.slice(0, Math.min(3, maisPaga.length)).map((p) => p.pontoId)
+    );
     return [...comPctPago]
       .sort((a, b) => a.pct - b.pct)
       .map((x) => x.p)
       .filter((p) => !idsTop.has(p.pontoId))
-      .slice(0, 8);
+      .slice(0, RANK_TOP);
   }, [comPctPago, maisPaga]);
 
   const maisTeDeixa = useMemo(
-    () => comMovimento.filter((p) => p.lucro > 0.009).slice(0, 8),
+    () =>
+      [...comMovimento]
+        .filter((p) => p.lucro > 0.009)
+        .sort((a, b) => b.lucro - a.lucro)
+        .slice(0, RANK_TOP),
     [comMovimento]
   );
 
   const menosTeDeixa = useMemo(() => {
-    const negativos = [...comMovimento]
-      .filter((p) => p.lucro < -0.009)
-      .sort((a, b) => a.lucro - b.lucro);
-    if (negativos.length) return negativos.slice(0, 8);
+    const porLucroAsc = [...comMovimento].sort((a, b) => a.lucro - b.lucro);
+    const negativos = porLucroAsc.filter((p) => p.lucro < -0.009);
+    if (negativos.length) return negativos.slice(0, RANK_TOP);
     if (comMovimento.length < 2) return [];
-    const idsMelhores = new Set(maisTeDeixa.map((m) => m.pontoId));
-    return [...comMovimento]
-      .sort((a, b) => a.lucro - b.lucro)
-      .filter((p) => !idsMelhores.has(p.pontoId))
-      .slice(0, Math.min(5, comMovimento.length));
+    const idsMelhores = new Set(
+      maisTeDeixa.slice(0, Math.min(3, maisTeDeixa.length)).map((m) => m.pontoId)
+    );
+    return porLucroAsc.filter((p) => !idsMelhores.has(p.pontoId)).slice(0, RANK_TOP);
   }, [comMovimento, maisTeDeixa]);
 
   const maquinas = useMemo(() => {
@@ -476,9 +484,9 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
             .map((x) => x.m)
             .filter((m) => !idsMaisPaga.has(m.equipamentoId));
     return {
-      maisMovimento: porMov.slice(0, 8),
-      maisPaga: porPagoDesc.slice(0, 8),
-      menosPaga: porPagoBaixo.slice(0, 8),
+      maisMovimento: porMov.slice(0, RANK_TOP),
+      maisPaga: porPagoDesc.slice(0, RANK_TOP),
+      menosPaga: porPagoBaixo.slice(0, RANK_TOP),
     };
   }, [data.cassino?.rankingMaquinas]);
 
@@ -775,8 +783,8 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
               Movimento · pagamento · seu bolso
             </h2>
             <p className="mt-1.5 text-[14px] text-slate-500">
-              Três leituras separadas — entrada das máquinas, quanto o ponto paga, e o que ficou
-              com você.
+              Período: {periodo.label}. Top 10 — entrada das máquinas, quanto o ponto paga, e o
+              que ficou com você.
             </p>
           </div>
 
@@ -898,7 +906,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
               </p>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-3">
               <div className="rounded-sm border border-white/[0.06] bg-white/[0.015] px-4 py-2 sm:px-5">
                 <div className="border-b border-white/[0.05] py-3">
                   <h3 className="text-[14px] font-medium tracking-wide text-[#f4efe6]">
@@ -940,6 +948,32 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
                   ))
                 )}
               </div>
+
+              <div className="rounded-sm border border-white/[0.06] bg-white/[0.015] px-4 py-2 sm:px-5">
+                <div className="border-b border-white/[0.05] py-3">
+                  <h3 className="text-[14px] font-medium tracking-wide text-[#f4efe6]">
+                    Menos paga
+                  </h3>
+                  <p className="mt-1 text-[12px] text-slate-500">
+                    Menor % saída ÷ entrada — retém mais
+                  </p>
+                </div>
+                {maquinas.menosPaga.length === 0 ? (
+                  <p className="py-8 text-[15px] text-slate-500">
+                    Precisa de pelo menos 2 máquinas com % pago.
+                  </p>
+                ) : (
+                  maquinas.menosPaga.map((m, i) => (
+                    <MaquinaRankRow
+                      key={`menos-pago-${m.equipamentoId}`}
+                      maquina={m}
+                      rank={i + 1}
+                      variant="worst"
+                      metric="pago"
+                    />
+                  ))
+                )}
+              </div>
             </div>
           </section>
         )}
@@ -959,7 +993,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
                 Saúde dos pontos
               </h2>
               <p className="mt-1.5 text-[14px] text-slate-500">
-                Fortes, razoáveis e fracos no período · consolidado.
+                Pelo lucro real no período — forte = top da frota, fraco = prejuízo ou cauda baixa.
               </p>
             </div>
             <div className="flex flex-wrap gap-4 text-[13px] tabular-nums text-slate-500">
@@ -977,7 +1011,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           <SaudePontosPainel
             itens={saude}
             titulo="Classificação operacional"
-            subtitulo="Com base nas visitas e coletas do período selecionado"
+            subtitulo="Lucro real do período selecionado, comparado entre os pontos"
           />
         </section>
 

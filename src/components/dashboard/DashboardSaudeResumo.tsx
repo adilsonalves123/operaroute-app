@@ -47,7 +47,7 @@ export function DashboardSaudeResumo({ saude }: { saude: SaudePontosResumo }) {
             {labelSaude(destaque.classe)}:{" "}
             <span className="text-slate-400">{destaque.nome}</span>
             {destaque.indice !== null && (
-              <span className="text-slate-600"> · {destaque.indice.toFixed(0)}% tração</span>
+              <span className="text-slate-600"> · {destaque.indice.toFixed(0)}º percentil</span>
             )}
           </p>
         )}

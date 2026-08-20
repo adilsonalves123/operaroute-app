@@ -4,6 +4,8 @@ import {
   saldoPendenciaCobravel,
   saldoPendenciaReais,
 } from "@/lib/nichos/cassino/pendencias";
+import { saldoPendenteColeta } from "@/lib/nichos/fura-fura/pagamentos-fifo";
+import { cobravelCassinoVisita } from "@/lib/visitas-ponto/resumo";
 
 export type PendenciaAbertaRow = {
   id?: string | null;
@@ -187,6 +189,65 @@ export function somarPendenciasPorNicho(rows: PendenciaAbertaRow[]): PendenciasP
   return out;
 }
 
+/**
+ * Esconde na UI dívidas espelhadas já quitadas na visita/coleta
+ * (editar pagamento atualiza o documento, mas a pendência pode ficar "aberta").
+ * Não altera haver nem grava nada.
+ */
+export async function filtrarPendenciasJaQuitadas(
+  supabase: SupabaseClient,
+  empresaId: string,
+  rows: PendenciaAbertaRow[]
+): Promise<PendenciaAbertaRow[]> {
+  if (rows.length === 0) return rows;
+
+  const visitaIds = [
+    ...new Set(rows.map((r) => r.visita_id).filter((id): id is string => Boolean(id))),
+  ];
+  const coletaIds = [
+    ...new Set(rows.map((r) => r.coleta_id).filter((id): id is string => Boolean(id))),
+  ];
+
+  const visitasQuitadas = new Set<string>();
+  const coletasQuitadas = new Set<string>();
+
+  if (visitaIds.length > 0) {
+    const { data } = await supabase
+      .from("visitas")
+      .select(
+        "id, valor_operacao_efetivo, valor_operacao, valor_pago, restante, debito_abatido, saldo_negativo"
+      )
+      .eq("empresa_id", empresaId)
+      .in("id", visitaIds);
+    for (const v of data ?? []) {
+      if (v.saldo_negativo) continue;
+      // Mesma regra do badge Quitada / reconciliar: cobravel ≈ 0
+      if (cobravelCassinoVisita(v) <= 0.009) visitasQuitadas.add(v.id);
+    }
+  }
+
+  if (coletaIds.length > 0) {
+    const { data } = await supabase
+      .from("coletas")
+      .select("id, valor_a_receber, valor_pago_recebido")
+      .eq("empresa_id", empresaId)
+      .in("id", coletaIds);
+    for (const c of data ?? []) {
+      if (saldoPendenteColeta(c) <= 0.009) coletasQuitadas.add(c.id);
+    }
+  }
+
+  if (visitasQuitadas.size === 0 && coletasQuitadas.size === 0) return rows;
+
+  return rows.filter((p) => {
+    if ((p.tipo ?? "").toLowerCase() === "haver") return true;
+    if ((p.tipo ?? "").toLowerCase() === "negativo") return true;
+    if (p.visita_id && visitasQuitadas.has(p.visita_id)) return false;
+    if (p.coleta_id && coletasQuitadas.has(p.coleta_id)) return false;
+    return true;
+  });
+}
+
 export const fetchPendenciasAbertas = cache(async (
   supabase: SupabaseClient,
   empresaId: string
@@ -197,5 +258,9 @@ export const fetchPendenciasAbertas = cache(async (
     .eq("empresa_id", empresaId)
     .eq("status", "aberta");
 
-  return (data ?? []) as PendenciaAbertaRow[];
+  return filtrarPendenciasJaQuitadas(
+    supabase,
+    empresaId,
+    (data ?? []) as PendenciaAbertaRow[]
+  );
 });

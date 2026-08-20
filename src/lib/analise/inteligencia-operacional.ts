@@ -14,7 +14,7 @@ import {
 } from "@/lib/nichos/fura-fura/kits";
 import { parseBrindesSalvos } from "@/lib/nichos/fura-fura/reconstruct-coleta";
 import {
-  classificarSaudePonto,
+  aplicarClassificacaoSaudePorLucro,
   coletasToEventosPonto,
   visitasToEventosPonto,
   type PontoSaudeItem,
@@ -22,8 +22,14 @@ import {
 } from "@/lib/dashboard-saude-pontos";
 import type { PeriodoAnaliseRange } from "@/lib/analise/periodo-analise";
 import { periodoAnterior, resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
-import { somarPendenciasPorNicho } from "@/lib/dashboard-pendencias-abertas";
+import {
+  filtrarPendenciasJaQuitadas,
+  somarPendenciasPorNicho,
+  type PendenciaAbertaRow,
+} from "@/lib/dashboard-pendencias-abertas";
 import { liquidoRecebidoCassinoVisita } from "@/lib/nichos/cassino/lucro-recebido";
+import { cobravelCassinoVisita } from "@/lib/visitas-ponto/resumo";
+import { formatCurrency } from "@/lib/utils";
 
 function mapaPendenciaOperacaoAberta(
   rows: { visita_id?: string | null; tipo?: string | null; valor?: number | null }[]
@@ -35,6 +41,16 @@ function mapaPendenciaOperacaoAberta(
     map.set(p.visita_id, (map.get(p.visita_id) ?? 0) + Number(p.valor ?? 0));
   }
   return map;
+}
+
+function finalizarSaudeMap(saudeMap: Map<string, PontoSaudeItem>): PontoSaudeItem[] {
+  return aplicarClassificacaoSaudePorLucro([...saudeMap.values()]);
+}
+
+function enriquecerSaudeMap(saudeMap: Map<string, PontoSaudeItem>) {
+  for (const item of finalizarSaudeMap(saudeMap)) {
+    saudeMap.set(item.pontoId, item);
+  }
 }
 
 function round2(n: number): number {
@@ -101,12 +117,23 @@ function enrichRankingPonto(r: RankingPonto): RankingPonto {
   };
 }
 
+/** Unifica "Reginópolis" / "Reginopolis" / espaços extras numa só chave. */
+function chaveCidadeNormalizada(raw: string | null | undefined): { key: string; display: string } {
+  const trimmed = (raw ?? "").trim().replace(/\s+/g, " ");
+  if (!trimmed) return { key: "sem-cidade", display: "Sem cidade" };
+  const key = trimmed
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase();
+  return { key, display: trimmed };
+}
+
 function agregarRankingCidades(pontos: RankingPonto[], lucroTotal: number): RankingCidade[] {
   const map = new Map<string, RankingCidade>();
   for (const p of pontos) {
-    const key = p.cidade?.trim() ? p.cidade.trim() : "Sem cidade";
+    const { key, display } = chaveCidadeNormalizada(p.cidade);
     const prev = map.get(key) ?? {
-      cidade: key,
+      cidade: display,
       lucro: 0,
       bruto: 0,
       dinheiroOperacao: 0,
@@ -116,6 +143,14 @@ function agregarRankingCidades(pontos: RankingPonto[], lucroTotal: number): Rank
       shareLucroPct: null,
       margemPct: null,
     };
+    // Prefere grafia com acento / mais completa como rótulo.
+    if (
+      display !== "Sem cidade" &&
+      (prev.cidade === "Sem cidade" ||
+        (display.length >= prev.cidade.length && /[áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ]/u.test(display)))
+    ) {
+      prev.cidade = display;
+    }
     prev.lucro += p.lucro;
     prev.bruto += p.bruto;
     prev.dinheiroOperacao += p.dinheiroOperacao;
@@ -348,11 +383,7 @@ function agregarNichoColetaAnalise(
     else if (e.lucroReais > 0.009) prev.impulsos++;
     saudeMap.set(e.ponto_id, prev);
   }
-  for (const item of saudeMap.values()) {
-    const decisivos = item.impulsos + item.pressoes;
-    item.indice = decisivos > 0 ? round2((item.impulsos / decisivos) * 100) : null;
-    item.classe = classificarSaudePonto(item);
-  }
+  enriquecerSaudeMap(saudeMap);
 
   return {
     caixa: {
@@ -702,7 +733,7 @@ function gerarInsights(data: {
       push({
         severidade: ratio >= 1 ? "danger" : "warning",
         titulo: "A receber alto frente ao lucro",
-        descricao: `Pendente R$ ${data.visao.aReceber.toFixed(2)} · ${((ratio) * 100).toFixed(0)}% do lucro líquido do período — priorize cobrança`,
+        descricao: `Pendente ${formatCurrency(data.visao.aReceber)} · ${((ratio) * 100).toFixed(0)}% do lucro líquido do período — priorize cobrança`,
         href: "/pendencias",
         hrefLabel: "Pendências",
       });
@@ -730,7 +761,7 @@ function gerarInsights(data: {
     push({
       severidade: "danger",
       titulo: `Maior prejuízo fura-fura: ${piorFura.nome}`,
-      descricao: `Prejuízo de R$ ${Math.abs(piorFura.lucro).toFixed(2)} no período · custo brindes R$ ${piorFura.custoBrindes.toFixed(2)}`,
+      descricao: `Prejuízo de ${formatCurrency(Math.abs(piorFura.lucro))} no período · custo brindes ${formatCurrency(piorFura.custoBrindes)}`,
       href: `/pontos/${piorFura.pontoId}`,
       hrefLabel: "Ver ponto",
     });
@@ -741,7 +772,7 @@ function gerarInsights(data: {
     push({
       severidade: "success",
       titulo: `Melhor rendimento fura-fura: ${melhorFura.nome}`,
-      descricao: `Seu dinheiro R$ ${melhorFura.lucro.toFixed(2)} (caixa R$ ${melhorFura.dinheiroOperacao.toFixed(2)} − brindes R$ ${melhorFura.custoBrindes.toFixed(2)})`,
+      descricao: `Seu dinheiro ${formatCurrency(melhorFura.lucro)} (caixa ${formatCurrency(melhorFura.dinheiroOperacao)} − brindes ${formatCurrency(melhorFura.custoBrindes)})`,
       href: `/pontos/${melhorFura.pontoId}`,
       hrefLabel: "Ver ponto",
     });
@@ -752,7 +783,7 @@ function gerarInsights(data: {
     push({
       severidade: "danger",
       titulo: `Bar com mais pressão (cassino): ${piorCassino.nome}`,
-      descricao: `Recebido R$ ${piorCassino.lucro.toFixed(2)} no período · ${piorCassino.movimentos} visita(s)`,
+      descricao: `Recebido ${formatCurrency(piorCassino.lucro)} no período · ${piorCassino.movimentos} visita(s)`,
       href: `/pontos/${piorCassino.pontoId}`,
       hrefLabel: "Ver ponto",
     });
@@ -763,7 +794,7 @@ function gerarInsights(data: {
     push({
       severidade: "success",
       titulo: `Máquina destaque (cassino): ${melhorMaquina.nome}`,
-      descricao: `${melhorMaquina.pontoNome} · lucro R$ ${melhorMaquina.lucro.toFixed(2)}${melhorMaquina.pctPago != null ? ` · paga ${melhorMaquina.pctPago.toFixed(1)}%` : ""}`,
+      descricao: `${melhorMaquina.pontoNome} · lucro ${formatCurrency(melhorMaquina.lucro)}${melhorMaquina.pctPago != null ? ` · paga ${melhorMaquina.pctPago.toFixed(1)}%` : ""}`,
       href: `/pontos/${melhorMaquina.pontoId}`,
       hrefLabel: "Ver ponto",
     });
@@ -774,7 +805,7 @@ function gerarInsights(data: {
     push({
       severidade: "success",
       titulo: `Máquina destaque (ursinho): ${melhorUrso.nome}`,
-      descricao: `${melhorUrso.pontoNome} · lucro R$ ${melhorUrso.lucro.toFixed(2)} · ${melhorUrso.leituras} coleta(s)`,
+      descricao: `${melhorUrso.pontoNome} · lucro ${formatCurrency(melhorUrso.lucro)} · ${melhorUrso.leituras} coleta(s)`,
       href: `/pontos/${melhorUrso.pontoId}`,
       hrefLabel: "Ver ponto",
     });
@@ -785,7 +816,7 @@ function gerarInsights(data: {
     push({
       severidade: "danger",
       titulo: `Maior prejuízo ursinho: ${piorUrso.nome}`,
-      descricao: `Prejuízo de R$ ${Math.abs(piorUrso.lucro).toFixed(2)} · brindes R$ ${piorUrso.custoBrindes.toFixed(2)}`,
+      descricao: `Prejuízo de ${formatCurrency(Math.abs(piorUrso.lucro))} · brindes ${formatCurrency(piorUrso.custoBrindes)}`,
       href: `/pontos/${piorUrso.pontoId}`,
       hrefLabel: "Ver ponto",
     });
@@ -796,7 +827,7 @@ function gerarInsights(data: {
     push({
       severidade: "success",
       titulo: `Melhor ponto ursinho: ${melhorUrsoPonto.nome}`,
-      descricao: `Lucro R$ ${melhorUrsoPonto.lucro.toFixed(2)} · ${melhorUrsoPonto.movimentos} coleta(s)`,
+      descricao: `Lucro ${formatCurrency(melhorUrsoPonto.lucro)} · ${melhorUrsoPonto.movimentos} coleta(s)`,
       href: `/pontos/${melhorUrsoPonto.pontoId}`,
       hrefLabel: "Ver ponto",
     });
@@ -848,7 +879,7 @@ function gerarInsights(data: {
     push({
       severidade: "warning",
       titulo: `Estoque baixo: ${e.nome}`,
-      descricao: `${e.quantidade} un. (mín. ${e.quantidadeMinima}) · valor R$ ${e.valorTotal.toFixed(2)}`,
+      descricao: `${e.quantidade} un. (mín. ${e.quantidadeMinima}) · valor ${formatCurrency(e.valorTotal)}`,
       href: "/estoque",
       hrefLabel: "Abrir estoque",
     });
@@ -879,7 +910,7 @@ function gerarInsights(data: {
       severidade:
         data.visao.margemPct >= 30 ? "success" : data.visao.margemPct >= 15 ? "info" : "warning",
       titulo: `Margem da operação: ${data.visao.margemPct.toFixed(1)}%`,
-      descricao: `Entrada R$ ${data.visao.entrada.toFixed(2)} · líquido R$ ${data.visao.liquidoOperacao.toFixed(2)} · comissão R$ ${data.visao.comissao.toFixed(2)} · brindes R$ ${data.visao.custoBrindesMes.toFixed(2)}`,
+      descricao: `Entrada ${formatCurrency(data.visao.entrada)} · líquido ${formatCurrency(data.visao.liquidoOperacao)} · comissão ${formatCurrency(data.visao.comissao)} · brindes ${formatCurrency(data.visao.custoBrindesMes)}`,
     });
   }
 
@@ -888,7 +919,7 @@ function gerarInsights(data: {
 
 function formatDelta(n: number): string {
   const sign = n >= 0 ? "+" : "−";
-  return `${sign} R$ ${Math.abs(n).toFixed(2)}`;
+  return `${sign} ${formatCurrency(Math.abs(n))}`;
 }
 
 export async function fetchInteligenciaOperacional(
@@ -999,7 +1030,7 @@ export async function fetchInteligenciaOperacional(
       ? supabase
           .from("visitas")
           .select(
-            "id, ponto_id, created_at, total_lucro_centavos, valor_operacao, valor_operacao_efetivo, valor_pago, restante, valor_cliente, total_entrada_periodo, total_saida_periodo, saldo_negativo, desconto, adiantamento_pix, adiantamento_dinheiro, pontos(nome)"
+            "id, ponto_id, created_at, total_lucro_centavos, valor_operacao, valor_operacao_efetivo, valor_pago, restante, debito_abatido, valor_cliente, total_entrada_periodo, total_saida_periodo, saldo_negativo, desconto, adiantamento_pix, adiantamento_dinheiro, pontos(nome)"
           )
           .eq("empresa_id", empresaId)
           .gte("created_at", startISO)
@@ -1133,6 +1164,12 @@ export async function fetchInteligenciaOperacional(
       ? queryColetasSaldoAberto(NICHO_MODULO_CONSIGNADO)
       : Promise.resolve({ data: [] as never[], error: null }),
   ]);
+
+  const pendenciasAbertas = await filtrarPendenciasJaQuitadas(
+    supabase,
+    empresaId,
+    (pendenciasRes.data ?? []) as PendenciaAbertaRow[]
+  );
 
   function somarSaldoAbertoColetas(
     rows: { valor_a_receber?: number | null; valor_pago_recebido?: number | null }[] | null
@@ -1360,7 +1397,7 @@ export async function fetchInteligenciaOperacional(
   let furaCustoBrindes = 0;
   let furaRecebido = 0;
   let totalFurosMes = 0;
-  const furaHaver = somarHaverFuraFuraAberto(pendenciasRes.data ?? []);
+  const furaHaver = somarHaverFuraFuraAberto(pendenciasAbertas);
 
   if (opts.furaFura) {
     const mapPonto = new Map<string, RankingPonto>();
@@ -1484,11 +1521,7 @@ export async function fetchInteligenciaOperacional(
       else if (e.lucroReais > 0.009) prev.impulsos++;
       saudeMap.set(e.ponto_id, prev);
     }
-    for (const item of saudeMap.values()) {
-      const decisivos = item.impulsos + item.pressoes;
-      item.indice = decisivos > 0 ? round2((item.impulsos / decisivos) * 100) : null;
-      item.classe = classificarSaudePonto(item);
-    }
+    enriquecerSaudeMap(saudeMap);
 
     furaBlock = {
       caixa: {
@@ -1522,7 +1555,7 @@ export async function fetchInteligenciaOperacional(
     // Entrada/saída a partir das coletas (centavos — convertidos ao montar o bloco).
     let cassinoEntrada = 0;
     let cassinoSaida = 0;
-    const openOpByVisita = mapaPendenciaOperacaoAberta(pendenciasRes.data ?? []);
+    const openOpByVisita = mapaPendenciaOperacaoAberta(pendenciasAbertas);
     for (const c of coletasCassinoRes.data ?? []) {
       cassinoEntrada += Number(c.entrada_periodo ?? 0);
       cassinoSaida += Number(c.saida_periodo ?? 0);
@@ -1657,11 +1690,7 @@ export async function fetchInteligenciaOperacional(
       else if (e.lucroReais > 0.009) prev.impulsos++;
       saudeMap.set(e.ponto_id, prev);
     }
-    for (const item of saudeMap.values()) {
-      const decisivos = item.impulsos + item.pressoes;
-      item.indice = decisivos > 0 ? round2((item.impulsos / decisivos) * 100) : null;
-      item.classe = classificarSaudePonto(item);
-    }
+    enriquecerSaudeMap(saudeMap);
 
     cassinoBlock = {
       lucro: round2(cassinoLucro),
@@ -1826,11 +1855,7 @@ export async function fetchInteligenciaOperacional(
       else if (e.lucroReais > 0.009) prev.impulsos++;
       saudeMap.set(e.ponto_id, prev);
     }
-    for (const item of saudeMap.values()) {
-      const decisivos = item.impulsos + item.pressoes;
-      item.indice = decisivos > 0 ? round2((item.impulsos / decisivos) * 100) : null;
-      item.classe = classificarSaudePonto(item);
-    }
+    enriquecerSaudeMap(saudeMap);
 
     ursinhoBlock = {
       caixa: {
@@ -1939,16 +1964,22 @@ export async function fetchInteligenciaOperacional(
   );
   const lucroLiquido = liquidoOperacao;
 
-  const pendSums = somarPendenciasPorNicho(pendenciasRes.data ?? []);
+  const pendSums = somarPendenciasPorNicho(pendenciasAbertas);
+  const cassinoAReceberVisitas = round2(
+    (visitasRes.data ?? [])
+      .filter((v) => !v.saldo_negativo)
+      .reduce((s, v) => s + cobravelCassinoVisita(v), 0)
+  );
   // Estoque de dívida aberta (coletas) por nicho; Math.max evita double-count com
   // pendências espelhadas ("Coleta X pendente") na tabela pendencias.
+  // Cassino: cobravel das visitas (fonte do Quitada), não a tabela pendencias.
   const aReceber = round2(
     Math.max(furaBlock?.caixa.pendenteReceber ?? 0, pendSums.furaPendente) +
       Math.max(ursinhoBlock?.caixa.pendenteReceber ?? 0, pendSums.ursinhoPendente) +
       Math.max(diversaoBlock?.caixa.pendenteReceber ?? 0, pendSums.diversaoPendente) +
       Math.max(bolinhaBlock?.caixa.pendenteReceber ?? 0, pendSums.bolinhaPendente) +
       Math.max(consignadoBlock?.caixa.pendenteReceber ?? 0, pendSums.consignadoPendente) +
-      pendSums.cassinoPendente +
+      cassinoAReceberVisitas +
       pendSums.pontoPendente
   );
   const haver = round2(
@@ -2006,7 +2037,7 @@ export async function fetchInteligenciaOperacional(
   const prevDiversao = somarPrevColetas(prevColetasDiversaoRes.data ?? []);
   const prevBolinha = somarPrevColetas(prevColetasBolinhaRes.data ?? []);
   const prevConsignado = somarPrevColetas(prevColetasConsignadoRes.data ?? []);
-  const openOpByVisitaPrev = mapaPendenciaOperacaoAberta(pendenciasRes.data ?? []);
+  const openOpByVisitaPrev = mapaPendenciaOperacaoAberta(pendenciasAbertas);
   const prevCassinoLucro = (prevVisitasRes.data ?? []).reduce(
     (s, v) => s + liquidoRecebidoCassinoVisita(v, openOpByVisitaPrev.get(v.id) ?? 0),
     0
@@ -2103,7 +2134,7 @@ export async function fetchInteligenciaOperacional(
       score += 40;
     }
     if (s.lucroMes < -0.009) {
-      motivos.push(`Prejuízo R$ ${Math.abs(s.lucroMes).toFixed(2)}`);
+      motivos.push(`Prejuízo ${formatCurrency(Math.abs(s.lucroMes))}`);
       score += 30;
     }
     if (s.pressoes > s.impulsos) {
@@ -2251,7 +2282,9 @@ export async function fetchInteligenciaOperacional(
       }
     }
   }
-  const saudePontos = [...saudePontosMap.values()].sort((a, b) => b.lucroMes - a.lucroMes);
+  const saudePontos = finalizarSaudeMap(saudePontosMap).sort(
+    (a, b) => b.lucroMes - a.lucroMes
+  );
 
   const visaoGeral: InteligenciaOperacional["visaoGeral"] = {
     faturamentoBruto,

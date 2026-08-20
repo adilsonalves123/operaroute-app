@@ -10,6 +10,7 @@ export type PontoSaudeItem = {
   pontoId: string;
   nome: string;
   classe: SaudePontoClasse;
+  /** Percentil de lucro entre pontos com visita no período (0–100). */
   indice: number | null;
   lucroMes: number;
   impulsos: number;
@@ -58,20 +59,96 @@ function classificarEvento(e: PulsoEvento): "impulso" | "pressao" | "neutro" {
   return "neutro";
 }
 
+function percentileSorted(sortedAsc: number[], p: number): number {
+  if (sortedAsc.length === 0) return 0;
+  if (sortedAsc.length === 1) return sortedAsc[0];
+  const idx = (sortedAsc.length - 1) * p;
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  if (lo === hi) return sortedAsc[lo];
+  const w = idx - lo;
+  return sortedAsc[lo] * (1 - w) + sortedAsc[hi] * w;
+}
+
+/**
+ * Saúde pelo lucro real no período, relativo à frota.
+ * - Forte: top ~30% de lucro (e lucro ≥ R$ 100)
+ * - Fraco: prejuízo, bottom ~30%, ou lucro &lt; R$ 80
+ * - Razoável: o meio
+ */
+export function aplicarClassificacaoSaudePorLucro(
+  itens: Array<
+    Omit<PontoSaudeItem, "classe" | "indice"> &
+      Partial<Pick<PontoSaudeItem, "classe" | "indice">>
+  >
+): PontoSaudeItem[] {
+  const comVisita = itens.filter((i) => (i.visitas ?? 0) > 0);
+  const lucros = comVisita.map((i) => Number(i.lucroMes) || 0).sort((a, b) => a - b);
+  const p30 = percentileSorted(lucros, 0.3);
+  const p70 = percentileSorted(lucros, 0.7);
+  const n = comVisita.length;
+
+  return itens.map((item) => {
+    const visitas = item.visitas ?? 0;
+    const lucro = Math.round((Number(item.lucroMes) || 0) * 100) / 100;
+    if (visitas <= 0) {
+      return {
+        pontoId: item.pontoId,
+        nome: item.nome,
+        impulsos: item.impulsos ?? 0,
+        pressoes: item.pressoes ?? 0,
+        visitas: 0,
+        lucroMes: lucro,
+        classe: "sem_dados" as const,
+        indice: null,
+      };
+    }
+
+    const abaixoOuIgual = lucros.filter((l) => l <= lucro).length;
+    const indice = Math.round((abaixoOuIgual / Math.max(1, lucros.length)) * 1000) / 10;
+
+    let classe: SaudePontoClasse;
+    if (lucro < -0.009) {
+      classe = "fraco";
+    } else if (n <= 2) {
+      if (lucro >= 500) classe = "forte";
+      else if (lucro >= 100) classe = "razoavel";
+      else classe = "fraco";
+    } else if (n <= 5) {
+      if (lucro >= p70 && lucro >= 150) classe = "forte";
+      else if (lucro <= p30 || lucro < 80) classe = "fraco";
+      else classe = "razoavel";
+    } else {
+      if (lucro >= p70 && lucro >= 100) classe = "forte";
+      else if (lucro <= p30 || lucro < 80) classe = "fraco";
+      else classe = "razoavel";
+    }
+
+    return {
+      pontoId: item.pontoId,
+      nome: item.nome,
+      impulsos: item.impulsos ?? 0,
+      pressoes: item.pressoes ?? 0,
+      visitas,
+      lucroMes: lucro,
+      classe,
+      indice,
+    };
+  });
+}
+
+/** Fallback absoluto quando a classificação em lote não está disponível. */
 export function classificarSaudePonto(stats: {
   impulsos: number;
   pressoes: number;
   lucroMes: number;
   visitas: number;
 }): SaudePontoClasse {
-  const decisivos = stats.impulsos + stats.pressoes;
-  if (stats.visitas === 0 || decisivos === 0) return "sem_dados";
-
-  const indice = (stats.impulsos / decisivos) * 100;
-
-  if (indice >= 75 && stats.lucroMes >= -0.009) return "forte";
-  if (indice < 45 || stats.lucroMes < -0.009 || stats.pressoes > stats.impulsos) return "fraco";
-  return "razoavel";
+  if (stats.visitas === 0) return "sem_dados";
+  if (stats.lucroMes < -0.009) return "fraco";
+  if (stats.lucroMes >= 500) return "forte";
+  if (stats.lucroMes >= 100) return "razoavel";
+  return "fraco";
 }
 
 function agregarPorPonto(eventos: PulsoEventoPonto[]): PontoSaudeItem[] {
@@ -102,27 +179,16 @@ function agregarPorPonto(eventos: PulsoEventoPonto[]): PontoSaudeItem[] {
     map.set(e.ponto_id, prev);
   }
 
-  return [...map.entries()].map(([pontoId, s]) => {
-    const decisivos = s.impulsos + s.pressoes;
-    const indice =
-      decisivos > 0 ? Math.round((s.impulsos / decisivos) * 1000) / 10 : null;
-    const classe = classificarSaudePonto({
-      impulsos: s.impulsos,
-      pressoes: s.pressoes,
-      lucroMes: s.lucroMes,
-      visitas: s.visitas,
-    });
-    return {
+  return aplicarClassificacaoSaudePorLucro(
+    [...map.entries()].map(([pontoId, s]) => ({
       pontoId,
       nome: s.nome,
-      classe,
-      indice,
-      lucroMes: Math.round(s.lucroMes * 100) / 100,
       impulsos: s.impulsos,
       pressoes: s.pressoes,
       visitas: s.visitas,
-    };
-  });
+      lucroMes: s.lucroMes,
+    }))
+  );
 }
 
 function contarClasses(itens: PontoSaudeItem[]) {
@@ -160,7 +226,7 @@ function ordenarSaude(a: PontoSaudeItem, b: PontoSaudeItem): number {
   };
   const diff = ordem[a.classe] - ordem[b.classe];
   if (diff !== 0) return diff;
-  return (b.indice ?? -1) - (a.indice ?? -1);
+  return b.lucroMes - a.lucroMes;
 }
 
 export function labelSaude(classe: SaudePontoClasse): string {
@@ -237,6 +303,8 @@ export function buildSaudeResumoFromEventos(
     }
   }
 
+  // Reclassifica com os sem_dados incluídos (não mudam os percentis dos visitados).
+  resumo.mes = aplicarClassificacaoSaudePorLucro(resumo.mes).sort(ordenarSaude);
   resumo.contagem = contarClasses(resumo.mes);
   return resumo;
 }

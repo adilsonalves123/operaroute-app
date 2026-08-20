@@ -13,7 +13,7 @@ const CONFIG: Record<
 > = {
   forte: {
     titulo: "Pontos fortes",
-    descricao: "Maioria das visitas com lucro · tração ≥ 75%",
+    descricao: "Top de lucro no período · entre os melhores da frota",
     icon: ShieldCheck,
     cor: "text-green-400",
     borda: "border-green-500/20",
@@ -21,7 +21,7 @@ const CONFIG: Record<
   },
   razoavel: {
     titulo: "Pontos razoáveis",
-    descricao: "No equilíbrio — dá para evoluir com atenção",
+    descricao: "Lucro no meio — dá para evoluir com atenção",
     icon: ShieldQuestion,
     cor: "text-amber-400",
     borda: "border-amber-500/20",
@@ -29,7 +29,7 @@ const CONFIG: Record<
   },
   fraco: {
     titulo: "Pontos fracos",
-    descricao: "Pressão ou prejuízo — priorize visita e ajuste",
+    descricao: "Prejuízo ou lucro baixo vs o restante da frota",
     icon: ShieldAlert,
     cor: "text-red-400",
     borda: "border-red-500/20",
@@ -65,7 +65,7 @@ function CardPonto({ item }: { item: PontoSaudeItem }) {
       <div className="mt-2 flex items-center justify-between gap-2 text-xs">
         <span className={cn("font-medium", cfg.cor)}>{labelSaude(item.classe)}</span>
         <div className="flex items-center gap-2 tabular-nums text-slate-500">
-          {item.indice !== null && <span>{item.indice.toFixed(0)}%</span>}
+          {item.indice !== null && <span title="Percentil de lucro">{item.indice.toFixed(0)}º</span>}
           <span className={item.lucroMes >= 0 ? "text-green-400/80" : "text-red-400/80"}>
             {formatCurrency(item.lucroMes)}
           </span>
@@ -117,7 +117,7 @@ function ColunaClasse({
 export function SaudePontosPainel({
   itens,
   titulo = "Saúde dos pontos",
-  subtitulo = "Classificação com base nas visitas do mês",
+  subtitulo = "Classificação pelo lucro real no período, relativa aos outros pontos",
 }: {
   itens: PontoSaudeItem[];
   titulo?: string;

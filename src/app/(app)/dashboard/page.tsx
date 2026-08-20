@@ -37,6 +37,7 @@ import {
   type CartelaPontos,
 } from "@/lib/dashboard-cartela-pontos";
 import {
+  aplicarClassificacaoSaudePorLucro,
   computeSaudePontos,
   fetchSaudePontos,
   type SaudePontosResumo,
@@ -330,15 +331,11 @@ function mergeSaude(slices: DashSlice[]): SaudePontosResumo {
           prev.impulsos += p.impulsos;
           prev.pressoes += p.pressoes;
           prev.visitas += p.visitas;
-          if (prev.classe === "sem_dados" && p.classe !== "sem_dados") {
-            prev.classe = p.classe;
-            prev.indice = p.indice;
-          }
         }
       }
     }
   }
-  const mes = [...map.values()];
+  const mes = aplicarClassificacaoSaudePorLucro([...map.values()]);
   const contagem = { forte: 0, razoavel: 0, fraco: 0, semDados: 0 };
   for (const p of mes) {
     if (p.classe === "forte") contagem.forte++;
