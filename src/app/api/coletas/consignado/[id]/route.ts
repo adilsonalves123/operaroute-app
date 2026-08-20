@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { createClient, getProfile } from "@/lib/supabase/server";
-import { NICHO_MODULO_BOLINHA } from "@/lib/nichos/bolinha";
+import { NICHO_MODULO_CONSIGNADO } from "@/lib/nichos/consignado";
 import {
   normalizarEstoqueBrindesPonto,
   restaurarEstoqueBrindes,
   type BrindeEntreguePonto,
 } from "@/lib/estoque/brindes-ponto";
 
-function parseBrindesSalvos(raw: unknown): BrindeEntreguePonto[] {
+function parseVendidosSalvos(raw: unknown): BrindeEntreguePonto[] {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((item) => ({
@@ -26,7 +26,7 @@ export async function GET(
 ) {
   const { id } = await params;
   const url = new URL(request.url);
-  return NextResponse.redirect(new URL(`/coletas/bolinha/${id}`, url.origin));
+  return NextResponse.redirect(new URL(`/coletas/consignado/${id}`, url.origin));
 }
 
 /**
@@ -76,7 +76,7 @@ export async function DELETE(
     .select("*")
     .eq("id", id)
     .eq("empresa_id", profile.empresa_id)
-    .eq("nicho_modulo", NICHO_MODULO_BOLINHA)
+    .eq("nicho_modulo", NICHO_MODULO_CONSIGNADO)
     .maybeSingle();
 
   if (coletaError || !coleta) {
@@ -153,8 +153,9 @@ export async function DELETE(
     return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
 
-  const brindes = parseBrindesSalvos(coleta.brindes_entregues);
-  if (brindes.length > 0 && coleta.equipamento_id) {
+  // Devolve unidades vendidas ao expositor (reposto pós-coleta não fica na coleta).
+  const vendidos = parseVendidosSalvos(coleta.brindes_entregues);
+  if (vendidos.length > 0 && coleta.equipamento_id) {
     const { data: equipamento } = await supabase
       .from("equipamentos")
       .select("id, estoque_brindes")
@@ -165,17 +166,9 @@ export async function DELETE(
       const estoque = normalizarEstoqueBrindesPonto(equipamento.estoque_brindes);
       await supabase
         .from("equipamentos")
-        .update({ estoque_brindes: restaurarEstoqueBrindes(estoque, brindes) })
+        .update({ estoque_brindes: restaurarEstoqueBrindes(estoque, vendidos) })
         .eq("id", equipamento.id);
     }
-  }
-
-  if (coleta.equipamento_id && coleta.entrada_anterior != null) {
-    await supabase
-      .from("equipamentos")
-      .update({ entrada_atual: Number(coleta.entrada_anterior) })
-      .eq("id", coleta.equipamento_id)
-      .eq("empresa_id", profile.empresa_id);
   }
 
   const { auditarAcao } = await import("@/lib/auditoria/auditar");
@@ -187,8 +180,10 @@ export async function DELETE(
     severidade: "high",
     categoria: "coleta",
     modulo: "coletas",
-    titulo: preservarSlot ? "Substituiu coleta bolinha (edição)" : "Apagou coleta bolinha",
-    resumo: `Equipamento ${coleta.equipamento_id ?? "—"} · lucro ${coleta.lucro_real ?? coleta.lucro_centavos ?? "—"}`,
+    titulo: preservarSlot
+      ? "Substituiu coleta consignado (edição)"
+      : "Apagou coleta consignado",
+    resumo: `Equipamento ${coleta.equipamento_id ?? "—"} · lucro ${coleta.lucro_real ?? "—"}`,
   });
 
   return NextResponse.json({

@@ -29,13 +29,32 @@ export default async function ColetaDiversaoDetalhePage({
 
   if (!coleta) notFound();
 
-  const { data: empresa } = profile?.empresa_id
-    ? await supabase
-        .from("empresas")
-        .select("nome_operacao, chave_pix")
-        .eq("id", profile.empresa_id)
-        .maybeSingle()
-    : { data: null };
+  const [{ data: empresa }, { data: itemVisita }] = await Promise.all([
+    profile?.empresa_id
+      ? supabase
+          .from("empresas")
+          .select("nome_operacao, chave_pix")
+          .eq("id", profile.empresa_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("visita_ponto_itens")
+      .select("visita_ponto_id")
+      .eq("coleta_id", id)
+      .eq("nicho", "diversao")
+      .maybeSingle(),
+  ]);
+
+  const editarHref = (() => {
+    const params = new URLSearchParams({
+      ponto: coleta.ponto_id,
+      editar_visita: id,
+    });
+    if (itemVisita?.visita_ponto_id) {
+      params.set("visita_ponto", itemVisita.visita_ponto_id);
+    }
+    return `/coletas/nova/diversao?${params.toString()}`;
+  })();
 
   const valorAReceber = Number(coleta.valor_a_receber ?? coleta.valor_liquido ?? 0);
   const valorPago = Number(coleta.valor_pago_recebido ?? 0);
@@ -214,6 +233,12 @@ export default async function ColetaDiversaoDetalhePage({
       </div>
 
       <div className="flex flex-wrap gap-3">
+        <Link
+          href={editarHref}
+          className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 hover:bg-amber-500/20"
+        >
+          Editar coleta completa
+        </Link>
         <CorrigirPagamentoButton
           tipo="coleta"
           id={id}

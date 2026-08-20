@@ -395,12 +395,15 @@ export async function POST(request: Request) {
       .eq("empresa_id", profile.empresa_id);
 
     if (visitaPontoId && coletasCriadasIds.length > 0) {
+      const religarFinalizada =
+        body.religar_visita_finalizada === true || body.editar_visita_finalizada === true;
       await vincularItemVisitaPonto({
         supabase,
         empresaId: profile.empresa_id,
         visitaPontoId,
         nicho: "consignado",
         coletaIds: coletasCriadasIds,
+        permitirReligarFinalizada: religarFinalizada,
       });
     }
 

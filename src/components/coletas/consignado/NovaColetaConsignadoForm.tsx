@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Package, Minus, Plus, Search } from "lucide-react";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
@@ -18,11 +18,12 @@ import {
 } from "@/lib/utils";
 import {
   calcularColetaConsignado,
+  NICHO_MODULO_CONSIGNADO,
   type CalculoColetaConsignado,
   type LinhaConsignadoInput,
   type ModoComissaoConsignado,
 } from "@/lib/nichos/consignado";
-import { normalizarEstoqueBrindesPonto } from "@/lib/estoque/brindes-ponto";
+import { normalizarEstoqueBrindesPonto, type BrindeEntreguePonto } from "@/lib/estoque/brindes-ponto";
 import { agregarDividaCobravelPorPonto } from "@/lib/visitas-ponto/divida-ponto";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
@@ -48,7 +49,7 @@ import {
 import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
 import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
-import { totalCobrancaNicho } from "@/lib/coletas/total-cobranca-nicho";
+import { totalCobrancaNicho, detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
 import type { RelatorioConsignadoData } from "@/lib/nichos/consignado/relatorio";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import type { Equipamento, Ponto, ProdutoConsignado } from "@/lib/types/database";
@@ -173,9 +174,36 @@ function linhaToInput(linha: LinhaForm): LinhaConsignadoInput {
   };
 }
 
+function aplicarVendidosNasLinhas(
+  linhas: LinhaForm[],
+  vendidos: BrindeEntreguePonto[]
+): LinhaForm[] {
+  return linhas.map((linha) => {
+    const vendido = vendidos.find(
+      (v) =>
+        (v.item_id && linha.produtoId && v.item_id === linha.produtoId) ||
+        v.nome === linha.nome
+    );
+    const vendidoQty = vendido
+      ? Math.max(0, Math.floor(Number(vendido.quantidade) || 0))
+      : 0;
+    const currentQty = Math.max(0, Math.floor(Number(linha.deixado) || 0));
+    return {
+      ...linha,
+      deixado: currentQty + vendidoQty,
+      sobrouInput: String(currentQty),
+    };
+  });
+}
+
 export function NovaColetaConsignadoForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const pontoInicial = searchParams.get("ponto") ?? "";
+  const editarColetaId =
+    searchParams.get("editar_coleta")?.trim() ||
+    searchParams.get("editar_visita")?.trim() ||
+    "";
   const [pontoId, setPontoId] = useState(pontoInicial);
   const {
     visitaPontoId,
@@ -190,6 +218,7 @@ export function NovaColetaConsignadoForm() {
   const [loading, setLoading] = useState(false);
   const submitLock = useSubmitLock();
   const [loadingPonto, setLoadingPonto] = useState(false);
+  const [editandoCarregado, setEditandoCarregado] = useState(!editarColetaId);
   const [error, setError] = useState("");
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [empresaNome, setEmpresaNome] = useState("Operação");
@@ -284,16 +313,21 @@ export function NovaColetaConsignadoForm() {
     if (!pontoId) {
       setPonto(null);
       setExpositores([]);
-      // Consignado usa tabela (custo / valor final / repasse do produto) — não % do ponto.
       setModoComissao("tabela");
       setComissaoPercentual("0");
-      setDescontarHaver(false);
-      setIncluirPendencia(false);
+      if (!editarColetaId) {
+        setDescontarHaver(false);
+        setIncluirPendencia(false);
+      }
       return;
     }
 
-    setDescontarHaver(false);
-    setIncluirPendencia(false);
+    if (editarColetaId && !empresaId) return;
+
+    if (!editarColetaId) {
+      setDescontarHaver(false);
+      setIncluirPendencia(false);
+    }
 
     async function loadPontoData() {
       setLoadingPonto(true);
@@ -319,22 +353,71 @@ export function NovaColetaConsignadoForm() {
       );
 
       setPonto(pontoData);
-      // Sempre tabela no recolhe: preço e repasse vêm do cadastro do produto.
       setModoComissao("tabela");
       setComissaoPercentual("0");
-      setExpositores(
-        (equipamentos ?? []).map((eq: Equipamento) => expositorToForm(eq, catalogo))
+
+      let forms = (equipamentos ?? []).map((eq: Equipamento) =>
+        expositorToForm(eq, catalogo)
       );
+
+      if (editarColetaId && empresaId) {
+        const { data: coleta, error: coletaErr } = await supabase
+          .from("coletas")
+          .select("*")
+          .eq("id", editarColetaId)
+          .eq("empresa_id", empresaId)
+          .eq("nicho_modulo", NICHO_MODULO_CONSIGNADO)
+          .maybeSingle();
+
+        if (coletaErr || !coleta) {
+          setError("Coleta para edição não encontrada.");
+          setEditandoCarregado(true);
+          setLoadingPonto(false);
+          return;
+        }
+
+        const eqId = String(coleta.equipamento_id ?? "");
+        forms = forms.filter((exp) => exp.equipamentoId === eqId);
+        if (forms.length === 0 && eqId) {
+          const { data: eqRow } = await supabase
+            .from("equipamentos")
+            .select("*")
+            .eq("id", eqId)
+            .maybeSingle();
+          if (eqRow) forms = [expositorToForm(eqRow as Equipamento, catalogo)];
+        }
+
+        const vendidos = (
+          Array.isArray(coleta.brindes_entregues) ? coleta.brindes_entregues : []
+        ) as BrindeEntreguePonto[];
+
+        forms = forms.map((exp) => ({
+          ...exp,
+          fotoPreview: coleta.foto_url ? String(coleta.foto_url) : null,
+          linhas: aplicarVendidosNasLinhas(exp.linhas, vendidos),
+        }));
+
+        setDesconto(Number(coleta.desconto ?? 0) > 0.009 ? String(coleta.desconto) : "");
+        setValorPix(Number(coleta.valor_pix ?? 0) > 0.009 ? String(coleta.valor_pix) : "");
+        setValorDinheiro(
+          Number(coleta.valor_dinheiro ?? 0) > 0.009 ? String(coleta.valor_dinheiro) : ""
+        );
+        setObservacao(String(coleta.observacao ?? ""));
+        setEditandoCarregado(true);
+      }
+
+      setExpositores(forms);
       setLoadingPonto(false);
 
       if (!pontoData) setError("Ponto não encontrado.");
-      else if ((equipamentos ?? []).length === 0) {
+      else if (forms.length === 0) {
         setError("Este ponto não tem expositores de Consignado cadastrados.");
       }
     }
 
-    loadPontoData();
-  }, [pontoId, empresaId]);
+    void loadPontoData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- empresaId só importa na edição
+  }, [pontoId, editarColetaId, editarColetaId ? empresaId : null]);
 
   useEffect(() => {
     if (!pontoId || !empresaId) {
@@ -539,7 +622,7 @@ export function NovaColetaConsignadoForm() {
     }
 
     let fecharVisitaAgora = false;
-    if (receberAgora) {
+    if (receberAgora && !editarColetaId) {
       const decisao = await confirmarReceberEncerrar();
       if (decisao === "abortar") return;
       fecharVisitaAgora = decisao === "encerrar";
@@ -565,6 +648,31 @@ export function NovaColetaConsignadoForm() {
         fotos
       );
 
+      let visitaPontoParaSalvar = visitaPontoId || null;
+      if (editarColetaId) {
+        const delRes = await fetch(`/api/coletas/consignado/${editarColetaId}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "preparar_edicao", preservar_slot: true }),
+        });
+        const delData = await delRes.json().catch(() => ({}));
+        if (!delRes.ok) {
+          setError(
+            typeof delData.error === "string"
+              ? delData.error
+              : "Não foi possível atualizar a coleta anterior."
+          );
+          return;
+        }
+        const idsReligar = Array.isArray(delData.visita_ponto_ids)
+          ? (delData.visita_ponto_ids as string[]).filter(Boolean)
+          : [];
+        if (!visitaPontoParaSalvar && idsReligar[0]) {
+          visitaPontoParaSalvar = idsReligar[0];
+        }
+      }
+
       const res = await fetch("/api/coletas/consignado", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -577,15 +685,18 @@ export function NovaColetaConsignadoForm() {
           observacao: observacao || null,
           latitude: gps?.latitude ?? null,
           longitude: gps?.longitude ?? null,
-          visita_ponto_id: visitaPontoId || null,
+          visita_ponto_id: visitaPontoParaSalvar,
           receber_agora: receberAgora,
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
+          religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
           comissao_percentual: Number(comissaoPercentual) || 0,
           modo_comissao: "tabela",
           expositores: expositores.map((exp) => ({
             equipamento_id: exp.equipamentoId,
-            foto_url: fotoUrls.get(exp.equipamentoId) ?? null,
+            foto_url:
+              fotoUrls.get(exp.equipamentoId) ??
+              (exp.fotoPreview && !exp.fotoFile ? exp.fotoPreview : null),
             linhas: exp.linhas.map((linha) => ({
               produto_id: linha.produtoId,
               sobrou: parseIntInput(linha.sobrouInput),
@@ -610,7 +721,19 @@ export function NovaColetaConsignadoForm() {
         });
       }
 
-      if (relatorioData) {
+      if (editarColetaId) {
+        const params = new URLSearchParams();
+        if (pontoId) params.set("ponto", pontoId);
+        if (visitaPontoId && !fecharVisitaAgora) {
+          params.set("visita_ponto", visitaPontoId);
+        }
+        router.replace(
+          params.toString()
+            ? `/coletas/nova/consignado?${params.toString()}`
+            : "/coletas/nova/consignado"
+        );
+        voltarAposColeta(fecharVisitaAgora ? { visitaJaFinalizada: true } : undefined);
+      } else if (relatorioData) {
         setSucessoRelatorio({ ...relatorioData, previa: false, data: new Date() });
         setSucessoRepor(
           expositores.map((exp) => ({
@@ -646,11 +769,21 @@ export function NovaColetaConsignadoForm() {
     (exp) => (expositorCalcs.get(exp.equipamentoId)?.totalVendido ?? 0) > 0
   ).length;
 
+  if (editarColetaId && !editandoCarregado) {
+    return (
+      <ColetaNovaPageShell title="Editar recolhe Consignado" subtitle="Carregando coleta…" backHref="/coletas">
+        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
+      </ColetaNovaPageShell>
+    );
+  }
+
   return (
     <ColetaNovaPageShell
-      title="Recolhe Consignado"
+      title={editarColetaId ? "Editar recolhe Consignado" : "Recolhe Consignado"}
       subtitle={
-        ensuringVisita
+        editarColetaId
+          ? "Corrigir contagem e pagamento — salva no lugar da coleta anterior."
+          : ensuringVisita
           ? "Entrando na visita do ponto…"
           : emVisitaPonto
             ? "Conte o que sobrou — Salvar e seguir ou Receber agora."
@@ -677,9 +810,15 @@ export function NovaColetaConsignadoForm() {
             <ColetaPontoSearchSelect
               label="Ponto *"
               value={pontoId}
-              onChange={setPontoId}
+              onChange={(id) => {
+                if (editarColetaId) return;
+                setPontoId(id);
+              }}
               options={pontos.map((item) => ({ value: item.id, label: item.nome }))}
               inputClassName={inputClass(false)}
+              placeholder={
+                editarColetaId ? "Ponto da coleta (não alterável)" : undefined
+              }
             />
           }
           comissaoField={
@@ -1066,11 +1205,13 @@ export function NovaColetaConsignadoForm() {
               onObservacaoChange={setObservacao}
               error={error}
               submitLabel={
-                emVisitaPonto
-                  ? receberAgora
-                    ? "Receber agora"
-                    : "Salvar e seguir"
-                  : "Salvar coleta de Consignado"
+                editarColetaId
+                  ? "Salvar correção"
+                  : emVisitaPonto
+                    ? receberAgora
+                      ? "Receber agora"
+                      : "Salvar e seguir"
+                    : "Salvar coleta de Consignado"
               }
               submitDisabled={loadingPonto || expositores.length === 0}
               loading={loading}

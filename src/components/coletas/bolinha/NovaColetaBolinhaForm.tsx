@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Circle } from "lucide-react";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
@@ -18,9 +18,11 @@ import {
   formatMoneyInput,
   formatMoneyInputOnBlur,
 } from "@/lib/utils";
-import { calcularColetaBolinha } from "@/lib/nichos/bolinha";
+import { calcularColetaBolinha, NICHO_MODULO_BOLINHA } from "@/lib/nichos/bolinha";
 import {
   normalizarEstoqueBrindesPonto,
+  restaurarEstoqueBrindes,
+  type BrindeEntreguePonto,
   type EstoqueBrindePonto,
 } from "@/lib/estoque/brindes-ponto";
 import { agregarDividaCobravelPorPonto } from "@/lib/visitas-ponto/divida-ponto";
@@ -44,7 +46,7 @@ import {
 import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
 import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
-import { totalCobrancaNicho } from "@/lib/coletas/total-cobranca-nicho";
+import { totalCobrancaNicho, detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
 import type { RelatorioBolinhaData } from "@/lib/nichos/bolinha/relatorio";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import type { Equipamento, Ponto } from "@/lib/types/database";
@@ -81,8 +83,13 @@ function inputClass(hasError: boolean) {
 }
 
 export function NovaColetaBolinhaForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const pontoInicial = searchParams.get("ponto") ?? "";
+  const editarColetaId =
+    searchParams.get("editar_coleta")?.trim() ||
+    searchParams.get("editar_visita")?.trim() ||
+    "";
   const [pontoId, setPontoId] = useState(pontoInicial);
   const {
     visitaPontoId,
@@ -97,6 +104,7 @@ export function NovaColetaBolinhaForm() {
   const [loading, setLoading] = useState(false);
   const submitLock = useSubmitLock();
   const [loadingPonto, setLoadingPonto] = useState(false);
+  const [editandoCarregado, setEditandoCarregado] = useState(!editarColetaId);
   const [error, setError] = useState("");
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [empresaNome, setEmpresaNome] = useState("Operação");
@@ -167,14 +175,20 @@ export function NovaColetaBolinhaForm() {
     if (!pontoId) {
       setPonto(null);
       setMaquinas([]);
-      setComissaoPercentual("");
-      setDescontarHaver(false);
-      setIncluirPendencia(false);
+      if (!editarColetaId) {
+        setComissaoPercentual("");
+        setDescontarHaver(false);
+        setIncluirPendencia(false);
+      }
       return;
     }
 
-    setDescontarHaver(false);
-    setIncluirPendencia(false);
+    if (editarColetaId && !empresaId) return;
+
+    if (!editarColetaId) {
+      setDescontarHaver(false);
+      setIncluirPendencia(false);
+    }
 
     async function loadPontoData() {
       setLoadingPonto(true);
@@ -192,18 +206,80 @@ export function NovaColetaBolinhaForm() {
       ]);
 
       setPonto(pontoData);
-      setComissaoPercentual(String(getComissaoPercentualNicho(pontoData, "bolinha")));
-      setMaquinas((equipamentos ?? []).map((eq: Equipamento) => maquinaToForm(eq)));
+
+      let forms = (equipamentos ?? []).map((eq: Equipamento) => maquinaToForm(eq));
+
+      if (editarColetaId && empresaId) {
+        const { data: coleta, error: coletaErr } = await supabase
+          .from("coletas")
+          .select("*")
+          .eq("id", editarColetaId)
+          .eq("empresa_id", empresaId)
+          .eq("nicho_modulo", NICHO_MODULO_BOLINHA)
+          .maybeSingle();
+
+        if (coletaErr || !coleta) {
+          setError("Coleta para edição não encontrada.");
+          setEditandoCarregado(true);
+          setLoadingPonto(false);
+          return;
+        }
+
+        const eqId = String(coleta.equipamento_id ?? "");
+        forms = forms.filter((m) => m.equipamentoId === eqId);
+        if (forms.length === 0 && eqId) {
+          const { data: eqRow } = await supabase
+            .from("equipamentos")
+            .select("*")
+            .eq("id", eqId)
+            .maybeSingle();
+          if (eqRow) forms = [maquinaToForm(eqRow as Equipamento)];
+        }
+
+        const brindesSalvos = (
+          Array.isArray(coleta.brindes_entregues) ? coleta.brindes_entregues : []
+        ) as BrindeEntreguePonto[];
+
+        forms = forms.map((m) => {
+          const estoqueComOriginais =
+            brindesSalvos.length > 0
+              ? restaurarEstoqueBrindes(m.estoqueBrindes, brindesSalvos)
+              : m.estoqueBrindes;
+          return {
+            ...m,
+            entradaAnterior: Math.round(
+              Number(coleta.entrada_anterior ?? m.entradaAnterior)
+            ),
+            valorContadoInput: formatMoneyInput(Number(coleta.valor_bruto ?? 0)),
+            fotoPreview: coleta.foto_url ? String(coleta.foto_url) : null,
+            estoqueBrindes: estoqueComOriginais,
+          };
+        });
+
+        setComissaoPercentual(String(coleta.comissao_percentual ?? ""));
+        setDesconto(Number(coleta.desconto ?? 0) > 0.009 ? String(coleta.desconto) : "");
+        setValorPix(Number(coleta.valor_pix ?? 0) > 0.009 ? String(coleta.valor_pix) : "");
+        setValorDinheiro(
+          Number(coleta.valor_dinheiro ?? 0) > 0.009 ? String(coleta.valor_dinheiro) : ""
+        );
+        setObservacao(String(coleta.observacao ?? ""));
+        setEditandoCarregado(true);
+      } else {
+        setComissaoPercentual(String(getComissaoPercentualNicho(pontoData, "bolinha")));
+      }
+
+      setMaquinas(forms);
       setLoadingPonto(false);
 
       if (!pontoData) setError("Ponto não encontrado.");
-      else if ((equipamentos ?? []).length === 0) {
+      else if (forms.length === 0) {
         setError("Este ponto não tem máquinas de Bolinha cadastradas.");
       }
     }
 
-    loadPontoData();
-  }, [pontoId]);
+    void loadPontoData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- empresaId só importa na edição
+  }, [pontoId, editarColetaId, editarColetaId ? empresaId : null]);
 
   useEffect(() => {
     if (!pontoId || !empresaId) {
@@ -309,10 +385,14 @@ export function NovaColetaBolinhaForm() {
 
   const leiturasCompletas =
     maquinas.length > 0 &&
-    maquinas.every((maquina) => maquina.valorContadoInput.trim() && maquina.fotoFile);
+    maquinas.every(
+      (maquina) =>
+        maquina.valorContadoInput.trim() && (maquina.fotoFile || maquina.fotoPreview)
+    );
 
   const maquinasProntas = maquinas.filter(
-    (maquina) => maquina.valorContadoInput.trim() && maquina.fotoFile
+    (maquina) =>
+      maquina.valorContadoInput.trim() && (maquina.fotoFile || maquina.fotoPreview)
   ).length;
 
   const relatorioData: RelatorioBolinhaData | null = useMemo(() => {
@@ -372,7 +452,7 @@ export function NovaColetaBolinhaForm() {
       if (!maquina.valorContadoInput.trim()) {
         return `Informe o dinheiro contado de ${maquina.nome}.`;
       }
-      if (!maquina.fotoFile) {
+      if (!maquina.fotoFile && !maquina.fotoPreview) {
         return `A foto da máquina ${maquina.nome} é obrigatória.`;
       }
     }
@@ -399,7 +479,7 @@ export function NovaColetaBolinhaForm() {
     }
 
     let fecharVisitaAgora = false;
-    if (receberAgora) {
+    if (receberAgora && !editarColetaId) {
       const decisao = await confirmarReceberEncerrar();
       if (decisao === "abortar") return;
       fecharVisitaAgora = decisao === "encerrar";
@@ -425,6 +505,31 @@ export function NovaColetaBolinhaForm() {
         fotos
       );
 
+      let visitaPontoParaSalvar = visitaPontoId || null;
+      if (editarColetaId) {
+        const delRes = await fetch(`/api/coletas/bolinha/${editarColetaId}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "preparar_edicao", preservar_slot: true }),
+        });
+        const delData = await delRes.json().catch(() => ({}));
+        if (!delRes.ok) {
+          setError(
+            typeof delData.error === "string"
+              ? delData.error
+              : "Não foi possível atualizar a coleta anterior."
+          );
+          return;
+        }
+        const idsReligar = Array.isArray(delData.visita_ponto_ids)
+          ? (delData.visita_ponto_ids as string[]).filter(Boolean)
+          : [];
+        if (!visitaPontoParaSalvar && idsReligar[0]) {
+          visitaPontoParaSalvar = idsReligar[0];
+        }
+      }
+
       const res = await fetch("/api/coletas/bolinha", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -443,12 +548,15 @@ export function NovaColetaBolinhaForm() {
             valor_contado: parseMoneyInput(maquina.valorContadoInput),
             preco_jogada: maquina.precoJogada,
             entrada_anterior: maquina.entradaAnterior,
-            foto_url: fotoUrls.get(maquina.equipamentoId) ?? null,
+            foto_url:
+              fotoUrls.get(maquina.equipamentoId) ??
+              (maquina.fotoPreview && !maquina.fotoFile ? maquina.fotoPreview : null),
           })),
-          visita_ponto_id: visitaPontoId || null,
+          visita_ponto_id: visitaPontoParaSalvar,
           receber_agora: receberAgora,
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
+          religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
         }),
       });
 
@@ -467,6 +575,19 @@ export function NovaColetaBolinhaForm() {
         });
       }
 
+      if (editarColetaId) {
+        const params = new URLSearchParams();
+        if (pontoId) params.set("ponto", pontoId);
+        if (visitaPontoId && !fecharVisitaAgora) {
+          params.set("visita_ponto", visitaPontoId);
+        }
+        router.replace(
+          params.toString()
+            ? `/coletas/nova/bolinha?${params.toString()}`
+            : "/coletas/nova/bolinha"
+        );
+      }
+
       voltarAposColeta(fecharVisitaAgora ? { visitaJaFinalizada: true } : undefined);
       concluido = true;
     } catch (err) {
@@ -477,11 +598,21 @@ export function NovaColetaBolinhaForm() {
     }
   }
 
+  if (editarColetaId && !editandoCarregado) {
+    return (
+      <ColetaNovaPageShell title="Editar coleta Bolinha" subtitle="Carregando coleta…" backHref="/coletas">
+        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
+      </ColetaNovaPageShell>
+    );
+  }
+
   return (
     <ColetaNovaPageShell
-      title="Coleta Bolinha"
+      title={editarColetaId ? "Editar coleta Bolinha" : "Coleta Bolinha"}
       subtitle={
-        ensuringVisita
+        editarColetaId
+          ? "Corrigir valores contados e pagamento — salva no lugar da coleta anterior."
+          : ensuringVisita
           ? "Entrando na visita do ponto…"
           : emVisitaPonto
             ? "Dinheiro contado por máquina — Salvar e seguir ou Receber agora."
@@ -504,9 +635,15 @@ export function NovaColetaBolinhaForm() {
             <ColetaPontoSearchSelect
               label="Ponto *"
               value={pontoId}
-              onChange={setPontoId}
+              onChange={(id) => {
+                if (editarColetaId) return;
+                setPontoId(id);
+              }}
               options={pontos.map((item) => ({ value: item.id, label: item.nome }))}
               inputClassName={inputClass(false)}
+              placeholder={
+                editarColetaId ? "Ponto da coleta (não alterável)" : undefined
+              }
             />
           }
           comissaoField={
@@ -562,7 +699,8 @@ export function NovaColetaBolinhaForm() {
                 (item) => item.equipamentoId === maquina.equipamentoId
               );
               const pronta =
-                Boolean(maquina.valorContadoInput.trim()) && Boolean(maquina.fotoFile);
+                Boolean(maquina.valorContadoInput.trim()) &&
+                Boolean(maquina.fotoFile || maquina.fotoPreview);
               const estoqueDisponivel = maquina.estoqueBrindes.reduce(
                 (acc, item) => acc + Math.max(0, Number(item.quantidade) || 0),
                 0
@@ -788,11 +926,13 @@ export function NovaColetaBolinhaForm() {
               onObservacaoChange={setObservacao}
               error={error}
               submitLabel={
-                emVisitaPonto
-                  ? receberAgora
-                    ? "Receber agora"
-                    : "Salvar e seguir"
-                  : "Salvar coleta de Bolinha"
+                editarColetaId
+                  ? "Salvar correção"
+                  : emVisitaPonto
+                    ? receberAgora
+                      ? "Receber agora"
+                      : "Salvar e seguir"
+                    : "Salvar coleta de Bolinha"
               }
               submitDisabled={loadingPonto || maquinas.length === 0}
               loading={loading}

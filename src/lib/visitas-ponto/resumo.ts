@@ -237,14 +237,14 @@ function buildColetaNicho(
       nicho === "fura_fura" && rows.length === 1
         ? `/coletas/nova/fura-fura?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
         : nicho === "ursinho" && rows.length === 1
-          ? `/coletas/ursinho/${rows[0].id}`
+          ? `/coletas/nova/ursinho?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
           : nicho === "diversao" && rows.length === 1
-            ? `/coletas/diversao/${rows[0].id}`
+            ? `/coletas/nova/diversao?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
             : nicho === "bolinha" && rows.length === 1
-              ? `/coletas/bolinha/${rows[0].id}`
+              ? `/coletas/nova/bolinha?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
               : nicho === "consignado" && rows.length === 1
-                ? `/coletas/consignado/${rows[0].id}`
-            : undefined,
+                ? `/coletas/nova/consignado?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
+                : undefined,
   };
 }
 

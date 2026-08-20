@@ -12,15 +12,17 @@ import { useVisitaPontoContext } from "@/components/visitas-ponto/useVisitaPonto
 import { VisitaPontoNav } from "@/components/visitas-ponto/VisitaPontoNav";
 import { formatCurrency, cn, parseMoneyInput } from "@/lib/utils";
 import { formatContador, formatContadorInput, parseContadorInput } from "@/lib/nichos/cassino";
-import { calcularColetaUrsinho } from "@/lib/nichos/ursinho";
+import { calcularColetaUrsinho, NICHO_MODULO_URSINHO } from "@/lib/nichos/ursinho";
 import {
   maxQuantidadeBrindeMaquina,
   quantidadeRestanteBrindeColeta,
 } from "@/lib/nichos/ursinho/brindes-coleta";
 import {
   normalizarEstoqueBrindesPonto,
+  restaurarEstoqueBrindes,
   validarBrindesContraEstoquePonto,
   type EstoqueBrindePonto,
+  type BrindeEntreguePonto,
 } from "@/lib/estoque/brindes-ponto";
 import { agregarDividaCobravelPorPonto } from "@/lib/visitas-ponto/divida-ponto";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
@@ -43,7 +45,7 @@ import {
 import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
 import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
-import { totalCobrancaNicho } from "@/lib/coletas/total-cobranca-nicho";
+import { totalCobrancaNicho, detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
 import type { RelatorioUrsinhoData } from "@/lib/nichos/ursinho/relatorio";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import type { Equipamento, Ponto } from "@/lib/types/database";
@@ -102,6 +104,10 @@ export function NovaColetaUrsinhoForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pontoInicial = searchParams.get("ponto") ?? "";
+  const editarColetaId =
+    searchParams.get("editar_coleta")?.trim() ||
+    searchParams.get("editar_visita")?.trim() ||
+    "";
   const [pontoId, setPontoId] = useState(pontoInicial);
   const {
     visitaPontoId,
@@ -116,6 +122,7 @@ export function NovaColetaUrsinhoForm() {
   const [loading, setLoading] = useState(false);
   const submitLock = useSubmitLock();
   const [loadingPonto, setLoadingPonto] = useState(false);
+  const [editandoCarregado, setEditandoCarregado] = useState(!editarColetaId);
   const [error, setError] = useState("");
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [empresaNome, setEmpresaNome] = useState("Operação");
@@ -210,14 +217,21 @@ export function NovaColetaUrsinhoForm() {
     if (!pontoId) {
       setPonto(null);
       setMaquinas([]);
-      setComissaoPercentual("");
-      setDescontarHaver(false);
-      setIncluirPendencia(false);
+      if (!editarColetaId) {
+        setComissaoPercentual("");
+        setDescontarHaver(false);
+        setIncluirPendencia(false);
+      }
       return;
     }
 
-    setDescontarHaver(false);
-    setIncluirPendencia(false);
+    // Edição: espera empresaId para carregar a coleta junto com o ponto (evita reset).
+    if (editarColetaId && !empresaId) return;
+
+    if (!editarColetaId) {
+      setDescontarHaver(false);
+      setIncluirPendencia(false);
+    }
 
     async function loadPontoData() {
       setLoadingPonto(true);
@@ -235,18 +249,93 @@ export function NovaColetaUrsinhoForm() {
       ]);
 
       setPonto(pontoData);
-      setComissaoPercentual(String(getComissaoPercentualNicho(pontoData, "ursinho")));
-      setMaquinas((equipamentos ?? []).map((eq: Equipamento) => maquinaToForm(eq)));
+
+      let forms = (equipamentos ?? []).map((eq: Equipamento) => maquinaToForm(eq));
+
+      if (editarColetaId && empresaId) {
+        const { data: coleta, error: coletaErr } = await supabase
+          .from("coletas")
+          .select("*")
+          .eq("id", editarColetaId)
+          .eq("empresa_id", empresaId)
+          .eq("nicho_modulo", NICHO_MODULO_URSINHO)
+          .maybeSingle();
+
+        if (coletaErr || !coleta) {
+          setError("Coleta para edição não encontrada.");
+          setEditandoCarregado(true);
+          setLoadingPonto(false);
+          return;
+        }
+
+        const eqId = String(coleta.equipamento_id ?? "");
+        forms = forms.filter((m) => m.equipamentoId === eqId);
+        if (forms.length === 0 && eqId) {
+          const { data: eqRow } = await supabase
+            .from("equipamentos")
+            .select("*")
+            .eq("id", eqId)
+            .maybeSingle();
+          if (eqRow) forms = [maquinaToForm(eqRow as Equipamento)];
+        }
+
+        const brindesSalvos = (
+          Array.isArray(coleta.brindes_entregues) ? coleta.brindes_entregues : []
+        ) as BrindeEntreguePonto[];
+        const brindesForm: BrindeForm[] = brindesSalvos
+          .filter((b) => b.nome && Number(b.quantidade) > 0)
+          .map((b) => ({
+            id: crypto.randomUUID(),
+            item_id: b.item_id,
+            nome: b.nome,
+            quantidade: Math.max(1, Math.floor(Number(b.quantidade) || 1)),
+            custo_unitario: Math.max(0, Number(b.custo_unitario) || 0),
+          }));
+
+        forms = forms.map((m) => {
+          const estoqueComOriginais = restaurarEstoqueBrindes(
+            m.estoqueBrindes,
+            brindesSalvos.filter((b) => b.nome && Number(b.quantidade) > 0)
+          );
+          return {
+            ...m,
+            entradaAnterior: Math.round(
+              Number(coleta.entrada_anterior ?? m.entradaAnterior)
+            ),
+            entradaAtualInput: formatContadorInput(
+              Math.round(Number(coleta.entrada_atual ?? 0))
+            ),
+            fotoPreview: coleta.foto_url ? String(coleta.foto_url) : null,
+            brindes: brindesForm,
+            estoqueBrindes: estoqueComOriginais,
+          };
+        });
+
+        setComissaoPercentual(String(coleta.comissao_percentual ?? ""));
+        setDesconto(Number(coleta.desconto ?? 0) > 0.009 ? String(coleta.desconto) : "");
+        setValorPix(Number(coleta.valor_pix ?? 0) > 0.009 ? String(coleta.valor_pix) : "");
+        setValorDinheiro(
+          Number(coleta.valor_dinheiro ?? 0) > 0.009 ? String(coleta.valor_dinheiro) : ""
+        );
+        setObservacao(String(coleta.observacao ?? ""));
+        setEditandoCarregado(true);
+      } else {
+        setComissaoPercentual(String(getComissaoPercentualNicho(pontoData, "ursinho")));
+      }
+
+      setMaquinas(forms);
       setLoadingPonto(false);
 
       if (!pontoData) setError("Ponto não encontrado.");
-      else if ((equipamentos ?? []).length === 0) {
+      else if (forms.length === 0) {
         setError("Este ponto não tem máquinas de ursinho cadastradas.");
       }
     }
 
-    loadPontoData();
-  }, [pontoId]);
+    void loadPontoData();
+    // empresaId só importa na edição (evita resetar o form quando a empresa carrega).
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- ver comentário acima
+  }, [pontoId, editarColetaId, editarColetaId ? empresaId : null]);
 
   useEffect(() => {
     if (!pontoId || !empresaId) {
@@ -302,15 +391,17 @@ export function NovaColetaUrsinhoForm() {
     }
   }, [maquinas, comissaoPercentual, desconto, valorRecebido]);
 
-  const totalACobrarAgora = useMemo(() => {
-    if (emVisitaPonto && !receberAgora) return calculo?.valorAReceber ?? 0;
-    return totalCobrancaNicho({
+  const cobrancaComprovante = useMemo(() => {
+    if (emVisitaPonto && !receberAgora) {
+      return { totalACobrar: calculo?.valorAReceber ?? 0, cobranca: null };
+    }
+    return detalheCobrancaParaComprovante({
       valorOperacao: calculo?.valorAReceber ?? 0,
       pendenciaSaldo: pendenciaPonto?.totalPendente ?? 0,
       incluirPendencia,
       haverSaldo,
       descontarHaver,
-    }).totalACobrar;
+    });
   }, [
     emVisitaPonto,
     receberAgora,
@@ -320,13 +411,17 @@ export function NovaColetaUrsinhoForm() {
     haverSaldo,
     descontarHaver,
   ]);
+  const totalACobrarAgora = cobrancaComprovante.totalACobrar;
 
   const leiturasCompletas =
     maquinas.length > 0 &&
-    maquinas.every((maquina) => maquina.entradaAtualInput.trim() && maquina.fotoFile);
+    maquinas.every(
+      (maquina) =>
+        maquina.entradaAtualInput.trim() && (maquina.fotoFile || maquina.fotoPreview)
+    );
 
   const maquinasProntas = maquinas.filter(
-    (maquina) => maquina.entradaAtualInput.trim() && maquina.fotoFile
+    (maquina) => maquina.entradaAtualInput.trim() && (maquina.fotoFile || maquina.fotoPreview)
   ).length;
 
   const relatorioData: RelatorioUrsinhoData | null = useMemo(() => {
@@ -465,7 +560,7 @@ export function NovaColetaUrsinhoForm() {
       if (parseContadorInput(maquina.entradaAtualInput) < maquina.entradaAnterior) {
         return `A entrada atual de ${maquina.nome} não pode ser menor que a anterior.`;
       }
-      if (!maquina.fotoFile) {
+      if (!maquina.fotoFile && !maquina.fotoPreview) {
         return `A foto da máquina ${maquina.nome} é obrigatória.`;
       }
     }
@@ -493,7 +588,7 @@ export function NovaColetaUrsinhoForm() {
     }
 
     let fecharVisitaAgora = false;
-    if (receberAgora) {
+    if (receberAgora && !editarColetaId) {
       const decisao = await confirmarReceberEncerrar();
       if (decisao === "abortar") return;
       fecharVisitaAgora = decisao === "encerrar";
@@ -519,6 +614,31 @@ export function NovaColetaUrsinhoForm() {
         fotos
       );
 
+      let visitaPontoParaSalvar = visitaPontoId || null;
+      if (editarColetaId) {
+        const delRes = await fetch(`/api/coletas/ursinho/${editarColetaId}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "preparar_edicao", preservar_slot: true }),
+        });
+        const delData = await delRes.json().catch(() => ({}));
+        if (!delRes.ok) {
+          setError(
+            typeof delData.error === "string"
+              ? delData.error
+              : "Não foi possível atualizar a coleta anterior."
+          );
+          return;
+        }
+        const idsReligar = Array.isArray(delData.visita_ponto_ids)
+          ? (delData.visita_ponto_ids as string[]).filter(Boolean)
+          : [];
+        if (!visitaPontoParaSalvar && idsReligar[0]) {
+          visitaPontoParaSalvar = idsReligar[0];
+        }
+      }
+
       const res = await fetch("/api/coletas/ursinho", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -536,13 +656,16 @@ export function NovaColetaUrsinhoForm() {
             equipamento_id: maquina.equipamentoId,
             entrada_anterior: maquina.entradaAnterior,
             entrada_atual: parseContadorInput(maquina.entradaAtualInput),
-            foto_url: fotoUrls.get(maquina.equipamentoId) ?? null,
+            foto_url:
+              fotoUrls.get(maquina.equipamentoId) ??
+              (maquina.fotoPreview && !maquina.fotoFile ? maquina.fotoPreview : null),
             brindes: parseBrindes(maquina.brindes),
           })),
-          visita_ponto_id: visitaPontoId || null,
+          visita_ponto_id: visitaPontoParaSalvar,
           receber_agora: receberAgora,
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
+          religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
         }),
       });
 
@@ -561,6 +684,19 @@ export function NovaColetaUrsinhoForm() {
         });
       }
 
+      if (editarColetaId) {
+        const params = new URLSearchParams();
+        if (pontoId) params.set("ponto", pontoId);
+        if (visitaPontoId && !fecharVisitaAgora) {
+          params.set("visita_ponto", visitaPontoId);
+        }
+        router.replace(
+          params.toString()
+            ? `/coletas/nova/ursinho?${params.toString()}`
+            : "/coletas/nova/ursinho"
+        );
+      }
+
       voltarAposColeta(fecharVisitaAgora ? { visitaJaFinalizada: true } : undefined);
       concluido = true;
     } catch (err) {
@@ -571,11 +707,21 @@ export function NovaColetaUrsinhoForm() {
     }
   }
 
+  if (editarColetaId && !editandoCarregado) {
+    return (
+      <ColetaNovaPageShell title="Editar coleta ursinho" subtitle="Carregando coleta…" backHref="/coletas">
+        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
+      </ColetaNovaPageShell>
+    );
+  }
+
   return (
     <ColetaNovaPageShell
-      title="Coleta ursinho"
+      title={editarColetaId ? "Editar coleta ursinho" : "Coleta ursinho"}
       subtitle={
-        ensuringVisita
+        editarColetaId
+          ? "Corrigir leituras, brindes e valores — salva no lugar da coleta anterior."
+          : ensuringVisita
           ? "Entrando na visita do ponto…"
           : emVisitaPonto
             ? "Leitura, foto e brindes — Salvar e seguir ou Receber agora."
@@ -598,9 +744,15 @@ export function NovaColetaUrsinhoForm() {
             <ColetaPontoSearchSelect
               label="Ponto *"
               value={pontoId}
-              onChange={setPontoId}
+              onChange={(id) => {
+                if (editarColetaId) return;
+                setPontoId(id);
+              }}
               options={pontos.map((item) => ({ value: item.id, label: item.nome }))}
               inputClassName={inputClass(false)}
+              placeholder={
+                editarColetaId ? "Ponto da coleta (não alterável)" : undefined
+              }
             />
           }
           comissaoField={
@@ -659,7 +811,8 @@ export function NovaColetaUrsinhoForm() {
               const valorBruto = entradaPeriodo > 0 ? formatCurrency(entradaPeriodo / 100) : null;
 
               const pronta =
-                Boolean(maquina.entradaAtualInput.trim()) && Boolean(maquina.fotoFile);
+                Boolean(maquina.entradaAtualInput.trim()) &&
+                  Boolean(maquina.fotoFile || maquina.fotoPreview);
 
               return (
                 <div
@@ -933,11 +1086,13 @@ export function NovaColetaUrsinhoForm() {
               onObservacaoChange={setObservacao}
               error={error}
               submitLabel={
-                emVisitaPonto
-                  ? receberAgora
-                    ? "Receber agora"
-                    : "Salvar e seguir"
-                  : "Salvar coleta de ursinho"
+                editarColetaId
+                  ? "Salvar correção"
+                  : emVisitaPonto
+                    ? receberAgora
+                      ? "Receber agora"
+                      : "Salvar e seguir"
+                    : "Salvar coleta de ursinho"
               }
               submitDisabled={loadingPonto || maquinas.length === 0}
               loading={loading}
