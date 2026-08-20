@@ -38,6 +38,7 @@ export type ColetaSerieHistorico = {
   ponto_id: string | null;
   ponto_nome: string | null;
   equipamento_nome: string | null;
+  equipamento_id?: string | null;
 };
 
 export type BuscaNumeroSerieResult = {
@@ -45,6 +46,8 @@ export type BuscaNumeroSerieResult = {
   encontrado: boolean;
   equipamento_ativo: EquipamentoSerieResumo | null;
   equipamentos_historico: EquipamentoSerieResumo[];
+  /** Outras fichas ativas com a mesma série (cadastro duplicado). */
+  duplicatas_ativas: EquipamentoSerieResumo[];
   coletas: ColetaSerieHistorico[];
   foto_referencia: string | null;
   aviso: string | null;

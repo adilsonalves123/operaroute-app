@@ -46,11 +46,19 @@ export async function GET(
           supabase,
           profile.empresa_id!,
           equipamento.numero_serie,
-          { pontoAtualId: equipamento.ponto_id, limiteColetas: 6 }
+          {
+            pontoAtualId: equipamento.ponto_id,
+            equipamentoAtualId: equipamento.id,
+            limiteColetas: 6,
+          }
         )
       : null;
 
+  const ultimaLeituraDesteEq = historicoSerie?.coletas.find(
+    (c) => c.equipamento_id === equipamento.id
+  );
   const ultimaLeitura =
+    ultimaLeituraDesteEq ??
     historicoSerie?.coletas[0] ??
     (equipamento.tipo === "ursinho" ||
     equipamento.tipo === "vending_ursinho" ||
@@ -71,6 +79,7 @@ export async function GET(
           ponto_id: equipamento.ponto_id,
           ponto_nome: equipamento.pontos?.nome ?? null,
           equipamento_nome: equipamento.nome,
+          equipamento_id: equipamento.id,
         }
       : null);
 

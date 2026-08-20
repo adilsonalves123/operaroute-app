@@ -589,6 +589,25 @@ export function EquipamentoDetalheModal({
                       <span>{dados.historicoSerie.aviso}</span>
                     </div>
                   )}
+                  {(dados?.historicoSerie?.duplicatas_ativas?.length ?? 0) > 0 && (
+                    <div className="rounded-lg border border-rose-500/25 bg-rose-500/10 px-3 py-2 text-sm text-rose-100">
+                      <p className="font-medium text-rose-200">Série duplicada no sistema</p>
+                      <ul className="mt-1 space-y-1 text-xs text-rose-100/90">
+                        {dados!.historicoSerie!.duplicatas_ativas.map((d) => (
+                          <li key={d.id}>
+                            {d.em_estoque || !d.ponto_id
+                              ? "No estoque"
+                              : `No ponto “${d.ponto_nome ?? "—"}”`}
+                            {d.numero_maquina ? ` · Painel ${d.numero_maquina}` : ""}
+                            {d.nome ? ` · ${d.nome}` : ""}
+                          </li>
+                        ))}
+                      </ul>
+                      <p className="mt-2 text-xs text-rose-100/70">
+                        Fique com a ficha correta e inative ou exclua a outra.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

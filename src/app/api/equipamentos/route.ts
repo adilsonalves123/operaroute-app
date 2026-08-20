@@ -53,13 +53,18 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient();
+  const { normalizarNumeroSerie } = await import("@/lib/equipamentos/numero-serie");
+  const serieNorm = normalizarNumeroSerie(numeroSerie);
 
-  const { data: serieExistente } = await supabase
+  const { data: seriesExistentes } = await supabase
     .from("equipamentos")
-    .select("id")
+    .select("id, numero_serie, ponto_id, status")
     .eq("empresa_id", profile.empresa_id)
-    .eq("numero_serie", numeroSerie)
-    .maybeSingle();
+    .not("numero_serie", "is", null);
+
+  const serieExistente = (seriesExistentes ?? []).find(
+    (e) => normalizarNumeroSerie(String(e.numero_serie ?? "")) === serieNorm
+  );
 
   if (serieExistente) {
     return NextResponse.json(

@@ -42,7 +42,12 @@ export async function buscarHistoricoPorNumeroSerie(
   supabase: SupabaseClient,
   empresaId: string,
   serieRaw: string,
-  opts?: { pontoAtualId?: string; limiteColetas?: number }
+  opts?: {
+    pontoAtualId?: string | null;
+    /** Ficha que o usuário está olhando — o aviso fala dela, não de outra com a mesma série. */
+    equipamentoAtualId?: string | null;
+    limiteColetas?: number;
+  }
 ): Promise<BuscaNumeroSerieResult> {
   const serie = serieRaw.trim();
   const normalizado = normalizarNumeroSerie(serie);
@@ -54,6 +59,7 @@ export async function buscarHistoricoPorNumeroSerie(
       encontrado: false,
       equipamento_ativo: null,
       equipamentos_historico: [],
+      duplicatas_ativas: [],
       coletas: [],
       foto_referencia: null,
       aviso: null,
@@ -74,12 +80,24 @@ export async function buscarHistoricoPorNumeroSerie(
     .filter((row) => normalizarNumeroSerie(String(row.numero_serie ?? "")) === normalizado)
     .map((row) => mapEquipamento(row as Record<string, unknown>));
 
+  const equipamentoAtualId = opts?.equipamentoAtualId?.trim() || null;
+  const fichaAtual = equipamentoAtualId
+    ? equipamentos_historico.find((e) => e.id === equipamentoAtualId) ?? null
+    : null;
+
   // Preferência: máquina ativa alocada; senão a do estoque; senão qualquer ativa.
   const equipamento_ativo =
+    fichaAtual ??
     equipamentos_historico.find((e) => e.status === "ativo" && e.ponto_id) ??
     equipamentos_historico.find((e) => e.status === "ativo" && e.em_estoque) ??
     equipamentos_historico.find((e) => e.status === "ativo") ??
     null;
+
+  const duplicatas_ativas = equipamentos_historico.filter(
+    (e) =>
+      e.status === "ativo" &&
+      (!equipamento_ativo || e.id !== equipamento_ativo.id)
+  );
 
   const equipamentoIds = equipamentos_historico.map((e) => e.id);
 
@@ -115,6 +133,7 @@ export async function buscarHistoricoPorNumeroSerie(
         ponto_id: c.ponto_id,
         ponto_nome: pontoNome ?? eq?.ponto_nome ?? null,
         equipamento_nome: eq?.nome ?? null,
+        equipamento_id: c.equipamento_id ?? null,
       };
     });
   }
@@ -154,6 +173,7 @@ export async function buscarHistoricoPorNumeroSerie(
         ponto_id: c.ponto_id,
         ponto_nome: pontoNome ?? null,
         equipamento_nome: null,
+        equipamento_id: c.equipamento_id ?? null,
       });
       idsJaInclusos.add(c.id);
       if (coletas.length >= limite) break;
@@ -165,26 +185,46 @@ export async function buscarHistoricoPorNumeroSerie(
     coletas = coletas.slice(0, limite);
   }
 
+  // Leituras desta ficha primeiro (evita misturar contador de cadastro duplicado).
+  if (equipamentoAtualId) {
+    const desta = coletas.filter((c) => c.equipamento_id === equipamentoAtualId);
+    const outras = coletas.filter((c) => c.equipamento_id !== equipamentoAtualId);
+    coletas = [...desta, ...outras];
+  }
+
   const fotoColeta = coletas.find((c) => c.foto_url)?.foto_url ?? null;
   const foto_referencia =
-    equipamento_ativo?.foto_url ??
+    (fichaAtual?.foto_url || equipamento_ativo?.foto_url) ??
     equipamentos_historico.find((e) => e.foto_url)?.foto_url ??
     fotoColeta;
 
   let aviso: string | null = null;
-  if (equipamento_ativo) {
-    if (equipamento_ativo.em_estoque || !equipamento_ativo.ponto_id) {
+  const ref = fichaAtual ?? equipamento_ativo;
+  const outraAlocada = duplicatas_ativas.find((e) => Boolean(e.ponto_id));
+  const outraEstoque = duplicatas_ativas.find((e) => e.em_estoque || !e.ponto_id);
+
+  if (ref) {
+    if (outraAlocada && (ref.em_estoque || !ref.ponto_id)) {
+      const onde = outraAlocada.ponto_nome?.trim() || "outro ponto";
+      aviso = `Esta ficha está no estoque, mas existe outra com a mesma série ativa em "${onde}". Cadastro duplicado — use só uma e apague/inative a outra.`;
+    } else if (outraEstoque && ref.ponto_id) {
+      aviso = `Esta máquina está em "${ref.ponto_nome ?? "ponto"}", mas existe outra ficha com a mesma série no estoque. Cadastro duplicado.`;
+    } else if (outraAlocada && ref.ponto_id && outraAlocada.ponto_id !== ref.ponto_id) {
+      aviso = `Série duplicada: também há ficha ativa em "${outraAlocada.ponto_nome ?? "outro ponto"}".`;
+    } else if (ref.em_estoque || !ref.ponto_id) {
       aviso = opts?.pontoAtualId
         ? "Esta série está no estoque. Quer trazer esta máquina para cá?"
         : "Esta série está no estoque central.";
     } else if (
       opts?.pontoAtualId &&
-      equipamento_ativo.ponto_id !== opts.pontoAtualId
+      ref.ponto_id !== opts.pontoAtualId
     ) {
-      const onde = equipamento_ativo.ponto_nome?.trim() || "outro ponto";
+      const onde = ref.ponto_nome?.trim() || "outro ponto";
       aviso = `Esta série já está ativa em "${onde}". Você pode transferir para cá em vez de cadastrar de novo.`;
-    } else if (!opts?.pontoAtualId) {
-      aviso = `Ativa no ponto "${equipamento_ativo.ponto_nome ?? "—"}".`;
+    } else if (!opts?.pontoAtualId && !fichaAtual) {
+      aviso = `Ativa no ponto "${ref.ponto_nome ?? "—"}".`;
+    } else if (ref.ponto_id) {
+      aviso = `Alocada em "${ref.ponto_nome ?? "ponto"}".`;
     }
   }
 
@@ -193,6 +233,7 @@ export async function buscarHistoricoPorNumeroSerie(
     encontrado: equipamentos_historico.length > 0 || coletas.length > 0,
     equipamento_ativo,
     equipamentos_historico,
+    duplicatas_ativas,
     coletas,
     foto_referencia,
     aviso,
