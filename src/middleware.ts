@@ -16,6 +16,9 @@ const publicRoutes = [
 ];
 const authRoutes = ["/login", "/cadastro", "/esqueci-senha"];
 
+/** Evita 504 MIDDLEWARE_INVOCATION_TIMEOUT quando o Auth do Supabase trava. */
+const SUPABASE_FETCH_TIMEOUT_MS = 4_000;
+
 type MiddlewareProfile = {
   onboarding_completo?: boolean | null;
   empresa_id?: string | null;
@@ -29,106 +32,127 @@ function needsOnboarding(profile: MiddlewareProfile) {
 function routeNeedsProfileCheck(
   pathname: string,
   isPublic: boolean,
-  isApiRoute: boolean,
   isAuthRoute: boolean
 ): boolean {
-  if (isApiRoute) return false;
   if (isAuthRoute) return true;
   if (pathname === "/" || pathname === "/configuracao" || pathname === "/pesquisa") return true;
   return !isPublic;
 }
 
+function fetchComTimeout(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): Promise<Response> {
+  const timeoutSignal = AbortSignal.timeout(SUPABASE_FETCH_TIMEOUT_MS);
+  const callerSignal = init?.signal;
+  const signal =
+    callerSignal && typeof AbortSignal.any === "function"
+      ? AbortSignal.any([callerSignal, timeoutSignal])
+      : timeoutSignal;
+  return fetch(input, { ...init, signal });
+}
+
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
-      },
-    }
-  );
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
   const { pathname } = request.nextUrl;
-  const isPublic = publicRoutes.some((r) => pathname.startsWith(r));
-  const isAuthRoute = authRoutes.some((r) => pathname === r);
-  const isApiRoute = pathname.startsWith("/api/");
-  // Painel do dono: login/cookie próprios — não exige sessão Supabase do SaaS
-  const isDonoArea =
-    pathname.startsWith("/dono") || pathname.startsWith("/api/dono");
 
-  if (isDonoArea) {
+  // Painel do dono: login próprio — não exige sessão Supabase do SaaS
+  if (pathname.startsWith("/dono")) {
     return supabaseResponse;
   }
 
-  if (!user && !isPublic && pathname !== "/" && !isApiRoute) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  const isPublic = publicRoutes.some((r) => pathname.startsWith(r));
+  const isAuthRoute = authRoutes.some((r) => pathname === r);
+
+  try {
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: { fetch: fetchComTimeout },
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value }) =>
+              request.cookies.set(name, value)
+            );
+            supabaseResponse = NextResponse.next({ request });
+            cookiesToSet.forEach(({ name, value, options }) =>
+              supabaseResponse.cookies.set(name, value, options)
+            );
+          },
+        },
+      }
+    );
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user && !isPublic && pathname !== "/") {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    if (pathname === "/" && !user) {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+
+    if (user && routeNeedsProfileCheck(pathname, isPublic, isAuthRoute)) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completo, empresa_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const onboarding = needsOnboarding(profile);
+
+      if (isAuthRoute) {
+        return NextResponse.redirect(
+          new URL(onboarding ? "/pesquisa" : "/dashboard", request.url)
+        );
+      }
+
+      if (
+        (pathname === "/configuracao" || pathname === "/pesquisa") &&
+        !onboarding
+      ) {
+        return NextResponse.redirect(new URL("/dashboard", request.url));
+      }
+
+      if (pathname === "/") {
+        return NextResponse.redirect(
+          new URL(onboarding ? "/pesquisa" : "/dashboard", request.url)
+        );
+      }
+
+      if (
+        !isPublic &&
+        pathname !== "/configuracao" &&
+        pathname !== "/pesquisa" &&
+        onboarding
+      ) {
+        return NextResponse.redirect(new URL("/pesquisa", request.url));
+      }
+    }
+
+    return supabaseResponse;
+  } catch {
+    // Timeout/rede: não segura a página no 504. Rotas privadas vão para login.
+    if (!isPublic && pathname !== "/") {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
+    return supabaseResponse;
   }
-
-  if (pathname === "/" && !user) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-
-  if (user && routeNeedsProfileCheck(pathname, isPublic, isApiRoute, isAuthRoute)) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("onboarding_completo, empresa_id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const onboarding = needsOnboarding(profile);
-
-    if (isAuthRoute) {
-      return NextResponse.redirect(
-        new URL(onboarding ? "/pesquisa" : "/dashboard", request.url)
-      );
-    }
-
-    if (
-      (pathname === "/configuracao" || pathname === "/pesquisa") &&
-      !onboarding
-    ) {
-      return NextResponse.redirect(new URL("/dashboard", request.url));
-    }
-
-    if (pathname === "/") {
-      return NextResponse.redirect(
-        new URL(onboarding ? "/pesquisa" : "/dashboard", request.url)
-      );
-    }
-
-    if (
-      !isPublic &&
-      pathname !== "/configuracao" &&
-      pathname !== "/pesquisa" &&
-      onboarding
-    ) {
-      return NextResponse.redirect(new URL("/pesquisa", request.url));
-    }
-  }
-
-  return supabaseResponse;
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|downloads/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|apk)$).*)",
+    /*
+     * Páginas apenas. /api/* autentica sozinho (requireAcesso/getProfile) —
+     * tirar do middleware evita 504 em leituras IA / uploads longos.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|api/|downloads/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|apk)$).*)",
   ],
 };
