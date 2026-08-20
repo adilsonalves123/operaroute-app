@@ -4,6 +4,7 @@ import { forwardRef } from "react";
 import { formatCurrency } from "@/lib/utils";
 import type { RelatorioBolinhaData } from "@/lib/nichos/bolinha/relatorio";
 import type { RelatorioLinhaComprovante } from "@/lib/coletas/relatorio-comprovante-theme";
+import { appendLinhasCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 import {
   RelatorioBadgePrevia,
   RelatorioCabecalho,
@@ -33,7 +34,7 @@ function buildLinhasResumo(data: RelatorioBolinhaData): RelatorioLinhaComprovant
   }
   linhas.push({ label: "Acerto desta visita", secao: true, dividerBefore: true });
   linhas.push({
-    label: "A receber",
+    label: "Operação (desta visita)",
     valor: formatCurrency(c.valorAReceber),
     variant: "highlight",
     destaque: true,
@@ -46,8 +47,11 @@ function buildLinhasResumo(data: RelatorioBolinhaData): RelatorioLinhaComprovant
     valor: formatCurrency(c.lucroReal),
     variant: "success",
   });
+
+  const comCobranca = appendLinhasCobrancaDetalhe(linhas, data.cobranca);
+
   if (c.valorPagoRecebido > 0.009) {
-    linhas.push({
+    comCobranca.push({
       label: "Recebido agora",
       valor: formatCurrency(c.valorPagoRecebido),
       variant: "success",
@@ -55,20 +59,20 @@ function buildLinhasResumo(data: RelatorioBolinhaData): RelatorioLinhaComprovant
     });
   }
   if (c.saldoPendente > 0.009) {
-    linhas.push({
+    comCobranca.push({
       label: "Saldo pendente",
       valor: formatCurrency(c.saldoPendente),
       variant: "warning",
     });
   }
   if (c.haver > 0.009) {
-    linhas.push({
+    comCobranca.push({
       label: "Haver do ponto",
       valor: formatCurrency(c.haver),
       variant: "warning",
     });
   }
-  return linhas;
+  return comCobranca;
 }
 
 export const RelatorioBolinhaView = forwardRef<HTMLDivElement, { data: RelatorioBolinhaData }>(

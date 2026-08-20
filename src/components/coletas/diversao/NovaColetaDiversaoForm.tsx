@@ -37,7 +37,7 @@ import {
 import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
 import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
-import { totalCobrancaNicho, detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
+import { detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
 import type { RelatorioDiversaoData } from "@/lib/nichos/diversao/relatorio";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import type { Equipamento, Ponto } from "@/lib/types/database";
@@ -226,7 +226,9 @@ export function NovaColetaDiversaoForm() {
         forms = forms.map((m) => ({
           ...m,
           entradaAnterior: Math.round(Number(coleta.entrada_anterior ?? m.entradaAnterior)),
-          entradaAtualInput: formatContadorInput(Math.round(Number(coleta.entrada_atual ?? 0))),
+          entradaAtualInput: formatContadorInput(
+            String(Math.round(Number(coleta.entrada_atual ?? 0)))
+          ),
           fotoPreview: coleta.foto_url ? String(coleta.foto_url) : null,
         }));
 
@@ -308,15 +310,17 @@ export function NovaColetaDiversaoForm() {
     }
   }, [maquinas, comissaoPercentual, desconto, valorRecebido]);
 
-  const totalACobrarAgora = useMemo(() => {
-    if (emVisitaPonto && !receberAgora) return calculo?.valorAReceber ?? 0;
-    return totalCobrancaNicho({
+  const cobrancaComprovante = useMemo(() => {
+    if (emVisitaPonto && !receberAgora) {
+      return { totalACobrar: calculo?.valorAReceber ?? 0, cobranca: null };
+    }
+    return detalheCobrancaParaComprovante({
       valorOperacao: calculo?.valorAReceber ?? 0,
       pendenciaSaldo: pendenciaPonto?.totalPendente ?? 0,
       incluirPendencia,
       haverSaldo,
       descontarHaver,
-    }).totalACobrar;
+    });
   }, [
     emVisitaPonto,
     receberAgora,
@@ -326,6 +330,7 @@ export function NovaColetaDiversaoForm() {
     haverSaldo,
     descontarHaver,
   ]);
+  const totalACobrarAgora = cobrancaComprovante.totalACobrar;
 
   const leiturasCompletas =
     maquinas.length > 0 &&
@@ -358,8 +363,9 @@ export function NovaColetaDiversaoForm() {
         fotoUrl: maquinas.find((item) => item.equipamentoId === maquina.equipamentoId)?.fotoPreview,
       })),
       calculo,
+      cobranca: cobrancaComprovante.cobranca,
     };
-  }, [calculo, ponto, empresaNome, maquinas, comissaoPercentual]);
+  }, [calculo, ponto, empresaNome, maquinas, comissaoPercentual, cobrancaComprovante.cobranca]);
 
   function updateMaquina(id: string, patch: Partial<MaquinaForm>) {
     setMaquinas((prev) => prev.map((maquina) => (maquina.equipamentoId === id ? { ...maquina, ...patch } : maquina)));

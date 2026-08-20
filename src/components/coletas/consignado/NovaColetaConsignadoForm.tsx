@@ -49,7 +49,7 @@ import {
 import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
 import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
-import { totalCobrancaNicho, detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
+import { detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
 import type { RelatorioConsignadoData } from "@/lib/nichos/consignado/relatorio";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import type { Equipamento, Ponto, ProdutoConsignado } from "@/lib/types/database";
@@ -468,15 +468,17 @@ export function NovaColetaConsignadoForm() {
     }
   }, [expositores, modoComissao, comissaoPercentual, desconto, valorRecebido]);
 
-  const totalACobrarAgora = useMemo(() => {
-    if (emVisitaPonto && !receberAgora) return calculo?.valorAReceber ?? 0;
-    return totalCobrancaNicho({
+  const cobrancaComprovante = useMemo(() => {
+    if (emVisitaPonto && !receberAgora) {
+      return { totalACobrar: calculo?.valorAReceber ?? 0, cobranca: null };
+    }
+    return detalheCobrancaParaComprovante({
       valorOperacao: calculo?.valorAReceber ?? 0,
       pendenciaSaldo: pendenciaPonto?.totalPendente ?? 0,
       incluirPendencia,
       haverSaldo,
       descontarHaver,
-    }).totalACobrar;
+    });
   }, [
     emVisitaPonto,
     receberAgora,
@@ -486,6 +488,7 @@ export function NovaColetaConsignadoForm() {
     haverSaldo,
     descontarHaver,
   ]);
+  const totalACobrarAgora = cobrancaComprovante.totalACobrar;
 
   const calculoError = useMemo(() => {
     const linhas = expositores.flatMap((exp) =>
@@ -551,8 +554,9 @@ export function NovaColetaConsignadoForm() {
         })
         .filter((exp): exp is NonNullable<typeof exp> => exp != null),
       calculo,
+      cobranca: cobrancaComprovante.cobranca,
     };
-  }, [calculo, ponto, empresaNome, expositores, expositorCalcs]);
+  }, [calculo, ponto, empresaNome, expositores, expositorCalcs, cobrancaComprovante.cobranca]);
 
   function updateLinha(
     expositorId: string,

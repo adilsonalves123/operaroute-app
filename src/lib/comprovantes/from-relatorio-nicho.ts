@@ -30,6 +30,14 @@ export function snapshotFromNichoPadrao(opts: {
   haverGerado?: number;
   /** Quando a prévia inclui dívida anterior / abatimentos na cobrança. */
   totalACobrarOverride?: number;
+  /** Dívida/pendência anterior incluída nesta cobrança. */
+  divida?: number;
+  /** Haver abatido nesta cobrança. */
+  haverAbatido?: number;
+  /** Haver que o ponto tinha antes. */
+  haverAnterior?: number;
+  /** Haver restante após abatimento. */
+  haverRestante?: number;
   notas?: string[];
 }): ComprovanteSnapshot {
   const dataIso =
@@ -43,6 +51,17 @@ export function snapshotFromNichoPadrao(opts: {
   const desconto = roundMoney(opts.desconto ?? 0);
   const valorPago = roundMoney(opts.valorPago ?? 0);
   const haverGerado = roundMoney(opts.haverGerado ?? 0);
+  const divida = roundMoney(opts.divida ?? 0);
+  const haverAbatido = roundMoney(opts.haverAbatido ?? 0);
+  const haverAnterior = roundMoney(
+    opts.haverAnterior ??
+      (haverAbatido > 0.009 ? haverAbatido + (opts.haverRestante ?? 0) : 0)
+  );
+  const haverRestante = roundMoney(
+    opts.haverRestante != null
+      ? opts.haverRestante
+      : Math.max(0, haverAnterior - haverAbatido)
+  );
   const totalACobrar = roundMoney(
     opts.totalACobrarOverride != null ? opts.totalACobrarOverride : valorAReceber
   );
@@ -52,6 +71,7 @@ export function snapshotFromNichoPadrao(opts: {
       : Math.max(0, totalACobrar - valorPago)
   );
   const subtotal = roundMoney(valorAReceber + desconto);
+  const totalBruto = roundMoney(totalACobrar + haverAbatido);
 
   return {
     empresaNome: (opts.empresaNome ?? "").trim() || "Operação",
@@ -65,17 +85,29 @@ export function snapshotFromNichoPadrao(opts: {
     comissao: roundMoney(opts.comissao ?? 0),
     comissaoPercentual: opts.comissaoPercentual,
     subtotal,
-    divida: 0,
+    divida,
     desconto,
-    haverAbatido: 0,
+    haverAbatido,
     totalACobrar,
     valorPago,
     restante,
     haverGerado,
-    totalBruto: totalACobrar,
+    haverAnterior: haverAnterior > 0.009 ? haverAnterior : undefined,
+    haverRestante:
+      haverAbatido > 0.009 || haverRestante > 0.009 ? haverRestante : undefined,
+    totalBruto,
     notas: opts.notas,
   };
 }
+
+type SnapshotNichoOpts = {
+  chavePix?: string | null;
+  valorACobrar?: number;
+  divida?: number;
+  haverAbatido?: number;
+  haverAnterior?: number;
+  haverRestante?: number;
+};
 
 export function snapshotFromRelatorioColetaData(
   data: RelatorioColetaData,
@@ -127,12 +159,13 @@ export function snapshotFromRelatorioColetaData(
 
 export function snapshotFromRelatorioFuraFura(
   data: RelatorioFuraFuraData,
-  opts?: { chavePix?: string | null; valorACobrar?: number }
+  opts?: SnapshotNichoOpts
 ): ComprovanteSnapshot {
   const c = data.calculo;
   const notas: string[] = [];
   if (data.kitNome) notas.push(`Kit: ${data.kitNome}`);
   notas.push(`Furos: ${c.quantidadeFuros} × ${c.precoFuro}`);
+  const cobranca = data.cobranca;
   return snapshotFromNichoPadrao({
     empresaNome: data.empresaNome,
     pontoNome: data.pontoNome,
@@ -148,16 +181,21 @@ export function snapshotFromRelatorioFuraFura(
     valorPago: c.valorPagoRecebido,
     saldoPendente: c.saldoPendente,
     haverGerado: c.haver,
-    totalACobrarOverride: opts?.valorACobrar,
+    totalACobrarOverride: opts?.valorACobrar ?? cobranca?.totalACobrar,
+    divida: opts?.divida ?? cobranca?.dividaAnterior,
+    haverAbatido: opts?.haverAbatido ?? cobranca?.haverAbatido,
+    haverAnterior: opts?.haverAnterior ?? cobranca?.haverAnterior,
+    haverRestante: opts?.haverRestante,
     notas,
   });
 }
 
 export function snapshotFromRelatorioUrsinho(
   data: RelatorioUrsinhoData,
-  opts?: { chavePix?: string | null; valorACobrar?: number }
+  opts?: SnapshotNichoOpts
 ): ComprovanteSnapshot {
   const c = data.calculo;
+  const cobranca = data.cobranca;
   return snapshotFromNichoPadrao({
     empresaNome: data.empresaNome,
     pontoNome: data.pontoNome,
@@ -178,15 +216,20 @@ export function snapshotFromRelatorioUrsinho(
     valorPago: c.valorPagoRecebido,
     saldoPendente: c.saldoPendente,
     haverGerado: c.haver,
-    totalACobrarOverride: opts?.valorACobrar,
+    totalACobrarOverride: opts?.valorACobrar ?? cobranca?.totalACobrar,
+    divida: opts?.divida ?? cobranca?.dividaAnterior,
+    haverAbatido: opts?.haverAbatido ?? cobranca?.haverAbatido,
+    haverAnterior: opts?.haverAnterior ?? cobranca?.haverAnterior,
+    haverRestante: opts?.haverRestante,
   });
 }
 
 export function snapshotFromRelatorioDiversao(
   data: RelatorioDiversaoData,
-  opts?: { chavePix?: string | null; valorACobrar?: number }
+  opts?: SnapshotNichoOpts
 ): ComprovanteSnapshot {
   const c = data.calculo;
+  const cobranca = data.cobranca;
   return snapshotFromNichoPadrao({
     empresaNome: data.empresaNome,
     pontoNome: data.pontoNome,
@@ -207,15 +250,20 @@ export function snapshotFromRelatorioDiversao(
     valorPago: c.valorPagoRecebido,
     saldoPendente: c.saldoPendente,
     haverGerado: c.haver,
-    totalACobrarOverride: opts?.valorACobrar,
+    totalACobrarOverride: opts?.valorACobrar ?? cobranca?.totalACobrar,
+    divida: opts?.divida ?? cobranca?.dividaAnterior,
+    haverAbatido: opts?.haverAbatido ?? cobranca?.haverAbatido,
+    haverAnterior: opts?.haverAnterior ?? cobranca?.haverAnterior,
+    haverRestante: opts?.haverRestante,
   });
 }
 
 export function snapshotFromRelatorioBolinha(
   data: RelatorioBolinhaData,
-  opts?: { chavePix?: string | null; valorACobrar?: number }
+  opts?: SnapshotNichoOpts
 ): ComprovanteSnapshot {
   const c = data.calculo;
+  const cobranca = data.cobranca;
   return snapshotFromNichoPadrao({
     empresaNome: data.empresaNome,
     pontoNome: data.pontoNome,
@@ -236,15 +284,20 @@ export function snapshotFromRelatorioBolinha(
     valorPago: c.valorPagoRecebido,
     saldoPendente: c.saldoPendente,
     haverGerado: c.haver,
-    totalACobrarOverride: opts?.valorACobrar,
+    totalACobrarOverride: opts?.valorACobrar ?? cobranca?.totalACobrar,
+    divida: opts?.divida ?? cobranca?.dividaAnterior,
+    haverAbatido: opts?.haverAbatido ?? cobranca?.haverAbatido,
+    haverAnterior: opts?.haverAnterior ?? cobranca?.haverAnterior,
+    haverRestante: opts?.haverRestante,
   });
 }
 
 export function snapshotFromRelatorioConsignado(
   data: RelatorioConsignadoData,
-  opts?: { chavePix?: string | null; valorACobrar?: number }
+  opts?: SnapshotNichoOpts
 ): ComprovanteSnapshot {
   const c = data.calculo;
+  const cobranca = data.cobranca;
   return snapshotFromNichoPadrao({
     empresaNome: data.empresaNome,
     pontoNome: data.pontoNome,
@@ -264,7 +317,11 @@ export function snapshotFromRelatorioConsignado(
     valorPago: c.valorPagoRecebido,
     saldoPendente: c.saldoPendente,
     haverGerado: c.haver,
-    totalACobrarOverride: opts?.valorACobrar,
+    totalACobrarOverride: opts?.valorACobrar ?? cobranca?.totalACobrar,
+    divida: opts?.divida ?? cobranca?.dividaAnterior,
+    haverAbatido: opts?.haverAbatido ?? cobranca?.haverAbatido,
+    haverAnterior: opts?.haverAnterior ?? cobranca?.haverAnterior,
+    haverRestante: opts?.haverRestante,
   });
 }
 

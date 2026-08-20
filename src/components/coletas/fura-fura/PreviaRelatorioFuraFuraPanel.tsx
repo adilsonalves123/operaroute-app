@@ -41,7 +41,13 @@ export function PreviaRelatorioFuraFuraPanel({
     () =>
       snapshotFromRelatorioFuraFura(
         { ...data, previa: false },
-        { chavePix, valorACobrar: valorCobrar }
+        {
+          chavePix,
+          valorACobrar: valorCobrar,
+          divida: data.cobranca?.dividaAnterior,
+          haverAbatido: data.cobranca?.haverAbatido,
+          haverAnterior: data.cobranca?.haverAnterior,
+        }
       ),
     [data, chavePix, valorCobrar]
   );
@@ -106,7 +112,14 @@ export function PreviaRelatorioFuraFuraPanel({
           `Bruto: ${formatCurrency(c.valorBruto)}`,
           `Comissão: ${formatCurrency(c.valorComissao)}`,
           ...(c.desconto > 0.009 ? [`Desconto: ${formatCurrency(c.desconto)}`] : []),
-          `A receber: ${formatCurrency(c.valorAReceber)}`,
+          `Operação: ${formatCurrency(c.valorAReceber)}`,
+          ...((data.cobranca?.dividaAnterior ?? 0) > 0.009
+            ? [`Dívida anterior: ${formatCurrency(data.cobranca!.dividaAnterior!)}`]
+            : []),
+          ...((data.cobranca?.haverAbatido ?? 0) > 0.009
+            ? [`Haver abatido: ${formatCurrency(data.cobranca!.haverAbatido!)}`]
+            : []),
+          `A cobrar: ${formatCurrency(valorCobrar)}`,
         ]}
       />
 

@@ -24,7 +24,9 @@ import { PreviaRelatorioFuraFuraPanel } from "@/components/coletas/fura-fura/Pre
 import { ColetaFuraFuraSucessoModal } from "@/components/coletas/fura-fura/ColetaFuraFuraSucessoModal";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
-import { totalCobrancaNicho } from "@/lib/coletas/total-cobranca-nicho";
+import {
+  detalheCobrancaParaComprovante,
+} from "@/lib/coletas/total-cobranca-nicho";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { uploadFotoFuraFura } from "@/lib/storage/coleta-fotos";
@@ -461,15 +463,17 @@ export function NovaColetaFuraFuraForm() {
     [form, brindes, ponto, valorRecebido]
   );
 
-  const totalACobrarAgora = useMemo(() => {
-    if (emVisitaPonto && !receberAgora) return calculo.valorAReceber;
-    return totalCobrancaNicho({
+  const cobrancaComprovante = useMemo(() => {
+    if (emVisitaPonto && !receberAgora) {
+      return { totalACobrar: calculo.valorAReceber, cobranca: null };
+    }
+    return detalheCobrancaParaComprovante({
       valorOperacao: calculo.valorAReceber,
       pendenciaSaldo: pendenciaPonto?.totalPendente ?? 0,
       incluirPendencia,
       haverSaldo,
       descontarHaver,
-    }).totalACobrar;
+    });
   }, [
     emVisitaPonto,
     receberAgora,
@@ -479,6 +483,7 @@ export function NovaColetaFuraFuraForm() {
     haverSaldo,
     descontarHaver,
   ]);
+  const totalACobrarAgora = cobrancaComprovante.totalACobrar;
 
   function update(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -665,6 +670,7 @@ export function NovaColetaFuraFuraForm() {
           calculo: calculoSalvo,
           kitNome: kitAtivo?.nome ?? null,
           fotoUrl,
+          cobranca: cobrancaComprovante.cobranca,
         },
         valorACobrar: totalACobrarAgora,
         visitaJaFinalizada: fecharVisitaAgora,
@@ -1083,6 +1089,7 @@ export function NovaColetaFuraFuraForm() {
                         calculo,
                         kitNome: kitAtivo?.nome ?? null,
                         fotoUrl: fotoPreview,
+                        cobranca: cobrancaComprovante.cobranca,
                       }}
                     />
                   </ColetaPreviaSection>

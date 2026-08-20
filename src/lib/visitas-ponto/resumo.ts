@@ -187,7 +187,8 @@ function buildCassinoNicho(
 function buildColetaNicho(
   nicho: VisitaPontoNicho,
   coletaIds: string[],
-  coletas: ColetaRow[]
+  coletas: ColetaRow[],
+  visitaPonto: { id: string; ponto_id: string }
 ): NichoResumoVisita | null {
   const rows = coletaIds
     .map((id) => coletas.find((c) => c.id === id))
@@ -235,15 +236,15 @@ function buildColetaNicho(
     itemIds: rows.map((c) => c.id),
     href:
       nicho === "fura_fura" && rows.length === 1
-        ? `/coletas/nova/fura-fura?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
+        ? `/coletas/nova/fura-fura?ponto=${visitaPonto.ponto_id}&visita_ponto=${visitaPonto.id}&editar_visita=${rows[0].id}`
         : nicho === "ursinho" && rows.length === 1
-          ? `/coletas/nova/ursinho?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
+          ? `/coletas/nova/ursinho?ponto=${visitaPonto.ponto_id}&visita_ponto=${visitaPonto.id}&editar_visita=${rows[0].id}`
           : nicho === "diversao" && rows.length === 1
-            ? `/coletas/nova/diversao?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
+            ? `/coletas/nova/diversao?ponto=${visitaPonto.ponto_id}&visita_ponto=${visitaPonto.id}&editar_visita=${rows[0].id}`
             : nicho === "bolinha" && rows.length === 1
-              ? `/coletas/nova/bolinha?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
+              ? `/coletas/nova/bolinha?ponto=${visitaPonto.ponto_id}&visita_ponto=${visitaPonto.id}&editar_visita=${rows[0].id}`
               : nicho === "consignado" && rows.length === 1
-                ? `/coletas/nova/consignado?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
+                ? `/coletas/nova/consignado?ponto=${visitaPonto.ponto_id}&visita_ponto=${visitaPonto.id}&editar_visita=${rows[0].id}`
                 : undefined,
   };
 }
@@ -319,11 +320,11 @@ export function montarResumoVisitaPonto(
         }
       : null;
 
-  const fura = buildColetaNicho("fura_fura", furaColetaIds, coletas);
-  const urso = buildColetaNicho("ursinho", ursoColetaIds, coletas);
-  const diversao = buildColetaNicho("diversao", diversaoColetaIds, coletas);
-  const bolinha = buildColetaNicho("bolinha", bolinhaColetaIds, coletas);
-  const consignado = buildColetaNicho("consignado", consignadoColetaIds, coletas);
+  const fura = buildColetaNicho("fura_fura", furaColetaIds, coletas, visita);
+  const urso = buildColetaNicho("ursinho", ursoColetaIds, coletas, visita);
+  const diversao = buildColetaNicho("diversao", diversaoColetaIds, coletas, visita);
+  const bolinha = buildColetaNicho("bolinha", bolinhaColetaIds, coletas, visita);
+  const consignado = buildColetaNicho("consignado", consignadoColetaIds, coletas, visita);
 
   const nichos = [cassinoPositivo, fura, urso, diversao, bolinha, consignado].filter(
     (n): n is NichoResumoVisita => Boolean(n)

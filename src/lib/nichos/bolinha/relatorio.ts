@@ -1,5 +1,6 @@
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import type { CalculoColetaBolinha } from "./index";
+import type { RelatorioCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 
 export type RelatorioBolinhaMaquina = {
   nome: string;
@@ -24,6 +25,7 @@ export type RelatorioBolinhaData = {
   previa: boolean;
   maquinas: RelatorioBolinhaMaquina[];
   calculo: CalculoColetaBolinha;
+  cobranca?: RelatorioCobrancaDetalhe | null;
 };
 
 export function buildRelatorioMensagemWhatsAppBolinha(data: RelatorioBolinhaData): string {

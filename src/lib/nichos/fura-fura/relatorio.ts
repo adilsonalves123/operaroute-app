@@ -1,6 +1,7 @@
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import type { CalculoColetaFuraFuraResult } from "./calculo-coleta";
 import { whatsAppUrl } from "@/lib/nichos/cassino/relatorio";
+import type { RelatorioCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 
 export type RelatorioFuraFuraData = {
   empresaNome: string;
@@ -12,6 +13,8 @@ export type RelatorioFuraFuraData = {
   kitNome?: string | null;
   /** Preview/blob ou URL pública da foto da máquina. */
   fotoUrl?: string | null;
+  /** Pendência/haver incluídos na cobrança (comprovante detalhado). */
+  cobranca?: RelatorioCobrancaDetalhe | null;
 };
 
 export function buildRelatorioMensagemWhatsAppFuraFura(data: RelatorioFuraFuraData): string {

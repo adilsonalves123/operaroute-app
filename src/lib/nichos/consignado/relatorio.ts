@@ -1,5 +1,6 @@
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import type { CalculoColetaConsignado, LinhaConsignadoCalculada } from "./index";
+import type { RelatorioCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 
 export type RelatorioConsignadoExpositor = {
   nome: string;
@@ -18,6 +19,7 @@ export type RelatorioConsignadoData = {
   previa: boolean;
   expositores: RelatorioConsignadoExpositor[];
   calculo: CalculoColetaConsignado;
+  cobranca?: RelatorioCobrancaDetalhe | null;
 };
 
 export function buildRelatorioMensagemWhatsAppConsignado(data: RelatorioConsignadoData): string {

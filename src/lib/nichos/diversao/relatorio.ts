@@ -1,6 +1,7 @@
 import { formatContador } from "@/lib/nichos/cassino";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import type { CalculoColetaDiversao } from "./index";
+import type { RelatorioCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 
 export type RelatorioDiversaoMaquina = {
   nome: string;
@@ -21,6 +22,7 @@ export type RelatorioDiversaoData = {
   previa: boolean;
   maquinas: RelatorioDiversaoMaquina[];
   calculo: CalculoColetaDiversao;
+  cobranca?: RelatorioCobrancaDetalhe | null;
 };
 
 export function buildRelatorioMensagemWhatsAppDiversao(data: RelatorioDiversaoData): string {

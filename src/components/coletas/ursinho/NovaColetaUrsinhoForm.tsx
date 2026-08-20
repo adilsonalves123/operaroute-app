@@ -45,7 +45,7 @@ import {
 import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
 import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
-import { totalCobrancaNicho, detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
+import { detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
 import type { RelatorioUrsinhoData } from "@/lib/nichos/ursinho/relatorio";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import type { Equipamento, Ponto } from "@/lib/types/database";
@@ -303,7 +303,7 @@ export function NovaColetaUrsinhoForm() {
               Number(coleta.entrada_anterior ?? m.entradaAnterior)
             ),
             entradaAtualInput: formatContadorInput(
-              Math.round(Number(coleta.entrada_atual ?? 0))
+              String(Math.round(Number(coleta.entrada_atual ?? 0)))
             ),
             fotoPreview: coleta.foto_url ? String(coleta.foto_url) : null,
             brindes: brindesForm,
@@ -444,8 +444,9 @@ export function NovaColetaUrsinhoForm() {
         fotoUrl: maquinas.find((item) => item.equipamentoId === maquina.equipamentoId)?.fotoPreview,
       })),
       calculo,
+      cobranca: cobrancaComprovante.cobranca,
     };
-  }, [calculo, ponto, empresaNome, maquinas, comissaoPercentual]);
+  }, [calculo, ponto, empresaNome, maquinas, comissaoPercentual, cobrancaComprovante.cobranca]);
 
   function updateMaquina(id: string, patch: Partial<MaquinaForm>) {
     setMaquinas((prev) => prev.map((maquina) => (maquina.equipamentoId === id ? { ...maquina, ...patch } : maquina)));

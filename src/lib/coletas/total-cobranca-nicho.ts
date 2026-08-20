@@ -28,3 +28,39 @@ export function totalCobrancaNicho(opts: {
   const totalACobrar = round2(Math.max(0, valorOperacao - haverDescontado + pendenciaIncluida));
   return { valorOperacao, pendenciaIncluida, haverDescontado, totalACobrar };
 }
+
+/** Detalhe para comprovante (dívida/haver) — null se não há nada além da operação. */
+export function detalheCobrancaParaComprovante(opts: {
+  valorOperacao: number;
+  pendenciaSaldo?: number;
+  incluirPendencia?: boolean;
+  haverSaldo?: number;
+  descontarHaver?: boolean;
+}): {
+  totalACobrar: number;
+  cobranca: {
+    dividaAnterior: number;
+    haverAnterior: number;
+    haverAbatido: number;
+    totalACobrar: number;
+  } | null;
+} {
+  const cobranca = totalCobrancaNicho(opts);
+  const haverAnterior =
+    opts.descontarHaver && (opts.haverSaldo ?? 0) > 0.009
+      ? round2(opts.haverSaldo!)
+      : 0;
+  const temExtra =
+    cobranca.pendenciaIncluida > 0.009 || cobranca.haverDescontado > 0.009;
+  return {
+    totalACobrar: cobranca.totalACobrar,
+    cobranca: temExtra
+      ? {
+          dividaAnterior: cobranca.pendenciaIncluida,
+          haverAnterior,
+          haverAbatido: cobranca.haverDescontado,
+          totalACobrar: cobranca.totalACobrar,
+        }
+      : null,
+  };
+}

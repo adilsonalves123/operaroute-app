@@ -36,6 +36,9 @@ export function ColetaFuraFuraSucessoModal({
   const snapshotBase = snapshotFromRelatorioFuraFura(relatorio, {
     chavePix,
     valorACobrar,
+    divida: data.cobranca?.dividaAnterior,
+    haverAbatido: data.cobranca?.haverAbatido,
+    haverAnterior: data.cobranca?.haverAnterior,
   });
 
   return (

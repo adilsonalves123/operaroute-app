@@ -46,7 +46,7 @@ import {
 import { ColetaHaverPendenciaPanel } from "@/components/coletas/ColetaHaverPendenciaPanel";
 import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
 import { somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
-import { totalCobrancaNicho, detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
+import { detalheCobrancaParaComprovante } from "@/lib/coletas/total-cobranca-nicho";
 import type { RelatorioBolinhaData } from "@/lib/nichos/bolinha/relatorio";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import type { Equipamento, Ponto } from "@/lib/types/database";
@@ -250,7 +250,7 @@ export function NovaColetaBolinhaForm() {
             entradaAnterior: Math.round(
               Number(coleta.entrada_anterior ?? m.entradaAnterior)
             ),
-            valorContadoInput: formatMoneyInput(Number(coleta.valor_bruto ?? 0)),
+            valorContadoInput: formatMoneyInput(String(Math.round(Number(coleta.valor_bruto ?? 0) * 100))),
             fotoPreview: coleta.foto_url ? String(coleta.foto_url) : null,
             estoqueBrindes: estoqueComOriginais,
           };
@@ -336,15 +336,17 @@ export function NovaColetaBolinhaForm() {
     }
   }, [maquinas, comissaoPercentual, desconto, valorRecebido]);
 
-  const totalACobrarAgora = useMemo(() => {
-    if (emVisitaPonto && !receberAgora) return calculo?.valorAReceber ?? 0;
-    return totalCobrancaNicho({
+  const cobrancaComprovante = useMemo(() => {
+    if (emVisitaPonto && !receberAgora) {
+      return { totalACobrar: calculo?.valorAReceber ?? 0, cobranca: null };
+    }
+    return detalheCobrancaParaComprovante({
       valorOperacao: calculo?.valorAReceber ?? 0,
       pendenciaSaldo: pendenciaPonto?.totalPendente ?? 0,
       incluirPendencia,
       haverSaldo,
       descontarHaver,
-    }).totalACobrar;
+    });
   }, [
     emVisitaPonto,
     receberAgora,
@@ -354,6 +356,7 @@ export function NovaColetaBolinhaForm() {
     haverSaldo,
     descontarHaver,
   ]);
+  const totalACobrarAgora = cobrancaComprovante.totalACobrar;
 
   const calculoError = useMemo(() => {
     const leituras = maquinas
@@ -418,8 +421,9 @@ export function NovaColetaBolinhaForm() {
         fotoUrl: maquinas.find((item) => item.equipamentoId === maquina.equipamentoId)?.fotoPreview,
       })),
       calculo,
+      cobranca: cobrancaComprovante.cobranca,
     };
-  }, [calculo, ponto, empresaNome, maquinas, comissaoPercentual]);
+  }, [calculo, ponto, empresaNome, maquinas, comissaoPercentual, cobrancaComprovante.cobranca]);
 
   function updateMaquina(id: string, patch: Partial<MaquinaForm>) {
     setMaquinas((prev) =>
