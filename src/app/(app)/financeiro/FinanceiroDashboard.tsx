@@ -2,14 +2,15 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { Instrument_Serif, DM_Sans } from "next/font/google";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { AlertBadge } from "@/components/ui/AlertBadge";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import { descricaoValeVisivel } from "@/lib/equipe/vale-staff";
 import type { Financeiro } from "@/lib/types/database";
 import {
   breakdownLancamento,
   formaPagamentoLabel,
+  somarDescontos,
   type VisitaFinanceiro,
 } from "@/lib/financeiro/breakdown";
 import {
@@ -17,12 +18,33 @@ import {
   periodoLabels,
   type PeriodoFiltro,
 } from "@/lib/financeiro/periodo";
-import type { ComposicaoCaixa } from "@/lib/financeiro/saldo-caixa";
-import { ArrowDownLeft, ArrowUpRight, Info, Wallet } from "lucide-react";
+import {
+  reconciliarComposicaoExibida,
+  type ComposicaoCaixa,
+} from "@/lib/financeiro/saldo-caixa";
+import { Wallet } from "lucide-react";
+
+const display = Instrument_Serif({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-fin-display",
+});
+
+const sans = DM_Sans({
+  subsets: ["latin"],
+  variable: "--font-fin-sans",
+});
 
 type FinanceiroRow = Financeiro & {
   visita_id?: string | null;
   visitas?: VisitaFinanceiro;
+};
+
+type VisitaResumo = {
+  id: string;
+  desconto: number | null;
+  desconto_recebimento: number | null;
+  created_at: string;
 };
 
 const periodos: PeriodoFiltro[] = ["hoje", "7d", "30d", "tudo"];
@@ -33,55 +55,54 @@ function round2(n: number) {
 
 export function FinanceiroDashboard({
   lancamentos,
+  visitas,
   composicao,
 }: {
   lancamentos: FinanceiroRow[];
+  visitas: VisitaResumo[];
   composicao: ComposicaoCaixa;
 }) {
   const [periodo, setPeriodo] = useState<PeriodoFiltro>("hoje");
 
-  const saldoExibido = Math.max(0, composicao.saldo);
-  const pixCaixa = Math.max(0, round2(composicao.pix));
-  const dinheiroCaixa = Math.max(0, round2(composicao.dinheiro));
-  const naoClassificado = round2(composicao.naoClassificado);
-  const naoClassificadoAbs = Math.abs(naoClassificado);
+  const caixa = useMemo(
+    () => reconciliarComposicaoExibida(composicao),
+    [composicao]
+  );
+
+  const pctPix =
+    caixa.saldo > 0.009 ? Math.round((caixa.pix / caixa.saldo) * 100) : 0;
+  const pctDinheiro =
+    caixa.saldo > 0.009 ? Math.round((caixa.dinheiro / caixa.saldo) * 100) : 0;
 
   const movimento = useMemo(() => {
     const rows = lancamentos.filter((l) => dataNoPeriodo(l.data, periodo));
+    const visitasPeriodo = visitas.filter((v) =>
+      dataNoPeriodo(v.created_at, periodo)
+    );
+    const descontos = somarDescontos(visitasPeriodo);
+
     const entradas = rows
       .filter((l) => l.tipo === "entrada")
       .reduce((s, l) => s + Number(l.valor), 0);
     const saidas = rows
       .filter((l) => l.tipo === "saida")
       .reduce((s, l) => s + Number(l.valor), 0);
-
-    let entradasPix = 0;
-    let entradasDinheiro = 0;
-    for (const l of rows) {
-      if (l.tipo !== "entrada") continue;
-      const b = breakdownLancamento(l);
-      entradasPix += b.pix;
-      entradasDinheiro += b.dinheiro;
-      const classificado = b.pix + b.dinheiro;
-      if (classificado <= 0.009) {
-        const forma = String(l.forma_pagamento ?? "").toLowerCase();
-        if (forma === "pix") entradasPix += Number(l.valor);
-        else if (forma === "dinheiro") entradasDinheiro += Number(l.valor);
-      }
-    }
 
     return {
       rows,
       entradas: round2(entradas),
       saidas: round2(saidas),
       resultado: round2(entradas - saidas),
-      entradasPix: round2(entradasPix),
-      entradasDinheiro: round2(entradasDinheiro),
+      descontoRecebimento: round2(descontos.recebimento),
+      deixadoNoPonto: round2(descontos.manual),
+      abatimentosTotal: round2(descontos.total),
     };
-  }, [lancamentos, periodo]);
+  }, [lancamentos, visitas, periodo]);
 
-  const movimentoHoje = useMemo(() => {
+  const hoje = useMemo(() => {
     const rows = lancamentos.filter((l) => dataNoPeriodo(l.data, "hoje"));
+    const visitasHoje = visitas.filter((v) => dataNoPeriodo(v.created_at, "hoje"));
+    const descontos = somarDescontos(visitasHoje);
     const entradas = rows
       .filter((l) => l.tipo === "entrada")
       .reduce((s, l) => s + Number(l.valor), 0);
@@ -91,113 +112,197 @@ export function FinanceiroDashboard({
     return {
       entradas: round2(entradas),
       saidas: round2(saidas),
+      descontoRecebimento: round2(descontos.recebimento),
+      deixadoNoPonto: round2(descontos.manual),
     };
-  }, [lancamentos]);
+  }, [lancamentos, visitas]);
 
   return (
-    <div className="space-y-8">
-      {/* 1. Caixa agora — o que você tem */}
-      <section className="space-y-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            No caixa agora
-          </p>
-          <p className="mt-0.5 text-sm text-slate-500">
-            Saldo real da operação — não muda com o filtro de dias
-          </p>
-        </div>
+    <div className={cn(display.variable, sans.variable, "space-y-10")}>
+      {/* HERO — uma composição */}
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-[#c4a574]/25 bg-[#0b1018]">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-90"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 60% at 10% 0%, rgba(196,165,116,0.18), transparent 55%), radial-gradient(ellipse 70% 50% at 100% 100%, rgba(34,211,238,0.08), transparent 50%), linear-gradient(165deg, #121820 0%, #0b1018 45%, #0a0e14 100%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage:
+              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          }}
+        />
 
-        <div className="rounded-2xl border border-blue-500/25 bg-gradient-to-br from-blue-500/10 to-slate-950/80 p-5 sm:p-6">
-          <p className="text-sm text-slate-400">Saldo disponível</p>
-          <p className="mt-1 text-3xl font-bold tracking-tight text-white sm:text-4xl">
-            {formatCurrency(saldoExibido)}
+        <div className="relative px-6 pb-8 pt-8 sm:px-10 sm:pb-10 sm:pt-10">
+          <p
+            className="text-[11px] uppercase tracking-[0.28em] text-[#c4a574]/90"
+            style={{ fontFamily: "var(--font-fin-sans), system-ui, sans-serif" }}
+          >
+            Caixa agora
           </p>
-          {composicao.saldo < -0.009 && (
-            <p className="mt-1 text-xs text-amber-300/90">
-              Histórico com saldo negativo — exibido como zero para novas saídas
-            </p>
-          )}
+          <h2
+            className="mt-3 text-[clamp(2.75rem,8vw,4.5rem)] leading-[0.92] tracking-tight text-[#f4efe6]"
+            style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+          >
+            {formatCurrency(caixa.saldo)}
+          </h2>
+          <p
+            className="mt-3 max-w-md text-sm text-slate-400"
+            style={{ fontFamily: "var(--font-fin-sans), system-ui, sans-serif" }}
+          >
+            O que você tem disponível — Pix e dinheiro somam este saldo.
+          </p>
 
-          <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-cyan-500/25 bg-cyan-500/10 px-4 py-3">
-              <p className="text-xs text-cyan-200/80">Pix</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-cyan-200">
-                {formatCurrency(pixCaixa)}
-              </p>
+          <div className="mt-8 grid gap-6 sm:grid-cols-2">
+            <div>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-[11px] uppercase tracking-[0.2em] text-cyan-300/80">
+                  Pix
+                </span>
+                <span
+                  className="text-2xl tabular-nums text-cyan-200"
+                  style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+                >
+                  {formatCurrency(caixa.pix)}
+                </span>
+              </div>
+              <div className="mt-3 h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full bg-cyan-400/80 transition-all duration-700"
+                  style={{ width: `${pctPix}%` }}
+                />
+              </div>
             </div>
-            <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3">
-              <p className="text-xs text-amber-200/80">Dinheiro</p>
-              <p className="mt-1 text-xl font-semibold tabular-nums text-amber-100">
-                {formatCurrency(dinheiroCaixa)}
-              </p>
+            <div>
+              <div className="flex items-baseline justify-between gap-3">
+                <span className="text-[11px] uppercase tracking-[0.2em] text-amber-200/80">
+                  Dinheiro
+                </span>
+                <span
+                  className="text-2xl tabular-nums text-amber-100"
+                  style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+                >
+                  {formatCurrency(caixa.dinheiro)}
+                </span>
+              </div>
+              <div className="mt-3 h-[3px] overflow-hidden rounded-full bg-white/[0.06]">
+                <div
+                  className="h-full rounded-full bg-amber-300/75 transition-all duration-700"
+                  style={{ width: `${pctDinheiro}%` }}
+                />
+              </div>
             </div>
           </div>
 
-          {naoClassificadoAbs > 0.05 && (
-            <p className="mt-3 flex gap-2 text-xs text-slate-400">
-              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-              <span>
-                {formatCurrency(naoClassificadoAbs)} em lançamentos sem Pix/dinheiro
-                definidos (antigos ou misto sem detalhe). Por isso Pix + Dinheiro pode
-                diferir do saldo.
-              </span>
+          {caixa.residual > 0.05 && (
+            <p className="mt-5 text-xs text-slate-500">
+              + {formatCurrency(caixa.residual)} ainda sem forma definida no histórico
             </p>
           )}
         </div>
       </section>
 
-      {/* 2. Hoje — sempre visível */}
-      <section className="space-y-3">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Hoje
-          </p>
-          <p className="mt-0.5 text-sm text-slate-500">O que entrou e saiu neste dia</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-4">
-            <div className="flex items-center gap-2 text-emerald-300/90">
-              <ArrowDownLeft className="h-4 w-4" />
-              <p className="text-xs font-medium">Entrou</p>
-            </div>
-            <p className="mt-2 text-2xl font-bold tabular-nums text-emerald-300">
-              {formatCurrency(movimentoHoje.entradas)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-4 py-4">
-            <div className="flex items-center gap-2 text-rose-300/90">
-              <ArrowUpRight className="h-4 w-4" />
-              <p className="text-xs font-medium">Saiu</p>
-            </div>
-            <p className="mt-2 text-2xl font-bold tabular-nums text-rose-300">
-              {formatCurrency(movimentoHoje.saidas)}
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Movimento por período + lista */}
-      <section className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+      {/* HOJE */}
+      <section className="space-y-5">
+        <div className="flex items-end justify-between gap-4 border-b border-white/[0.07] pb-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Movimento
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">Hoje</p>
+            <h3
+              className="mt-1 text-2xl text-[#f4efe6]"
+              style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+            >
+              Movimento do dia
+            </h3>
+          </div>
+        </div>
+
+        <div className="grid gap-8 sm:grid-cols-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-400/70">
+              Entrou
             </p>
-            <p className="mt-0.5 text-sm text-slate-500">
-              Filtra só entradas, saídas e a lista — não o saldo do caixa
+            <p
+              className="mt-2 text-4xl tabular-nums tracking-tight text-emerald-300"
+              style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+            >
+              {formatCurrency(hoje.entradas)}
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-rose-400/70">
+              Saiu
+            </p>
+            <p
+              className="mt-2 text-4xl tabular-nums tracking-tight text-rose-300"
+              style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+            >
+              {formatCurrency(hoje.saidas)}
+            </p>
+          </div>
+        </div>
+
+        <div className="grid gap-6 border-t border-white/[0.06] pt-5 sm:grid-cols-2">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-rose-300/70">
+              Descontos dados
+            </p>
+            <p
+              className="mt-1.5 text-xl tabular-nums text-rose-200/90"
+              style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+            >
+              {formatCurrency(hoje.descontoRecebimento)}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">No recebimento das coletas de hoje</p>
+          </div>
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/70">
+              Deixado no ponto
+            </p>
+            <p
+              className="mt-1.5 text-xl tabular-nums text-orange-200/90"
+              style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+            >
+              {formatCurrency(hoje.deixadoNoPonto)}
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              Adiantamento / valor deixado nas visitas de hoje
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* PERÍODO + LISTA */}
+      <section className="space-y-5">
+        <div className="flex flex-col gap-4 border-b border-white/[0.07] pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+              Histórico
+            </p>
+            <h3
+              className="mt-1 text-2xl text-[#f4efe6]"
+              style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+            >
+              Lançamentos
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              O filtro não altera o saldo do caixa acima
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
             {periodos.map((p) => (
               <button
                 key={p}
                 type="button"
                 onClick={() => setPeriodo(p)}
-                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                className={cn(
+                  "rounded-sm px-3 py-1.5 text-[12px] tracking-wide transition",
                   periodo === p
-                    ? "border border-primary-neon/40 bg-primary-neon/20 text-primary-neon"
-                    : "border border-slate-700 text-slate-400 hover:border-slate-500 hover:text-slate-200"
-                }`}
+                    ? "bg-[#c4a574]/15 text-[#c4a574] ring-1 ring-[#c4a574]/35"
+                    : "text-slate-500 hover:text-slate-300"
+                )}
               >
                 {periodoLabels[p]}
               </button>
@@ -205,52 +310,27 @@ export function FinanceiroDashboard({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-3">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-3 sm:px-4">
-            <p className="text-[11px] text-slate-500">Entradas</p>
-            <p className="mt-1 text-base font-semibold tabular-nums text-emerald-400 sm:text-lg">
-              {formatCurrency(movimento.entradas)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-3 sm:px-4">
-            <p className="text-[11px] text-slate-500">Saídas</p>
-            <p className="mt-1 text-base font-semibold tabular-nums text-rose-400 sm:text-lg">
-              {formatCurrency(movimento.saidas)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-3 py-3 sm:px-4">
-            <p className="text-[11px] text-slate-500">Resultado</p>
-            <p className="mt-1 text-base font-semibold tabular-nums text-white sm:text-lg">
-              {formatCurrency(movimento.resultado)}
-            </p>
-          </div>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+          <Metric label="Entradas" value={movimento.entradas} tone="emerald" />
+          <Metric label="Saídas" value={movimento.saidas} tone="rose" />
+          <Metric
+            label="Descontos"
+            value={movimento.descontoRecebimento}
+            tone="rose"
+          />
+          <Metric
+            label="Deixado no ponto"
+            value={movimento.deixadoNoPonto}
+            tone="orange"
+          />
         </div>
 
-        {(movimento.entradasPix > 0.009 || movimento.entradasDinheiro > 0.009) && (
-          <p className="text-xs text-slate-500">
-            Entradas no período:{" "}
-            {movimento.entradasPix > 0.009 && (
-              <span className="text-cyan-400">Pix {formatCurrency(movimento.entradasPix)}</span>
-            )}
-            {movimento.entradasPix > 0.009 && movimento.entradasDinheiro > 0.009 && (
-              <span className="text-slate-600"> · </span>
-            )}
-            {movimento.entradasDinheiro > 0.009 && (
-              <span className="text-amber-400">
-                Dinheiro {formatCurrency(movimento.entradasDinheiro)}
-              </span>
-            )}
-          </p>
-        )}
-
-        <div className="flex flex-wrap gap-3 text-xs">
-          <Link
-            href={`/financeiro/negativos?periodo=${periodo}`}
-            className="text-primary-neon hover:underline"
-          >
-            Ver negativos recuperados →
-          </Link>
-        </div>
+        <Link
+          href={`/financeiro/negativos?periodo=${periodo}`}
+          className="inline-block text-sm text-[#c4a574] hover:underline"
+        >
+          Negativos recuperados →
+        </Link>
 
         {movimento.rows.length === 0 ? (
           <EmptyState
@@ -259,74 +339,94 @@ export function FinanceiroDashboard({
             icon={<Wallet className="h-8 w-8" />}
           />
         ) : (
-          <div className="space-y-2">
+          <ul className="divide-y divide-white/[0.05] border-t border-white/[0.07]">
             {movimento.rows.map((l) => {
               const b = breakdownLancamento(l);
               const temPixDinheiro = b.pix > 0.009 || b.dinheiro > 0.009;
               const formaLabel = formaPagamentoLabel(l.forma_pagamento);
+              const entrada = l.tipo === "entrada";
 
               return (
-                <div
+                <li
                   key={l.id}
-                  className="flex items-start justify-between gap-4 rounded-xl border border-slate-800/80 bg-slate-950/40 p-4"
+                  className="flex items-start justify-between gap-4 py-4 first:pt-3"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-white">
+                    <p className="truncate text-[15px] text-[#f0ebe3]">
                       {descricaoValeVisivel(l.descricao) || l.descricao || l.categoria}
                     </p>
-                    <p className="text-sm text-slate-500">
+                    <p className="mt-0.5 text-[12px] text-slate-500">
                       {formatDate(l.data)} · {l.categoria}
+                      {temPixDinheiro && (
+                        <>
+                          {" · "}
+                          {b.pix > 0.009 && (
+                            <span className="text-cyan-400/90">
+                              Pix {formatCurrency(b.pix)}
+                            </span>
+                          )}
+                          {b.pix > 0.009 && b.dinheiro > 0.009 && " · "}
+                          {b.dinheiro > 0.009 && (
+                            <span className="text-amber-400/90">
+                              Dinheiro {formatCurrency(b.dinheiro)}
+                            </span>
+                          )}
+                        </>
+                      )}
+                      {!temPixDinheiro && formaLabel ? ` · ${formaLabel}` : null}
                     </p>
-
-                    {temPixDinheiro && (
-                      <p className="mt-1.5 text-xs text-slate-400">
-                        {b.pix > 0.009 && (
-                          <span className="text-cyan-400">Pix {formatCurrency(b.pix)}</span>
-                        )}
-                        {b.pix > 0.009 && b.dinheiro > 0.009 && (
-                          <span className="mx-1.5 text-slate-600">·</span>
-                        )}
-                        {b.dinheiro > 0.009 && (
-                          <span className="text-amber-400">
-                            Dinheiro {formatCurrency(b.dinheiro)}
-                          </span>
-                        )}
-                      </p>
-                    )}
-
-                    {!temPixDinheiro && formaLabel && l.tipo === "entrada" && (
-                      <p className="mt-1 text-xs text-slate-500">{formaLabel}</p>
-                    )}
-
                     {l.visita_id && (
                       <Link
                         href={`/coletas/visita/${l.visita_id}`}
-                        className="mt-1 inline-block text-xs text-primary-neon hover:underline"
+                        className="mt-1 inline-block text-[12px] text-[#c4a574]/90 hover:underline"
                       >
                         Ver visita →
                       </Link>
                     )}
                   </div>
-
-                  <div className="shrink-0 text-right">
-                    <p
-                      className={`font-semibold tabular-nums ${
-                        l.tipo === "entrada" ? "text-emerald-400" : "text-rose-400"
-                      }`}
-                    >
-                      {l.tipo === "entrada" ? "+" : "−"}
-                      {formatCurrency(Number(l.valor))}
-                    </p>
-                    <AlertBadge variant={l.tipo === "entrada" ? "success" : "danger"}>
-                      {l.tipo}
-                    </AlertBadge>
-                  </div>
-                </div>
+                  <p
+                    className={cn(
+                      "shrink-0 text-[15px] tabular-nums",
+                      entrada ? "text-emerald-400" : "text-rose-400"
+                    )}
+                  >
+                    {entrada ? "+" : "−"}
+                    {formatCurrency(Number(l.valor))}
+                  </p>
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "emerald" | "rose" | "orange";
+}) {
+  const color =
+    tone === "emerald"
+      ? "text-emerald-300"
+      : tone === "orange"
+        ? "text-orange-200"
+        : "text-rose-300";
+  return (
+    <div>
+      <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">{label}</p>
+      <p
+        className={cn("mt-1 text-lg tabular-nums sm:text-xl", color)}
+        style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
+      >
+        {formatCurrency(value)}
+      </p>
     </div>
   );
 }

@@ -104,7 +104,6 @@ export async function fetchComposicaoCaixa(
   let saldo = 0;
   let pix = 0;
   let dinheiro = 0;
-  let naoClassificado = 0;
 
   for (const row of data ?? []) {
     const v = Number(row.valor ?? 0);
@@ -125,12 +124,10 @@ export async function fetchComposicaoCaixa(
       saldo += v;
       pix += parte.pix;
       dinheiro += parte.dinheiro;
-      naoClassificado += parte.naoClassificado;
     } else if (row.tipo === "saida") {
       saldo -= v;
       pix -= parte.pix;
       dinheiro -= parte.dinheiro;
-      naoClassificado -= parte.naoClassificado;
     }
   }
 
@@ -138,8 +135,41 @@ export async function fetchComposicaoCaixa(
     saldo,
     pix,
     dinheiro,
-    naoClassificado,
+    naoClassificado: Math.round((saldo - pix - dinheiro) * 100) / 100,
   };
+}
+
+/**
+ * Pix / Dinheiro / residual que somam exatamente o saldo disponível (para a UI).
+ */
+export function reconciliarComposicaoExibida(comp: ComposicaoCaixa): {
+  saldo: number;
+  pix: number;
+  dinheiro: number;
+  residual: number;
+} {
+  const saldo = Math.max(0, Math.round(comp.saldo * 100) / 100);
+  let pix = Math.max(0, Math.round(comp.pix * 100) / 100);
+  let dinheiro = Math.max(0, Math.round(comp.dinheiro * 100) / 100);
+  const soma = pix + dinheiro;
+
+  if (saldo <= 0.009) {
+    return { saldo: 0, pix: 0, dinheiro: 0, residual: 0 };
+  }
+
+  if (soma <= 0.009) {
+    return { saldo, pix: 0, dinheiro: 0, residual: saldo };
+  }
+
+  if (soma > saldo + 0.05) {
+    const fator = saldo / soma;
+    pix = Math.round(pix * fator * 100) / 100;
+    dinheiro = Math.round((saldo - pix) * 100) / 100;
+    return { saldo, pix, dinheiro, residual: 0 };
+  }
+
+  const residual = Math.round((saldo - pix - dinheiro) * 100) / 100;
+  return { saldo, pix, dinheiro, residual: Math.max(0, residual) };
 }
 
 /** Quanto pode sair do caixa sem deixar saldo negativo (já negativo conta como 0 disponível). */

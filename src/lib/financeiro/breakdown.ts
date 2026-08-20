@@ -86,38 +86,81 @@ export function breakdownLancamento(l: {
     const forma = l.forma_pagamento;
     if (forma === "pix") return { ...vazio, pix: valor };
     if (forma === "dinheiro") return { ...vazio, dinheiro: valor };
-    return vazio;
+    // Sem detalhe: assume dinheiro (adiantamento / deixado no ponto costuma sair em espécie).
+    return { ...vazio, dinheiro: valor };
   }
 
   if (visita) {
+    const pixVisita = Number(visita.valor_pix ?? 0);
+    const dinheiroVisita = Number(visita.valor_dinheiro ?? 0);
     const descontos = descontoFromVisita(visita);
+
+    // Só usa o split da visita se houver Pix/dinheiro gravados.
+    // Muitas visitas quitadas têm valor_pago sem split — aí cai na forma do lançamento.
+    if (pixVisita + dinheiroVisita > 0.009) {
+      return {
+        pix: pixVisita,
+        dinheiro: dinheiroVisita,
+        debitoAbatido: Number(visita.debito_abatido ?? 0),
+        descontoManual: descontos.manual,
+        descontoRecebimento: descontos.recebimento,
+        descontoTotal: descontos.total,
+      };
+    }
+  }
+
+  const pixMatch = l.descricao?.match(PIX_REGEX);
+  const dinheiroMatch = l.descricao?.match(DINHEIRO_REGEX);
+  if (pixMatch || dinheiroMatch) {
+    const descontos = descontoFromVisita(visita ?? null);
     return {
-      pix: Number(visita.valor_pix ?? 0),
-      dinheiro: Number(visita.valor_dinheiro ?? 0),
-      debitoAbatido: Number(visita.debito_abatido ?? 0),
+      pix: pixMatch ? parseBRL(pixMatch[1]) : 0,
+      dinheiro: dinheiroMatch ? parseBRL(dinheiroMatch[1]) : 0,
+      debitoAbatido: Number(visita?.debito_abatido ?? 0),
       descontoManual: descontos.manual,
       descontoRecebimento: descontos.recebimento,
       descontoTotal: descontos.total,
     };
   }
 
-  const pixMatch = l.descricao?.match(PIX_REGEX);
-  const dinheiroMatch = l.descricao?.match(DINHEIRO_REGEX);
-  if (pixMatch || dinheiroMatch) {
-    return {
-      ...vazio,
-      pix: pixMatch ? parseBRL(pixMatch[1]) : 0,
-      dinheiro: dinheiroMatch ? parseBRL(dinheiroMatch[1]) : 0,
-    };
-  }
-
-  if (l.tipo !== "entrada") {
+  if (l.tipo !== "entrada" && l.tipo !== "saida") {
     return vazio;
   }
 
   const forma = l.forma_pagamento;
-  if (forma === "pix") return { ...vazio, pix: valor };
-  if (forma === "dinheiro") return { ...vazio, dinheiro: valor };
+  const descontos = descontoFromVisita(visita ?? null);
+  if (forma === "pix") {
+    return {
+      ...vazio,
+      pix: valor,
+      debitoAbatido: Number(visita?.debito_abatido ?? 0),
+      descontoManual: descontos.manual,
+      descontoRecebimento: descontos.recebimento,
+      descontoTotal: descontos.total,
+    };
+  }
+  if (forma === "dinheiro") {
+    return {
+      ...vazio,
+      dinheiro: valor,
+      debitoAbatido: Number(visita?.debito_abatido ?? 0),
+      descontoManual: descontos.manual,
+      descontoRecebimento: descontos.recebimento,
+      descontoTotal: descontos.total,
+    };
+  }
+
+  // Sem forma: entradas antigas sem split — conta como dinheiro para o caixa bater.
+  if (l.tipo === "entrada") {
+    return {
+      ...vazio,
+      dinheiro: valor,
+      debitoAbatido: Number(visita?.debito_abatido ?? 0),
+      descontoManual: descontos.manual,
+      descontoRecebimento: descontos.recebimento,
+      descontoTotal: descontos.total,
+    };
+  }
 
   return vazio;
 }
