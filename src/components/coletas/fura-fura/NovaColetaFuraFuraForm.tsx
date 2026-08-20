@@ -172,7 +172,17 @@ export function NovaColetaFuraFuraForm() {
   const pendenciaPonto = form.ponto_id ? pendenciasPorPonto.get(form.ponto_id) : undefined;
 
   useEffect(() => {
-    if (!ponto) return;
+    if (!ponto) {
+      setForm((prev) => ({
+        ...prev,
+        comissao_percentual: "",
+        preco_furo: "",
+      }));
+      setBrindes([]);
+      setDescontarHaver(false);
+      setIncluirPendencia(false);
+      return;
+    }
     setForm((prev) => ({
       ...prev,
       comissao_percentual: String(getComissaoPercentualNicho(ponto, "fura_fura")),
@@ -360,8 +370,11 @@ export function NovaColetaFuraFuraForm() {
     () =>
       calcularColetaFuraFura({
         quantidadeFuros: Number(form.quantidade_furos) || 0,
-        precoFuro: Number(form.preco_furo) || Number(ponto?.preco_furo ?? 1),
-        comissaoPercentual: Number(form.comissao_percentual) || 0,
+        // Sem ponto: não inventa preço R$ 1 nem comissão — evita soma fantasma.
+        precoFuro: ponto
+          ? Number(form.preco_furo) || Number(ponto.preco_furo ?? 0)
+          : 0,
+        comissaoPercentual: ponto ? Number(form.comissao_percentual) || 0 : 0,
         desconto: Number(form.desconto) || 0,
         brindes,
         valorPagoRecebido: valorRecebido,
@@ -616,13 +629,15 @@ export function NovaColetaFuraFuraForm() {
             />
           }
           comissaoField={
-            <FormInput
-              label="Comissão (%)"
-              type="number"
-              step="0.01"
-              value={form.comissao_percentual}
-              onChange={(e) => update("comissao_percentual", e.target.value)}
-            />
+            ponto ? (
+              <FormInput
+                label="Comissão (%)"
+                type="number"
+                step="0.01"
+                value={form.comissao_percentual}
+                onChange={(e) => update("comissao_percentual", e.target.value)}
+              />
+            ) : undefined
           }
           alert={
             ponto ? (
@@ -865,14 +880,18 @@ export function NovaColetaFuraFuraForm() {
           fechar={
             <FecharColetaPanel
               empty={
-                calculo.quantidadeFuros <= 0 ? (
+                !ponto ? (
+                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
+                    Selecione o ponto para carregar comissão, preço do furo e o resumo.
+                  </p>
+                ) : calculo.quantidadeFuros <= 0 ? (
                   <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
                     Informe a quantidade de furos para ver o resumo e registrar o pagamento.
                   </p>
                 ) : undefined
               }
               resumo={
-                calculo.quantidadeFuros > 0 ? (
+                ponto && calculo.quantidadeFuros > 0 ? (
                   <ColetaFuraFuraResumo
                     calculo={calculo}
                     pendenciaPonto={pendenciaPonto}
