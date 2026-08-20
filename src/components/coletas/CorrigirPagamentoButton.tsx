@@ -3,7 +3,13 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Loader2, Pencil } from "lucide-react";
-import { cn, formatCurrency, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
+import {
+  cn,
+  formatCurrency,
+  formatMoneyInput,
+  formatMoneyInputOnBlur,
+  parseMoneyInput,
+} from "@/lib/utils";
 
 type Props = {
   /** coleta = nichos · visita = cassino */
@@ -14,6 +20,11 @@ type Props = {
   valorDinheiroInicial: number;
   className?: string;
 };
+
+function moneyFromReais(n: number): string {
+  if (!Number.isFinite(n) || Math.abs(n) < 0.005) return "";
+  return formatMoneyInputOnBlur(n.toFixed(2).replace(".", ","));
+}
 
 export function CorrigirPagamentoButton({
   tipo,
@@ -36,16 +47,23 @@ export function CorrigirPagamentoButton({
   function abrir() {
     setErro("");
     setOk("");
-    setPix(
-      valorPixInicial > 0.009
-        ? formatMoneyInputOnBlur(valorPixInicial.toFixed(2).replace(".", ","))
-        : ""
-    );
-    setDinheiro(
-      valorDinheiroInicial > 0.009
-        ? formatMoneyInputOnBlur(valorDinheiroInicial.toFixed(2).replace(".", ","))
-        : ""
-    );
+
+    const pixIni = Math.max(0, Number(valorPixInicial) || 0);
+    const dinIni = Math.max(0, Number(valorDinheiroInicial) || 0);
+    const jaTemSplit = pixIni + dinIni > 0.009;
+
+    if (jaTemSplit) {
+      setPix(moneyFromReais(pixIni));
+      setDinheiro(moneyFromReais(dinIni));
+    } else if (aReceber > 0.009) {
+      // Quitada/recebida sem split Pix/dinheiro gravado — preenche o total no Pix.
+      setPix(moneyFromReais(aReceber));
+      setDinheiro("");
+    } else {
+      setPix("");
+      setDinheiro("");
+    }
+
     setOpen(true);
   }
 
@@ -53,6 +71,18 @@ export function CorrigirPagamentoButton({
     () => parseMoneyInput(pix) + parseMoneyInput(dinheiro),
     [pix, dinheiro]
   );
+
+  function preencherTudoNoPix() {
+    if (aReceber <= 0.009) return;
+    setPix(moneyFromReais(aReceber));
+    setDinheiro("");
+  }
+
+  function preencherTudoNoDinheiro() {
+    if (aReceber <= 0.009) return;
+    setPix("");
+    setDinheiro(moneyFromReais(aReceber));
+  }
 
   async function salvar() {
     setBusy(true);
@@ -116,14 +146,33 @@ export function CorrigirPagamentoButton({
             </p>
           </div>
 
+          {aReceber > 0.009 && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={preencherTudoNoPix}
+                className="rounded-lg border border-cyan-500/30 bg-cyan-500/10 px-2.5 py-1 text-xs text-cyan-200 hover:bg-cyan-500/20"
+              >
+                Tudo no Pix
+              </button>
+              <button
+                type="button"
+                onClick={preencherTudoNoDinheiro}
+                className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs text-emerald-200 hover:bg-emerald-500/20"
+              >
+                Tudo no dinheiro
+              </button>
+            </div>
+          )}
+
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block space-y-1">
               <span className="text-xs text-slate-500">Pix (R$)</span>
               <input
                 type="text"
-                inputMode="decimal"
+                inputMode="numeric"
                 value={pix}
-                onChange={(e) => setPix(e.target.value)}
+                onChange={(e) => setPix(formatMoneyInput(e.target.value))}
                 onBlur={() => setPix(formatMoneyInputOnBlur(pix))}
                 className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
                 placeholder="0,00"
@@ -133,9 +182,9 @@ export function CorrigirPagamentoButton({
               <span className="text-xs text-slate-500">Dinheiro (R$)</span>
               <input
                 type="text"
-                inputMode="decimal"
+                inputMode="numeric"
                 value={dinheiro}
-                onChange={(e) => setDinheiro(e.target.value)}
+                onChange={(e) => setDinheiro(formatMoneyInput(e.target.value))}
                 onBlur={() => setDinheiro(formatMoneyInputOnBlur(dinheiro))}
                 className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
                 placeholder="0,00"
