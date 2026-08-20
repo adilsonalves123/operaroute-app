@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -9,8 +9,15 @@ import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchS
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import type { Ponto } from "@/lib/types/database";
-import { useEffect } from "react";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
+import { formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
+
+const TITULOS_PADRAO: Record<string, string> = {
+  negativo: "Débito manual",
+  pagamento_pendente: "Pagamento pendente",
+  parcial: "Pagamento parcial",
+  haver: "Haver do ponto",
+};
 
 export default function NovaPendenciaPage() {
   const router = useRouter();
@@ -21,7 +28,7 @@ export default function NovaPendenciaPage() {
     ponto_id: "",
     tipo: "negativo",
     valor: "",
-    titulo: "Débito manual",
+    titulo: TITULOS_PADRAO.negativo,
     descricao: "",
   });
 
@@ -41,17 +48,49 @@ export default function NovaPendenciaPage() {
     load();
   }, []);
 
+  function onTipoChange(tipo: string) {
+    setForm((f) => {
+      const tituloPadraoAnterior = TITULOS_PADRAO[f.tipo] ?? "";
+      const tituloAindaPadrao =
+        !f.titulo.trim() || f.titulo.trim() === tituloPadraoAnterior;
+      return {
+        ...f,
+        tipo,
+        titulo: tituloAindaPadrao ? TITULOS_PADRAO[tipo] ?? f.titulo : f.titulo,
+      };
+    });
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    const valor = parseMoneyInput(form.valor);
+    if (!Number.isFinite(valor) || valor <= 0) {
+      setError("Informe um valor válido.");
+      setLoading(false);
+      return;
+    }
+    if (!form.ponto_id) {
+      setError("Selecione o ponto.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const res = await fetch("/api/pendencias", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          valor,
+          titulo:
+            form.titulo.trim() ||
+            TITULOS_PADRAO[form.tipo] ||
+            "Pendência manual",
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -87,20 +126,35 @@ export default function NovaPendenciaPage() {
         <FormSelect
           label="Tipo *"
           value={form.tipo}
-          onChange={(e) => setForm((f) => ({ ...f, tipo: e.target.value }))}
+          onChange={(e) => onTipoChange(e.target.value)}
           options={[
             { value: "negativo", label: "Débito negativo" },
             { value: "pagamento_pendente", label: "Pagamento pendente" },
             { value: "parcial", label: "Pagamento parcial" },
+            { value: "haver", label: "Haver (crédito do ponto)" },
           ]}
         />
+        {form.tipo === "haver" && (
+          <p className="text-xs text-emerald-400/90">
+            Crédito a favor do ponto — entra nas próximas coletas como haver para abater.
+          </p>
+        )}
         <FormInput
           label="Valor (R$) *"
-          type="number"
-          step="0.01"
-          min="0"
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          placeholder="0,00"
           value={form.valor}
-          onChange={(e) => setForm((f) => ({ ...f, valor: e.target.value }))}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, valor: formatMoneyInput(e.target.value) }))
+          }
+          onBlur={(e) =>
+            setForm((f) => ({
+              ...f,
+              valor: formatMoneyInputOnBlur(e.target.value),
+            }))
+          }
           required
         />
         <FormInput

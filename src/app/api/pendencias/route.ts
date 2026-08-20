@@ -1,6 +1,14 @@
 import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { createClient } from "@/lib/supabase/server";
+import { parseMoneyInput } from "@/lib/utils";
+
+const TIPOS_OK = new Set([
+  "negativo",
+  "pagamento_pendente",
+  "parcial",
+  "haver",
+]);
 
 export async function POST(request: Request) {
   const auth = await requireAcesso("pendencias", "criar");
@@ -13,18 +21,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ponto, tipo e valor são obrigatórios." }, { status: 400 });
   }
 
+  const tipo = String(body.tipo);
+  if (!TIPOS_OK.has(tipo)) {
+    return NextResponse.json({ error: "Tipo de pendência inválido." }, { status: 400 });
+  }
+
+  const valor = parseMoneyInput(body.valor);
+  if (!Number.isFinite(valor) || valor <= 0) {
+    return NextResponse.json({ error: "Informe um valor válido." }, { status: 400 });
+  }
+
+  const tituloPadrao =
+    tipo === "haver"
+      ? "Haver do ponto"
+      : tipo === "pagamento_pendente"
+        ? "Pagamento pendente"
+        : tipo === "parcial"
+          ? "Pagamento parcial"
+          : "Pendência manual";
+
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("pendencias")
     .insert({
       empresa_id: profile.empresa_id,
       ponto_id: body.ponto_id,
-      tipo: body.tipo,
-      titulo: body.titulo ?? "Pendência manual",
+      tipo,
+      titulo: body.titulo ?? tituloPadrao,
       descricao: body.descricao ?? null,
-      valor: parseFloat(body.valor),
+      valor,
       status: "aberta",
-      prioridade: body.prioridade ?? "media",
+      prioridade: body.prioridade ?? (tipo === "haver" ? "baixa" : "media"),
     })
     .select("id")
     .maybeSingle();
