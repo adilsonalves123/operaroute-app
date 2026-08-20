@@ -254,6 +254,7 @@ export default async function ColetaBolinhaDetalhePage({
           valorAReceber={valorAReceber}
           valorPixInicial={Number(coleta.valor_pix ?? 0)}
           valorDinheiroInicial={Number(coleta.valor_dinheiro ?? 0)}
+          valorPagoInicial={Number(coleta.valor_pago_recebido ?? 0)}
         />
         <CompartilharColetaHistoricoActions
           snapshot={snapshot}

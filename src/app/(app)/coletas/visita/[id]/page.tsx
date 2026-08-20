@@ -312,9 +312,17 @@ export default async function VisitaDetailPage({
           <CorrigirPagamentoButton
             tipo="visita"
             id={id}
-            valorAReceber={Number(visita.valor_pago ?? 0) + Number(visita.restante ?? 0)}
+            valorAReceber={Math.max(
+              Number(visita.valor_pago ?? 0) + Number(visita.restante ?? 0),
+              Number(visita.valor_operacao_efetivo ?? visita.valor_operacao ?? 0),
+              Number(calculo.totalACobrarReais ?? 0)
+            )}
             valorPixInicial={Number(visita.valor_pix ?? 0)}
             valorDinheiroInicial={Number(visita.valor_dinheiro ?? 0)}
+            valorPagoInicial={Math.max(
+              Number(visita.valor_pago ?? 0),
+              Number(calculo.valorPagoReais ?? 0)
+            )}
           />
           <CompartilharColetaHistoricoActions
             snapshot={snapshot}
