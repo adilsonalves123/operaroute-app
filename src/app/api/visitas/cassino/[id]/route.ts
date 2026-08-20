@@ -299,7 +299,7 @@ function reverterPendenciaPelaVisita(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
@@ -308,6 +308,11 @@ export async function DELETE(
   if (!profile?.empresa_id) {
     return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
   }
+
+  const url = new URL(request.url);
+  const preservarSlot =
+    url.searchParams.get("preservar_slot") === "1" ||
+    url.searchParams.get("preservar_slot") === "true";
 
   const supabase = await createClient();
 
@@ -378,10 +383,10 @@ export async function DELETE(
     .eq("visita_id", id)
     .eq("empresa_id", profile.empresa_id);
 
-  // Guarda vínculo com visita ao ponto antes de apagar o item.
+  // Guarda vínculo com visita ao ponto antes de desvincular/apagar o item.
   const { data: itensVisitaPonto } = await supabase
     .from("visita_ponto_itens")
-    .select("visita_ponto_id")
+    .select("id, visita_ponto_id")
     .eq("cassino_visita_id", id)
     .eq("empresa_id", profile.empresa_id);
   const visitaPontoIds = [
@@ -392,11 +397,39 @@ export async function DELETE(
     ),
   ];
 
-  await supabase
-    .from("visita_ponto_itens")
-    .delete()
-    .eq("cassino_visita_id", id)
-    .eq("empresa_id", profile.empresa_id);
+  // Visita ao ponto já finalizada + correção (preservar_slot): só solta o
+  // cassino_visita_id para religar depois. Exclusão normal: remove o item.
+  if (visitaPontoIds.length > 0) {
+    const { data: visitasPontoStatus } = await supabase
+      .from("visitas_ponto")
+      .select("id, status")
+      .in("id", visitaPontoIds)
+      .eq("empresa_id", profile.empresa_id);
+
+    const statusPorId = new Map(
+      (visitasPontoStatus ?? []).map((v) => [v.id, String(v.status ?? "").toLowerCase()])
+    );
+
+    for (const item of itensVisitaPonto ?? []) {
+      if (!item.visita_ponto_id || !item.id) continue;
+      const status = statusPorId.get(item.visita_ponto_id) ?? "rascunho";
+      const softUnlink =
+        preservarSlot && (status === "finalizada" || status === "cancelada");
+      if (softUnlink) {
+        await supabase
+          .from("visita_ponto_itens")
+          .update({ cassino_visita_id: null })
+          .eq("id", item.id)
+          .eq("empresa_id", profile.empresa_id);
+      } else {
+        await supabase
+          .from("visita_ponto_itens")
+          .delete()
+          .eq("id", item.id)
+          .eq("empresa_id", profile.empresa_id);
+      }
+    }
+  }
 
   // Pendências criadas por esta visita (dívida, haver, negativo, etc.).
   const { error: delPendError } = await supabase
@@ -522,5 +555,9 @@ export async function DELETE(
     resumo: `Visita ${id} · ponto ${visita.ponto_id} — financeiro e pendências vinculados removidos.`,
   });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({
+    success: true,
+    /** Para o form religar após DELETE+POST em visita ao ponto já finalizada. */
+    visita_ponto_ids: visitaPontoIds,
+  });
 }

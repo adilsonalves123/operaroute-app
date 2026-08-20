@@ -111,6 +111,12 @@ function mesclarLeiturasPreservandoDigitacao(
   });
 }
 
+function moneyFieldFromReais(value: number | null | undefined): string {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n) || Math.abs(n) < 0.005) return "";
+  return formatMoneyInputOnBlur(n.toFixed(2).replace(".", ","));
+}
+
 export function NovaColetaCassinoForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -142,6 +148,8 @@ export function NovaColetaCassinoForm() {
   const [editarVisitaId, setEditarVisitaId] = useState<string | null>(
     editarVisitaUrl || null
   );
+  /** Corrige coleta ligada a visita ao ponto já finalizada (religar slot + pagamento no ato). */
+  const [editandoVisitaFinalizada, setEditandoVisitaFinalizada] = useState(false);
   const [pendencias, setPendencias] = useState<PendenciaNegativa[]>([]);
   const [havers, setHavers] = useState<PendenciaNegativa[]>([]);
   const [pendenciasOperacao, setPendenciasOperacao] = useState<PendenciaNegativa[]>([]);
@@ -173,8 +181,12 @@ export function NovaColetaCassinoForm() {
   });
   const [modoFecharVisita, setModoFecharVisita] =
     useState<VisitaColetaModoFechar>("continuar");
-  const receberAgora = emVisitaPonto && modoFecharVisita === "receber";
-  const finalizarVisitaSemPagar = emVisitaPonto && modoFecharVisita === "finalizar";
+  /** Em correção de visita já finalizada, cobrança entra na própria coleta (não no checkout). */
+  const emVisitaPontoAtiva = emVisitaPonto && !editandoVisitaFinalizada;
+  const receberAgora =
+    (emVisitaPontoAtiva && modoFecharVisita === "receber") ||
+    (editandoVisitaFinalizada && modoFecharVisita !== "finalizar");
+  const finalizarVisitaSemPagar = emVisitaPontoAtiva && modoFecharVisita === "finalizar";
   /** Fecha no submit: finalizar negativa sempre; receber depende da escolha do diálogo. */
 
   const updateLeitura = useLeituraUpdater(setLeituras);
@@ -417,6 +429,7 @@ export function NovaColetaCassinoForm() {
     async function aplicarContextoVisita() {
       const supabase = createClient();
       let visitaParaEditar = editarVisitaUrl || null;
+      let visitaPontoFinalizada = false;
 
       if (visitaPontoId) {
         try {
@@ -429,15 +442,23 @@ export function NovaColetaCassinoForm() {
             const statusVisita = String(
               (data.resumo as { status?: string } | undefined)?.status ?? ""
             ).toLowerCase();
-            // Visita já encerrada: NÃO reabrir como edição — isso bagunçava
-            // negativo/haver (pendências já baixadas + leituras antigas).
-            if (statusVisita === "finalizada" || statusVisita === "cancelada") {
+            const encerrada =
+              statusVisita === "finalizada" || statusVisita === "cancelada";
+
+            if (encerrada && !editarVisitaUrl) {
+              // Encerrada sem pedido explícito de edição: não reabre sozinho
+              // (pendências já baixadas + leituras antigas bagunçavam o cálculo).
               visitaParaEditar = null;
-              if (editarVisitaUrl) {
+            } else if (encerrada && editarVisitaUrl) {
+              if (statusVisita === "cancelada") {
+                visitaParaEditar = null;
                 const params = new URLSearchParams(searchParams.toString());
                 params.delete("editar_visita");
                 params.set("ponto", pontoId);
                 router.replace(`/coletas/nova/cassino?${params.toString()}`);
+              } else {
+                visitaPontoFinalizada = true;
+                visitaParaEditar = editarVisitaUrl;
               }
             } else if (!visitaParaEditar) {
               const fromItens = (data.itens as { cassino_visita_id?: string | null }[] | undefined)
@@ -458,16 +479,54 @@ export function NovaColetaCassinoForm() {
       if (cancelled) return;
 
       if (visitaParaEditar) {
-        const { data: coletasEdit } = await supabase
-          .from("coletas")
-          .select(
-            "equipamento_id, entrada_anterior, saida_anterior, entrada_atual, saida_atual, foto_url"
-          )
-          .eq("visita_id", visitaParaEditar);
+        const [{ data: coletasEdit }, { data: visitaEdit }] = await Promise.all([
+          supabase
+            .from("coletas")
+            .select(
+              "equipamento_id, entrada_anterior, saida_anterior, entrada_atual, saida_atual, foto_url"
+            )
+            .eq("visita_id", visitaParaEditar),
+          supabase
+            .from("visitas")
+            .select(
+              "desconto, desconto_recebimento, valor_pix, valor_dinheiro, adiantamento_pix, adiantamento_dinheiro, adiantamento_pix_do_caixa, adiantamento_dinheiro_do_caixa, recebimento_pix_do_caixa, recebimento_dinheiro_do_caixa, observacao, saldo_negativo"
+            )
+            .eq("id", visitaParaEditar)
+            .maybeSingle(),
+        ]);
 
         if (cancelled) return;
 
         if (coletasEdit?.length) {
+          // Garante visita_ponto na URL para religar após DELETE (mesmo se veio só do detalhe).
+          let visitaPontoParaReligar = visitaPontoId;
+          if (!visitaPontoParaReligar) {
+            const { data: itemLink } = await supabase
+              .from("visita_ponto_itens")
+              .select("visita_ponto_id")
+              .eq("cassino_visita_id", visitaParaEditar)
+              .limit(1)
+              .maybeSingle();
+            visitaPontoParaReligar = itemLink?.visita_ponto_id ?? "";
+            if (visitaPontoParaReligar) {
+              const { data: vp } = await supabase
+                .from("visitas_ponto")
+                .select("status")
+                .eq("id", visitaPontoParaReligar)
+                .maybeSingle();
+              const st = String(vp?.status ?? "").toLowerCase();
+              if (st === "finalizada") {
+                visitaPontoFinalizada = true;
+              }
+              contextoVisitaAplicadoRef.current = `${pontoId}|${visitaPontoParaReligar}|${visitaParaEditar}`;
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("editar_visita", visitaParaEditar);
+              params.set("ponto", pontoId);
+              params.set("visita_ponto", visitaPontoParaReligar);
+              router.replace(`/coletas/nova/cassino?${params.toString()}`);
+            }
+          }
+
           const byEq = new Map(
             coletasEdit
               .filter((c) => c.equipamento_id)
@@ -499,6 +558,41 @@ export function NovaColetaCassinoForm() {
               prev
             )
           );
+
+          if (visitaEdit) {
+            const descontoManual = Number(visitaEdit.desconto ?? 0);
+            const descontoReceb = Number(visitaEdit.desconto_recebimento ?? 0);
+            const adiantPix = Number(visitaEdit.adiantamento_pix ?? 0);
+            const adiantDin = Number(visitaEdit.adiantamento_dinheiro ?? 0);
+            const temAdiantamento = adiantPix + adiantDin > 0.009;
+            setPagamento((p) => ({
+              ...p,
+              desconto_manual: temAdiantamento
+                ? ""
+                : moneyFieldFromReais(descontoManual),
+              desconto_recebimento: moneyFieldFromReais(descontoReceb),
+              valor_pix: moneyFieldFromReais(visitaEdit.valor_pix),
+              valor_dinheiro: moneyFieldFromReais(visitaEdit.valor_dinheiro),
+              adiantamento_pix: moneyFieldFromReais(visitaEdit.adiantamento_pix),
+              adiantamento_dinheiro: moneyFieldFromReais(visitaEdit.adiantamento_dinheiro),
+              adiantamento_pix_do_caixa: Boolean(visitaEdit.adiantamento_pix_do_caixa),
+              adiantamento_dinheiro_do_caixa: Boolean(
+                visitaEdit.adiantamento_dinheiro_do_caixa
+              ),
+              recebimento_pix_do_caixa: Boolean(visitaEdit.recebimento_pix_do_caixa),
+              recebimento_dinheiro_do_caixa: Boolean(
+                visitaEdit.recebimento_dinheiro_do_caixa
+              ),
+              observacao: String(visitaEdit.observacao ?? ""),
+            }));
+            if (visitaPontoFinalizada) {
+              setModoFecharVisita(
+                visitaEdit.saldo_negativo ? "finalizar" : "receber"
+              );
+            }
+          }
+
+          setEditandoVisitaFinalizada(visitaPontoFinalizada);
           setEditarVisitaId(visitaParaEditar);
           // Marca a chave atual e a que o router.replace vai gerar, para não reaplicar
           contextoVisitaAplicadoRef.current = applyKey;
@@ -517,6 +611,7 @@ export function NovaColetaCassinoForm() {
       }
 
       setEditarVisitaId(null);
+      setEditandoVisitaFinalizada(false);
       const draft =
         visitaPontoId && pontoId
           ? loadCassinoLeiturasDraft(visitaPontoId, pontoId)
@@ -823,7 +918,7 @@ export function NovaColetaCassinoForm() {
     }
 
     let fecharVisitaAposReceber = finalizarVisitaSemPagar;
-    if (receberAgora) {
+    if (receberAgora && !editandoVisitaFinalizada) {
       const decisao = await confirmarReceberEncerrar();
       if (decisao === "abortar") return;
       fecharVisitaAposReceber = decisao === "encerrar";
@@ -851,17 +946,29 @@ export function NovaColetaCassinoForm() {
       const recebimentoPixReais = parseMoneyInput(pagamento.valor_pix);
       const recebimentoDinheiroReais = parseMoneyInput(pagamento.valor_dinheiro);
 
-      const finalizarDireto = emVisitaPonto && fecharVisitaAposReceber;
+      const finalizarDireto =
+        emVisitaPontoAtiva && fecharVisitaAposReceber;
+
+      let visitaPontoParaSalvar = visitaPontoId || null;
 
       if (editarVisitaId) {
-        const delRes = await fetch(`/api/visitas/cassino/${editarVisitaId}`, {
-          method: "DELETE",
-          credentials: "include",
-        });
+        const delRes = await fetch(
+          `/api/visitas/cassino/${editarVisitaId}?preservar_slot=1`,
+          {
+            method: "DELETE",
+            credentials: "include",
+          }
+        );
         const delData = await delRes.json().catch(() => ({}));
         if (!delRes.ok) {
           setError(delData.error ?? "Não foi possível atualizar a coleta anterior.");
           return;
+        }
+        const idsReligar = Array.isArray(delData.visita_ponto_ids)
+          ? (delData.visita_ponto_ids as string[]).filter(Boolean)
+          : [];
+        if (!visitaPontoParaSalvar && idsReligar[0]) {
+          visitaPontoParaSalvar = idsReligar[0];
         }
       }
 
@@ -923,11 +1030,13 @@ export function NovaColetaCassinoForm() {
           observacao: pagamento.observacao || null,
           latitude: gps?.latitude ?? null,
           longitude: gps?.longitude ?? null,
-          visita_ponto_id: visitaPontoId || null,
+          visita_ponto_id: visitaPontoParaSalvar,
+          religar_visita_finalizada: editandoVisitaFinalizada,
           // Receber agora: aplica pagamento na coleta e fecha.
           // Finalizar (negativo): só fecha depois, sem cobrança.
           // Continuar: defere o pagamento para o checkout.
-          receber_agora: receberAgora,
+          // Correção pós-finalização: sempre aplica pagamento na coleta.
+          receber_agora: receberAgora || editandoVisitaFinalizada,
         }),
       });
 
@@ -964,12 +1073,14 @@ export function NovaColetaCassinoForm() {
         });
       }
 
+      const eraEdicaoFinalizada = editandoVisitaFinalizada;
       setEditarVisitaId(null);
+      setEditandoVisitaFinalizada(false);
       setSucesso({
         visitaId: data.visita_id,
         empresaId,
         relatorioData: { ...relatorioData, previa: false },
-        visitaJaFinalizada: finalizarDireto,
+        visitaJaFinalizada: finalizarDireto || eraEdicaoFinalizada,
       });
       concluido = true;
 
@@ -977,8 +1088,8 @@ export function NovaColetaCassinoForm() {
       {
         const params = new URLSearchParams();
         if (pontoId) params.set("ponto", pontoId);
-        if (visitaPontoId && !finalizarDireto) {
-          params.set("visita_ponto", visitaPontoId);
+        if (visitaPontoParaSalvar && !finalizarDireto && !eraEdicaoFinalizada) {
+          params.set("visita_ponto", visitaPontoParaSalvar);
         }
         router.replace(
           params.toString()
@@ -1009,10 +1120,12 @@ export function NovaColetaCassinoForm() {
           ensuringVisita
             ? "Entrando na visita do ponto…"
             : editarVisitaId
-              ? "Corrigindo coleta cassino já salva nesta visita."
+              ? editandoVisitaFinalizada
+                ? "Corrigindo coleta já finalizada — máquinas, descontos e valores."
+                : "Corrigindo coleta cassino já salva nesta visita."
             : calculo?.saldoNegativo
               ? "Visita negativa — Continuar (outros nichos) ou Finalizar sem cobrar."
-              : emVisitaPonto
+              : emVisitaPontoAtiva
                 ? "Leitura das máquinas. Depois: Continuar ou Receber."
                 : "Leitura das máquinas e fechamento ao lado."
         }
@@ -1265,23 +1378,27 @@ export function NovaColetaCassinoForm() {
                 accent={
                   calculo?.saldoNegativo
                     ? "red"
-                    : emVisitaPonto && receberAgora
+                    : receberAgora || editandoVisitaFinalizada
                       ? "emerald"
                       : "cyan"
                 }
                 title={
                   calculo?.saldoNegativo
                     ? "Visita negativa"
-                    : emVisitaPonto && receberAgora
-                      ? "Receber agora"
-                      : "Fechar coleta"
+                    : editandoVisitaFinalizada
+                      ? "Corrigir e salvar"
+                      : emVisitaPonto && receberAgora
+                        ? "Receber agora"
+                        : "Fechar coleta"
                 }
                 subtitle={
                   calculo?.saldoNegativo
                     ? "Sem cobrança nesta coleta"
-                    : emVisitaPonto && !receberAgora
-                      ? "Desconto aqui · Pix/dinheiro na aba Cobrar"
-                      : "Resultado e pagamento"
+                    : editandoVisitaFinalizada
+                      ? "Máquinas, descontos e pagamento desta coleta"
+                      : emVisitaPonto && !receberAgora
+                        ? "Desconto aqui · Pix/dinheiro na aba Cobrar"
+                        : "Resultado e pagamento"
                 }
                 empty={
                   !calculo || !relatorioData ? (
@@ -1699,7 +1816,7 @@ export function NovaColetaCassinoForm() {
 
           {calculo && !calculo.saldoNegativo && (
             <div className="space-y-4 border-t border-slate-800 pt-4">
-              {emVisitaPonto && !receberAgora ? (
+              {emVisitaPontoAtiva && !receberAgora ? (
                 <>
                   <h2 className="font-semibold text-white">Valor da operação</h2>
                   <p className="text-xs text-slate-500">
@@ -2128,7 +2245,7 @@ export function NovaColetaCassinoForm() {
                 }
                 error={error}
                 depoisDaColeta={
-                  emVisitaPonto && calculo ? (
+                  emVisitaPontoAtiva && calculo ? (
                     <VisitaColetaModoPagamento
                       value={
                         calculo.saldoNegativo && modoFecharVisita === "receber"
@@ -2149,7 +2266,9 @@ export function NovaColetaCassinoForm() {
                   ) : undefined
                 }
                 submitLabel={
-                  emVisitaPonto
+                  editandoVisitaFinalizada
+                    ? "Salvar correção completa"
+                    : emVisitaPontoAtiva
                     ? finalizarVisitaSemPagar
                       ? "Encerrar sem cobrar"
                       : receberAgora
@@ -2157,7 +2276,9 @@ export function NovaColetaCassinoForm() {
                         : editarVisitaId
                           ? "Salvar correção e seguir"
                           : "Salvar e seguir"
-                    : "Salvar coleta cassino"
+                    : editarVisitaId
+                      ? "Salvar correção"
+                      : "Salvar coleta cassino"
                 }
                 submitDisabled={loadingPonto || leituras.length === 0 || !!sucesso}
                 loading={loading}

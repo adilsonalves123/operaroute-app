@@ -739,12 +739,17 @@ export async function POST(request: Request) {
 
   const visitaPontoIdLink = parseVisitaPontoId(body.visita_ponto_id);
   if (visitaPontoIdLink) {
+    // Correção de coleta já encerrada: body.religar_visita_finalizada ou
+    // slot com cassino_visita_id nulo (soft-unlink no DELETE).
+    const permitirReligarFinalizada =
+      body.religar_visita_finalizada === true || body.editar_visita_finalizada === true;
     await vincularItemVisitaPonto({
       supabase,
       empresaId: profile.empresa_id,
       visitaPontoId: visitaPontoIdLink,
       nicho: "cassino",
       cassinoVisitaId: visita.id,
+      permitirReligarFinalizada,
     });
   }
 

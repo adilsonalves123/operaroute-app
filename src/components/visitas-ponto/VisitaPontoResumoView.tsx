@@ -172,7 +172,9 @@ export function VisitaPontoResumoView({
               {nicho.href && (
                 <div className="border-t border-white/[0.04] px-4 py-2">
                   <Link href={nicho.href} className="text-xs text-primary-neon hover:underline">
-                    Ver coleta completa →
+                    {resumo.status === "finalizada" && nicho.nicho === "cassino"
+                      ? "Corrigir leituras e valores →"
+                      : "Ver coleta completa →"}
                   </Link>
                 </div>
               )}
@@ -192,7 +194,7 @@ export function VisitaPontoResumoView({
             href={resumo.cassinoNegativo.href}
             className="mt-2 inline-block text-xs text-primary-neon hover:underline"
           >
-            Corrigir leituras →
+            Corrigir leituras e valores →
           </Link>
         </section>
       )}

@@ -318,7 +318,7 @@ export function VisitaConcluidaCeremony({
               href={resumo.cassinoNegativo.href}
               className="mt-2 inline-block text-[12px] text-[#c4a574] hover:underline"
             >
-              Corrigir leituras
+              Corrigir leituras e valores
             </Link>
           </section>
         )}

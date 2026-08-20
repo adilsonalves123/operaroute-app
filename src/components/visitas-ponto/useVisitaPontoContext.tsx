@@ -26,7 +26,9 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
   } | null>(null);
 
   useEffect(() => {
+    // Correção de coleta já salva: não abre visita ao ponto nova automaticamente.
     if (visitaPontoId || !pontoId) return;
+    if (searchParams.get("editar_visita")?.trim()) return;
     if (ensuringFor.current === pontoId) return;
 
     let cancelled = false;
