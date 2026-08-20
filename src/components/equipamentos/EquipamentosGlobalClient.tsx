@@ -201,14 +201,20 @@ export function EquipamentosGlobalClient({
         </div>
 
         <div className="mt-8 space-y-4">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+          <div className="flex items-center gap-3 rounded-sm border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 transition focus-within:border-[#c4a574]/35">
+            <Search
+              className="h-4 w-4 shrink-0 text-slate-500"
+              aria-hidden
+            />
             <input
-              type="search"
+              type="text"
+              inputMode="search"
+              enterKeyHint="search"
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar por série, número, nome ou ponto…"
-              className="w-full rounded-sm border border-white/[0.08] bg-white/[0.03] py-2.5 pl-10 pr-4 text-[13px] text-[#f4efe6] placeholder:text-slate-600 outline-none transition focus:border-[#c4a574]/35"
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] text-[#f4efe6] outline-none placeholder:text-slate-600 shadow-none focus:ring-0"
+              aria-label="Buscar equipamentos"
             />
           </div>
 

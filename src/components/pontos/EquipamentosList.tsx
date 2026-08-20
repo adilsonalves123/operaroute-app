@@ -287,11 +287,14 @@ export function EquipamentosList({
         <div className="flex items-center gap-2.5 border-b border-white/[0.08] pb-3 focus-within:border-[#c4a574]/35">
           <Search className="h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden />
           <input
-            type="search"
+            type="text"
+            inputMode="search"
+            enterKeyHint="search"
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Série, número ou nome…"
-            className="min-w-0 flex-1 !border-0 !bg-transparent !p-0 !shadow-none text-[13px] tracking-wide text-[#f0ebe3] placeholder:text-slate-600 focus:!border-transparent focus:!shadow-none"
+            className="min-w-0 flex-1 !border-0 !bg-transparent !p-0 !shadow-none text-[13px] tracking-wide text-[#f0ebe3] placeholder:text-slate-600 focus:!border-transparent focus:!shadow-none focus:!ring-0"
+            aria-label="Buscar máquinas"
           />
         </div>
       )}
