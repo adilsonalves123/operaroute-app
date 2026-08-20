@@ -130,6 +130,8 @@ export function NovaColetaUrsinhoForm() {
   const [modoFecharVisita, setModoFecharVisita] =
     useState<VisitaColetaModoFechar>("continuar");
   const receberAgora = emVisitaPonto && modoFecharVisita === "receber";
+  /** Fora da visita multi-nicho, a coleta cobra na hora — Pix/dinheiro devem ir pro servidor. */
+  const cobrandoAgora = !emVisitaPonto || receberAgora;
   const [haverSaldo, setHaverSaldo] = useState(0);
   const [descontarHaver, setDescontarHaver] = useState(false);
   const [incluirPendencia, setIncluirPendencia] = useState(false);
@@ -525,8 +527,8 @@ export function NovaColetaUrsinhoForm() {
           ponto_id: pontoId,
           comissao_percentual: Number(comissaoPercentual) || 0,
           desconto: Number(desconto) || 0,
-          valor_pix: receberAgora ? parseMoneyInput(valorPix) : 0,
-          valor_dinheiro: receberAgora ? parseMoneyInput(valorDinheiro) : 0,
+          valor_pix: cobrandoAgora ? parseMoneyInput(valorPix) : 0,
+          valor_dinheiro: cobrandoAgora ? parseMoneyInput(valorDinheiro) : 0,
           observacao: observacao || null,
           latitude: gps?.latitude ?? null,
           longitude: gps?.longitude ?? null,
@@ -539,8 +541,8 @@ export function NovaColetaUrsinhoForm() {
           })),
           visita_ponto_id: visitaPontoId || null,
           receber_agora: receberAgora,
-          descontar_haver_na_cobranca: receberAgora && descontarHaver,
-          incluir_pendencia_operacao: receberAgora && incluirPendencia,
+          descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
+          incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
         }),
       });
 

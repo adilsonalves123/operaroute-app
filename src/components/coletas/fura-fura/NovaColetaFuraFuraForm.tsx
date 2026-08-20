@@ -117,6 +117,8 @@ export function NovaColetaFuraFuraForm() {
   const [modoFecharVisita, setModoFecharVisita] =
     useState<VisitaColetaModoFechar>("continuar");
   const receberAgora = emVisitaPonto && modoFecharVisita === "receber";
+  /** Fora da visita multi-nicho, a coleta cobra na hora — Pix/dinheiro devem ir pro servidor. */
+  const cobrandoAgora = !emVisitaPonto || receberAgora;
   const [haverSaldo, setHaverSaldo] = useState(0);
   const [descontarHaver, setDescontarHaver] = useState(false);
   const [incluirPendencia, setIncluirPendencia] = useState(false);
@@ -501,8 +503,8 @@ export function NovaColetaFuraFuraForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
-          valor_pix: receberAgora ? form.valor_pix : "",
-          valor_dinheiro: receberAgora ? form.valor_dinheiro : "",
+          valor_pix: cobrandoAgora ? form.valor_pix : "",
+          valor_dinheiro: cobrandoAgora ? form.valor_dinheiro : "",
           brindes,
           relatorio_enviado: relatorioEnviado,
           foto_url: fotoUrl,
@@ -510,8 +512,8 @@ export function NovaColetaFuraFuraForm() {
           longitude: gps?.longitude ?? null,
           visita_ponto_id: visitaPontoId || null,
           receber_agora: receberAgora,
-          descontar_haver_na_cobranca: receberAgora && descontarHaver,
-          incluir_pendencia_operacao: receberAgora && incluirPendencia,
+          descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
+          incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
         }),
       });
       const data = await parseFetchJson<{
