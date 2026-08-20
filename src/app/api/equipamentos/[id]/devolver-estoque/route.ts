@@ -40,12 +40,14 @@ export async function POST(
     .eq("id", equipamento.ponto_id)
     .maybeSingle();
 
+  // Se o ponto sumiu, ainda assim devolve a máquina ao estoque (não deixa órfã).
   const devolucao = await devolverTodoEstoqueMaquinaParaPonto(supabase, {
     empresaId: profile.empresa_id,
     equipamentoId,
+    limparSeFalhar: !ponto,
   });
 
-  if (devolucao.error) {
+  if (devolucao.error && ponto) {
     return NextResponse.json(
       { error: `Não foi possível devolver brindes ao ponto: ${devolucao.error}` },
       { status: 500 }

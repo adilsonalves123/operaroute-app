@@ -11,6 +11,11 @@ function mapEquipamento(
   pontoNome?: string | null
 ): EquipamentoSerieResumo {
   const pontos = row.pontos as { nome: string } | { nome: string }[] | null | undefined;
+  const pontoIdRaw = row.ponto_id;
+  const ponto_id =
+    pontoIdRaw != null && String(pontoIdRaw).trim() && String(pontoIdRaw) !== "null"
+      ? String(pontoIdRaw)
+      : null;
   const nomePonto =
     pontoNome ??
     (Array.isArray(pontos) ? pontos[0]?.nome : pontos?.nome) ??
@@ -18,7 +23,7 @@ function mapEquipamento(
 
   return {
     id: String(row.id),
-    ponto_id: String(row.ponto_id),
+    ponto_id,
     nome: String(row.nome ?? ""),
     numero_maquina: row.numero_maquina != null ? String(row.numero_maquina) : null,
     numero_serie: row.numero_serie != null ? String(row.numero_serie) : null,
@@ -28,7 +33,8 @@ function mapEquipamento(
     numero_saida: row.numero_saida != null ? Number(row.numero_saida) : null,
     foto_url: row.foto_url != null ? String(row.foto_url) : null,
     created_at: String(row.created_at ?? ""),
-    ponto_nome: nomePonto,
+    ponto_nome: ponto_id ? nomePonto : null,
+    em_estoque: !ponto_id,
   };
 }
 
@@ -68,8 +74,12 @@ export async function buscarHistoricoPorNumeroSerie(
     .filter((row) => normalizarNumeroSerie(String(row.numero_serie ?? "")) === normalizado)
     .map((row) => mapEquipamento(row as Record<string, unknown>));
 
+  // Preferência: máquina ativa alocada; senão a do estoque; senão qualquer ativa.
   const equipamento_ativo =
-    equipamentos_historico.find((e) => e.status === "ativo") ?? null;
+    equipamentos_historico.find((e) => e.status === "ativo" && e.ponto_id) ??
+    equipamentos_historico.find((e) => e.status === "ativo" && e.em_estoque) ??
+    equipamentos_historico.find((e) => e.status === "ativo") ??
+    null;
 
   const equipamentoIds = equipamentos_historico.map((e) => e.id);
 
@@ -162,14 +172,20 @@ export async function buscarHistoricoPorNumeroSerie(
     fotoColeta;
 
   let aviso: string | null = null;
-  if (
-    equipamento_ativo &&
-    opts?.pontoAtualId &&
-    equipamento_ativo.ponto_id !== opts.pontoAtualId
-  ) {
-    aviso = `Esta série já está ativa no ponto "${equipamento_ativo.ponto_nome ?? "outro"}". Transfira a máquina em vez de cadastrar de novo.`;
-  } else if (equipamento_ativo && !opts?.pontoAtualId) {
-    aviso = `Ativa no ponto "${equipamento_ativo.ponto_nome ?? "—"}".`;
+  if (equipamento_ativo) {
+    if (equipamento_ativo.em_estoque || !equipamento_ativo.ponto_id) {
+      aviso = opts?.pontoAtualId
+        ? "Esta série está no estoque. Quer trazer esta máquina para cá?"
+        : "Esta série está no estoque central.";
+    } else if (
+      opts?.pontoAtualId &&
+      equipamento_ativo.ponto_id !== opts.pontoAtualId
+    ) {
+      const onde = equipamento_ativo.ponto_nome?.trim() || "outro ponto";
+      aviso = `Esta série já está ativa em "${onde}". Você pode transferir para cá em vez de cadastrar de novo.`;
+    } else if (!opts?.pontoAtualId) {
+      aviso = `Ativa no ponto "${equipamento_ativo.ponto_nome ?? "—"}".`;
+    }
   }
 
   return {

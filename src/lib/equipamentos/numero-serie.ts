@@ -8,7 +8,7 @@ export function numeroSerieValido(raw: string): boolean {
 
 export type EquipamentoSerieResumo = {
   id: string;
-  ponto_id: string;
+  ponto_id: string | null;
   nome: string;
   numero_maquina: string | null;
   numero_serie: string | null;
@@ -19,6 +19,8 @@ export type EquipamentoSerieResumo = {
   foto_url: string | null;
   created_at: string;
   ponto_nome: string | null;
+  /** true quando ponto_id é null (estoque central). */
+  em_estoque: boolean;
 };
 
 export type ColetaSerieHistorico = {

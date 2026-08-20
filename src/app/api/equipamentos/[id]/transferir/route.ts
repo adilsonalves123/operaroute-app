@@ -83,17 +83,24 @@ export async function POST(
   }
 
   const dataStr = new Date().toLocaleDateString("pt-BR");
-  const linhaTransferencia = `Transferido de ${pontoOrigem?.nome ?? "ponto anterior"} para ${pontoDestino.nome} em ${dataStr}`;
+  const numeroMaquinaNovo = String(body.numero_maquina ?? "").trim();
+  const numeroFinal = numeroMaquinaNovo || equipamento.numero_maquina;
+  const linhaTransferencia = `Transferido de ${pontoOrigem?.nome ?? "ponto anterior"} para ${pontoDestino.nome}${numeroFinal ? ` (nº ${numeroFinal})` : ""} em ${dataStr}`;
   const observacaoAtualizada = equipamento.observacao
     ? `${equipamento.observacao}\n${linhaTransferencia}`
     : linhaTransferencia;
 
+  const update: Record<string, unknown> = {
+    ponto_id: pontoDestinoId,
+    observacao: observacaoAtualizada,
+  };
+  if (numeroMaquinaNovo) {
+    update.numero_maquina = numeroMaquinaNovo;
+  }
+
   const { error: updateError } = await supabase
     .from("equipamentos")
-    .update({
-      ponto_id: pontoDestinoId,
-      observacao: observacaoAtualizada,
-    })
+    .update(update)
     .eq("id", equipamentoId)
     .eq("empresa_id", profile.empresa_id);
 

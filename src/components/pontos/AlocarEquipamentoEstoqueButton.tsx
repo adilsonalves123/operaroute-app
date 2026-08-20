@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { PackagePlus, X } from "lucide-react";
 import { FormInput } from "@/components/ui/FormInput";
 import { getEquipamentoTipoLabel } from "@/lib/equipamentos";
+import { normalizarNumeroSerie } from "@/lib/equipamentos/numero-serie";
 import type { Equipamento } from "@/lib/types/database";
 
 type Props = {
@@ -25,8 +26,20 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
   const [open, setOpen] = useState(false);
   const [equipamentoId, setEquipamentoId] = useState("");
   const [numeroMaquina, setNumeroMaquina] = useState("");
+  const [buscaSerie, setBuscaSerie] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const filtrados = useMemo(() => {
+    const q = normalizarNumeroSerie(buscaSerie);
+    if (!q) return estoqueDisponivel;
+    return estoqueDisponivel.filter((eq) => {
+      const serie = normalizarNumeroSerie(eq.numero_serie ?? "");
+      const nome = eq.nome.trim().toLowerCase();
+      const num = (eq.numero_maquina ?? "").trim().toLowerCase();
+      return serie.includes(q) || nome.includes(q) || num.includes(q);
+    });
+  }, [estoqueDisponivel, buscaSerie]);
 
   const selecionado = estoqueDisponivel.find((eq) => eq.id === equipamentoId);
 
@@ -78,6 +91,7 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
       setOpen(false);
       setEquipamentoId("");
       setNumeroMaquina("");
+      setBuscaSerie("");
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao alocar.");
@@ -102,7 +116,7 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
                 <div>
                   <h3 className="font-semibold text-white">Alocar equipamento do estoque</h3>
                   <p className="mt-0.5 text-xs text-slate-500">
-                    Escolha a máquina e defina o nº neste ponto.
+                    Digite a série ou escolha na lista e defina o nº neste ponto.
                   </p>
                 </div>
                 <button
@@ -115,20 +129,57 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
                 </button>
               </div>
 
+              <FormInput
+                label="Buscar por série / nome"
+                value={buscaSerie}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setBuscaSerie(v);
+                  const q = normalizarNumeroSerie(v);
+                  if (!q) return;
+                  const match = estoqueDisponivel.find(
+                    (eq) => normalizarNumeroSerie(eq.numero_serie ?? "") === q
+                  );
+                  if (match) {
+                    setEquipamentoId(match.id);
+                    if (!numeroMaquina.trim()) {
+                      setNumeroMaquina(
+                        match.numero_maquina?.trim() || match.numero_serie?.trim() || ""
+                      );
+                    }
+                  }
+                }}
+                placeholder="Ex.: SN123456"
+                hint="Se a série bater exatamente, a máquina é selecionada sozinha."
+              />
+
               <div className="space-y-1.5">
                 <label className="block text-sm font-medium text-slate-300">Equipamento *</label>
                 <select
                   value={equipamentoId}
-                  onChange={(e) => setEquipamentoId(e.target.value)}
+                  onChange={(e) => {
+                    setEquipamentoId(e.target.value);
+                    const eq = estoqueDisponivel.find((x) => x.id === e.target.value);
+                    if (eq && !numeroMaquina.trim()) {
+                      setNumeroMaquina(
+                        eq.numero_maquina?.trim() || eq.numero_serie?.trim() || ""
+                      );
+                    }
+                  }}
                   className="w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2.5 text-sm text-white focus:border-cyan-500/50 focus:outline-none"
                 >
                   <option value="">Selecione...</option>
-                  {estoqueDisponivel.map((eq) => (
+                  {filtrados.map((eq) => (
                     <option key={eq.id} value={eq.id}>
                       {labelOpcao(eq)}
                     </option>
                   ))}
                 </select>
+                {filtrados.length === 0 && (
+                  <p className="text-xs text-amber-300/90">
+                    Nenhuma máquina no estoque com essa busca.
+                  </p>
+                )}
                 {selecionado && (
                   <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-xs text-slate-400">
                     <p className="font-medium text-slate-200">

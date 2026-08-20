@@ -154,7 +154,7 @@ function EquipamentoCard({
           </div>
 
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-slate-500">
-            {showPonto && pontoNome && (
+            {showPonto && eq.ponto_id && pontoNome && (
               <Link
                 href={`/pontos/${pontoId}`}
                 className="inline-flex max-w-[12rem] items-center gap-1 truncate text-slate-400 transition hover:text-[#c4a574]"
@@ -163,6 +163,12 @@ function EquipamentoCard({
                 <MapPin className="h-3 w-3 shrink-0 opacity-60" />
                 <span className="truncate">{pontoNome}</span>
               </Link>
+            )}
+            {showPonto && eq.ponto_id && !pontoNome && (
+              <span className="inline-flex items-center gap-1 text-amber-300/90">
+                <MapPin className="h-3 w-3 shrink-0 opacity-60" />
+                Ponto removido — devolva ao estoque
+              </span>
             )}
             {showPonto && !eq.ponto_id && (
               <span className="inline-flex items-center gap-1 text-slate-500">
