@@ -503,6 +503,15 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
   const fortes = saude.filter((p) => p.classe === "forte").length;
   const razoaveis = saude.filter((p) => p.classe === "razoavel").length;
   const fracos = saude.filter((p) => p.classe === "fraco").length;
+  const umNichoSo =
+    [
+      data.nichos.furaFura,
+      data.nichos.ursinho,
+      data.nichos.cassino,
+      data.nichos.diversao,
+      data.nichos.bolinha,
+      data.nichos.consignado,
+    ].filter(Boolean).length === 1;
 
   return (
     <div
@@ -1052,7 +1061,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           </section>
         )}
 
-        {/* Deep-dive — sempre acessível */}
+        {/* Deep-dive — conteúdo complementar (não repete ranking) */}
         <section
           ref={modulosRef}
           id="detalhe-nicho"
@@ -1061,27 +1070,20 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-[12px] uppercase tracking-[0.22em] text-slate-500">
-                Detalhamento
+                {umNichoSo ? "Raio-X" : "Detalhamento"}
               </p>
               <h2
-                className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6]"
+                className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6] sm:text-[2rem]"
                 style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
               >
-                Detalhe por nicho
+                {umNichoSo ? "O que o ranking não mostra" : "Detalhe por nicho"}
               </h2>
               <p className="mt-1.5 max-w-lg text-[14px] text-slate-500">
-                Caixa, máquinas, kits, capital e alertas — a mesma operação, fatiada.
+                {umNichoSo
+                  ? "Concentração, ticket por visita, máquinas que pagam alto e tipos de jogo — sem repetir a lista de cima."
+                  : "Caixa, capital e alertas por módulo — sem repetir o ranking consolidado."}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() =>
-                modulosRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
-              }
-              className="rounded-sm border border-[#c4a574]/35 bg-[#c4a574]/10 px-4 py-2 text-[14px] font-medium text-[#c4a574] transition hover:bg-[#c4a574]/18"
-            >
-              Ir ao detalhe
-            </button>
           </div>
           <CentroInteligencia data={data} mode="modulos" periodo={periodo} />
         </section>

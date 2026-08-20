@@ -183,6 +183,8 @@ function NichoColetaPainel({
   descricaoCaixa,
   labelItens = "Brindes / itens",
   showBrindes = true,
+  /** Embaixo da Análise premium: não repete ranking/saúde. */
+  complementar = false,
 }: {
   bloco: NichoColetaAnalise;
   periodoLabel: string;
@@ -190,8 +192,22 @@ function NichoColetaPainel({
   descricaoCaixa: string;
   labelItens?: string;
   showBrindes?: boolean;
+  complementar?: boolean;
 }) {
   const subPeriodo = periodoLabel.toLowerCase();
+  const visitas = bloco.rankingPontos.reduce((s, p) => s + p.movimentos, 0);
+  const lucroTotal = bloco.rankingPontos.reduce((s, p) => s + p.lucro, 0);
+  const ticket = visitas > 0 ? lucroTotal / visitas : null;
+  const top3 = [...bloco.rankingPontos].sort((a, b) => b.lucro - a.lucro).slice(0, 3);
+  const lucroPositivo = Math.max(
+    0,
+    bloco.rankingPontos.filter((p) => p.lucro > 0).reduce((s, p) => s + p.lucro, 0)
+  );
+  const shareTop3 =
+    lucroPositivo > 0.009
+      ? Math.round((top3.reduce((s, p) => s + Math.max(0, p.lucro), 0) / lucroPositivo) * 1000) / 10
+      : null;
+
   return (
     <div className="space-y-8">
       <FuraFuraCaixaPainel
@@ -231,50 +247,72 @@ function NichoColetaPainel({
         )}
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <div className="space-y-3">
-          <SecaoTitulo titulo="Pontos — melhor lucro" descricao={`Ranking · ${periodoLabel}`} />
-          <div className="space-y-2">
-            {bloco.rankingPontos.slice(0, 8).map((p, i) => (
-              <RankingRow
-                key={p.pontoId}
-                pos={i + 1}
-                titulo={p.nome}
-                subtitulo={`${p.movimentos} coleta(s)${p.cidade ? ` · ${p.cidade}` : ""}${
-                  p.custoBrindes > 0 ? ` · custo ${formatCurrency(p.custoBrindes)}` : ""
-                }`}
-                valor={formatCurrency(p.lucro)}
-                valorNegativo={p.lucro < 0}
-                href={`/pontos/${p.pontoId}`}
-              />
-            ))}
-            {bloco.rankingPontos.length === 0 && (
-              <p className="text-sm text-slate-500">Nenhuma coleta no período.</p>
-            )}
-          </div>
+      {complementar ? (
+        <div className="grid gap-3 sm:grid-cols-3">
+          <KpiCard
+            label="Lucro / coleta"
+            value={ticket != null ? formatCurrency(ticket) : "—"}
+            sub="Ticket médio do período"
+            accent={ticket != null && ticket < 0 ? "red" : "cyan"}
+          />
+          <KpiCard
+            label="Concentração top 3"
+            value={shareTop3 != null ? `${shareTop3.toFixed(0)}%` : "—"}
+            sub="Do lucro positivo nos 3 melhores"
+            accent={shareTop3 != null && shareTop3 >= 70 ? "amber" : "default"}
+          />
+          <KpiCard
+            label="Pontos ativos"
+            value={String(bloco.rankingPontos.filter((p) => p.movimentos > 0).length)}
+            sub={`${bloco.rankingPontos.filter((p) => p.movimentos === 1).length} com 1 coleta só`}
+          />
         </div>
-        <div className="space-y-3">
-          <SecaoTitulo titulo="Pontos — mais pressão" descricao={`Menor lucro · ${periodoLabel}`} />
-          <div className="space-y-2">
-            {[...bloco.rankingPontos]
-              .sort((a, b) => a.lucro - b.lucro)
-              .slice(0, 8)
-              .map((p, i) => (
+      ) : (
+        <div className="grid gap-6 xl:grid-cols-2">
+          <div className="space-y-3">
+            <SecaoTitulo titulo="Pontos — melhor lucro" descricao={`Ranking · ${periodoLabel}`} />
+            <div className="space-y-2">
+              {bloco.rankingPontos.slice(0, 8).map((p, i) => (
                 <RankingRow
                   key={p.pontoId}
                   pos={i + 1}
                   titulo={p.nome}
-                  subtitulo={`${p.movimentos} coleta(s)`}
+                  subtitulo={`${p.movimentos} coleta(s)${p.cidade ? ` · ${p.cidade}` : ""}${
+                    p.custoBrindes > 0 ? ` · custo ${formatCurrency(p.custoBrindes)}` : ""
+                  }`}
                   valor={formatCurrency(p.lucro)}
                   valorNegativo={p.lucro < 0}
                   href={`/pontos/${p.pontoId}`}
                 />
               ))}
+              {bloco.rankingPontos.length === 0 && (
+                <p className="text-sm text-slate-500">Nenhuma coleta no período.</p>
+              )}
+            </div>
+          </div>
+          <div className="space-y-3">
+            <SecaoTitulo titulo="Pontos — mais pressão" descricao={`Menor lucro · ${periodoLabel}`} />
+            <div className="space-y-2">
+              {[...bloco.rankingPontos]
+                .sort((a, b) => a.lucro - b.lucro)
+                .slice(0, 8)
+                .map((p, i) => (
+                  <RankingRow
+                    key={p.pontoId}
+                    pos={i + 1}
+                    titulo={p.nome}
+                    subtitulo={`${p.movimentos} coleta(s)`}
+                    valor={formatCurrency(p.lucro)}
+                    valorNegativo={p.lucro < 0}
+                    href={`/pontos/${p.pontoId}`}
+                  />
+                ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {bloco.rankingMaquinas.length > 0 && (
+      {!complementar && bloco.rankingMaquinas.length > 0 && (
         <div className="space-y-3">
           <SecaoTitulo
             titulo="Equipamentos com mais potencial"
@@ -331,7 +369,218 @@ function NichoColetaPainel({
         </div>
       )}
 
-      {bloco.saudePontos.length > 0 && <SaudePontosPainel itens={bloco.saudePontos} />}
+      {!complementar && bloco.saudePontos.length > 0 && (
+        <SaudePontosPainel itens={bloco.saudePontos} />
+      )}
+    </div>
+  );
+}
+
+/** Conteúdo que a Análise premium NÃO mostra — evita repetir ranking de bars. */
+function CassinoRaioX({
+  cassino,
+  periodoLabel,
+  periodo,
+  showIa,
+}: {
+  cassino: NonNullable<InteligenciaOperacional["cassino"]>;
+  periodoLabel: string;
+  periodo?: PeriodoAnaliseRange;
+  showIa: boolean;
+}) {
+  const pontos = cassino.rankingPontos;
+  const visitas = pontos.reduce((s, p) => s + p.movimentos, 0);
+  const lucroTotal = pontos.reduce((s, p) => s + p.lucro, 0);
+  const ticket = visitas > 0 ? lucroTotal / visitas : null;
+  const lucroPos = pontos.filter((p) => p.lucro > 0).reduce((s, p) => s + p.lucro, 0);
+  const top3 = [...pontos].sort((a, b) => b.lucro - a.lucro).slice(0, 3);
+  const shareTop3 =
+    lucroPos > 0.009
+      ? Math.round((top3.reduce((s, p) => s + Math.max(0, p.lucro), 0) / lucroPos) * 1000) / 10
+      : null;
+  const umaVisita = pontos.filter((p) => p.movimentos === 1);
+  const maquinasPagamAlto = [...cassino.rankingMaquinas]
+    .filter((m) => m.pctPago != null && m.pctPago >= 55 && m.entrada > 0)
+    .sort((a, b) => (b.pctPago ?? 0) - (a.pctPago ?? 0))
+    .slice(0, 6);
+
+  return (
+    <div className="space-y-8">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <KpiCard
+          label="Lucro líquido"
+          value={formatCurrency(cassino.lucro)}
+          sub="O que você recebeu do cliente"
+          accent={cassino.lucro >= 0 ? "green" : "red"}
+        />
+        <KpiCard
+          label="Lucro / visita"
+          value={ticket != null ? formatCurrency(ticket) : "—"}
+          sub={`${visitas} visita(s) · ${periodoLabel}`}
+          accent={ticket != null && ticket < 0 ? "red" : "cyan"}
+        />
+        <KpiCard
+          label="Top 3 concentram"
+          value={shareTop3 != null ? `${shareTop3.toFixed(0)}%` : "—"}
+          sub="Do lucro positivo da frota"
+          accent={shareTop3 != null && shareTop3 >= 70 ? "amber" : "default"}
+        />
+        <KpiCard
+          label="% pago médio"
+          value={
+            cassino.entrada > 0
+              ? `${((cassino.saida / cassino.entrada) * 100).toFixed(1)}%`
+              : "—"
+          }
+          sub={`Saída ${formatCurrency(cassino.saida / 100)} · entrada ${formatCurrency(cassino.entrada / 100)}`}
+        />
+      </div>
+
+      {showIa && periodo ? <IaLeiturasPainel periodo={periodo} compact /> : null}
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <div className="space-y-3">
+          <SecaoTitulo
+            titulo="Dependência da frota"
+            descricao="Quanto do lucro positivo vem dos 3 melhores bars"
+          />
+          <div className="space-y-2">
+            {top3.length === 0 ? (
+              <p className="text-sm text-slate-500">Sem visitas no período.</p>
+            ) : (
+              top3.map((p, i) => {
+                const share =
+                  lucroPos > 0.009 ? Math.round((Math.max(0, p.lucro) / lucroPos) * 1000) / 10 : 0;
+                return (
+                  <div
+                    key={p.pontoId}
+                    className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <Link
+                        href={`/pontos/${p.pontoId}`}
+                        className="truncate font-medium text-white hover:text-[#c4a574]"
+                      >
+                        {i + 1}. {p.nome}
+                      </Link>
+                      <span className="shrink-0 tabular-nums text-slate-400">{share}%</span>
+                    </div>
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                      <div
+                        className="h-full rounded-full bg-[#c4a574]/80"
+                        style={{ width: `${Math.min(100, share)}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })
+            )}
+            {shareTop3 != null && shareTop3 >= 70 && (
+              <p className="text-xs text-amber-400/90">
+                Frota concentrada — se um desses bars cair, o mês sente.
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <SecaoTitulo
+            titulo="Máquinas que pagam alto"
+            descricao="% saída ÷ entrada ≥ 55% — vale olhar furador / ajuste"
+          />
+          <div className="space-y-2">
+            {maquinasPagamAlto.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                Nenhuma máquina acima de 55% pago no período.
+              </p>
+            ) : (
+              maquinasPagamAlto.map((m, i) => (
+                <RankingRow
+                  key={m.equipamentoId}
+                  pos={i + 1}
+                  titulo={m.nome}
+                  subtitulo={`${m.pontoNome}${m.numeroMaquina ? ` · #${m.numeroMaquina}` : ""} · entrada ${formatCurrency(m.entrada / 100)}`}
+                  valor={`${(m.pctPago ?? 0).toFixed(1)}%`}
+                  valorNegativo={(m.pctPago ?? 0) >= 70}
+                  href={`/pontos/${m.pontoId}`}
+                />
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {umaVisita.length > 0 && (
+        <div className="space-y-3">
+          <SecaoTitulo
+            titulo="Só 1 visita no período"
+            descricao="Pode ser amostra fraca — ou bar que precisa de rota mais frequente"
+          />
+          <div className="flex flex-wrap gap-2">
+            {umaVisita.slice(0, 12).map((p) => (
+              <Link
+                key={p.pontoId}
+                href={`/pontos/${p.pontoId}`}
+                className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-[#c4a574]/40 hover:text-[#f4efe6]"
+              >
+                {p.nome}
+                <span
+                  className={cn(
+                    "ml-1.5 tabular-nums",
+                    p.lucro < 0 ? "text-red-400" : "text-slate-500"
+                  )}
+                >
+                  {formatCurrency(p.lucro)}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {cassino.rankingJogos.length > 0 && (
+        <div className="space-y-3">
+          <SecaoTitulo
+            titulo="Tipos de jogo"
+            descricao="Agrupado pelo nome da máquina — o que mais joga e o que mais paga"
+          />
+          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <table className="w-full min-w-[480px] text-left text-sm">
+              <thead>
+                <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
+                  <th className="px-4 py-3 font-medium">Jogo / modelo</th>
+                  <th className="px-4 py-3 font-medium">Máquinas</th>
+                  <th className="px-4 py-3 font-medium">Entrada</th>
+                  <th className="px-4 py-3 font-medium">% pago</th>
+                  <th className="px-4 py-3 font-medium">Lucro</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cassino.rankingJogos.map((j) => (
+                  <tr key={j.nome} className="border-b border-white/[0.04] last:border-0">
+                    <td className="px-4 py-3 font-medium text-white">{j.nome}</td>
+                    <td className="px-4 py-3 text-slate-300">{j.maquinas}</td>
+                    <td className="px-4 py-3 tabular-nums text-slate-300">
+                      {formatCurrency(j.entrada / 100)}
+                    </td>
+                    <td className="px-4 py-3 tabular-nums text-slate-300">
+                      {j.pctPago != null ? `${j.pctPago.toFixed(1)}%` : "—"}
+                    </td>
+                    <td
+                      className={cn(
+                        "px-4 py-3 tabular-nums font-medium",
+                        j.lucro >= 0 ? "text-green-400" : "text-red-400"
+                      )}
+                    >
+                      {formatCurrency(j.lucro)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -346,8 +595,23 @@ export function CentroInteligencia({
   mode?: "full" | "modulos";
   periodo?: PeriodoAnaliseRange;
 }) {
+  const nichoIds = (
+    [
+      data.nichos.furaFura && "fura",
+      data.nichos.ursinho && "ursinho",
+      data.nichos.cassino && "cassino",
+      data.nichos.diversao && "diversao",
+      data.nichos.bolinha && "bolinha",
+      data.nichos.consignado && "consignado",
+    ] as const
+  ).filter(Boolean) as SecaoId[];
+  const umNicho = mode === "modulos" && nichoIds.length === 1;
+  const complementar = mode === "modulos";
+
   const secoesVisiveis = SECOES.filter((s) => {
     if (mode === "modulos" && s.id === "geral") return false;
+    // Um nicho só: o ranking já veio acima — aqui fica raio-X fixo, sem aba repetida.
+    if (umNicho && nichoIds.includes(s.id)) return false;
     if (s.id === "fura") return data.nichos.furaFura;
     if (s.id === "ursinho") return data.nichos.ursinho;
     if (s.id === "cassino") return data.nichos.cassino;
@@ -363,8 +627,75 @@ export function CentroInteligencia({
   const v = data.visaoGeral;
   const subPeriodo = data.periodoLabel.toLowerCase();
 
+  const raioXUnico = (() => {
+    if (!umNicho) return null;
+    if (data.nichos.cassino && data.cassino) {
+      return (
+        <CassinoRaioX
+          cassino={data.cassino}
+          periodoLabel={data.periodoLabel}
+          periodo={periodo}
+          showIa
+        />
+      );
+    }
+    if (data.nichos.ursinho && data.ursinho) {
+      return (
+        <NichoColetaPainel
+          bloco={data.ursinho}
+          periodoLabel={data.periodoLabel}
+          tituloCaixa="Caixa ursinho"
+          descricaoCaixa="Entrada das máquinas — antes de separar brindes"
+          labelItens="Brindes"
+          showBrindes
+          complementar
+        />
+      );
+    }
+    if (data.nichos.diversao && data.diversao) {
+      return (
+        <NichoColetaPainel
+          bloco={data.diversao}
+          periodoLabel={data.periodoLabel}
+          tituloCaixa="Caixa diversão"
+          descricaoCaixa="Sinuca, fliperama, massagem — entrada líquida da operação"
+          showBrindes={false}
+          complementar
+        />
+      );
+    }
+    if (data.nichos.bolinha && data.bolinha) {
+      return (
+        <NichoColetaPainel
+          bloco={data.bolinha}
+          periodoLabel={data.periodoLabel}
+          tituloCaixa="Caixa bolinha"
+          descricaoCaixa="Entrada das máquinas — antes de separar brindes"
+          labelItens="Brindes"
+          showBrindes
+          complementar
+        />
+      );
+    }
+    if (data.nichos.consignado && data.consignado) {
+      return (
+        <NichoColetaPainel
+          bloco={data.consignado}
+          periodoLabel={data.periodoLabel}
+          tituloCaixa="Caixa consignado"
+          descricaoCaixa="Vendas no expositor — lucro após custo dos produtos"
+          labelItens="Produtos vendidos"
+          showBrindes
+          complementar
+        />
+      );
+    }
+    return null;
+  })();
+
   return (
     <div className="space-y-6">
+      {raioXUnico}
       {mode === "full" && (
       <div className="relative overflow-hidden rounded-2xl border border-primary-neon/15 bg-gradient-to-br from-primary-neon/[0.08] via-transparent to-transparent p-6">
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary-neon/10 blur-3xl" />
@@ -875,6 +1206,17 @@ export function CentroInteligencia({
 
       {/* ——— URSINHO ——— */}
       {secao === "ursinho" && data.ursinho && (
+        complementar ? (
+          <NichoColetaPainel
+            bloco={data.ursinho}
+            periodoLabel={data.periodoLabel}
+            tituloCaixa="Caixa ursinho"
+            descricaoCaixa="Entrada das máquinas — antes de separar brindes"
+            labelItens="Brindes"
+            showBrindes
+            complementar
+          />
+        ) : (
         <div className="space-y-8">
           <FuraFuraCaixaPainel
             caixa={data.ursinho.caixa}
@@ -1006,10 +1348,19 @@ export function CentroInteligencia({
             <SaudePontosPainel itens={data.ursinho.saudePontos} />
           )}
         </div>
+        )
       )}
 
       {/* ——— CASSINO ——— */}
       {secao === "cassino" && data.cassino && (
+        complementar ? (
+          <CassinoRaioX
+            cassino={data.cassino}
+            periodoLabel={data.periodoLabel}
+            periodo={periodo}
+            showIa
+          />
+        ) : (
         <div className="space-y-8">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <KpiCard
@@ -1144,6 +1495,7 @@ export function CentroInteligencia({
             <SaudePontosPainel itens={data.cassino.saudePontos} />
           )}
         </div>
+        )
       )}
 
       {secao === "diversao" && data.diversao && (
@@ -1153,6 +1505,7 @@ export function CentroInteligencia({
           tituloCaixa="Caixa diversão"
           descricaoCaixa="Sinuca, fliperama, massagem — entrada líquida da operação"
           showBrindes={false}
+          complementar={complementar}
         />
       )}
 
@@ -1164,6 +1517,7 @@ export function CentroInteligencia({
           descricaoCaixa="Entrada das máquinas — antes de separar brindes"
           labelItens="Brindes"
           showBrindes
+          complementar={complementar}
         />
       )}
 
@@ -1175,6 +1529,7 @@ export function CentroInteligencia({
           descricaoCaixa="Vendas no expositor — lucro após custo dos produtos"
           labelItens="Produtos vendidos"
           showBrindes
+          complementar={complementar}
         />
       )}
 

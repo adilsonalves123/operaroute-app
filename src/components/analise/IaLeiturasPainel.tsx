@@ -37,7 +37,14 @@ function Kpi({
   );
 }
 
-export function IaLeiturasPainel({ periodo }: { periodo: PeriodoAnaliseRange }) {
+export function IaLeiturasPainel({
+  periodo,
+  compact = false,
+}: {
+  periodo: PeriodoAnaliseRange;
+  /** Versão enxuta quando ainda não há leituras finalizadas. */
+  compact?: boolean;
+}) {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [disponivel, setDisponivel] = useState(true);
@@ -79,6 +86,28 @@ export function IaLeiturasPainel({ periodo }: { periodo: PeriodoAnaliseRange }) 
       cancel = true;
     };
   }, [periodo.preset, periodo.inicioISO, periodo.fimISO]);
+
+  const semFinalizadas = Boolean(resumo && resumo.finalizadas === 0);
+  const usarCompacto = compact && !loading && !erro && disponivel && semFinalizadas;
+
+  if (usarCompacto && resumo) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-violet-500/20 bg-violet-500/[0.04] px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Sparkles className="h-4 w-4 shrink-0 text-violet-300" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-white">Leitura IA</p>
+            <p className="text-xs text-slate-500">
+              {resumo.total} leitura{resumo.total === 1 ? "" : "s"} · {resumo.pendentes} pendente
+              {resumo.pendentes === 1 ? "" : "s"} · {resumo.rejeitadas} rejeitada
+              {resumo.rejeitadas === 1 ? "" : "s"}
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-slate-500">Finalize coletas com foto pra medir acerto.</p>
+      </div>
+    );
+  }
 
   return (
     <section className="space-y-4 rounded-2xl border border-violet-500/20 bg-violet-500/[0.04] p-5">
