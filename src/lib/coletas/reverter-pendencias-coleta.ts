@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { cobravelCassinoVisita } from "@/lib/visitas-ponto/resumo";
+import { tagColetaOrigem, tagViaColetaOrigem } from "@/lib/coletas/baixa-pendencia-coleta";
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
@@ -25,9 +27,9 @@ function temBaixa(linha: string): boolean {
 }
 
 /**
- * Restaura haver (e outras baixas) que uma coleta de nicho consumiu.
- * Linhas modernas: `Abatido R$ X em DATE [coleta:uuid]`
- * Fallback: `Abatido R$ X em DATE` no dia da coleta.
+ * Restaura haver e dívidas que uma coleta de nicho consumiu.
+ * Linhas: `Baixa de R$ X em DATE [coleta:uuid]` / `Abatido R$ X …`
+ * Também desfaz pagamento espelhado em coleta antiga ou visita cassino.
  */
 export async function reverterPendenciasAfetadasPorColeta(
   supabase: SupabaseClient,
@@ -39,11 +41,12 @@ export async function reverterPendenciasAfetadasPorColeta(
   }
 ): Promise<{ restauradas: number }> {
   const dataStr = new Date(opts.createdAt).toLocaleDateString("pt-BR");
-  const tag = `[coleta:${opts.coletaId}]`;
+  const tag = tagColetaOrigem(opts.coletaId);
+  const viaTag = tagViaColetaOrigem(opts.coletaId);
 
   const { data: pendencias } = await supabase
     .from("pendencias")
-    .select("id, tipo, valor, descricao, status")
+    .select("id, tipo, valor, descricao, status, coleta_id, visita_id")
     .eq("empresa_id", opts.empresaId)
     .eq("ponto_id", opts.pontoId);
 
@@ -51,16 +54,6 @@ export async function reverterPendenciasAfetadasPorColeta(
 
   for (const p of pendencias ?? []) {
     if (!p.descricao) continue;
-    const tipo = (p.tipo ?? "").toLowerCase();
-    // Haver e dívidas de operação de outros nichos
-    if (
-      tipo !== "haver" &&
-      tipo !== "pagamento_pendente" &&
-      tipo !== "parcial" &&
-      tipo !== "visita_consolidada"
-    ) {
-      continue;
-    }
 
     let removido = 0;
     const manter: string[] = [];
@@ -104,6 +97,66 @@ export async function reverterPendenciasAfetadasPorColeta(
       })
       .eq("id", p.id)
       .eq("empresa_id", opts.empresaId);
+
+    // Desfaz quitação espelhada na coleta antiga (FIFO).
+    if (p.coleta_id) {
+      const { data: col } = await supabase
+        .from("coletas")
+        .select("id, valor_pago_recebido, valor_a_receber")
+        .eq("id", p.coleta_id)
+        .eq("empresa_id", opts.empresaId)
+        .maybeSingle();
+
+      if (col) {
+        const pagoAtual = Number(col.valor_pago_recebido ?? 0);
+        const novoPago = round2(Math.max(0, pagoAtual - removido));
+        await supabase
+          .from("coletas")
+          .update({ valor_pago_recebido: novoPago })
+          .eq("id", col.id)
+          .eq("empresa_id", opts.empresaId);
+
+        const { data: pags } = await supabase
+          .from("coleta_pagamentos")
+          .select("id, observacao, valor")
+          .eq("coleta_id", col.id)
+          .eq("empresa_id", opts.empresaId);
+
+        const viaIds = (pags ?? [])
+          .filter((pg) => String(pg.observacao ?? "").includes(viaTag))
+          .map((pg) => pg.id);
+        if (viaIds.length > 0) {
+          await supabase.from("coleta_pagamentos").delete().in("id", viaIds);
+        }
+      }
+    }
+
+    // Desfaz quitação espelhada em visita cassino (sem alterar rotas/UI do cassino).
+    if (p.visita_id) {
+      const { data: visita } = await supabase
+        .from("visitas")
+        .select(
+          "id, valor_operacao_efetivo, valor_operacao, valor_pago, restante, debito_abatido, saldo_negativo"
+        )
+        .eq("id", p.visita_id)
+        .eq("empresa_id", opts.empresaId)
+        .maybeSingle();
+
+      if (visita && !visita.saldo_negativo) {
+        const pagoAtual = Number(visita.valor_pago ?? 0);
+        const novoPago = round2(Math.max(0, pagoAtual - removido));
+        const cobravel = cobravelCassinoVisita(visita);
+        const novoRestante = round2(Math.max(0, cobravel - novoPago));
+        await supabase
+          .from("visitas")
+          .update({
+            valor_pago: novoPago,
+            restante: novoRestante,
+          })
+          .eq("id", visita.id)
+          .eq("empresa_id", opts.empresaId);
+      }
+    }
 
     restauradas++;
   }

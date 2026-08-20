@@ -402,6 +402,7 @@ async function postColetaFuraFura(request: Request) {
         formaPagamento: recebimento.data.forma,
         operadorId: user?.id ?? null,
         excluirVisitaPontoId: visitaPontoId ?? undefined,
+        origemColetaId: coleta.id,
       });
       haverGerado = Math.round(
         Math.max(0, recebimentoRateado.aplicadoDividaAnterior - aplicado) * 100

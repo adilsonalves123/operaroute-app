@@ -313,6 +313,7 @@ export async function POST(request: Request) {
           formaPagamento: recebimento.data.forma,
           operadorId: user?.id ?? null,
           excluirVisitaPontoId: visitaPontoId ?? undefined,
+          origemColetaId: primeiraColetaId ?? undefined,
         });
 
         haverGerado = Math.round(

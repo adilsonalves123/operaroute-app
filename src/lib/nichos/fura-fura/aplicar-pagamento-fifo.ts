@@ -8,6 +8,10 @@ import {
   type DistribuicaoPagamento,
 } from "./pagamentos-fifo";
 import { reconciliarPendenciasCobraveisPonto } from "@/lib/visitas-ponto/reconciliar-pendencias-ponto";
+import {
+  appendLinhaBaixaPendencia,
+  tagViaColetaOrigem,
+} from "@/lib/coletas/baixa-pendencia-coleta";
 
 export async function aplicarPagamentoFifoColetas(
   supabase: SupabaseClient,
@@ -23,6 +27,11 @@ export async function aplicarPagamentoFifoColetas(
     operadorId: string | null;
     observacao?: string;
     categoriaFinanceiro?: string;
+    /**
+     * Coleta que está quitando dívida antiga (fura/ursinho/…).
+     * Marca baixa para restaurar se essa coleta for excluída.
+     */
+    origemColetaId?: string;
   }
 ): Promise<{ distribuicoes: DistribuicaoPagamento[]; valorAplicado: number; valorSobra: number }> {
   const pendentes = opts.coletas.filter((c) => saldoPendenteColeta(c) > 0.009);
@@ -33,6 +42,8 @@ export async function aplicarPagamentoFifoColetas(
       : { distribuicoes: [], valorAplicado: 0, valorSobra: opts.valor };
 
   const categoria = opts.categoriaFinanceiro ?? "Recebimento coleta";
+  const viaTag = opts.origemColetaId ? ` ${tagViaColetaOrigem(opts.origemColetaId)}` : "";
+  const financeiroColetaId = opts.origemColetaId ?? null;
 
   for (const d of distribuicoes) {
     const col = pendentes.find((c) => c.id === d.coletaId)!;
@@ -52,6 +63,7 @@ export async function aplicarPagamentoFifoColetas(
 
     col.valor_pago_recebido = novoPago;
 
+    const obsBase = opts.observacao ?? "Pagamento consolidado";
     await supabase.from("coleta_pagamentos").insert({
       empresa_id: opts.empresaId,
       coleta_id: d.coletaId,
@@ -60,7 +72,7 @@ export async function aplicarPagamentoFifoColetas(
       valor_pix: pix,
       valor_dinheiro: dinheiro,
       forma_pagamento: opts.formaPagamento,
-      observacao: opts.observacao ?? "Pagamento consolidado",
+      observacao: `${obsBase}${viaTag}`.trim(),
       operador_id: opts.operadorId,
     });
 
@@ -74,7 +86,8 @@ export async function aplicarPagamentoFifoColetas(
         : `Pagamento coleta — ${opts.pontoNome}`,
       forma_pagamento: opts.formaPagamento,
       ponto_id: opts.pontoId,
-      coleta_id: d.coletaId,
+      // Preferir a coleta que quitou: ao excluí-la, o financeiro some junto.
+      coleta_id: financeiroColetaId ?? d.coletaId,
       operador_id: opts.operadorId,
     });
 
@@ -83,7 +96,36 @@ export async function aplicarPagamentoFifoColetas(
       valor_pago_recebido: novoPago,
     });
 
-    if (novoSaldo <= 0.009) {
+    const { data: pendsColeta } = await supabase
+      .from("pendencias")
+      .select("id, descricao")
+      .eq("coleta_id", d.coletaId)
+      .eq("empresa_id", opts.empresaId)
+      .eq("status", "aberta");
+
+    if ((pendsColeta ?? []).length > 0) {
+      for (const p of pendsColeta ?? []) {
+        const desc = opts.origemColetaId
+          ? appendLinhaBaixaPendencia(p.descricao, d.valor, opts.origemColetaId)
+          : p.descricao;
+        if (novoSaldo <= 0.009) {
+          await supabase
+            .from("pendencias")
+            .update({
+              status: "resolvida",
+              valor: 0,
+              resolvido_em: new Date().toISOString(),
+              descricao: desc,
+            })
+            .eq("id", p.id);
+        } else {
+          await supabase
+            .from("pendencias")
+            .update({ valor: novoSaldo, descricao: desc })
+            .eq("id", p.id);
+        }
+      }
+    } else if (novoSaldo <= 0.009) {
       await supabase
         .from("pendencias")
         .update({ status: "resolvida", valor: 0, resolvido_em: new Date().toISOString() })

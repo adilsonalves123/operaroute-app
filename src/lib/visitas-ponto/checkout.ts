@@ -16,6 +16,7 @@ import {
   sincronizarPendenciaDaColeta,
 } from "@/lib/visitas-ponto/reconciliar-pendencias-ponto";
 import { baixarHaverPonto, fetchHaverSaldoPonto } from "@/lib/coletas/haver-nicho";
+import { appendLinhaBaixaPendencia } from "@/lib/coletas/baixa-pendencia-coleta";
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
@@ -164,6 +165,8 @@ export async function aplicarPagamentoDividaAnterior(
     operadorId: string | null;
     excluirVisitaPontoId?: string;
     excluirVisitaIds?: string[];
+    /** Coleta de nicho que está quitando a dívida — permite restaurar ao excluir. */
+    origemColetaId?: string;
   }
 ): Promise<number> {
   let restante = opts.valor;
@@ -220,6 +223,7 @@ export async function aplicarPagamentoDividaAnterior(
         operadorId: opts.operadorId,
         observacao: "Quitação na visita ao ponto",
         categoriaFinanceiro: "Recebimento visita",
+        origemColetaId: opts.origemColetaId,
       });
 
       restante = round2(restante - aplicar);
@@ -264,17 +268,29 @@ export async function aplicarPagamentoDividaAnterior(
         forma_pagamento: deriveFormaPagamento(pix, dinheiro),
         ponto_id: opts.pontoId,
         visita_id: visita.id,
+        coleta_id: opts.origemColetaId ?? null,
         operador_id: opts.operadorId,
       });
 
       const novoSaldoPend = round2(Math.max(0, saldo - aplicar));
+      const desc = opts.origemColetaId
+        ? appendLinhaBaixaPendencia(pend.descricao, aplicar, opts.origemColetaId)
+        : pend.descricao;
       if (novoSaldoPend <= 0.009) {
         await supabase
           .from("pendencias")
-          .update({ status: "resolvida", valor: 0, resolvido_em: new Date().toISOString() })
+          .update({
+            status: "resolvida",
+            valor: 0,
+            resolvido_em: new Date().toISOString(),
+            descricao: desc,
+          })
           .eq("id", pend.id);
       } else {
-        await supabase.from("pendencias").update({ valor: novoSaldoPend }).eq("id", pend.id);
+        await supabase
+          .from("pendencias")
+          .update({ valor: novoSaldoPend, descricao: desc })
+          .eq("id", pend.id);
       }
 
       restante = round2(restante - aplicar);
@@ -285,12 +301,16 @@ export async function aplicarPagamentoDividaAnterior(
     if (aplicar <= 0.009) continue;
 
     const novoSaldo = round2(saldo - aplicar);
+    const desc = opts.origemColetaId
+      ? appendLinhaBaixaPendencia(pend.descricao, aplicar, opts.origemColetaId)
+      : pend.descricao;
     await supabase
       .from("pendencias")
       .update({
         valor: novoSaldo,
         status: novoSaldo <= 0.009 ? "resolvida" : "aberta",
         resolvido_em: novoSaldo <= 0.009 ? new Date().toISOString() : null,
+        descricao: desc,
       })
       .eq("id", pend.id);
 
@@ -307,6 +327,7 @@ export async function aplicarPagamentoDividaAnterior(
       descricao: `Quitação — ${opts.pontoNome} — ${pend.titulo}`,
       forma_pagamento: deriveFormaPagamento(pix, dinheiro),
       ponto_id: opts.pontoId,
+      coleta_id: opts.origemColetaId ?? null,
       operador_id: opts.operadorId,
     });
 
