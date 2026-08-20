@@ -14,6 +14,10 @@ import {
   useFotoUpdater,
   useIaLeituraHandlers,
 } from "@/components/coletas/cassino/MaquinaColetaCard";
+import {
+  buildCorrecaoHumana,
+  correcaoIndicaManual,
+} from "@/lib/nichos/cassino/correcao-humana";
 import { PreviaRelatorioPanel } from "@/components/coletas/cassino/PreviaRelatorioPanel";
 import { ResumoOperacaoNegativaView } from "@/components/coletas/cassino/ResumoOperacaoNegativaView";
 import { CobrancaClienteResumo } from "@/components/coletas/cassino/CobrancaClienteResumo";
@@ -175,7 +179,8 @@ export function NovaColetaCassinoForm() {
 
   const updateLeitura = useLeituraUpdater(setLeituras);
   const updateFoto = useFotoUpdater(setLeituras);
-  const { onIaSugestao, onConfirmarIa, onIaErro } = useIaLeituraHandlers(setLeituras);
+  const { onIaSugestao, onConfirmarIa, onExcecaoContador, onIaErro } =
+    useIaLeituraHandlers(setLeituras);
   /** Evita reaplicar edição/rascunho e apagar o que o operador está digitando. */
   const contextoVisitaAplicadoRef = useRef("");
 
@@ -866,21 +871,37 @@ export function NovaColetaCassinoForm() {
         credentials: "include",
         body: JSON.stringify({
           ponto_id: pontoId,
-          leituras: leituras.map((l) => ({
-            equipamento_id: l.equipamentoId,
-            entrada_atual: l.entradaAtualInput.replace(/\D/g, ""),
-            saida_atual: l.saidaAtualInput.replace(/\D/g, ""),
-            ia_reading_id: l.iaReadingId ?? null,
-            ia_status_final:
+          leituras: leituras.map((l) => {
+            const correcao =
               l.iaReadingId
-                ? l.iaRevisaoObrigatoria || l.iaStatus === "rejected"
-                  ? "approved_manual"
-                  : "approved_ai"
-                : null,
-            foto_url:
-              fotoUrls.get(l.equipamentoId) ??
-              (l.fotoPreview && /^https?:\/\//i.test(l.fotoPreview) ? l.fotoPreview : null),
-          })),
+                ? buildCorrecaoHumana({
+                    entradaSugerida: l.iaSugestaoEntrada ?? null,
+                    saidaSugerida: l.iaSugestaoSaida ?? null,
+                    entradaFinal: l.entradaAtualInput,
+                    saidaFinal: l.saidaAtualInput,
+                    alternativas: l.iaAlternativas,
+                    revisaoObrigatoria: l.iaRevisaoObrigatoria,
+                    score: l.iaScore,
+                    statusIa: l.iaStatus,
+                    flags: l.iaFlags,
+                    excecaoContador: l.iaExcecaoContador ?? null,
+                  })
+                : null;
+            const manual =
+              Boolean(l.iaFoiCorrigidaManualmente) || correcaoIndicaManual(correcao);
+            return {
+              equipamento_id: l.equipamentoId,
+              entrada_atual: l.entradaAtualInput.replace(/\D/g, ""),
+              saida_atual: l.saidaAtualInput.replace(/\D/g, ""),
+              ia_reading_id: l.iaReadingId ?? null,
+              ia_status_final: l.iaReadingId ? (manual ? "approved_manual" : "approved_ai") : null,
+              ia_excecao_contador: l.iaExcecaoContador ?? null,
+              ia_correcao: correcao,
+              foto_url:
+                fotoUrls.get(l.equipamentoId) ??
+                (l.fotoPreview && /^https?:\/\//i.test(l.fotoPreview) ? l.fotoPreview : null),
+            };
+          }),
           desconto_manual: pagamento.desconto_manual,
           adiantamento_pix: pagamento.adiantamento_pix,
           adiantamento_dinheiro: pagamento.adiantamento_dinheiro,
@@ -1229,6 +1250,7 @@ export function NovaColetaCassinoForm() {
                       onFotoChange={updateFoto}
                       onIaSugestao={onIaSugestao}
                       onConfirmarIa={onConfirmarIa}
+                      onExcecaoContador={onExcecaoContador}
                       onIaErro={onIaErro}
                       erroEntrada={erros?.entrada}
                       erroSaida={erros?.saida}

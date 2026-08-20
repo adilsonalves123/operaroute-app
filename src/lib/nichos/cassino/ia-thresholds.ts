@@ -40,4 +40,12 @@ export const CASSINO_IA_THRESHOLDS = {
     sharpenCenterWeight: 1.48,
     sharpenNeighborWeight: 0.12,
   },
+  exceptions: {
+    /** Score mínimo para aplicar leitura quando regressão é justificada. */
+    scoreMinApplyComExcecao: 72,
+    /** Recupera parte da penalidade por regressão quando há exceção declarada. */
+    regressionPenaltyRecovery: 28,
+    /** Recupera penalidade quando manutenção recente foi detectada automaticamente. */
+    manutencaoPenaltyRecovery: 22,
+  },
 } as const;

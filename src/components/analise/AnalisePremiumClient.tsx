@@ -1049,7 +1049,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
               Ir ao detalhe
             </button>
           </div>
-          <CentroInteligencia data={data} mode="modulos" />
+          <CentroInteligencia data={data} mode="modulos" periodo={periodo} />
         </section>
       </div>
     </div>

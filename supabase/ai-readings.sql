@@ -24,6 +24,8 @@ CREATE TABLE IF NOT EXISTS ai_readings (
   historico_resumo jsonb NULL,
   usando_recortes boolean NOT NULL DEFAULT false,
   alternativas jsonb NULL,
+  excecao_contador text NULL,
+  correcao_humana jsonb NULL,
   corrected_by uuid NULL REFERENCES profiles(user_id) ON DELETE SET NULL,
   imagem_nome text NULL,
   imagem_tipo text NULL,
@@ -35,8 +37,14 @@ CREATE TABLE IF NOT EXISTS ai_readings (
   ),
   CONSTRAINT ai_readings_final_status_check CHECK (
     final_status IS NULL OR final_status IN ('approved_ai', 'approved_manual', 'rejected', 'error')
+  ),
+  CONSTRAINT ai_readings_excecao_contador_check CHECK (
+    excecao_contador IS NULL OR excecao_contador IN ('reset_contador', 'manutencao', 'troca_placa')
   )
 );
+
+ALTER TABLE ai_readings ADD COLUMN IF NOT EXISTS excecao_contador text NULL;
+ALTER TABLE ai_readings ADD COLUMN IF NOT EXISTS correcao_humana jsonb NULL;
 
 CREATE INDEX IF NOT EXISTS idx_ai_readings_empresa_created
   ON ai_readings (empresa_id, created_at DESC);

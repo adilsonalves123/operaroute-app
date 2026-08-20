@@ -27,11 +27,13 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { SaudePontosPainel } from "@/components/analise/SaudePontosPainel";
 import { FuraFuraCaixaPainel } from "@/components/analise/FuraFuraCaixaPainel";
 import { InteligenciaIAPainel } from "@/components/analise/InteligenciaIAPainel";
+import { IaLeiturasPainel } from "@/components/analise/IaLeiturasPainel";
 import type {
   InteligenciaOperacional,
   InsightOperacional,
   NichoColetaAnalise,
 } from "@/lib/analise/inteligencia-operacional";
+import type { PeriodoAnaliseRange } from "@/lib/analise/periodo-analise";
 
 type SecaoId =
   | "geral"
@@ -337,10 +339,12 @@ function NichoColetaPainel({
 export function CentroInteligencia({
   data,
   mode = "full",
+  periodo,
 }: {
   data: InteligenciaOperacional;
   /** full = hero + visão geral; modulos = só abas de nicho/capital/alertas/ia */
   mode?: "full" | "modulos";
+  periodo?: PeriodoAnaliseRange;
 }) {
   const secoesVisiveis = SECOES.filter((s) => {
     if (mode === "modulos" && s.id === "geral") return false;
@@ -1030,6 +1034,8 @@ export function CentroInteligencia({
             />
             <KpiCard label="Visitas" value={String(data.cassino.visitas)} sub={subPeriodo} />
           </div>
+
+          {periodo ? <IaLeiturasPainel periodo={periodo} /> : null}
 
           <div className="grid gap-6 xl:grid-cols-2">
             <div className="space-y-3">

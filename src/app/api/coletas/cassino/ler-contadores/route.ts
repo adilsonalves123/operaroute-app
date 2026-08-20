@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { iaDisponivel } from "@/lib/ia/openai-client";
+import { buscarManutencaoRecente } from "@/lib/nichos/cassino/buscar-manutencao-recente";
+import {
+  ajustarFlagsRegressao,
+  flagsIndicamRegressao,
+  regressaoPermiteRevisao,
+  type ExcecaoContadorTipo,
+} from "@/lib/nichos/cassino/excecoes-contador";
 import { CASSINO_IA_THRESHOLDS } from "@/lib/nichos/cassino/ia-thresholds";
 import { lerContadoresCassinoDaFoto } from "@/lib/nichos/cassino/ler-contadores-ia";
 
@@ -35,6 +42,80 @@ function parseEquipamentoId(raw: FormDataEntryValue | null): string | null {
 function parsePontoId(raw: FormDataEntryValue | null): string | null {
   const value = String(raw ?? "").trim();
   return value || null;
+}
+
+function parseExcecaoContador(raw: FormDataEntryValue | null): ExcecaoContadorTipo | null {
+  const value = String(raw ?? "").trim();
+  if (value === "reset_contador" || value === "manutencao" || value === "troca_placa") {
+    return value;
+  }
+  return null;
+}
+
+function aplicarExcecaoRegressao(args: {
+  score: number;
+  flags: string[];
+  avisos: string[];
+  aplicar: boolean;
+  status: "approved_ai" | "needs_review" | "rejected";
+  motivoRecusa: string | null;
+  excecaoContador: ExcecaoContadorTipo | null;
+  manutencaoRecente: boolean;
+  bloquearHistorico: boolean;
+}) {
+  if (!flagsIndicamRegressao(args.flags)) {
+    return args;
+  }
+
+  const justifica = regressaoPermiteRevisao({
+    excecaoContador: args.excecaoContador,
+    manutencaoRecente: args.manutencaoRecente,
+  });
+  if (!justifica) return args;
+
+  const flags = ajustarFlagsRegressao({
+    flags: args.flags,
+    excecaoContador: args.excecaoContador,
+    manutencaoRecente: args.manutencaoRecente,
+  });
+  const avisos = [...args.avisos];
+  if (args.excecaoContador) {
+    avisos.push("Regressão informada pelo operador — confira antes de confirmar.");
+  } else if (args.manutencaoRecente) {
+    avisos.push("Manutenção recente detectada nesta máquina.");
+  }
+
+  const penaltyRecovery = args.excecaoContador
+    ? CASSINO_IA_THRESHOLDS.exceptions.regressionPenaltyRecovery
+    : CASSINO_IA_THRESHOLDS.exceptions.manutencaoPenaltyRecovery;
+  const score = clampScore(args.score + penaltyRecovery);
+
+  const bloqueioDuro =
+    flags.includes("divergencia_entre_leituras") ||
+    flags.includes("baixa_confianca") ||
+    flags.includes("leitura_ambigua") ||
+    args.bloquearHistorico;
+
+  const scoreMin = CASSINO_IA_THRESHOLDS.exceptions.scoreMinApplyComExcecao;
+  let aplicar = args.aplicar;
+  let status = args.status;
+  let motivoRecusa = args.motivoRecusa;
+
+  if (!bloqueioDuro && score >= scoreMin) {
+    aplicar = true;
+    status =
+      score >= CASSINO_IA_THRESHOLDS.reading.scoreApprovedAi ? "approved_ai" : "needs_review";
+    motivoRecusa = null;
+  } else {
+    aplicar = false;
+    status = "needs_review";
+    motivoRecusa =
+      args.excecaoContador != null
+        ? "Regressão informada — confira os valores e confirme manualmente."
+        : "Manutenção recente nesta máquina — confira os contadores antes de confirmar.";
+  }
+
+  return { score, flags, avisos, aplicar, status, motivoRecusa };
 }
 
 type HistoricoColetaMini = {
@@ -183,6 +264,7 @@ export async function POST(request: Request) {
   const saidaAnterior = parseAnterior(form.get("saida_anterior"));
   const equipamentoId = parseEquipamentoId(form.get("equipamento_id"));
   const pontoId = parsePontoId(form.get("ponto_id"));
+  const excecaoContador = parseExcecaoContador(form.get("excecao_contador"));
   const fotoEntrada = form.get("foto_entrada");
   const fotoSaida = form.get("foto_saida");
 
@@ -217,6 +299,11 @@ export async function POST(request: Request) {
         ).data ?? []
       : [];
 
+  const manutencao = await buscarManutencaoRecente(auth.supabase, {
+    empresaId: auth.profile.empresa_id!,
+    equipamentoId,
+  });
+
   const r = leitura.result;
   const historicoAnalise = analisarHistoricoMaquina({
     entradaPeriodoAtual: Math.max(0, r.entradaCentesimos - entradaAnterior),
@@ -224,20 +311,38 @@ export async function POST(request: Request) {
     historico,
   });
 
-  const score = clampScore(r.score - historicoAnalise.scorePenalty);
-  const flags = Array.from(new Set([...r.flags, ...historicoAnalise.flags]));
-  const avisos = Array.from(new Set([...r.avisos, ...historicoAnalise.avisos]));
-  const aplicar = r.aplicar && !historicoAnalise.bloquearAplicacao;
-  const status =
+  let score = clampScore(r.score - historicoAnalise.scorePenalty);
+  let flags = Array.from(new Set([...r.flags, ...historicoAnalise.flags]));
+  let avisos = Array.from(new Set([...r.avisos, ...historicoAnalise.avisos]));
+  let aplicar = r.aplicar && !historicoAnalise.bloquearAplicacao;
+  let status =
     !aplicar && historicoAnalise.bloquearAplicacao
       ? "rejected"
       : flags.some((flag) => flag.startsWith("historico_"))
         ? "needs_review"
         : r.status;
-  const motivoRecusa =
+  let motivoRecusa =
     !aplicar && historicoAnalise.bloquearAplicacao
       ? "Movimentação muito fora do padrão histórico desta máquina. Confira o visor e digite manualmente."
       : r.motivoRecusa ?? null;
+
+  const excecaoAjustada = aplicarExcecaoRegressao({
+    score,
+    flags,
+    avisos,
+    aplicar,
+    status,
+    motivoRecusa,
+    excecaoContador,
+    manutencaoRecente: manutencao.detectada,
+    bloquearHistorico: historicoAnalise.bloquearAplicacao,
+  });
+  score = excecaoAjustada.score;
+  flags = excecaoAjustada.flags;
+  avisos = Array.from(new Set(excecaoAjustada.avisos));
+  aplicar = excecaoAjustada.aplicar;
+  status = excecaoAjustada.status;
+  motivoRecusa = excecaoAjustada.motivoRecusa;
   let readingId: string | null = null;
 
   try {
@@ -266,6 +371,7 @@ export async function POST(request: Request) {
         historico_resumo: historicoAnalise.resumo,
         usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
         alternativas: r.alternativas ?? null,
+        excecao_contador: excecaoContador,
         imagem_nome: foto.name || null,
         imagem_tipo: tipo,
         imagem_tamanho: foto.size,
@@ -311,6 +417,8 @@ export async function POST(request: Request) {
       historico_resumo: historicoAnalise.resumo,
       usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
       alternativas: r.alternativas ?? null,
+      excecao_contador: excecaoContador,
+      manutencao_recente: manutencao.detectada ? manutencao : null,
       reading_id: readingId,
     },
     meta: {
@@ -339,6 +447,8 @@ export async function POST(request: Request) {
     historico_resumo: historicoAnalise.resumo,
     usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
     alternativas: r.alternativas ?? null,
+    excecao_contador: excecaoContador,
+    manutencao_recente: manutencao.detectada ? manutencao : null,
     reading_id: readingId,
     /** Sempre true nesta feature — UI obriga confirmação antes de marcar pronta. */
     exige_confirmacao: true,

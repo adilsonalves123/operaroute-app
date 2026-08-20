@@ -18,12 +18,17 @@ import {
   valorSaidaPermitidaNoCaixa,
 } from "@/lib/financeiro/saldo-caixa";
 
+import type { CorrecaoHumanaPayload } from "@/lib/nichos/cassino/correcao-humana";
+import type { ExcecaoContadorTipo } from "@/lib/nichos/cassino/excecoes-contador";
+
 interface LeituraBody {
   equipamento_id: string;
   entrada_atual: number | string;
   saida_atual: number | string;
   ia_reading_id?: string | null;
   ia_status_final?: "approved_ai" | "approved_manual" | null;
+  ia_excecao_contador?: ExcecaoContadorTipo | null;
+  ia_correcao?: CorrecaoHumanaPayload | null;
   foto_url?: string | null;
 }
 
@@ -182,6 +187,10 @@ export async function POST(request: Request) {
       entradaAtual: parseCentesimos(l.entrada_atual),
       saidaAtual: parseCentesimos(l.saida_atual),
       fotoUri: l.foto_url ?? null,
+      ia_reading_id: l.ia_reading_id ?? null,
+      ia_status_final: l.ia_status_final ?? null,
+      ia_excecao_contador: l.ia_excecao_contador ?? null,
+      ia_correcao: l.ia_correcao ?? null,
     });
   }
 
@@ -420,6 +429,9 @@ export async function POST(request: Request) {
           entrada_final: m.entradaAtual,
           saida_final: m.saidaAtual,
           final_status: leituraBody.ia_status_final ?? "approved_ai",
+          status: leituraBody.ia_status_final ?? "approved_ai",
+          excecao_contador: leituraBody.ia_excecao_contador ?? null,
+          correcao_humana: leituraBody.ia_correcao ?? null,
           corrected_by:
             leituraBody.ia_status_final === "approved_manual" ? profile.user_id : null,
           finalized_at: new Date().toISOString(),

@@ -16,7 +16,16 @@ import { preprocessOcrCrop } from "@/lib/ia/preprocess-ocr-image";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
+import {
+  EXCECAO_CONTADOR_OPCOES,
+  flagsIndicamRegressao,
+  isRegressaoContador,
+  type ExcecaoContadorTipo,
+} from "@/lib/nichos/cassino/excecoes-contador";
 import { coletaInputClass } from "@/components/coletas/layout/coleta-form-styles";
+import {
+  valoresDivergemDaSugestao,
+} from "@/lib/nichos/cassino/correcao-humana";
 
 export interface LeituraFormState {
   equipamentoId: string;
@@ -42,6 +51,11 @@ export interface LeituraFormState {
     entrada: string[];
     saida: string[];
   };
+  iaSugestaoEntrada?: string | null;
+  iaSugestaoSaida?: string | null;
+  iaExcecaoContador?: ExcecaoContadorTipo | null;
+  iaManutencaoRecente?: boolean;
+  iaFoiCorrigidaManualmente?: boolean;
   iaErro?: string | null;
 }
 
@@ -109,10 +123,12 @@ interface MaquinaColetaCardProps {
         entrada: string[];
         saida: string[];
       };
+      manutencaoRecente?: boolean;
       avisos: string[];
     }
   ) => void;
   onConfirmarIa: (id: string) => void;
+  onExcecaoContador: (id: string, excecao: ExcecaoContadorTipo | null) => void;
   onIaErro: (id: string, erro: string | null) => void;
   erroEntrada?: string | null;
   erroSaida?: string | null;
@@ -127,6 +143,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
   onFotoChange,
   onIaSugestao,
   onConfirmarIa,
+  onExcecaoContador,
   onIaErro,
   erroEntrada,
   erroSaida,
@@ -136,6 +153,13 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
 
   const entradaAtual = getCentesimos(leitura.entradaAtualInput, leitura.entradaAnterior);
   const saidaAtual = getCentesimos(leitura.saidaAtualInput, leitura.saidaAnterior);
+  const temRegressao =
+    isRegressaoContador({
+      entradaAtual,
+      entradaAnterior: leitura.entradaAnterior,
+      saidaAtual,
+      saidaAnterior: leitura.saidaAnterior,
+    }) || flagsIndicamRegressao(leitura.iaFlags ?? []);
   const temLeituras =
     Boolean(leitura.entradaAtualInput.trim()) && Boolean(leitura.saidaAtualInput.trim());
   const entradaPeriodo = temLeituras ? entradaAtual - leitura.entradaAnterior : null;
@@ -217,6 +241,9 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       body.append("equipamento_id", leitura.equipamentoId);
       body.append("entrada_anterior", String(leitura.entradaAnterior));
       body.append("saida_anterior", String(leitura.saidaAnterior));
+      if (leitura.iaExcecaoContador) {
+        body.append("excecao_contador", leitura.iaExcecaoContador);
+      }
 
       const res = await fetch("/api/coletas/cassino/ler-contadores", {
         method: "POST",
@@ -272,6 +299,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
                 ? data.motivo_recusa
                 : "Encontramos dúvida na leitura. Escolha a opção correta abaixo.",
             alternativas,
+            manutencaoRecente: Boolean(data.manutencao_recente?.detectada),
             avisos: Array.isArray(data.avisos) ? data.avisos.map(String) : [],
           });
         } else {
@@ -310,6 +338,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
                 saida: data.alternativas.saida.map(String),
               }
             : undefined,
+        manutencaoRecente: Boolean(data.manutencao_recente?.detectada),
         avisos: Array.isArray(data.avisos) ? data.avisos.map(String) : [],
       });
     } catch {
@@ -720,10 +749,52 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               Validações ativas: {leitura.iaFlags.join(", ")}.
             </p>
           ) : null}
+          {temRegressao ? (
+            <div className="space-y-2 rounded-xl border border-rose-400/25 bg-black/20 p-3">
+              <p className="text-[11px] font-medium text-rose-100">
+                Leitura menor que a anterior
+              </p>
+              <p className="text-[11px] leading-snug text-rose-100/75">
+                Se houve reset, manutenção ou troca de placa, informe abaixo para registrar a
+                exceção.
+              </p>
+              {leitura.iaManutencaoRecente ? (
+                <p className="text-[11px] text-cyan-200/90">
+                  Manutenção recente detectada nesta máquina.
+                </p>
+              ) : null}
+              <select
+                value={leitura.iaExcecaoContador ?? ""}
+                onChange={(e) =>
+                  onExcecaoContador(
+                    leitura.equipamentoId,
+                    (e.target.value || null) as ExcecaoContadorTipo | null
+                  )
+                }
+                className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-xs text-amber-50"
+              >
+                <option value="">Selecione o motivo (se aplicável)</option>
+                {EXCECAO_CONTADOR_OPCOES.map((opcao) => (
+                  <option key={opcao.id} value={opcao.id}>
+                    {opcao.label}
+                  </option>
+                ))}
+              </select>
+              {leitura.iaExcecaoContador ? (
+                <p className="text-[10px] leading-snug text-amber-100/70">
+                  {
+                    EXCECAO_CONTADOR_OPCOES.find((o) => o.id === leitura.iaExcecaoContador)
+                      ?.descricao
+                  }
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           <button
             type="button"
+            disabled={temRegressao && !leitura.iaExcecaoContador && !leitura.iaManutencaoRecente}
             onClick={() => onConfirmarIa(leitura.equipamentoId)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <CheckCircle2 className="h-4 w-4" />
             {leitura.iaRevisaoObrigatoria ? "Confirmar revisão" : "Confirmar leitura"}
@@ -762,6 +833,11 @@ export function leituraToInput(eq: {
     iaRevisaoObrigatoria: false,
     iaMotivo: null,
     iaAlternativas: { entrada: [], saida: [] },
+    iaSugestaoEntrada: null,
+    iaSugestaoSaida: null,
+    iaExcecaoContador: null,
+    iaManutencaoRecente: false,
+    iaFoiCorrigidaManualmente: false,
     iaErro: null,
   };
 }
@@ -802,6 +878,11 @@ export function useFotoUpdater(setLeituras: Dispatch<SetStateAction<LeituraFormS
             iaRevisaoObrigatoria: false,
             iaMotivo: null,
             iaAlternativas: { entrada: [], saida: [] },
+            iaSugestaoEntrada: null,
+            iaSugestaoSaida: null,
+            iaExcecaoContador: null,
+            iaManutencaoRecente: false,
+            iaFoiCorrigidaManualmente: false,
             iaErro: null,
           };
         })
@@ -829,6 +910,7 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
           entrada: string[];
           saida: string[];
         };
+        manutencaoRecente?: boolean;
         avisos: string[];
       }
     ) => {
@@ -848,6 +930,11 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
                 iaRevisaoObrigatoria: data.revisaoObrigatoria ?? false,
                 iaMotivo: data.motivo ?? null,
                 iaAlternativas: data.alternativas ?? { entrada: [], saida: [] },
+                iaSugestaoEntrada: data.entrada,
+                iaSugestaoSaida: data.saida,
+                iaExcecaoContador: l.iaExcecaoContador ?? null,
+                iaManutencaoRecente: Boolean(data.manutencaoRecente),
+                iaFoiCorrigidaManualmente: false,
                 iaAvisos: data.avisos,
                 iaErro: null,
               }
@@ -861,16 +948,37 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
   const onConfirmarIa = useCallback(
     (id: string) => {
       setLeituras((prev) =>
+        prev.map((l) => {
+          if (l.equipamentoId !== id) return l;
+          const divergiu = valoresDivergemDaSugestao({
+            entradaSugerida: l.iaSugestaoEntrada ?? null,
+            saidaSugerida: l.iaSugestaoSaida ?? null,
+            entradaFinal: l.entradaAtualInput,
+            saidaFinal: l.saidaAtualInput,
+          });
+          const manual =
+            Boolean(l.iaRevisaoObrigatoria) ||
+            Boolean(l.iaExcecaoContador) ||
+            divergiu;
+          return {
+            ...l,
+            iaPendenteConfirmacao: false,
+            iaRevisaoObrigatoria: false,
+            iaFoiCorrigidaManualmente: manual,
+            iaStatus: manual ? "needs_review" : l.iaStatus ?? "approved_ai",
+            iaErro: null,
+          };
+        })
+      );
+    },
+    [setLeituras]
+  );
+
+  const onExcecaoContador = useCallback(
+    (id: string, excecao: ExcecaoContadorTipo | null) => {
+      setLeituras((prev) =>
         prev.map((l) =>
-          l.equipamentoId === id
-            ? {
-                ...l,
-                iaPendenteConfirmacao: false,
-                iaRevisaoObrigatoria: false,
-                iaStatus: l.iaStatus ?? "approved_ai",
-                iaErro: null,
-              }
-            : l
+          l.equipamentoId === id ? { ...l, iaExcecaoContador: excecao, iaErro: null } : l
         )
       );
     },
@@ -900,7 +1008,7 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
     [setLeituras]
   );
 
-  return { onIaSugestao, onConfirmarIa, onIaErro };
+  return { onIaSugestao, onConfirmarIa, onExcecaoContador, onIaErro };
 }
 
 export function leiturasToCalculoInput(leituras: LeituraFormState[]) {
