@@ -44,6 +44,7 @@ import {
   quantidadeRestanteBrindeNoPonto,
   maxQuantidadeLinhaBrinde,
   labelPontoComPendencia,
+  parseBrindesSalvos,
   type ResumoPendenciaPonto,
   type BrindeEntregue,
   type EstoqueBrindePonto,
@@ -92,6 +93,14 @@ export function NovaColetaFuraFuraForm() {
     brindes_restantes: "",
     observacao: "",
   });
+  const editarColetaId =
+    searchParams.get("editar_coleta")?.trim() ||
+    searchParams.get("editar_visita")?.trim() ||
+    "";
+  const [editandoCarregado, setEditandoCarregado] = useState(!editarColetaId);
+  const [furosOriginaisEdicao, setFurosOriginaisEdicao] = useState(0);
+  const [brindesOriginaisEdicao, setBrindesOriginaisEdicao] = useState<BrindeEntregue[]>([]);
+  const [fotoUrlExistente, setFotoUrlExistente] = useState<string | null>(null);
   const {
     visitaPontoId,
     emVisitaPonto,
@@ -170,11 +179,61 @@ export function NovaColetaFuraFuraForm() {
     load();
   }, []);
 
+  useEffect(() => {
+    if (!editarColetaId || !empresaId) return;
+    let cancelled = false;
+    async function loadColetaEdicao() {
+      const supabase = createClient();
+      const { data: coleta, error: coletaErr } = await supabase
+        .from("coletas")
+        .select("*")
+        .eq("id", editarColetaId)
+        .eq("empresa_id", empresaId)
+        .eq("nicho_modulo", NICHO_MODULO_FURA_FURA)
+        .maybeSingle();
+      if (cancelled) return;
+      if (coletaErr || !coleta) {
+        setError("Coleta para edição não encontrada.");
+        setEditandoCarregado(true);
+        return;
+      }
+
+      const brindesSalvos = parseBrindesSalvos(coleta.brindes_entregues);
+      setFurosOriginaisEdicao(Number(coleta.quantidade_furos ?? 0));
+      setBrindesOriginaisEdicao(brindesSalvos);
+      setBrindes(brindesSalvos);
+      setForm({
+        ponto_id: String(coleta.ponto_id ?? ""),
+        quantidade_furos: String(coleta.quantidade_furos ?? ""),
+        preco_furo: String(coleta.preco_furo ?? ""),
+        comissao_percentual: String(coleta.comissao_percentual ?? ""),
+        desconto: String(coleta.desconto ?? ""),
+        valor_pix: Number(coleta.valor_pix ?? 0) > 0.009 ? String(coleta.valor_pix) : "",
+        valor_dinheiro:
+          Number(coleta.valor_dinheiro ?? 0) > 0.009 ? String(coleta.valor_dinheiro) : "",
+        brindes_repostos: coleta.brindes_repostos != null ? String(coleta.brindes_repostos) : "",
+        brindes_restantes:
+          coleta.brindes_restantes != null ? String(coleta.brindes_restantes) : "",
+        observacao: String(coleta.observacao ?? ""),
+      });
+      if (coleta.foto_url) {
+        setFotoUrlExistente(String(coleta.foto_url));
+        setFotoPreview(String(coleta.foto_url));
+      }
+      setEditandoCarregado(true);
+    }
+    void loadColetaEdicao();
+    return () => {
+      cancelled = true;
+    };
+  }, [editarColetaId, empresaId]);
+
   const ponto = pontos.find((p) => p.id === form.ponto_id);
   const pendenciaPonto = form.ponto_id ? pendenciasPorPonto.get(form.ponto_id) : undefined;
 
   useEffect(() => {
     if (!ponto) {
+      if (editarColetaId) return;
       setForm((prev) => ({
         ...prev,
         comissao_percentual: "",
@@ -185,6 +244,8 @@ export function NovaColetaFuraFuraForm() {
       setIncluirPendencia(false);
       return;
     }
+    // Edição: valores já vieram da coleta salva — não sobrescreve nem zera brindes.
+    if (editarColetaId) return;
     setForm((prev) => ({
       ...prev,
       comissao_percentual: String(getComissaoPercentualNicho(ponto, "fura_fura")),
@@ -193,7 +254,7 @@ export function NovaColetaFuraFuraForm() {
     setBrindes([]);
     setDescontarHaver(false);
     setIncluirPendencia(false);
-  }, [ponto?.id]);
+  }, [ponto?.id, editarColetaId]);
 
   useEffect(() => {
     if (!form.ponto_id || !empresaId) {
@@ -252,11 +313,27 @@ export function NovaColetaFuraFuraForm() {
   }, [ponto?.estoque_brindes]);
 
   const estoqueBrindes = useMemo((): EstoqueBrindePonto[] => {
-    if (kitAtivo) {
-      return estoqueAvulsosDoKit(premiosKit, poolBrindesPonto, reposicaoKit);
+    const base = kitAtivo
+      ? estoqueAvulsosDoKit(premiosKit, poolBrindesPonto, reposicaoKit)
+      : poolBrindesPonto;
+    if (!editarColetaId || brindesOriginaisEdicao.length === 0) return base;
+    // Devolve ao pool o que a coleta original já tinha baixado (só pra validar a edição).
+    const next = base.map((e) => ({ ...e }));
+    for (const b of brindesOriginaisEdicao) {
+      const idx = b.item_id
+        ? next.findIndex((e) => e.item_id === b.item_id)
+        : next.findIndex((e) => e.nome === b.nome);
+      if (idx >= 0) {
+        next[idx].quantidade = Math.max(0, (next[idx].quantidade ?? 0) + b.quantidade);
+      }
     }
-    return poolBrindesPonto;
-  }, [kitAtivo, premiosKit, poolBrindesPonto, reposicaoKit]);
+    return next;
+  }, [kitAtivo, premiosKit, poolBrindesPonto, reposicaoKit, editarColetaId, brindesOriginaisEdicao]);
+
+  const furosEstoqueParaValidar =
+    ponto?.furos_estoque != null
+      ? Math.max(0, Number(ponto.furos_estoque) + (editarColetaId ? furosOriginaisEdicao : 0))
+      : null;
 
   useEffect(() => {
     if (!empresaId) return;
@@ -439,9 +516,9 @@ export function NovaColetaFuraFuraForm() {
   }
 
   function handleFotoChange(file: File | null) {
-    if (fotoPreview) URL.revokeObjectURL(fotoPreview);
+    if (fotoPreview && fotoPreview.startsWith("blob:")) URL.revokeObjectURL(fotoPreview);
     setFotoFile(file);
-    setFotoPreview(file ? URL.createObjectURL(file) : null);
+    setFotoPreview(file ? URL.createObjectURL(file) : fotoUrlExistente);
     setErroFoto("");
   }
 
@@ -455,7 +532,8 @@ export function NovaColetaFuraFuraForm() {
       setError("Informe a quantidade de furos.");
       return;
     }
-    if (!fotoFile) {
+    const temFoto = Boolean(fotoFile) || Boolean(fotoUrlExistente);
+    if (!temFoto) {
       setErroFoto("Foto obrigatória");
       setError("Tire a foto da máquina antes de registrar.");
       return;
@@ -466,7 +544,7 @@ export function NovaColetaFuraFuraForm() {
     }
 
     const erroBrindes = kitAtivo
-      ? validarBrindesContraPremiosKit(brindes, premiosKit, poolBrindesPonto, reposicaoKit)
+      ? validarBrindesContraPremiosKit(brindes, premiosKit, estoqueBrindes, reposicaoKit)
       : validarBrindesContraEstoquePonto(brindes, estoqueBrindes);
     if (erroBrindes) {
       setError(erroBrindes);
@@ -475,7 +553,7 @@ export function NovaColetaFuraFuraForm() {
 
     const erroFuros = validarQuantidadeFurosColeta(
       calculo.quantidadeFuros,
-      ponto?.furos_estoque
+      furosEstoqueParaValidar
     );
     if (erroFuros) {
       setError(erroFuros);
@@ -483,7 +561,7 @@ export function NovaColetaFuraFuraForm() {
     }
 
     let fecharVisitaAgora = false;
-    if (receberAgora) {
+    if (receberAgora && !editarColetaId) {
       const decisao = await confirmarReceberEncerrar();
       if (decisao === "abortar") return;
       fecharVisitaAgora = decisao === "encerrar";
@@ -496,7 +574,41 @@ export function NovaColetaFuraFuraForm() {
 
     try {
       const supabase = createClient();
-      const fotoUrl = await uploadFotoFuraFura(supabase, empresaId, form.ponto_id, fotoFile);
+      let fotoUrl = fotoUrlExistente;
+      if (fotoFile) {
+        fotoUrl = await uploadFotoFuraFura(supabase, empresaId, form.ponto_id, fotoFile);
+      }
+      if (!fotoUrl) {
+        setErroFoto("Foto obrigatória");
+        setError("Tire a foto da máquina antes de registrar.");
+        return;
+      }
+
+      let visitaPontoParaSalvar = visitaPontoId || null;
+      if (editarColetaId) {
+        // POST (não DELETE): evita 405 em alguns proxies / abertura acidental da API no browser.
+        const delRes = await fetch(`/api/coletas/fura-fura/${editarColetaId}`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "preparar_edicao", preservar_slot: true }),
+        });
+        const delData = await delRes.json().catch(() => ({}));
+        if (!delRes.ok) {
+          setError(
+            typeof delData.error === "string"
+              ? delData.error
+              : "Não foi possível atualizar a coleta anterior."
+          );
+          return;
+        }
+        const idsReligar = Array.isArray(delData.visita_ponto_ids)
+          ? (delData.visita_ponto_ids as string[]).filter(Boolean)
+          : [];
+        if (!visitaPontoParaSalvar && idsReligar[0]) {
+          visitaPontoParaSalvar = idsReligar[0];
+        }
+      }
 
       const res = await fetch("/api/coletas/fura-fura", {
         method: "POST",
@@ -510,10 +622,11 @@ export function NovaColetaFuraFuraForm() {
           foto_url: fotoUrl,
           latitude: gps?.latitude ?? null,
           longitude: gps?.longitude ?? null,
-          visita_ponto_id: visitaPontoId || null,
+          visita_ponto_id: visitaPontoParaSalvar,
           receber_agora: receberAgora,
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
+          religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
         }),
       });
       const data = await parseFetchJson<{
@@ -586,17 +699,28 @@ export function NovaColetaFuraFuraForm() {
   }
 
   const navLinks = ponto ? linksNavegacaoPonto(ponto) : null;
-  const maxFuros = ponto?.furos_estoque != null ? Math.max(0, ponto.furos_estoque) : null;
+  const maxFuros =
+    furosEstoqueParaValidar != null ? Math.max(0, furosEstoqueParaValidar) : null;
   const erroFurosForm =
     ponto && calculo.quantidadeFuros > 0
-      ? validarQuantidadeFurosColeta(calculo.quantidadeFuros, ponto.furos_estoque)
+      ? validarQuantidadeFurosColeta(calculo.quantidadeFuros, furosEstoqueParaValidar)
       : null;
+
+  if (editarColetaId && !editandoCarregado) {
+    return (
+      <ColetaNovaPageShell title="Editar coleta fura-fura" subtitle="Carregando coleta…" backHref="/coletas">
+        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
+      </ColetaNovaPageShell>
+    );
+  }
 
   return (
     <ColetaNovaPageShell
-      title="Coleta fura-fura"
+      title={editarColetaId ? "Editar coleta fura-fura" : "Coleta fura-fura"}
       subtitle={
-        ensuringVisita
+        editarColetaId
+          ? "Corrigir furos, brindes e valores — salva no lugar da coleta anterior."
+          : ensuringVisita
           ? "Entrando na visita do ponto…"
           : emVisitaPonto
             ? "Furos, foto e brindes — Salvar e seguir ou Receber agora."
@@ -613,13 +737,22 @@ export function NovaColetaFuraFuraForm() {
         ) : undefined
       }
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        method="post"
+        action="#"
+        noValidate
+        className="space-y-5"
+      >
         <ColetaPontoBar
           pontoField={
             <ColetaPontoSearchSelect
               label="Ponto *"
               value={form.ponto_id}
-              onChange={(id) => update("ponto_id", id)}
+              onChange={(id) => {
+                if (editarColetaId) return;
+                update("ponto_id", id);
+              }}
               options={pontos.map((p) => ({
                 value: p.id,
                 label: labelPontoComPendencia(
@@ -628,6 +761,9 @@ export function NovaColetaFuraFuraForm() {
                   formatCurrency
                 ),
               }))}
+              placeholder={
+                editarColetaId ? "Ponto da coleta (não alterável)" : "Digite para buscar o ponto…"
+              }
             />
           }
           comissaoField={
@@ -957,11 +1093,13 @@ export function NovaColetaFuraFuraForm() {
               onObservacaoChange={(v) => update("observacao", v)}
               error={error}
               submitLabel={
-                emVisitaPonto
-                  ? receberAgora
-                    ? "Receber agora"
-                    : "Salvar e seguir"
-                  : "Salvar coleta fura-fura"
+                editarColetaId
+                  ? "Salvar correção"
+                  : emVisitaPonto
+                    ? receberAgora
+                      ? "Receber agora"
+                      : "Salvar e seguir"
+                    : "Salvar coleta fura-fura"
               }
               submitDisabled={Boolean(erroFurosForm) || !!sucesso}
               loading={loading}

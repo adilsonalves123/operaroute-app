@@ -289,7 +289,9 @@ export function VisitaConcluidaCeremony({
                             href={nicho.href}
                             className="mt-3 inline-block pl-5 text-[12px] text-[#c4a574]/80 underline-offset-4 hover:text-[#c4a574] hover:underline"
                           >
-                            Ver coleta
+                            {nicho.nicho === "cassino" || nicho.nicho === "fura_fura"
+                              ? "Corrigir leituras e valores"
+                              : "Ver coleta"}
                           </Link>
                         )}
                       </div>

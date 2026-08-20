@@ -37,7 +37,7 @@ export default async function ColetaFuraFuraDetailPage({
 
   if (!coleta) notFound();
 
-  const [{ data: pagamentos }, { data: empresa }] = await Promise.all([
+  const [{ data: pagamentos }, { data: empresa }, { data: itemVisita }] = await Promise.all([
     supabase
       .from("coleta_pagamentos")
       .select("*")
@@ -48,7 +48,24 @@ export default async function ColetaFuraFuraDetailPage({
       .select("nome_operacao, chave_pix")
       .eq("id", profile.empresa_id)
       .maybeSingle(),
+    supabase
+      .from("visita_ponto_itens")
+      .select("visita_ponto_id")
+      .eq("coleta_id", id)
+      .eq("nicho", "fura_fura")
+      .maybeSingle(),
   ]);
+
+  const editarHref = (() => {
+    const params = new URLSearchParams({
+      ponto: coleta.ponto_id,
+      editar_visita: id,
+    });
+    if (itemVisita?.visita_ponto_id) {
+      params.set("visita_ponto", itemVisita.visita_ponto_id);
+    }
+    return `/coletas/nova/fura-fura?${params.toString()}`;
+  })();
 
   const ponto = coleta.pontos as {
     nome: string;
@@ -201,6 +218,12 @@ export default async function ColetaFuraFuraDetailPage({
       )}
 
       <div className="flex flex-wrap gap-3">
+        <Link
+          href={editarHref}
+          className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 hover:bg-amber-500/20"
+        >
+          Editar coleta completa
+        </Link>
         <CorrigirPagamentoButton
           tipo="coleta"
           id={id}

@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { coletaInputClass } from "./coleta-form-styles";
@@ -36,6 +39,11 @@ export function FecharColetaPanel({
   subtitle?: string;
   className?: string;
 }) {
+  // Evita POST nativo na página (HTTP 405) se o usuário tocar Salvar antes do JS hidratar.
+  const [pronto, setPronto] = useState(false);
+  useEffect(() => {
+    setPronto(true);
+  }, []);
   const borderAccent =
     accent === "pink"
       ? "border-pink-500/20"
@@ -101,15 +109,22 @@ export function FecharColetaPanel({
         <div className="space-y-3 border-t border-white/[0.06] bg-black/20 px-4 py-3.5 sm:px-5">
           {depoisDaColeta}
           <button
-            type="submit"
-            disabled={submitDisabled || loading}
+            type="button"
+            disabled={!pronto || submitDisabled || loading}
+            onClick={(e) => {
+              const form = e.currentTarget.form;
+              if (form) {
+                if (typeof form.requestSubmit === "function") form.requestSubmit();
+                else form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+              }
+            }}
             className={cn(
               "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold transition disabled:opacity-50",
               btnAccent
             )}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-            {submitLabel}
+            {!pronto ? "Carregando…" : submitLabel}
           </button>
         </div>
       </div>

@@ -96,6 +96,32 @@ export async function vincularItemVisitaPonto({
   }
 
   for (const coletaId of coletaIds) {
+    // Slot liberado na exclusão/correção (soft-unlink) — só atualiza o vínculo.
+    const { data: slotLivre } = await supabase
+      .from("visita_ponto_itens")
+      .select("id")
+      .eq("visita_ponto_id", visitaPontoId)
+      .eq("empresa_id", empresaId)
+      .eq("nicho", nicho)
+      .is("coleta_id", null)
+      .order("ordem", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (slotLivre?.id) {
+      const { error } = await supabase
+        .from("visita_ponto_itens")
+        .update({ coleta_id: coletaId })
+        .eq("id", slotLivre.id)
+        .eq("empresa_id", empresaId);
+      if (error) throw new Error(error.message);
+      continue;
+    }
+
+    if (finalizada && !permitirReligarFinalizada) {
+      throw new Error("Esta visita já foi finalizada.");
+    }
+
     const { error } = await supabase.from("visita_ponto_itens").insert({
       visita_ponto_id: visitaPontoId,
       empresa_id: empresaId,

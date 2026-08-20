@@ -235,7 +235,7 @@ function buildColetaNicho(
     itemIds: rows.map((c) => c.id),
     href:
       nicho === "fura_fura" && rows.length === 1
-        ? `/coletas/fura-fura/${rows[0].id}`
+        ? `/coletas/nova/fura-fura?ponto=${visita.ponto_id}&visita_ponto=${visita.id}&editar_visita=${rows[0].id}`
         : nicho === "ursinho" && rows.length === 1
           ? `/coletas/ursinho/${rows[0].id}`
           : nicho === "diversao" && rows.length === 1

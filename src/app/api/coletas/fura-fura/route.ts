@@ -439,12 +439,15 @@ async function postColetaFuraFura(request: Request) {
   }
 
   if (visitaPontoId) {
+    const religarFinalizada =
+      body.religar_visita_finalizada === true || body.editar_visita_finalizada === true;
     await vincularItemVisitaPonto({
       supabase,
       empresaId: profile.empresa_id,
       visitaPontoId,
       nicho: "fura_fura",
       coletaIds: [coleta.id],
+      permitirReligarFinalizada: religarFinalizada,
     });
   }
 
