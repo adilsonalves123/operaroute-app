@@ -43,6 +43,22 @@ type IaJson = z.infer<typeof IaJsonSchema>;
 
 const CONF_MIN = CASSINO_IA_THRESHOLDS.reading.confidenceMin;
 const SCORE_MIN_APLICAR = CASSINO_IA_THRESHOLDS.reading.scoreMinApply;
+const SCORE_MIN_SUGESTAO = CASSINO_IA_THRESHOLDS.reading.scoreMinSugestao;
+
+function podeSugerirValores(args: {
+  entrada: number;
+  saida: number;
+  score: number;
+  flags: string[];
+}) {
+  return (
+    args.entrada > 0 &&
+    args.saida > 0 &&
+    args.score >= SCORE_MIN_SUGESTAO &&
+    !args.flags.includes("leitura_ambigua") &&
+    !args.flags.includes("valores_invalidos")
+  );
+}
 
 function soDigitos(raw: unknown): string {
   return String(raw ?? "").replace(/\D/g, "");
@@ -182,6 +198,44 @@ function compararDigitos(a: string, b: string): number[] {
   return diffs;
 }
 
+/** Divergência só nos últimos dígitos — típico de OCR, não bloqueia sugestão. */
+function divergenciaLeve(diffs: number[], lenA: number, lenB: number): boolean {
+  if (diffs.length === 0) return true;
+  const maxLen = Math.max(lenA, lenB, 1);
+  return diffs.length <= 2 && diffs.every((i) => i >= maxLen - 3);
+}
+
+function registrarDivergenciaLeituras(args: {
+  flags: Set<string>;
+  avisos: string[];
+  divergenciaEntrada: number[];
+  divergenciaSaida: number[];
+  entradaLen: number;
+  saidaLen: number;
+  entradaLen2: number;
+  saidaLen2: number;
+}) {
+  const entradaLeve = divergenciaLeve(
+    args.divergenciaEntrada,
+    args.entradaLen,
+    args.entradaLen2
+  );
+  const saidaLeve = divergenciaLeve(args.divergenciaSaida, args.saidaLen, args.saidaLen2);
+
+  if (args.divergenciaEntrada.length === 0 && args.divergenciaSaida.length === 0) return;
+
+  if (entradaLeve && saidaLeve) {
+    args.flags.add("divergencia_leve");
+    args.avisos.push(
+      "Pequena diferença entre as duas leituras — confira os últimos dígitos no visor."
+    );
+    return;
+  }
+
+  args.flags.add("divergencia_entre_leituras");
+  args.avisos.push("A segunda leitura não bateu exatamente com a primeira.");
+}
+
 function alternativasFormatadas(...valores: number[]) {
   return Array.from(
     new Set(
@@ -193,8 +247,14 @@ function alternativasFormatadas(...valores: number[]) {
 }
 
 function classificarStatus(score: number, flags: string[], aplicarBase: boolean) {
-  if (!aplicarBase || flags.includes("divergencia_entre_leituras")) {
+  if (flags.includes("leitura_ambigua") || flags.includes("valores_invalidos")) {
     return "rejected" as const;
+  }
+  if (flags.includes("divergencia_entre_leituras")) {
+    return "needs_review" as const;
+  }
+  if (!aplicarBase) {
+    return "needs_review" as const;
   }
   if (
     score >= CASSINO_IA_THRESHOLDS.reading.scoreApprovedAi &&
@@ -225,6 +285,9 @@ function calcularScore(args: {
       args.divergenciaEntrada.length * CASSINO_IA_THRESHOLDS.scoring.divergencePerDigitPenalty;
     score -=
       args.divergenciaSaida.length * CASSINO_IA_THRESHOLDS.scoring.divergencePerDigitPenalty;
+  }
+  if (args.flags.includes("divergencia_leve")) {
+    score -= CASSINO_IA_THRESHOLDS.scoring.divergenceLevePenalty;
   }
   return Math.max(0, Math.min(100, score));
 }
@@ -447,8 +510,16 @@ export async function lerContadoresCassinoDaFoto(opts: {
       flags.add("baixa_confianca");
     }
     if (divergenciaEntrada.length > 0 || divergenciaSaida.length > 0) {
-      flags.add("divergencia_entre_leituras");
-      avisos.push("A segunda leitura dos recortes não bateu exatamente com a primeira.");
+      registrarDivergenciaLeituras({
+        flags,
+        avisos,
+        divergenciaEntrada,
+        divergenciaSaida,
+        entradaLen: entrada1.digitos.length,
+        saidaLen: saida1.digitos.length,
+        entradaLen2: entrada2.digitos.length,
+        saidaLen2: saida2.digitos.length,
+      });
     }
 
     const avisosValidacao = validarContraAnterior(
@@ -474,20 +545,26 @@ export async function lerContadoresCassinoDaFoto(opts: {
       divergenciaSaida,
     });
     const regressao = entrada < opts.entradaAnterior || saida < opts.saidaAnterior;
+    const divergenciaGrave = flags.has("divergencia_entre_leituras");
     const aplicarBase =
-      !regressao &&
-      divergenciaEntrada.length === 0 &&
-      divergenciaSaida.length === 0 &&
-      !Array.from(flags).includes("baixa_confianca");
+      !divergenciaGrave &&
+      !flags.has("baixa_confianca") &&
+      !flags.has("leitura_ambigua");
     const status = classificarStatus(score, Array.from(flags), aplicarBase);
-    const aplicar = aplicarBase && score >= SCORE_MIN_APLICAR;
+    const aplicar =
+      podeSugerirValores({
+        entrada,
+        saida,
+        score,
+        flags: Array.from(flags),
+      }) && score >= SCORE_MIN_SUGESTAO;
     const motivoRecusa = regressao
-      ? "Valor menor que a leitura anterior — confira e digite se estiver certo."
-      : divergenciaEntrada.length > 0 || divergenciaSaida.length > 0
-        ? "Encontramos divergência entre duas leituras dos recortes. Confira o visor e digite manualmente."
-        : score < SCORE_MIN_APLICAR
+      ? "Valor menor que a leitura anterior — confira e confirme se houve reset ou manutenção."
+      : divergenciaGrave
+        ? "Encontramos divergência entre duas leituras dos recortes. Confira o visor."
+        : score < SCORE_MIN_SUGESTAO
           ? `Score de segurança baixo (${score}/100). Confira e digite manualmente.`
-          : `Confiança baixa (${Math.round(confianca * 100)}%). Digite manualmente.`;
+          : `Confira os valores sugeridos (score ${score}/100).`;
 
     return {
       ok: true,
@@ -643,8 +720,16 @@ export async function lerContadoresCassinoDaFoto(opts: {
   const divergenciaEntrada = compararDigitos(entradaDigitos, leitura2.entradaDigitos);
   const divergenciaSaida = compararDigitos(saidaDigitos, leitura2.saidaDigitos);
   if (divergenciaEntrada.length > 0 || divergenciaSaida.length > 0) {
-    flags.add("divergencia_entre_leituras");
-    todosAvisos.push("A segunda leitura não bateu exatamente com a primeira.");
+    registrarDivergenciaLeituras({
+      flags,
+      avisos: todosAvisos,
+      divergenciaEntrada,
+      divergenciaSaida,
+      entradaLen: entradaDigitos.length,
+      saidaLen: saidaDigitos.length,
+      entradaLen2: leitura2.entradaDigitos.length,
+      saidaLen2: leitura2.saidaDigitos.length,
+    });
   }
 
   if (entrada < opts.entradaAnterior) flags.add("entrada_menor_que_anterior");
@@ -665,21 +750,26 @@ export async function lerContadoresCassinoDaFoto(opts: {
     divergenciaEntrada,
     divergenciaSaida,
   });
+  const divergenciaGrave = flags.has("divergencia_entre_leituras");
   const aplicarBase =
-    confianca >= CONF_MIN &&
-    leitura2.confianca >= CONF_MIN &&
-    !regressao &&
-    divergenciaEntrada.length === 0 &&
-    divergenciaSaida.length === 0;
+    !divergenciaGrave &&
+    !flags.has("baixa_confianca") &&
+    !flags.has("leitura_ambigua");
   const status = classificarStatus(score, Array.from(flags), aplicarBase);
-  const aplicar = aplicarBase && score >= SCORE_MIN_APLICAR;
+  const aplicar =
+    podeSugerirValores({
+      entrada,
+      saida,
+      score,
+      flags: Array.from(flags),
+    }) && score >= SCORE_MIN_SUGESTAO;
   const motivoRecusa = regressao
-    ? "Valor menor que a leitura anterior — confira e digite se estiver certo."
-    : divergenciaEntrada.length > 0 || divergenciaSaida.length > 0
-      ? "Encontramos divergência entre duas leituras da IA. Confira o visor e digite manualmente."
-      : score < SCORE_MIN_APLICAR
+    ? "Valor menor que a leitura anterior — confira e confirme se houve reset ou manutenção."
+    : divergenciaGrave
+      ? "Encontramos divergência entre duas leituras da IA. Confira o visor."
+      : score < SCORE_MIN_SUGESTAO
         ? `Score de segurança baixo (${score}/100). Confira e digite manualmente.`
-        : `Confiança baixa (${Math.round(confianca * 100)}%). Digite manualmente.`;
+        : `Confira os valores sugeridos (score ${score}/100).`;
 
   return {
     ok: true,

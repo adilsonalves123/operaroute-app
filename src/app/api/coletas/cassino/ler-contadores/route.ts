@@ -92,7 +92,6 @@ function aplicarExcecaoRegressao(args: {
 
   const bloqueioDuro =
     flags.includes("divergencia_entre_leituras") ||
-    flags.includes("baixa_confianca") ||
     flags.includes("leitura_ambigua") ||
     args.bloquearHistorico;
 
@@ -202,12 +201,10 @@ function analisarHistoricoMaquina(args: {
   }
   if (args.entradaPeriodoAtual > thresholdEntradaBloqueio) {
     flags.push("historico_entrada_anomalia_severa");
-    bloquearAplicacao = true;
     scorePenalty += CASSINO_IA_THRESHOLDS.history.blockPenalty;
   }
   if (args.saidaPeriodoAtual > thresholdSaidaBloqueio) {
     flags.push("historico_saida_anomalia_severa");
-    bloquearAplicacao = true;
     scorePenalty += CASSINO_IA_THRESHOLDS.history.blockPenalty;
   }
 
@@ -215,7 +212,7 @@ function analisarHistoricoMaquina(args: {
     flags,
     avisos,
     scorePenalty,
-    bloquearAplicacao,
+    bloquearAplicacao: false,
     resumo: {
       amostras: Math.max(entradaHist.length, saidaHist.length),
       mediaEntrada: Math.round(mediaEntrada),
@@ -314,17 +311,23 @@ export async function POST(request: Request) {
   let score = clampScore(r.score - historicoAnalise.scorePenalty);
   let flags = Array.from(new Set([...r.flags, ...historicoAnalise.flags]));
   let avisos = Array.from(new Set([...r.avisos, ...historicoAnalise.avisos]));
-  let aplicar = r.aplicar && !historicoAnalise.bloquearAplicacao;
-  let status =
-    !aplicar && historicoAnalise.bloquearAplicacao
-      ? "rejected"
-      : flags.some((flag) => flag.startsWith("historico_"))
-        ? "needs_review"
-        : r.status;
-  let motivoRecusa =
-    !aplicar && historicoAnalise.bloquearAplicacao
-      ? "Movimentação muito fora do padrão histórico desta máquina. Confira o visor e digite manualmente."
-      : r.motivoRecusa ?? null;
+  let aplicar = r.aplicar;
+  let status = flags.some((flag) => flag.startsWith("historico_")) ? "needs_review" : r.status;
+  let motivoRecusa = r.motivoRecusa ?? null;
+
+  if (
+    !aplicar &&
+    r.entradaCentesimos > 0 &&
+    r.saidaCentesimos > 0 &&
+    score >= CASSINO_IA_THRESHOLDS.reading.scoreMinSugestao &&
+    !flags.includes("leitura_ambigua")
+  ) {
+    aplicar = true;
+    status = status === "rejected" ? "needs_review" : status;
+    motivoRecusa =
+      motivoRecusa ??
+      `Confira os valores sugeridos (score ${score}/100).`;
+  }
 
   const excecaoAjustada = aplicarExcecaoRegressao({
     score,

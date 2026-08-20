@@ -270,19 +270,20 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
                 saida: data.alternativas.saida.map(String),
               }
             : null;
-        if (
-          alternativas &&
-          (alternativas.entrada.length > 0 || alternativas.saida.length > 0)
-        ) {
+        const entradaSugerida =
+          String(data.entrada ?? "") ||
+          alternativas?.entrada[0] ||
+          leitura.entradaAtualInput;
+        const saidaSugerida =
+          String(data.saida ?? "") ||
+          alternativas?.saida[0] ||
+          leitura.saidaAtualInput;
+        const temSugestao = Boolean(entradaSugerida.trim() && saidaSugerida.trim());
+
+        if (temSugestao || alternativas) {
           onIaSugestao(leitura.equipamentoId, {
-            entrada:
-              String(data.entrada ?? "") ||
-              alternativas.entrada[0] ||
-              leitura.entradaAtualInput,
-            saida:
-              String(data.saida ?? "") ||
-              alternativas.saida[0] ||
-              leitura.saidaAtualInput,
+            entrada: entradaSugerida,
+            saida: saidaSugerida,
             readingId: typeof data.reading_id === "string" ? data.reading_id : null,
             confianca: Number(data.confianca) || 0,
             score: Number(data.score) || 0,
@@ -291,14 +292,14 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               data.status === "needs_review" ||
               data.status === "rejected"
                 ? data.status
-                : "rejected",
+                : "needs_review",
             flags: Array.isArray(data.flags) ? data.flags.map(String) : [],
             revisaoObrigatoria: true,
             motivo:
               typeof data.motivo_recusa === "string"
                 ? data.motivo_recusa
-                : "Encontramos dúvida na leitura. Escolha a opção correta abaixo.",
-            alternativas,
+                : "Confira os valores sugeridos pela IA antes de confirmar.",
+            alternativas: alternativas ?? { entrada: [], saida: [] },
             manutencaoRecente: Boolean(data.manutencao_recente?.detectada),
             avisos: Array.isArray(data.avisos) ? data.avisos.map(String) : [],
           });
@@ -307,7 +308,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
             leitura.equipamentoId,
             typeof data.motivo_recusa === "string"
               ? data.motivo_recusa
-              : "IA não aplicou a leitura. Digite manualmente."
+              : "IA não conseguiu ler entrada e saída. Digite manualmente."
           );
         }
         return;
@@ -326,8 +327,16 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
             ? data.status
             : "needs_review",
         flags: Array.isArray(data.flags) ? data.flags.map(String) : [],
-        revisaoObrigatoria: false,
-        motivo: null,
+        revisaoObrigatoria:
+          data.status !== "approved_ai" ||
+          Number(data.score) < 85 ||
+          Boolean(data.motivo_recusa),
+        motivo:
+          typeof data.motivo_recusa === "string"
+            ? data.motivo_recusa
+            : data.status === "approved_ai"
+              ? null
+              : "Confira os valores sugeridos pela IA antes de confirmar.",
         alternativas:
           data.alternativas &&
           typeof data.alternativas === "object" &&
@@ -610,7 +619,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           </p>
         ) : (
           <p className="text-center text-[11px] text-violet-300/70">
-            A IA sugere entrada/saída — você confirma antes de salvar. Foto muito escura, borrada ou estourada é bloqueada antes da leitura.
+            A IA sugere entrada/saída — você confirma antes de salvar. Só bloqueamos fotos claramente ilegíveis.
           </p>
         )}
       </div>

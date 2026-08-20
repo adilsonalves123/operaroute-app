@@ -103,22 +103,28 @@ export async function analyzePhotoQuality(file: File): Promise<PhotoQualityAnaly
   const focusScore = focusPixels > 0 ? focusAccumulator / focusPixels : 0;
 
   const reasons: string[] = [];
-  if (Math.min(width, height) < CASSINO_IA_THRESHOLDS.photoQuality.minImageSide) {
+  const tooSmall = Math.min(width, height) < 400;
+  const veryDark =
+    averageLuminance < 24 ||
+    (averageLuminance < CASSINO_IA_THRESHOLDS.photoQuality.minAverageLuminance &&
+      darkRatio > CASSINO_IA_THRESHOLDS.photoQuality.maxDarkRatio);
+  const veryBright =
+    brightRatio > CASSINO_IA_THRESHOLDS.photoQuality.maxBrightRatio + 0.12 ||
+    averageLuminance > CASSINO_IA_THRESHOLDS.photoQuality.maxAverageLuminance + 12;
+  const veryBlurry =
+    focusScore < CASSINO_IA_THRESHOLDS.photoQuality.minFocusScore - 3 &&
+    averageLuminance < 55;
+
+  if (tooSmall) {
     reasons.push("Resolução baixa para ler o visor com segurança.");
   }
-  if (
-    averageLuminance < CASSINO_IA_THRESHOLDS.photoQuality.minAverageLuminance ||
-    darkRatio > CASSINO_IA_THRESHOLDS.photoQuality.maxDarkRatio
-  ) {
+  if (veryDark) {
     reasons.push("Imagem escura demais.");
   }
-  if (
-    brightRatio > CASSINO_IA_THRESHOLDS.photoQuality.maxBrightRatio ||
-    averageLuminance > CASSINO_IA_THRESHOLDS.photoQuality.maxAverageLuminance
-  ) {
+  if (veryBright) {
     reasons.push("Reflexo ou luz estourada no visor.");
   }
-  if (focusScore < CASSINO_IA_THRESHOLDS.photoQuality.minFocusScore) {
+  if (veryBlurry) {
     reasons.push("Foto borrada ou sem nitidez suficiente.");
   }
 
