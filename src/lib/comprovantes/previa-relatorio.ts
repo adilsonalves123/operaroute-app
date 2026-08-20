@@ -1,37 +1,34 @@
 import { createClient } from "@/lib/supabase/client";
-import { mimeTypeFoto } from "@/lib/storage/coleta-fotos";
+import {
+  blobParaDataUrlCompacto,
+  comprimirImagemParaJpeg,
+  MAX_DATA_URL_BYTES,
+} from "@/lib/storage/comprimir-foto-cliente";
 import type { ComprovanteSnapshot } from "@/lib/comprovantes/types";
 
-async function blobUrlToPublicUrl(blobUrl: string, empresaId: string): Promise<string> {
-  const res = await fetch(blobUrl);
-  const blob = await res.blob();
+async function uploadJpegPublico(jpeg: Blob, empresaId: string): Promise<string | null> {
   const supabase = createClient();
-  const ext =
-    (blob.type || "").includes("png")
-      ? "png"
-      : (blob.type || "").includes("webp")
-        ? "webp"
-        : "jpg";
-  const path = `${empresaId}/previas/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`;
-  const { error } = await supabase.storage.from("coleta-fotos").upload(path, blob, {
+  const path = `${empresaId}/previas/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.jpg`;
+  const { error } = await supabase.storage.from("coleta-fotos").upload(path, jpeg, {
     upsert: true,
-    contentType: mimeTypeFoto(blob),
+    contentType: "image/jpeg",
   });
-  if (error) {
-    // Fallback: data URL (funciona sem storage; payload maior).
-    return blobUrlToDataUrl(blob);
-  }
+  if (error) return null;
   const { data } = supabase.storage.from("coleta-fotos").getPublicUrl(path);
   return data.publicUrl;
 }
 
-function blobUrlToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(new Error("Falha ao ler foto da prévia."));
-    reader.readAsDataURL(blob);
-  });
+async function blobParaUrlComprovante(blob: Blob, empresaId: string | null): Promise<string | null> {
+  const jpeg = await comprimirImagemParaJpeg(blob, { maxBytes: 180_000, maxSide: 1280 });
+  if (empresaId) {
+    const publicUrl = await uploadJpegPublico(jpeg, empresaId);
+    if (publicUrl) return publicUrl;
+  }
+  if (jpeg.size <= MAX_DATA_URL_BYTES) {
+    return blobParaDataUrlCompacto(jpeg);
+  }
+  // Não embute foto grande no JSON — estoura o limite da função (HTTP 413).
+  return null;
 }
 
 async function resolverUrlFoto(
@@ -39,19 +36,28 @@ async function resolverUrlFoto(
   empresaId: string | null
 ): Promise<string | null | undefined> {
   if (!url) return url;
-  if (
-    url.startsWith("https://") ||
-    url.startsWith("http://") ||
-    url.startsWith("data:")
-  ) {
+  if (url.startsWith("https://") || url.startsWith("http://")) {
     return url;
   }
-  if (!url.startsWith("blob:")) return url;
-  if (!empresaId) {
-    const res = await fetch(url);
-    return blobUrlToDataUrl(await res.blob());
+
+  if (url.startsWith("data:image")) {
+    if (url.length <= MAX_DATA_URL_BYTES) return url;
+    try {
+      const blob = await (await fetch(url)).blob();
+      return blobParaUrlComprovante(blob, empresaId);
+    } catch {
+      return null;
+    }
   }
-  return blobUrlToPublicUrl(url, empresaId);
+
+  if (!url.startsWith("blob:")) return url;
+
+  try {
+    const blob = await (await fetch(url)).blob();
+    return blobParaUrlComprovante(blob, empresaId);
+  } catch {
+    return null;
+  }
 }
 
 async function empresaIdAtual(): Promise<string | null> {
@@ -84,7 +90,7 @@ export async function resolverFotosNoRelatorio<T>(relatorio: T): Promise<T> {
       const out: Record<string, unknown> = {};
       for (const [k, v] of Object.entries(obj)) {
         if (
-          (k === "fotoUrl" || k === "foto_url") &&
+          (k === "fotoUrl" || k === "foto_url" || k === "fotoUri") &&
           typeof v === "string"
         ) {
           out[k] = await resolverUrlFoto(v, empresaId);

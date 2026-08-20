@@ -2,6 +2,12 @@
 
 import { whatsAppUrl } from "@/lib/nichos/cassino/relatorio";
 import type { ComprovanteSnapshot } from "@/lib/comprovantes/types";
+import {
+  jsonByteLength,
+  MAX_COMPROVANTE_JSON_BYTES,
+  stripAllRelatorioFotos,
+  stripHugeDataUrls,
+} from "@/lib/storage/comprimir-foto-cliente";
 
 export type CriarComprovanteClientInput = {
   visita_ponto_id?: string;
@@ -26,6 +32,12 @@ async function parseJsonSafe(res: Response): Promise<{
 }> {
   const text = await res.text();
   if (!text.trim()) {
+    if (res.status === 413) {
+      return {
+        error:
+          "As fotos desta coleta são grandes demais para gerar o link. Tente de novo — o app agora comprime as imagens.",
+      };
+    }
     return {
       error: `Servidor respondeu vazio (HTTP ${res.status}). Tente de novo; se persistir, confira SUPABASE_SERVICE_ROLE_KEY e a tabela public_comprovantes.`,
     };
@@ -38,21 +50,43 @@ async function parseJsonSafe(res: Response): Promise<{
       success?: boolean;
     };
   } catch {
+    if (
+      res.status === 413 ||
+      /FUNCTION_PAYLOAD_TOO_LARGE|Entity Too Large/i.test(text)
+    ) {
+      return {
+        error:
+          "As fotos desta coleta são grandes demais para gerar o link. Tente de novo; o comprovante será enviado sem as fotos embutidas.",
+      };
+    }
     return {
       error: `Resposta inválida do servidor (HTTP ${res.status}): ${text.slice(0, 120)}`,
     };
   }
 }
 
+function enxugarInput(input: CriarComprovanteClientInput): CriarComprovanteClientInput {
+  let next = stripHugeDataUrls(input);
+  if (jsonByteLength(next) > MAX_COMPROVANTE_JSON_BYTES) {
+    next = stripAllRelatorioFotos(next);
+  }
+  if (jsonByteLength(next) > MAX_COMPROVANTE_JSON_BYTES && next.snapshot?.relatorio) {
+    const { relatorio: _omit, ...restSnap } = next.snapshot;
+    next = { ...next, snapshot: restSnap };
+  }
+  return next;
+}
+
 export async function criarLinkComprovante(input: CriarComprovanteClientInput): Promise<{
   url: string;
   mensagem: string;
 }> {
+  const body = enxugarInput(input);
   const res = await fetch("/api/comprovantes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify(input),
+    body: JSON.stringify(body),
   });
   const data = await parseJsonSafe(res);
   if (!res.ok || !data.url || !data.mensagem) {
