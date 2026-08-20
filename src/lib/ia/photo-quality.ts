@@ -103,33 +103,15 @@ export async function analyzePhotoQuality(file: File): Promise<PhotoQualityAnaly
   const focusScore = focusPixels > 0 ? focusAccumulator / focusPixels : 0;
 
   const reasons: string[] = [];
-  const tooSmall = Math.min(width, height) < 400;
-  const veryDark =
-    averageLuminance < 24 ||
-    (averageLuminance < CASSINO_IA_THRESHOLDS.photoQuality.minAverageLuminance &&
-      darkRatio > CASSINO_IA_THRESHOLDS.photoQuality.maxDarkRatio);
-  const veryBright =
-    brightRatio > CASSINO_IA_THRESHOLDS.photoQuality.maxBrightRatio + 0.12 ||
-    averageLuminance > CASSINO_IA_THRESHOLDS.photoQuality.maxAverageLuminance + 12;
-  const veryBlurry =
-    focusScore < CASSINO_IA_THRESHOLDS.photoQuality.minFocusScore - 3 &&
-    averageLuminance < 55;
-
+  // Visor LED em bar costuma ser escuro e com poucos pixels nítidos.
+  // Não bloqueamos a foto: a IA lê melhor que estes heurísticos.
+  const tooSmall = Math.min(width, height) < 160;
   if (tooSmall) {
-    reasons.push("Resolução baixa para ler o visor com segurança.");
-  }
-  if (veryDark) {
-    reasons.push("Imagem escura demais.");
-  }
-  if (veryBright) {
-    reasons.push("Reflexo ou luz estourada no visor.");
-  }
-  if (veryBlurry) {
-    reasons.push("Foto borrada ou sem nitidez suficiente.");
+    reasons.push("Resolução muito baixa.");
   }
 
   return {
-    ok: reasons.length === 0,
+    ok: !tooSmall && width > 0 && height > 0,
     reasons,
     metrics: {
       width,

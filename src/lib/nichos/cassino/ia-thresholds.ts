@@ -7,7 +7,7 @@ export const CASSINO_IA_THRESHOLDS = {
     /** Score para considerar alta confiança sem revisão obrigatória. */
     scoreApprovedAi: 85,
     /** Score mínimo para ainda sugerir valores quando a leitura não passou no auto-apply. */
-    scoreMinSugestao: 50,
+    scoreMinSugestao: 1,
     jumpMultiplier: 35,
     jumpAbsoluteFloor: 3_500_000,
   },

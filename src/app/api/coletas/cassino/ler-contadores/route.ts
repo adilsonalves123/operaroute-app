@@ -311,22 +311,16 @@ export async function POST(request: Request) {
   let score = clampScore(r.score - historicoAnalise.scorePenalty);
   let flags = Array.from(new Set([...r.flags, ...historicoAnalise.flags]));
   let avisos = Array.from(new Set([...r.avisos, ...historicoAnalise.avisos]));
-  let aplicar = r.aplicar;
-  let status = flags.some((flag) => flag.startsWith("historico_")) ? "needs_review" : r.status;
+  let aplicar = r.aplicar || r.entradaCentesimos > 0 || r.saidaCentesimos > 0;
+  let status = flags.some((flag) => flag.startsWith("historico_"))
+    ? "needs_review"
+    : r.status === "rejected" && aplicar
+      ? "needs_review"
+      : r.status;
   let motivoRecusa = r.motivoRecusa ?? null;
 
-  if (
-    !aplicar &&
-    r.entradaCentesimos > 0 &&
-    r.saidaCentesimos > 0 &&
-    score >= CASSINO_IA_THRESHOLDS.reading.scoreMinSugestao &&
-    !flags.includes("leitura_ambigua")
-  ) {
-    aplicar = true;
-    status = status === "rejected" ? "needs_review" : status;
-    motivoRecusa =
-      motivoRecusa ??
-      `Confira os valores sugeridos (score ${score}/100).`;
+  if (aplicar && status === "rejected") {
+    status = "needs_review";
   }
 
   const excecaoAjustada = aplicarExcecaoRegressao({

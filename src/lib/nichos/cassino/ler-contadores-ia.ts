@@ -45,23 +45,25 @@ const CONF_MIN = CASSINO_IA_THRESHOLDS.reading.confidenceMin;
 const SCORE_MIN_APLICAR = CASSINO_IA_THRESHOLDS.reading.scoreMinApply;
 const SCORE_MIN_SUGESTAO = CASSINO_IA_THRESHOLDS.reading.scoreMinSugestao;
 
+function soDigitos(raw: unknown): string {
+  return String(raw ?? "").replace(/\D/g, "");
+}
+
 function podeSugerirValores(args: {
   entrada: number;
   saida: number;
   score: number;
   flags: string[];
 }) {
-  return (
-    args.entrada > 0 &&
-    args.saida > 0 &&
-    args.score >= SCORE_MIN_SUGESTAO &&
-    !args.flags.includes("leitura_ambigua") &&
-    !args.flags.includes("valores_invalidos")
-  );
+  return args.entrada > 0 || args.saida > 0;
 }
 
-function soDigitos(raw: unknown): string {
-  return String(raw ?? "").replace(/\D/g, "");
+function primeiroDigitos(...vals: string[]): string {
+  for (const v of vals) {
+    const d = soDigitos(v);
+    if (d.length > 0) return d;
+  }
+  return "";
 }
 
 function montarPromptBase(entradaAnterior: number, saidaAnterior: number): string {
@@ -85,7 +87,8 @@ REGRAS:
 3. Contadores quase nunca diminuem. Prefira valores >= anteriores.
 4. Ignore valores de crédito de jogo, jackpot, data/hora, IDs e números de série.
 5. Devolva só dígitos (sem ponto/vírgula). Inclua os centavos se o visor mostrar 2 casas decimais (ex.: 1.234,56 → "123456").
-6. Se houver dúvida real (ilegível, ambíguo, um só número), marque ambiguo=true e não invente.
+6. Visor LED escuro, reflexo ou foto de celular ainda assim deve ser lido se os números estiverem visíveis.
+7. Preencha entrada_digitos e saida_digitos sempre que enxergar os números. Use ambiguo=true SOMENTE se não conseguir ver os dígitos.
 
 Responda APENAS JSON:
 {
@@ -105,7 +108,7 @@ function montarPromptLeitura1(entradaAnterior: number, saidaAnterior: number): s
 
 PASSO EXTRA:
 - Faça a leitura principal do painel inteiro.
-- Se estiver em dúvida real, marque ambiguo=true.`;
+- Se os números estiverem visíveis, preencha os dígitos mesmo com confiança média.`;
 }
 
 function montarPromptLeitura2(entradaAnterior: number, saidaAnterior: number): string {
@@ -133,7 +136,8 @@ TAREFA:
 - Leia apenas o valor atual deste contador.
 - Ignore qualquer outro número secundário.
 - Use o rótulo visual quando existir.
-- Se houver dúvida real, marque ambiguo=true e não invente.
+- Se os dígitos estiverem visíveis, preencha "digitos" mesmo com confiança média.
+- Use ambiguo=true SOMENTE se não conseguir ver o número.
 
 RÓTULOS ESPERADOS:
 ${labels}
@@ -407,14 +411,14 @@ export async function lerContadoresCassinoDaFoto(opts: {
 > {
   const usarRecortes = Boolean(opts.entradaCropDataUrl && opts.saidaCropDataUrl);
 
-  if (usarRecortes) {
+  recorte: if (usarRecortes) {
     const entrada1 = await executarLeituraCampo({
       imageDataUrl: opts.entradaCropDataUrl!,
       campo: "entrada",
       anterior: opts.entradaAnterior,
       variante: 1,
     });
-    if (!entrada1.ok) return { ok: false, message: entrada1.message };
+    if (!entrada1.ok) break recorte;
 
     const saida1 = await executarLeituraCampo({
       imageDataUrl: opts.saidaCropDataUrl!,
@@ -422,7 +426,7 @@ export async function lerContadoresCassinoDaFoto(opts: {
       anterior: opts.saidaAnterior,
       variante: 1,
     });
-    if (!saida1.ok) return { ok: false, message: saida1.message };
+    if (!saida1.ok) break recorte;
 
     const entrada2 = await executarLeituraCampo({
       imageDataUrl: opts.entradaCropDataUrl!,
@@ -430,7 +434,7 @@ export async function lerContadoresCassinoDaFoto(opts: {
       anterior: opts.entradaAnterior,
       variante: 2,
     });
-    if (!entrada2.ok) return { ok: false, message: entrada2.message };
+    if (!entrada2.ok) break recorte;
 
     const saida2 = await executarLeituraCampo({
       imageDataUrl: opts.saidaCropDataUrl!,
@@ -438,68 +442,30 @@ export async function lerContadoresCassinoDaFoto(opts: {
       anterior: opts.saidaAnterior,
       variante: 2,
     });
-    if (!saida2.ok) return { ok: false, message: saida2.message };
+    if (!saida2.ok) break recorte;
 
     const avisos = [...entrada1.avisos, ...saida1.avisos, ...entrada2.avisos, ...saida2.avisos];
     const confianca = Math.max(entrada1.confianca, saida1.confianca, entrada2.confianca, saida2.confianca);
+    const entradaDigitosCrop = primeiroDigitos(entrada1.digitos, entrada2.digitos);
+    const saidaDigitosCrop = primeiroDigitos(saida1.digitos, saida2.digitos);
+    const algumAmbiguo =
+      entrada1.ambiguo || saida1.ambiguo || entrada2.ambiguo || saida2.ambiguo;
 
-    if (
-      entrada1.ambiguo ||
-      saida1.ambiguo ||
-      entrada2.ambiguo ||
-      saida2.ambiguo ||
-      !entrada1.digitos ||
-      !saida1.digitos ||
-      !entrada2.digitos ||
-      !saida2.digitos
-    ) {
-      const score = calcularScore({
-        confianca1: (entrada1.confianca + saida1.confianca) / 2,
-        confianca2: (entrada2.confianca + saida2.confianca) / 2,
-        flags: ["leitura_ambigua"],
-        divergenciaEntrada: [],
-        divergenciaSaida: [],
-      });
-      return {
-        ok: true,
-        result: {
-          entradaCentesimos: 0,
-          saidaCentesimos: 0,
-          entradaFormatada: "",
-          saidaFormatada: "",
-          confianca,
-          score,
-          status: "rejected",
-          flags: ["leitura_ambigua"],
-          avisos: avisos.length ? avisos : ["Recortes ambíguos ou incompletos."],
-          modelo: entrada1.model,
-          modelosUsados: [entrada1.model, saida1.model, entrada2.model, saida2.model],
-          aplicar: false,
-          motivoRecusa:
-            entrada1.motivo ||
-            saida1.motivo ||
-            entrada2.motivo ||
-            saida2.motivo ||
-            "Não foi possível ler os recortes de entrada e saída com segurança.",
-        alternativas: {
-          entrada: alternativasFormatadas(
-            parseContadorInput(entrada1.digitos),
-            parseContadorInput(entrada2.digitos)
-          ),
-          saida: alternativasFormatadas(
-            parseContadorInput(saida1.digitos),
-            parseContadorInput(saida2.digitos)
-          ),
-        },
-        },
-      };
-    }
-
-    const entrada = parseContadorInput(entrada1.digitos);
-    const saida = parseContadorInput(saida1.digitos);
-    const divergenciaEntrada = compararDigitos(entrada1.digitos, entrada2.digitos);
-    const divergenciaSaida = compararDigitos(saida1.digitos, saida2.digitos);
+    if (!entradaDigitosCrop || !saidaDigitosCrop) {
+      // Recortes falharam — cai na leitura do painel inteiro.
+    } else {
+    const entrada = parseContadorInput(entradaDigitosCrop);
+    const saida = parseContadorInput(saidaDigitosCrop);
+    const divergenciaEntrada = compararDigitos(
+      entrada1.digitos || entradaDigitosCrop,
+      entrada2.digitos || entradaDigitosCrop
+    );
+    const divergenciaSaida = compararDigitos(
+      saida1.digitos || saidaDigitosCrop,
+      saida2.digitos || saidaDigitosCrop
+    );
     const flags = new Set<string>(["recorte_campos"]);
+    if (algumAmbiguo) flags.add("leitura_ambigua");
 
     if (
       entrada1.confianca < CONF_MIN ||
@@ -551,53 +517,51 @@ export async function lerContadoresCassinoDaFoto(opts: {
       !flags.has("baixa_confianca") &&
       !flags.has("leitura_ambigua");
     const status = classificarStatus(score, Array.from(flags), aplicarBase);
-    const aplicar =
-      podeSugerirValores({
-        entrada,
-        saida,
-        score,
-        flags: Array.from(flags),
-      }) && score >= SCORE_MIN_SUGESTAO;
+    const aplicar = podeSugerirValores({
+      entrada,
+      saida,
+      score,
+      flags: Array.from(flags),
+    });
     const motivoRecusa = regressao
       ? "Valor menor que a leitura anterior — confira e confirme se houve reset ou manutenção."
-      : divergenciaGrave
-        ? "Encontramos divergência entre duas leituras dos recortes. Confira o visor."
-        : score < SCORE_MIN_SUGESTAO
-          ? `Score de segurança baixo (${score}/100). Confira e digite manualmente.`
-          : `Confira os valores sugeridos (score ${score}/100).`;
+      : `Confira os valores sugeridos (score ${score}/100).`;
 
-    return {
-      ok: true,
-      result: {
-        entradaCentesimos: entrada,
-        saidaCentesimos: saida,
-        entradaFormatada: formatContador(entrada),
-        saidaFormatada: formatContador(saida),
-        confianca,
-        score,
-        status,
-        flags: Array.from(flags),
-        avisos: [...avisos, ...avisosValidacao],
-        modelo: entrada1.model,
-        modelosUsados: [entrada1.model, saida1.model, entrada2.model, saida2.model],
-        aplicar,
-        motivoRecusa: aplicar ? undefined : motivoRecusa,
-        divergenciaDigitos:
-          divergenciaEntrada.length > 0 || divergenciaSaida.length > 0
-            ? { entrada: divergenciaEntrada, saida: divergenciaSaida }
-            : undefined,
-        alternativas: {
-          entrada: alternativasFormatadas(
-            parseContadorInput(entrada1.digitos),
-            parseContadorInput(entrada2.digitos)
-          ),
-          saida: alternativasFormatadas(
-            parseContadorInput(saida1.digitos),
-            parseContadorInput(saida2.digitos)
-          ),
+    if (aplicar) {
+      return {
+        ok: true,
+        result: {
+          entradaCentesimos: entrada,
+          saidaCentesimos: saida,
+          entradaFormatada: formatContador(entrada),
+          saidaFormatada: formatContador(saida),
+          confianca,
+          score,
+          status,
+          flags: Array.from(flags),
+          avisos: [...avisos, ...avisosValidacao],
+          modelo: entrada1.model,
+          modelosUsados: [entrada1.model, saida1.model, entrada2.model, saida2.model],
+          aplicar: true,
+          motivoRecusa: undefined,
+          divergenciaDigitos:
+            divergenciaEntrada.length > 0 || divergenciaSaida.length > 0
+              ? { entrada: divergenciaEntrada, saida: divergenciaSaida }
+              : undefined,
+          alternativas: {
+            entrada: alternativasFormatadas(
+              parseContadorInput(entrada1.digitos),
+              parseContadorInput(entrada2.digitos)
+            ),
+            saida: alternativasFormatadas(
+              parseContadorInput(saida1.digitos),
+              parseContadorInput(saida2.digitos)
+            ),
+          },
         },
-      },
-    };
+      };
+    }
+    }
   }
 
   const leitura1 = await executarLeitura(
@@ -612,62 +576,23 @@ export async function lerContadoresCassinoDaFoto(opts: {
     opts.imageDataUrl,
     montarPromptLeitura2(opts.entradaAnterior, opts.saidaAnterior)
   );
-  if (!leitura2.ok) {
-    return { ok: false, message: leitura2.message };
-  }
+  const leitura2Ok = leitura2.ok
+    ? leitura2
+    : {
+        ok: true as const,
+        confianca: leitura1.confianca,
+        entradaDigitos: leitura1.entradaDigitos,
+        saidaDigitos: leitura1.saidaDigitos,
+        avisos: [] as string[],
+        data: { ambiguo: false as boolean | null },
+        model: leitura1.model,
+      };
 
-  const avisos = [...leitura1.avisos, ...leitura2.avisos];
-  const confianca = Math.max(leitura1.confianca, leitura2.confianca);
-  const entradaDigitos = leitura1.entradaDigitos;
-  const saidaDigitos = leitura1.saidaDigitos;
-
-  if (
-    leitura1.data.ambiguo ||
-    leitura2.data.ambiguo ||
-    !entradaDigitos ||
-    !saidaDigitos ||
-    !leitura2.entradaDigitos ||
-    !leitura2.saidaDigitos
-  ) {
-    const score = calcularScore({
-      confianca1: leitura1.confianca,
-      confianca2: leitura2.confianca,
-      flags: ["leitura_ambigua"],
-      divergenciaEntrada: [],
-      divergenciaSaida: [],
-    });
-    return {
-      ok: true,
-      result: {
-        entradaCentesimos: 0,
-        saidaCentesimos: 0,
-        entradaFormatada: "",
-        saidaFormatada: "",
-        confianca,
-        score,
-        status: "rejected",
-        flags: ["leitura_ambigua"],
-        avisos: avisos.length ? avisos : ["Leitura ambígua ou incompleta."],
-        modelo: leitura1.model,
-        modelosUsados: [leitura1.model, leitura2.model],
-        aplicar: false,
-        motivoRecusa:
-          leitura1.data.motivo?.trim() ||
-          leitura2.data.motivo?.trim() ||
-          "Não foi possível identificar entrada e saída com segurança. Digite manualmente.",
-        alternativas: {
-          entrada: alternativasFormatadas(
-            parseContadorInput(leitura1.entradaDigitos),
-            parseContadorInput(leitura2.entradaDigitos)
-          ),
-          saida: alternativasFormatadas(
-            parseContadorInput(leitura1.saidaDigitos),
-            parseContadorInput(leitura2.saidaDigitos)
-          ),
-        },
-      },
-    };
-  }
+  const avisos = [...leitura1.avisos, ...leitura2Ok.avisos];
+  const confianca = Math.max(leitura1.confianca, leitura2Ok.confianca);
+  const entradaDigitos = primeiroDigitos(leitura1.entradaDigitos, leitura2Ok.entradaDigitos);
+  const saidaDigitos = primeiroDigitos(leitura1.saidaDigitos, leitura2Ok.saidaDigitos);
+  const algumAmbiguo = Boolean(leitura1.data.ambiguo || leitura2Ok.data.ambiguo);
 
   const entrada = parseContadorInput(entradaDigitos);
   const saida = parseContadorInput(saidaDigitos);
@@ -675,7 +600,7 @@ export async function lerContadoresCassinoDaFoto(opts: {
   if (entrada <= 0 && saida <= 0) {
     const score = calcularScore({
       confianca1: leitura1.confianca,
-      confianca2: leitura2.confianca,
+      confianca2: leitura2Ok.confianca,
       flags: ["valores_invalidos"],
       divergenciaEntrada: [],
       divergenciaSaida: [],
@@ -693,7 +618,7 @@ export async function lerContadoresCassinoDaFoto(opts: {
         flags: ["valores_invalidos"],
         avisos,
         modelo: leitura1.model,
-        modelosUsados: [leitura1.model, leitura2.model],
+        modelosUsados: [leitura1.model, leitura2Ok.model],
         aplicar: false,
         motivoRecusa: "Números lidos inválidos. Digite manualmente.",
         alternativas: {
@@ -712,13 +637,14 @@ export async function lerContadoresCassinoDaFoto(opts: {
   );
   const todosAvisos = [...avisos, ...avisosValidacao];
   const flags = new Set<string>();
+  if (algumAmbiguo) flags.add("leitura_ambigua");
 
-  if (confianca < CONF_MIN || leitura2.confianca < CONF_MIN) {
+  if (confianca < CONF_MIN || leitura2Ok.confianca < CONF_MIN) {
     flags.add("baixa_confianca");
   }
 
-  const divergenciaEntrada = compararDigitos(entradaDigitos, leitura2.entradaDigitos);
-  const divergenciaSaida = compararDigitos(saidaDigitos, leitura2.saidaDigitos);
+  const divergenciaEntrada = compararDigitos(entradaDigitos, leitura2Ok.entradaDigitos);
+  const divergenciaSaida = compararDigitos(saidaDigitos, leitura2Ok.saidaDigitos);
   if (divergenciaEntrada.length > 0 || divergenciaSaida.length > 0) {
     registrarDivergenciaLeituras({
       flags,
@@ -727,8 +653,8 @@ export async function lerContadoresCassinoDaFoto(opts: {
       divergenciaSaida,
       entradaLen: entradaDigitos.length,
       saidaLen: saidaDigitos.length,
-      entradaLen2: leitura2.entradaDigitos.length,
-      saidaLen2: leitura2.saidaDigitos.length,
+      entradaLen2: leitura2Ok.entradaDigitos.length,
+      saidaLen2: leitura2Ok.saidaDigitos.length,
     });
   }
 
@@ -745,7 +671,7 @@ export async function lerContadoresCassinoDaFoto(opts: {
     entrada < opts.entradaAnterior || saida < opts.saidaAnterior;
   const score = calcularScore({
     confianca1: leitura1.confianca,
-    confianca2: leitura2.confianca,
+    confianca2: leitura2Ok.confianca,
     flags: Array.from(flags),
     divergenciaEntrada,
     divergenciaSaida,
@@ -756,20 +682,15 @@ export async function lerContadoresCassinoDaFoto(opts: {
     !flags.has("baixa_confianca") &&
     !flags.has("leitura_ambigua");
   const status = classificarStatus(score, Array.from(flags), aplicarBase);
-  const aplicar =
-    podeSugerirValores({
-      entrada,
-      saida,
-      score,
-      flags: Array.from(flags),
-    }) && score >= SCORE_MIN_SUGESTAO;
+  const aplicar = podeSugerirValores({
+    entrada,
+    saida,
+    score,
+    flags: Array.from(flags),
+  });
   const motivoRecusa = regressao
     ? "Valor menor que a leitura anterior — confira e confirme se houve reset ou manutenção."
-    : divergenciaGrave
-      ? "Encontramos divergência entre duas leituras da IA. Confira o visor."
-      : score < SCORE_MIN_SUGESTAO
-        ? `Score de segurança baixo (${score}/100). Confira e digite manualmente.`
-        : `Confira os valores sugeridos (score ${score}/100).`;
+    : `Confira os valores sugeridos (score ${score}/100).`;
 
   return {
     ok: true,
@@ -784,7 +705,7 @@ export async function lerContadoresCassinoDaFoto(opts: {
       flags: Array.from(flags),
       avisos: todosAvisos,
       modelo: leitura1.model,
-      modelosUsados: [leitura1.model, leitura2.model],
+        modelosUsados: [leitura1.model, leitura2Ok.model],
       aplicar,
       motivoRecusa: aplicar ? undefined : motivoRecusa,
       divergenciaDigitos:
@@ -794,11 +715,11 @@ export async function lerContadoresCassinoDaFoto(opts: {
       alternativas: {
         entrada: alternativasFormatadas(
           parseContadorInput(leitura1.entradaDigitos),
-          parseContadorInput(leitura2.entradaDigitos)
+          parseContadorInput(leitura2Ok.entradaDigitos)
         ),
         saida: alternativasFormatadas(
           parseContadorInput(leitura1.saidaDigitos),
-          parseContadorInput(leitura2.saidaDigitos)
+          parseContadorInput(leitura2Ok.saidaDigitos)
         ),
       },
     },

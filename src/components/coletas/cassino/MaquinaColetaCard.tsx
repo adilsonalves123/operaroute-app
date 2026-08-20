@@ -181,10 +181,10 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
     onIaErro(leitura.equipamentoId, null);
     try {
       const quality = await analyzePhotoQuality(leitura.fotoFile);
-      if (!quality.ok) {
+      if (!quality.ok && quality.metrics.width === 0) {
         onIaErro(
           leitura.equipamentoId,
-          `Não conseguimos ler esta imagem com segurança. Tire outra foto. ${quality.reasons.join(" ")}`
+          `Não foi possível abrir esta imagem. Tire outra foto. ${quality.reasons.join(" ")}`
         );
         return;
       }
@@ -278,7 +278,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           String(data.saida ?? "") ||
           alternativas?.saida[0] ||
           leitura.saidaAtualInput;
-        const temSugestao = Boolean(entradaSugerida.trim() && saidaSugerida.trim());
+        const temSugestao = Boolean(entradaSugerida.trim() || saidaSugerida.trim());
 
         if (temSugestao || alternativas) {
           onIaSugestao(leitura.equipamentoId, {
