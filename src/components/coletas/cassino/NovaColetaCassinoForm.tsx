@@ -48,6 +48,7 @@ import {
   saldoHaverReais,
   isHaverDeNegativoCliente,
   isHaverCreditoComum,
+  pendenciasParaEdicaoVisita,
 } from "@/lib/nichos/cassino/pendencias";
 import type { RelatorioColetaData } from "@/lib/nichos/cassino/relatorio";
 import { uploadFotosMaquinasParalelo } from "@/lib/storage/coleta-fotos";
@@ -489,13 +490,94 @@ export function NovaColetaCassinoForm() {
           supabase
             .from("visitas")
             .select(
-              "desconto, desconto_recebimento, valor_pix, valor_dinheiro, adiantamento_pix, adiantamento_dinheiro, adiantamento_pix_do_caixa, adiantamento_dinheiro_do_caixa, recebimento_pix_do_caixa, recebimento_dinheiro_do_caixa, observacao, saldo_negativo"
+              "desconto, desconto_recebimento, valor_pix, valor_dinheiro, adiantamento_pix, adiantamento_dinheiro, adiantamento_pix_do_caixa, adiantamento_dinheiro_do_caixa, recebimento_pix_do_caixa, recebimento_dinheiro_do_caixa, observacao, saldo_negativo, debito_abatido"
             )
             .eq("id", visitaParaEditar)
             .maybeSingle(),
         ]);
 
         if (cancelled) return;
+
+        // Devolve negativo/haver que esta visita já tinha abatido — senão a
+        // comissão sobe na edição (pendência resolvida some do cálculo).
+        {
+          const tagLike = `%[visita:${visitaParaEditar}]%`;
+          const [
+            { data: negAbertas },
+            { data: negDesta },
+            { data: haverAbertas },
+            { data: haverDesta },
+            { data: opAbertas },
+            { data: opDesta },
+          ] = await Promise.all([
+            supabase
+              .from("pendencias")
+              .select("id, valor, descricao, tipo, titulo, status")
+              .eq("ponto_id", pontoId)
+              .eq("status", "aberta")
+              .ilike("tipo", "negativo"),
+            supabase
+              .from("pendencias")
+              .select("id, valor, descricao, tipo, titulo, status")
+              .eq("ponto_id", pontoId)
+              .ilike("tipo", "negativo")
+              .ilike("descricao", tagLike),
+            supabase
+              .from("pendencias")
+              .select("id, valor, descricao, tipo, titulo, status")
+              .eq("ponto_id", pontoId)
+              .eq("status", "aberta")
+              .ilike("tipo", "haver"),
+            supabase
+              .from("pendencias")
+              .select("id, valor, descricao, tipo, titulo, status")
+              .eq("ponto_id", pontoId)
+              .ilike("tipo", "haver")
+              .ilike("descricao", tagLike),
+            supabase
+              .from("pendencias")
+              .select("id, valor, descricao, tipo, titulo, status")
+              .eq("ponto_id", pontoId)
+              .eq("status", "aberta")
+              .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"]),
+            supabase
+              .from("pendencias")
+              .select("id, valor, descricao, tipo, titulo, status")
+              .eq("ponto_id", pontoId)
+              .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"])
+              .ilike("descricao", tagLike),
+          ]);
+          if (cancelled) return;
+
+          const mergeById = <T extends { id: string }>(a: T[] | null, b: T[] | null) => {
+            const map = new Map<string, T>();
+            for (const row of [...(a ?? []), ...(b ?? [])]) map.set(row.id, row);
+            return [...map.values()];
+          };
+
+          const negEdit = pendenciasParaEdicaoVisita(
+            mergeById(negAbertas, negDesta),
+            visitaParaEditar
+          );
+          const haverEdit = pendenciasParaEdicaoVisita(
+            mergeById(haverAbertas, haverDesta),
+            visitaParaEditar
+          );
+          const opEdit = pendenciasParaEdicaoVisita(
+            mergeById(opAbertas, opDesta),
+            visitaParaEditar
+          );
+          setPendencias(negEdit);
+          setHavers(haverEdit);
+          setPendenciasOperacao(opEdit);
+
+          const debitoAbatido = Number(
+            (visitaEdit as { debito_abatido?: number | null } | null)?.debito_abatido ?? 0
+          );
+          if (debitoAbatido > 0.009 || negEdit.some((p) => Number(p.valor ?? 0) > 0.009)) {
+            setAbaterNegativoAnterior(true);
+          }
+        }
 
         if (coletasEdit?.length) {
           // Garante visita_ponto na URL para religar após DELETE (mesmo se veio só do detalhe).

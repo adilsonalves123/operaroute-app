@@ -23,6 +23,9 @@ export {
   totalHaverCreditoComumAbertoReais,
   calcularAbatimentos,
   calcularBaixasValorPendencia,
+  descricaoSemBaixasDaVisita,
+  valorBaixadoPelaVisitaNaDescricao,
+  pendenciasParaEdicaoVisita,
 } from "./pendencias";
 export {
   distribuirValoresMaquinas,

@@ -244,3 +244,106 @@ export function calcularBaixasValorPendencia(
 
   return { abatimentos, abatidoCentavos };
 }
+
+function parseValorBRLinha(raw: string): number {
+  return parseFloat(raw.replace(/\./g, "").replace(",", ".")) || 0;
+}
+
+/**
+ * Remove baixas/compensações desta visita na descrição.
+ * Usado na edição: a visita ainda "segura" esses abatimentos até salvar de novo.
+ */
+export function descricaoSemBaixasDaVisita(
+  descricao: string | null | undefined,
+  visitaId: string
+): string | null {
+  if (!descricao) return null;
+  const tag = `[visita:${visitaId}]`;
+  const manter = descricao
+    .split("\n")
+    .filter((linha) => !linha.includes(tag))
+    .map((l) => l.trimEnd())
+    .filter(Boolean);
+  return manter.length ? manter.join("\n") : null;
+}
+
+/** Soma o que esta visita baixou/compensou (linhas com [visita:id]). */
+export function valorBaixadoPelaVisitaNaDescricao(
+  descricao: string | null | undefined,
+  visitaId: string
+): number {
+  if (!descricao) return 0;
+  const tag = `[visita:${visitaId}]`;
+  let total = 0;
+  for (const linha of descricao.split("\n")) {
+    if (!linha.includes(tag)) continue;
+    const m =
+      linha.match(/Compensado R\$ ([\d.,]+)/i) ??
+      linha.match(/Abatido R\$ ([\d.,]+)/i) ??
+      linha.match(/Baixa de R\$ ([\d.,]+)/i);
+    if (m) total += parseValorBRLinha(m[1]);
+  }
+  return Math.round(total * 100) / 100;
+}
+
+export type PendenciaParaEdicaoVisita = {
+  id: string;
+  valor: number;
+  descricao: string | null;
+  tipo: string | null;
+  titulo: string | null;
+  status?: string | null;
+};
+
+/**
+ * Prepara pendências para recalcular a visita em edição:
+ * devolve o que esta visita já tinha abatido (senão a comissão infla).
+ */
+export function pendenciasParaEdicaoVisita(
+  rows: PendenciaParaEdicaoVisita[],
+  visitaId: string
+): PendenciaParaEdicaoVisita[] {
+  const tag = `[visita:${visitaId}]`;
+  const out: PendenciaParaEdicaoVisita[] = [];
+
+  for (const p of rows) {
+    const desc = p.descricao ?? "";
+    const destaVisita = desc.includes(tag);
+    const aberta = String(p.status ?? "aberta").toLowerCase() === "aberta";
+
+    if (!destaVisita && !aberta) continue;
+
+    if (!destaVisita) {
+      out.push({
+        id: p.id,
+        valor: Number(p.valor ?? 0),
+        descricao: p.descricao,
+        tipo: p.tipo,
+        titulo: p.titulo,
+        status: "aberta",
+      });
+      continue;
+    }
+
+    const baixado = valorBaixadoPelaVisitaNaDescricao(desc, visitaId);
+    const descLimpa = descricaoSemBaixasDaVisita(desc, visitaId);
+    const valorBase = Number(p.valor ?? 0);
+    // Haver/operação: valor já é saldo restante → devolve o que esta visita baixou.
+    // Negativo: valor bruto + linhas Abatido → só limpar a descrição.
+    const valorEraSaldoRestante = /Compensado R\$|Baixa de R\$/i.test(desc);
+    const valor = valorEraSaldoRestante
+      ? Math.round((valorBase + baixado) * 100) / 100
+      : valorBase;
+
+    out.push({
+      id: p.id,
+      valor,
+      descricao: descLimpa,
+      tipo: p.tipo,
+      titulo: p.titulo,
+      status: "aberta",
+    });
+  }
+
+  return out;
+}
