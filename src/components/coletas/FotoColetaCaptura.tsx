@@ -18,9 +18,63 @@ type Props = {
   className?: string;
 };
 
+async function isCapacitorNativo(): Promise<boolean> {
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    return Capacitor.isNativePlatform();
+  } catch {
+    return false;
+  }
+}
+
+async function fotoNativaParaFile(
+  source: "camera" | "galeria"
+): Promise<File | null> {
+  const { Camera: CapCamera, CameraResultType, CameraSource } = await import(
+    "@capacitor/camera"
+  );
+
+  const permission = await CapCamera.checkPermissions();
+  if (source === "camera") {
+    if (permission.camera !== "granted") {
+      const next = await CapCamera.requestPermissions({ permissions: ["camera"] });
+      if (next.camera !== "granted") {
+        throw new Error(
+          "Permissão da câmera negada. Ative em Configurações → Apps → OperaRoute → Câmera."
+        );
+      }
+    }
+  } else if (permission.photos !== "granted") {
+    await CapCamera.requestPermissions({ permissions: ["photos"] });
+  }
+
+  const photo = await CapCamera.getPhoto({
+    quality: 85,
+    allowEditing: false,
+    resultType: CameraResultType.Uri,
+    source: source === "camera" ? CameraSource.Camera : CameraSource.Photos,
+    // Evita UI de edição / crop em alguns OEMs.
+    correctOrientation: true,
+  });
+
+  if (!photo.webPath) return null;
+
+  const res = await fetch(photo.webPath);
+  const blob = await res.blob();
+  const ext = blob.type.includes("png")
+    ? "png"
+    : blob.type.includes("webp")
+      ? "webp"
+      : "jpg";
+  return new File([blob], `foto-${Date.now()}.${ext}`, {
+    type: blob.type || "image/jpeg",
+  });
+}
+
 /**
  * Um botão "Foto" → escolhe Câmera ou Galeria.
- * `input.click()` no mesmo gesto do usuário (obrigatório no mobile).
+ * No app Android usa @capacitor/camera (abre a câmera de verdade).
+ * No browser continua com `<input capture>` / galeria.
  */
 export function FotoColetaCaptura({
   preview,
@@ -39,6 +93,7 @@ export function FotoColetaCaptura({
   const lockUntilRef = useRef(0);
   const [abrindo, setAbrindo] = useState<"camera" | "galeria" | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
+  const [erroLocal, setErroLocal] = useState<string | null>(null);
 
   useEffect(() => {
     function liberar() {
@@ -60,29 +115,50 @@ export function FotoColetaCaptura({
     return abrindo != null || Date.now() < lockUntilRef.current;
   }
 
-  function abrir(modo: "camera" | "galeria") {
+  async function abrir(modo: "camera" | "galeria") {
     if (estaTravado()) return;
 
-    const input = modo === "camera" ? cameraRef.current : galeriaRef.current;
-    if (!input) return;
-
     setMenuAberto(false);
+    setErroLocal(null);
     lockUntilRef.current = Date.now() + LOCK_MS;
     setAbrindo(modo);
-    input.value = "";
 
+    try {
+      if (await isCapacitorNativo()) {
+        try {
+          const file = await fotoNativaParaFile(modo);
+          if (file) onChange(file);
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : String(err);
+          // Usuário cancelou — não mostrar erro.
+          if (/cancel|dismiss|user cancelled/i.test(msg)) return;
+          if (/permissão|permission|câmera negada|camera/i.test(msg) && /negad|denied|settings|configura/i.test(msg)) {
+            setErroLocal(msg);
+            return;
+          }
+          // Fallback HTML se o plugin nativo falhar (APK antigo sem camera plugin).
+          abrirInputHtml(modo);
+          return;
+        }
+        return;
+      }
+
+      abrirInputHtml(modo);
+    } finally {
+      lockUntilRef.current = 0;
+      setAbrindo(null);
+    }
+  }
+
+  function abrirInputHtml(modo: "camera" | "galeria") {
+    const input = modo === "camera" ? cameraRef.current : galeriaRef.current;
+    if (!input) return;
+    input.value = "";
     try {
       input.click();
     } catch {
-      lockUntilRef.current = 0;
-      setAbrindo(null);
-      return;
+      setErroLocal("Não foi possível abrir a câmera neste aparelho.");
     }
-
-    window.setTimeout(() => {
-      setAbrindo((atual) => (atual === modo ? null : atual));
-      if (Date.now() >= lockUntilRef.current) lockUntilRef.current = 0;
-    }, 12_000);
   }
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -90,6 +166,7 @@ export function FotoColetaCaptura({
     lockUntilRef.current = 0;
     setAbrindo(null);
     setMenuAberto(false);
+    setErroLocal(null);
     onChange(file);
     e.target.value = "";
   }
@@ -101,7 +178,10 @@ export function FotoColetaCaptura({
     lockUntilRef.current = 0;
     setAbrindo(null);
     setMenuAberto(false);
+    setErroLocal(null);
   }
+
+  const erroExibido = erroLocal ?? erro;
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -156,7 +236,7 @@ export function FotoColetaCaptura({
           onClick={() => setMenuAberto((v) => !v)}
           className={cn(
             "flex w-full items-center justify-center gap-2 rounded-xl border border-dashed py-8 text-sm transition disabled:cursor-wait disabled:opacity-60",
-            erro
+            erroExibido
               ? "border-red-500/50 text-red-400"
               : "border-slate-600 text-slate-400 hover:border-cyan-500/40 hover:text-cyan-300",
             buttonClassName
@@ -175,7 +255,7 @@ export function FotoColetaCaptura({
           <button
             type="button"
             disabled={abrindo != null}
-            onClick={() => abrir("camera")}
+            onClick={() => void abrir("camera")}
             className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-slate-100 transition hover:bg-white/[0.04] disabled:opacity-50"
           >
             <Camera className="h-4 w-4 text-cyan-400" />
@@ -187,7 +267,7 @@ export function FotoColetaCaptura({
           <button
             type="button"
             disabled={abrindo != null}
-            onClick={() => abrir("galeria")}
+            onClick={() => void abrir("galeria")}
             className="flex w-full items-center gap-3 border-t border-white/[0.06] px-4 py-3.5 text-left text-sm text-slate-100 transition hover:bg-violet-500/10 disabled:opacity-50"
           >
             <ImageIcon className="h-4 w-4 text-violet-300" />
@@ -206,7 +286,7 @@ export function FotoColetaCaptura({
         </div>
       ) : null}
 
-      {erro ? <p className="text-xs text-red-400">{erro}</p> : null}
+      {erroExibido ? <p className="text-xs text-red-400">{erroExibido}</p> : null}
     </div>
   );
 }

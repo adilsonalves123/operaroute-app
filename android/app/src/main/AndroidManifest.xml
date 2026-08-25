@@ -53,4 +53,23 @@
     <uses-permission
         android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
+
+    <!--
+      Android 11+ package visibility: sem isso o Capacitor não resolve a câmera
+      em alguns aparelhos (Pixel/Android 14+) e cai na galeria ao tocar "Câmera".
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.media.action.IMAGE_CAPTURE" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.GET_CONTENT" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.PICK" />
+            <data android:mimeType="image/*" />
+        </intent>
+    </queries>
+
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
 </manifest>
