@@ -388,6 +388,8 @@ export default async function PontoDetailPage({
 
       <PontoComissaoPeriodo
         pontoId={id}
+        pontoNome={ponto.nome}
+        whatsapp={ponto.whatsapp}
         preset={periodoComissao.preset}
         label={periodoComissao.label}
         inicioISO={periodoComissao.inicioISO}
