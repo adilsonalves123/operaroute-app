@@ -386,15 +386,19 @@ export default async function PontoDetailPage({
         }
       />
 
+      <PontoComissaoPeriodo
+        pontoId={id}
+        preset={periodoComissao.preset}
+        label={periodoComissao.label}
+        inicioISO={periodoComissao.inicioISO}
+        fimISO={periodoComissao.fimISO}
+        total={comissaoPeriodo.total}
+        porNicho={comissaoPeriodo.porNicho}
+      />
+
       {mostraVisitaUnificada && (
         <PontoHistoricoVisitas visitas={visitasPontoHistorico} />
       )}
-
-      <PontoComissaoPeriodo
-        pontoId={id}
-        periodo={periodoComissao}
-        comissao={comissaoPeriodo}
-      />
 
       <PontoNichoPainel
         nichosContratados={nichosAtivos}
