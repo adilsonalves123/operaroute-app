@@ -75,7 +75,7 @@ interface PendenciaNegativa {
   id: string;
   valor: number | null;
   descricao: string | null;
-  tipo?: string;
+  tipo?: string | null;
   titulo?: string | null;
 }
 
