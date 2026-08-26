@@ -13,11 +13,12 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 export function isNativeAndroidApp(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    Capacitor.isNativePlatform() &&
-    Capacitor.getPlatform() === "android"
-  );
+  if (typeof window === "undefined") return false;
+
+  const w = window as Window & { androidBridge?: unknown };
+  if (w.androidBridge) return true;
+
+  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
 }
 
 export function pushSupported(): boolean {

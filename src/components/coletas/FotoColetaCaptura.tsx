@@ -3,6 +3,8 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Camera, ImageIcon, X } from "lucide-react";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
+import { capturarFotoNativa } from "@/lib/camera/captura-nativa";
+import { isNativeAndroidApp } from "@/lib/push/client";
 import { cn } from "@/lib/utils";
 
 const LOCK_MS = 1800;
@@ -17,59 +19,6 @@ type Props = {
   buttonClassName?: string;
   className?: string;
 };
-
-async function isCapacitorNativo(): Promise<boolean> {
-  try {
-    const { Capacitor } = await import("@capacitor/core");
-    return Capacitor.isNativePlatform();
-  } catch {
-    return false;
-  }
-}
-
-async function fotoNativaParaFile(
-  source: "camera" | "galeria"
-): Promise<File | null> {
-  const { Camera: CapCamera, CameraResultType, CameraSource } = await import(
-    "@capacitor/camera"
-  );
-
-  const permission = await CapCamera.checkPermissions();
-  if (source === "camera") {
-    if (permission.camera !== "granted") {
-      const next = await CapCamera.requestPermissions({ permissions: ["camera"] });
-      if (next.camera !== "granted") {
-        throw new Error(
-          "Permissão da câmera negada. Ative em Configurações → Apps → OperaRoute → Câmera."
-        );
-      }
-    }
-  } else if (permission.photos !== "granted") {
-    await CapCamera.requestPermissions({ permissions: ["photos"] });
-  }
-
-  const photo = await CapCamera.getPhoto({
-    quality: 85,
-    allowEditing: false,
-    resultType: CameraResultType.Uri,
-    source: source === "camera" ? CameraSource.Camera : CameraSource.Photos,
-    // Evita UI de edição / crop em alguns OEMs.
-    correctOrientation: true,
-  });
-
-  if (!photo.webPath) return null;
-
-  const res = await fetch(photo.webPath);
-  const blob = await res.blob();
-  const ext = blob.type.includes("png")
-    ? "png"
-    : blob.type.includes("webp")
-      ? "webp"
-      : "jpg";
-  return new File([blob], `foto-${Date.now()}.${ext}`, {
-    type: blob.type || "image/jpeg",
-  });
-}
 
 /**
  * Um botão "Foto" → escolhe Câmera ou Galeria.
@@ -124,26 +73,16 @@ export function FotoColetaCaptura({
     setAbrindo(modo);
 
     try {
-      if (await isCapacitorNativo()) {
-        try {
-          const file = await fotoNativaParaFile(modo);
-          if (file) onChange(file);
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err);
-          // Usuário cancelou — não mostrar erro.
-          if (/cancel|dismiss|user cancelled/i.test(msg)) return;
-          if (/permissão|permission|câmera negada|camera/i.test(msg) && /negad|denied|settings|configura/i.test(msg)) {
-            setErroLocal(msg);
-            return;
-          }
-          // Fallback HTML se o plugin nativo falhar (APK antigo sem camera plugin).
-          abrirInputHtml(modo);
-          return;
-        }
+      if (isNativeAndroidApp()) {
+        const file = await capturarFotoNativa(modo);
+        if (file) onChange(file);
         return;
       }
 
       abrirInputHtml(modo);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setErroLocal(msg || "Não foi possível abrir a câmera neste aparelho.");
     } finally {
       lockUntilRef.current = 0;
       setAbrindo(null);
