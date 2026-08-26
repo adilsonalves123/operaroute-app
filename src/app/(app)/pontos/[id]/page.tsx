@@ -16,16 +16,27 @@ import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
 import { visitaPontoDisponivel } from "@/lib/visitas-ponto";
 import { LinkColetaPonto } from "@/components/visitas-ponto/LinkColetaPonto";
 import { PontoHistoricoVisitas } from "@/components/pontos/PontoHistoricoVisitas";
+import { PontoComissaoPeriodo } from "@/components/pontos/PontoComissaoPeriodo";
+import { resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
+import { fetchComissaoPontoPeriodo } from "@/lib/pontos/comissao-periodo";
 
 const ACAO_COLETA =
   "inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-3 text-[13px] font-medium text-white transition hover:border-white/25 hover:bg-white/[0.08]";
 
 export default async function PontoDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
 }) {
   const { id } = await params;
+  const sp = await searchParams;
+  const periodoComissao = resolverPeriodoAnalise({
+    periodo: sp.periodo ?? "semana",
+    de: sp.de,
+    ate: sp.ate,
+  });
   const [profile, supabase] = await Promise.all([getProfile(), createClient()]);
   const empresa = profile?.empresa_id ? await getEmpresa(profile.empresa_id) : null;
   const nichosAtivos = resolveNichosAtivos(empresa?.nichos_ativos, empresa?.nicho);
@@ -78,6 +89,7 @@ export default async function PontoDetailPage({
     chamadosAbertosResult,
     visitaRascunhoResult,
     visitasPontoHistoricoResult,
+    comissaoPeriodoResult,
   ] = await Promise.all([
     isFuraFura && ponto.kit_ativo_id && profile?.empresa_id
       ? supabase
@@ -260,6 +272,15 @@ export default async function PontoDetailPage({
           .order("finalizada_em", { ascending: false })
           .limit(10)
       : Promise.resolve({ data: [] }),
+    profile?.empresa_id
+      ? fetchComissaoPontoPeriodo(
+          supabase,
+          profile.empresa_id,
+          id,
+          periodoComissao.inicioISO,
+          periodoComissao.fimISO
+        )
+      : Promise.resolve({ total: 0, porNicho: [] }),
   ]);
 
   const kitAtivoNome = kitAtivoResult.data?.nome ?? null;
@@ -285,6 +306,7 @@ export default async function PontoDetailPage({
   const chamadosAbertos = chamadosAbertosResult.data ?? [];
   const visitaRascunhoId = visitaRascunhoResult.data?.id ?? null;
   const visitasPontoHistorico = visitasPontoHistoricoResult.data ?? [];
+  const comissaoPeriodo = comissaoPeriodoResult;
 
   const chamadosResumo = chamadosAbertos ?? [];
 
@@ -367,6 +389,12 @@ export default async function PontoDetailPage({
       {mostraVisitaUnificada && (
         <PontoHistoricoVisitas visitas={visitasPontoHistorico} />
       )}
+
+      <PontoComissaoPeriodo
+        pontoId={id}
+        periodo={periodoComissao}
+        comissao={comissaoPeriodo}
+      />
 
       <PontoNichoPainel
         nichosContratados={nichosAtivos}
