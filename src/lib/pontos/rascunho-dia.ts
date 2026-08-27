@@ -1,6 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
-import { lucroOperacaoCassinoVisita } from "@/lib/nichos/cassino/lucro-recebido";
 import type { FormaPagamento } from "@/lib/types/database";
 
 function round2(n: number): number {
@@ -10,6 +9,7 @@ function round2(n: number): number {
 export type RascunhoFormaPagamento = FormaPagamento | null;
 
 export type RascunhoPontoDia = {
+  /** Quanto entrou (ou saiu, se negativo) naquele ponto no dia. */
   valor: number;
   pix: number;
   dinheiro: number;
@@ -47,6 +47,10 @@ function resolverPixDinheiro(opts: {
   if (pix + dinheiro < 0.0001 && ref > 0.0001) {
     if (forma === "pix") pix = ref;
     else if (forma === "dinheiro") dinheiro = ref;
+    else if (forma === "misto") {
+      pix = round2(ref / 2);
+      dinheiro = round2(ref - pix);
+    }
   }
 
   return {
@@ -59,13 +63,13 @@ function resolverPixDinheiro(opts: {
 function somarPonto(
   map: Map<string, RascunhoPontoDia>,
   pontoId: string,
-  add: { valor?: number; pix?: number; dinheiro?: number }
+  add: { recebido: number; pix: number; dinheiro: number }
 ) {
   const prev = map.get(pontoId) ?? { valor: 0, pix: 0, dinheiro: 0, forma: null };
-  const pix = round2(prev.pix + (add.pix ?? 0));
-  const dinheiro = round2(prev.dinheiro + (add.dinheiro ?? 0));
+  const pix = round2(prev.pix + add.pix);
+  const dinheiro = round2(prev.dinheiro + add.dinheiro);
   map.set(pontoId, {
-    valor: round2(prev.valor + (add.valor ?? 0)),
+    valor: round2(prev.valor + add.recebido),
     pix,
     dinheiro,
     forma: inferirForma(pix, dinheiro),
@@ -73,8 +77,7 @@ function somarPonto(
 }
 
 /**
- * Valores por ponto no dia (folha da rota): o que cada ponto gerou na operação
- * e como pagou (Pix / Dinheiro / misto).
+ * Folha da rota: quanto cada ponto mandou no dia (Pix + Dinheiro recebidos).
  */
 export async function fetchRascunhoDia(
   supabase: SupabaseClient,
@@ -101,7 +104,7 @@ export async function fetchRascunhoDia(
       supabase
         .from("visitas")
         .select(
-          "ponto_id, total_lucro_centavos, valor_operacao, valor_operacao_efetivo, saldo_negativo, valor_pago, valor_pix, valor_dinheiro, adiantamento_pix, adiantamento_dinheiro, forma_pagamento"
+          "ponto_id, total_lucro_centavos, saldo_negativo, valor_pago, valor_pix, valor_dinheiro, adiantamento_pix, adiantamento_dinheiro, forma_pagamento"
         )
         .eq("empresa_id", empresaId)
         .gte("created_at", periodo.inicioISO)
@@ -109,7 +112,7 @@ export async function fetchRascunhoDia(
       supabase
         .from("coletas")
         .select(
-          "ponto_id, lucro_real, valor_liquido, valor_pago_recebido, valor_pix, valor_dinheiro, forma_pagamento, visita_id"
+          "ponto_id, valor_pago_recebido, valor_pix, valor_dinheiro, forma_pagamento, visita_id"
         )
         .eq("empresa_id", empresaId)
         .gte("created_at", periodo.inicioISO)
@@ -123,59 +126,60 @@ export async function fetchRascunhoDia(
 
     for (const v of visitas ?? []) {
       if (!v.ponto_id) continue;
-      const valor = lucroOperacaoCassinoVisita(v);
       const negativa =
         Boolean(v.saldo_negativo) ||
         Number(v.total_lucro_centavos ?? 0) < -0.9;
 
-      const pagamento = negativa
-        ? {
-            pix: Number(v.adiantamento_pix ?? 0),
-            dinheiro: Number(v.adiantamento_dinheiro ?? 0),
-            forma: inferirForma(
-              Number(v.adiantamento_pix ?? 0),
-              Number(v.adiantamento_dinheiro ?? 0)
-            ),
-          }
-        : resolverPixDinheiro({
-            forma: v.forma_pagamento,
-            pix: v.valor_pix,
-            dinheiro: v.valor_dinheiro,
-            valorReferencia: v.valor_pago,
+      if (negativa) {
+        const pPix = Number(v.adiantamento_pix ?? 0);
+        const pDin = Number(v.adiantamento_dinheiro ?? 0);
+        const recebido = -round2(pPix + pDin);
+        if (Math.abs(recebido) > 0.0001) {
+          somarPonto(porPonto, v.ponto_id, {
+            recebido,
+            pix: 0,
+            dinheiro: 0,
           });
+        }
+        continue;
+      }
 
-      if (Math.abs(valor) > 0.0001 || pagamento.pix > 0 || pagamento.dinheiro > 0) {
+      const pagamento = resolverPixDinheiro({
+        forma: v.forma_pagamento,
+        pix: v.valor_pix,
+        dinheiro: v.valor_dinheiro,
+        valorReferencia: v.valor_pago,
+      });
+      const recebido = round2(pagamento.pix + pagamento.dinheiro);
+      if (recebido > 0.0001) {
         somarPonto(porPonto, v.ponto_id, {
-          valor,
+          recebido,
           pix: pagamento.pix,
           dinheiro: pagamento.dinheiro,
         });
+        pix += pagamento.pix;
+        dinheiro += pagamento.dinheiro;
       }
-
-      pix += pagamento.pix;
-      dinheiro += pagamento.dinheiro;
     }
 
     for (const c of coletas ?? []) {
       if (!c.ponto_id) continue;
-      const valor = Number(c.lucro_real ?? c.valor_liquido ?? 0);
       const pagamento = resolverPixDinheiro({
         forma: c.forma_pagamento,
         pix: c.valor_pix,
         dinheiro: c.valor_dinheiro,
-        valorReferencia: c.valor_pago_recebido ?? valor,
+        valorReferencia: c.valor_pago_recebido,
       });
-
-      if (Math.abs(valor) > 0.0001 || pagamento.pix > 0 || pagamento.dinheiro > 0) {
+      const recebido = round2(pagamento.pix + pagamento.dinheiro);
+      if (recebido > 0.0001) {
         somarPonto(porPonto, c.ponto_id, {
-          valor,
+          recebido,
           pix: pagamento.pix,
           dinheiro: pagamento.dinheiro,
         });
+        pix += pagamento.pix;
+        dinheiro += pagamento.dinheiro;
       }
-
-      pix += pagamento.pix;
-      dinheiro += pagamento.dinheiro;
     }
 
     const porPontoObj: Record<string, RascunhoPontoDia> = {};

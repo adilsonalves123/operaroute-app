@@ -93,11 +93,9 @@ function montarTextoResumo(opts: {
     `*${opts.titulo || "Dashboard"} — OperaRoute*`,
     dataLabel(opts.dataISO),
     "",
-    `Total: *${formatCurrency(opts.total)}*`,
-    `Recebido (Pix + Dinheiro): *${formatCurrency(opts.pix + opts.dinheiro)}*`,
+    `Total recebido: *${formatCurrency(opts.total)}*`,
+    `Pix: ${formatCurrency(opts.pix)} · Dinheiro: ${formatCurrency(opts.dinheiro)}`,
     `Pontos: ${opts.preenchidos}`,
-    `Pix: ${formatCurrency(opts.pix)}`,
-    `Dinheiro: ${formatCurrency(opts.dinheiro)}`,
   ];
 
   if (opts.ranking.length) {
@@ -229,7 +227,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   const texto = montarTextoResumo({
     titulo: titulo.trim() || "Dashboard",
     dataISO: dataSelecionada,
-    total,
+    total: totalRecebido,
     preenchidos,
     pix,
     dinheiro,
@@ -294,8 +292,8 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                 Dashboard
               </h1>
               <p className="max-w-md text-[14px] leading-relaxed text-slate-400">
-                Escolha o dia — valores, Pix e Dinheiro entram das coletas.
-                Você pode editar qualquer número antes de fechar.
+                Escolha o dia — puxa quanto cada ponto mandou (Pix e Dinheiro).
+                Os totais batem: soma dos pontos = Pix + Dinheiro.
               </p>
 
               <label className="block space-y-2">
@@ -454,11 +452,11 @@ export function DashboardRascunhoClient({ pontos }: Props) {
               )}
             </section>
 
-            {/* Soma + Pix / Dinheiro — depois da lista, antes de salvar */}
+            {/* Totais — depois da lista, antes de salvar */}
             <section className="space-y-5 border-t border-white/[0.08] pt-8">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                  Soma do que você colocou
+                  Total recebido na rota
                 </p>
                 <p
                   className={cn(
@@ -469,12 +467,12 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                     fontFamily: "var(--font-rasc-display), Georgia, serif",
                   }}
                 >
-                  {formatCurrency(total)}
+                  {formatCurrency(totalRecebido)}
                 </p>
                 <p className="mt-2 text-[12px] text-slate-500">
                   {preenchidos === 0
                     ? "Nenhum valor ainda"
-                    : `${preenchidos} ponto${preenchidos === 1 ? "" : "s"} preenchido${preenchidos === 1 ? "" : "s"}`}
+                    : `${preenchidos} ponto${preenchidos === 1 ? "" : "s"} · soma dos pontos: ${formatCurrency(total)}`}
                 </p>
               </div>
 
@@ -508,23 +506,12 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                   />
                 </label>
               </div>
-
-              <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-3">
-                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                  Total recebido (Pix + Dinheiro)
+              {Math.abs(total - totalRecebido) > 0.05 && preenchidos > 0 ? (
+                <p className="text-[11px] text-amber-400/90">
+                  Pix + Dinheiro ({formatCurrency(totalRecebido)}) difere da soma
+                  dos pontos ({formatCurrency(total)}) — confira os valores.
                 </p>
-                <p
-                  className="mt-1 text-[1.5rem] tabular-nums leading-none text-[#f4efe6]"
-                  style={{
-                    fontFamily: "var(--font-rasc-display), Georgia, serif",
-                  }}
-                >
-                  {formatCurrency(totalRecebido)}
-                </p>
-                <p className="mt-1.5 text-[11px] text-slate-600">
-                  Calculado automaticamente a partir das coletas do dia
-                </p>
-              </div>
+              ) : null}
               {feedback ? (
                 <p className="text-[12px] text-rose-400">{feedback}</p>
               ) : null}
@@ -579,16 +566,16 @@ export function DashboardRascunhoClient({ pontos }: Props) {
 
             <section className="space-y-2">
               <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                Total da rota
+                Total recebido
               </p>
               <p
                 className={cn(
                   "text-[clamp(2.8rem,10vw,4rem)] font-normal leading-none tracking-tight tabular-nums",
-                  total < 0 ? "text-rose-300" : "text-[#f4efe6]"
+                  totalRecebido < 0 ? "text-rose-300" : "text-[#f4efe6]"
                 )}
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
-                {formatCurrency(total)}
+                {formatCurrency(totalRecebido)}
               </p>
               <p className="text-[13px] text-slate-500">
                 {preenchidos} ponto{preenchidos === 1 ? "" : "s"}
