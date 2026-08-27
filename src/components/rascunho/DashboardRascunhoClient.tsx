@@ -27,7 +27,7 @@ function montarTextoResumo(opts: {
   ranking: { nome: string; valor: number }[];
 }): string {
   const linhas = [
-    `*${opts.titulo || "Rascunho"} — OperaRoute*`,
+    `*${opts.titulo || "Dashboard"} — OperaRoute*`,
     "",
     `Total: *${formatCurrency(opts.total)}*`,
     `Pontos: ${opts.preenchidos}`,
@@ -46,7 +46,7 @@ function montarTextoResumo(opts: {
 /** Digita valores → Salvar → lista some e ficam só os números. */
 export function DashboardRascunhoClient({ pontos }: Props) {
   const [valores, setValores] = useState<Record<string, string>>({});
-  const [titulo, setTitulo] = useState("Rascunho");
+  const [titulo, setTitulo] = useState("Dashboard");
   const [salvo, setSalvo] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -96,10 +96,11 @@ export function DashboardRascunhoClient({ pontos }: Props) {
     }
     setFeedback(null);
     setSalvo(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   const texto = montarTextoResumo({
-    titulo: titulo.trim() || "Rascunho",
+    titulo: titulo.trim() || "Dashboard",
     total,
     preenchidos,
     ranking,
@@ -110,7 +111,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({
-          title: titulo.trim() || "Rascunho",
+          title: titulo.trim() || "Dashboard",
           text: texto,
         });
         return;
@@ -132,25 +133,21 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8 pb-12">
+    <div className={cn("mx-auto max-w-3xl space-y-8", !salvo && "pb-28")}>
       <header className="space-y-2">
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
-          Rascunho
-        </p>
         {salvo ? (
           <h1 className="text-2xl font-semibold tracking-tight text-white">
-            {titulo.trim() || "Rascunho"}
+            {titulo.trim() || "Dashboard"}
           </h1>
         ) : (
           <>
             <h1 className="text-2xl font-semibold tracking-tight text-white">
-              Rascunho
+              Dashboard
             </h1>
             <p className="text-[13px] leading-relaxed text-slate-500">
               Digite o valor na frente de cada ponto. Use{" "}
               <span className="text-slate-400">-</span> para negativo. Depois
-              toque em <span className="text-slate-300">Salvar</span> — a lista
-              some e ficam só os números.
+              toque em <span className="text-slate-300">Salvar</span>.
             </p>
             <input
               type="text"
@@ -192,72 +189,78 @@ export function DashboardRascunhoClient({ pontos }: Props) {
       </section>
 
       {!salvo ? (
-        <section className="space-y-3">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
-              Todos os pontos
-            </h2>
-            <button
-              type="button"
-              onClick={limpar}
-              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[12px] text-slate-400 transition hover:border-white/20 hover:text-slate-200"
-            >
-              <Eraser className="h-3.5 w-3.5" />
-              Limpar
-            </button>
+        <>
+          <section className="space-y-3">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+                Todos os pontos
+              </h2>
+              <button
+                type="button"
+                onClick={limpar}
+                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[12px] text-slate-400 transition hover:border-white/20 hover:text-slate-200"
+              >
+                <Eraser className="h-3.5 w-3.5" />
+                Limpar
+              </button>
+            </div>
+
+            {!lista.length ? (
+              <p className="text-[13px] text-slate-500">Nenhum ponto cadastrado.</p>
+            ) : (
+              <ul className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.06]">
+                {lista.map((p) => {
+                  const v = parseMoneyInput(valores[p.id] ?? "");
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex items-center gap-3 bg-white/[0.02] px-3 py-2.5"
+                    >
+                      <div className="relative w-[8.5rem] shrink-0">
+                        <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-slate-500">
+                          R$
+                        </span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          placeholder="0,00"
+                          value={valores[p.id] ?? ""}
+                          onChange={(e) => setValor(p.id, e.target.value)}
+                          className={cn(
+                            "w-full rounded-lg border border-white/10 bg-slate-950/60 py-2 pl-8 pr-2 text-right text-[13px] tabular-nums placeholder:text-slate-600",
+                            v < 0 ? "text-rose-300" : "text-white"
+                          )}
+                        />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[13px] text-slate-200">{p.nome}</p>
+                        {p.status !== "ativo" ? (
+                          <p className="text-[11px] capitalize text-slate-600">
+                            {p.status}
+                          </p>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {feedback ? <p className="text-[12px] text-rose-400">{feedback}</p> : null}
+          </section>
+
+          {/* Sempre visível — lista longa não esconde o Salvar */}
+          <div className="fixed inset-x-0 bottom-16 z-30 border-t border-white/10 bg-[#0a0e16]/95 px-4 py-3 backdrop-blur-md lg:bottom-0">
+            <div className="mx-auto flex max-w-3xl gap-2">
+              <button
+                type="button"
+                onClick={salvar}
+                className="flex flex-1 items-center justify-center rounded-xl bg-[#c4a574] px-4 py-3.5 text-[15px] font-semibold text-slate-950 transition hover:bg-[#d4b584]"
+              >
+                Salvar
+              </button>
+            </div>
           </div>
-
-          {!lista.length ? (
-            <p className="text-[13px] text-slate-500">Nenhum ponto cadastrado.</p>
-          ) : (
-            <ul className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.06]">
-              {lista.map((p) => {
-                const v = parseMoneyInput(valores[p.id] ?? "");
-                return (
-                  <li
-                    key={p.id}
-                    className="flex items-center gap-3 bg-white/[0.02] px-3 py-2.5"
-                  >
-                    <div className="relative w-[8.5rem] shrink-0">
-                      <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-slate-500">
-                        R$
-                      </span>
-                      <input
-                        type="text"
-                        inputMode="decimal"
-                        placeholder="0,00"
-                        value={valores[p.id] ?? ""}
-                        onChange={(e) => setValor(p.id, e.target.value)}
-                        className={cn(
-                          "w-full rounded-lg border border-white/10 bg-slate-950/60 py-2 pl-8 pr-2 text-right text-[13px] tabular-nums placeholder:text-slate-600",
-                          v < 0 ? "text-rose-300" : "text-white"
-                        )}
-                      />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-[13px] text-slate-200">{p.nome}</p>
-                      {p.status !== "ativo" ? (
-                        <p className="text-[11px] capitalize text-slate-600">
-                          {p.status}
-                        </p>
-                      ) : null}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          <button
-            type="button"
-            onClick={salvar}
-            disabled={preenchidos === 0}
-            className="flex w-full items-center justify-center rounded-xl bg-[#c4a574] px-4 py-3 text-[14px] font-semibold text-slate-950 transition hover:bg-[#d4b584] disabled:opacity-40"
-          >
-            Salvar
-          </button>
-          {feedback ? <p className="text-[12px] text-slate-400">{feedback}</p> : null}
-        </section>
+        </>
       ) : (
         <section className="space-y-4">
           <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
