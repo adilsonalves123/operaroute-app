@@ -84,6 +84,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       isOwner={acesso.isOwner}
       permissoes={acesso.permissoes}
       comissaoPercentual={acesso.comissaoPercentual}
+      rascunhoDashboardAtivo={Boolean(empresa?.rascunho_dashboard_ativo)}
     >
       <MobileMenuProvider>
         <AuditoriaSessaoBeacon />

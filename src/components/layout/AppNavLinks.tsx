@@ -114,11 +114,15 @@ export function AppNavLinks({
   onNavigate,
 }: Props) {
   const pathname = usePathname();
-  const { podeVer } = usePermissoes();
+  const { podeVer, rascunhoDashboardAtivo } = usePermissoes();
   const badgeCount =
     chamadosAbertos > 99 ? "99+" : chamadosAbertos > 0 ? String(chamadosAbertos) : null;
 
-  const main = APP_NAV_MAIN.filter((item) => podeVer(item.modulo));
+  const main = APP_NAV_MAIN.filter((item) => {
+    if (!podeVer(item.modulo)) return false;
+    if (item.href === "/rascunho" && !rascunhoDashboardAtivo) return false;
+    return true;
+  });
   const bottom = APP_NAV_BOTTOM.filter((item) => podeVer(item.modulo));
 
   function renderItem(item: AppNavItem) {

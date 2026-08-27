@@ -60,6 +60,8 @@ export interface Empresa {
   ciclo_cobranca?: "mensal" | "anual" | null;
   /** Chave Pix da operação — cobrança via WhatsApp. */
   chave_pix?: string | null;
+  /** Mostra menu Rascunho (valores manuais). Desligado por padrão. */
+  rascunho_dashboard_ativo?: boolean | null;
 }
 
 export interface EmpresaNicho {

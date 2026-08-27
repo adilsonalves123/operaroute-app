@@ -109,6 +109,7 @@ export const getEmpresa = cache(async (empresaId: string) => {
   let assinatura_vence_em: string | null = null;
   let ciclo_cobranca: Empresa["ciclo_cobranca"] = null;
   let chave_pix: string | null = null;
+  let rascunho_dashboard_ativo = false;
   try {
     const { data: extras, error: extrasErr } = await supabase
       .from("empresas")
@@ -151,6 +152,20 @@ export const getEmpresa = cache(async (empresaId: string) => {
     }
   }
 
+  // Coluna opcional (rascunho-dashboard.sql)
+  try {
+    const { data: rascRow, error: rascErr } = await supabase
+      .from("empresas")
+      .select("rascunho_dashboard_ativo")
+      .eq("id", empresaId)
+      .maybeSingle();
+    if (!rascErr && rascRow && typeof rascRow.rascunho_dashboard_ativo === "boolean") {
+      rascunho_dashboard_ativo = rascRow.rascunho_dashboard_ativo;
+    }
+  } catch {
+    rascunho_dashboard_ativo = false;
+  }
+
   // Fallback só retencao se select conjunto falhar por coluna pesquisa
   if (pesquisa_onboarding === null) {
     try {
@@ -179,6 +194,7 @@ export const getEmpresa = cache(async (empresaId: string) => {
     assinatura_vence_em,
     ciclo_cobranca,
     chave_pix,
+    rascunho_dashboard_ativo,
     nichos_ativos: nichos ?? [data.nicho, "outros"],
   };
 });

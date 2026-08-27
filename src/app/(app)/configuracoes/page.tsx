@@ -66,6 +66,8 @@ export default async function ConfiguracoesPage() {
       podeCancelar={podeCancelar}
       podeZerar={podeCancelar}
       temCassino={nichosAtivos.includes("maquinas_cassino")}
+      rascunhoDashboardAtivo={Boolean(empresa?.rascunho_dashboard_ativo)}
+      podeEditarRascunho={podeCancelar}
     />
   );
 }

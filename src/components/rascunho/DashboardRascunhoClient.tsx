@@ -27,7 +27,7 @@ function montarTextoResumo(opts: {
   ranking: { nome: string; valor: number }[];
 }): string {
   const linhas = [
-    "*Dashboard rascunho — OperaRoute*",
+    "*Rascunho — OperaRoute*",
     "(valores manuais · não grava no sistema)",
     "",
     `Total: *${formatCurrency(opts.total)}*`,
@@ -44,7 +44,7 @@ function montarTextoResumo(opts: {
   return linhas.join("\n");
 }
 
-/** Dashboard e resumo 100% manuais — some ao sair da página. */
+/** Valores manuais por ponto — some ao sair da página. */
 export function DashboardRascunhoClient({ pontos }: Props) {
   const [valores, setValores] = useState<Record<string, string>>({});
   const [titulo, setTitulo] = useState("Rascunho");
@@ -53,10 +53,8 @@ export function DashboardRascunhoClient({ pontos }: Props) {
 
   const lista = useMemo(
     () =>
-      [...pontos]
-        .filter((p) => p.status === "ativo" || valores[p.id])
-        .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
-    [pontos, valores]
+      [...pontos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+    [pontos]
   );
 
   const ranking = useMemo(() => {
@@ -66,7 +64,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
         nome: p.nome,
         valor: parseMoneyInput(valores[p.id] ?? ""),
       }))
-      .filter((r) => r.valor > 0.0001)
+      .filter((r) => Math.abs(r.valor) > 0.0001)
       .sort((a, b) => b.valor - a.valor);
   }, [lista, valores]);
 
@@ -78,7 +76,15 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   const media = preenchidos > 0 ? total / preenchidos : 0;
 
   function setValor(id: string, raw: string) {
-    setValores((prev) => ({ ...prev, [id]: raw }));
+    // Permite digitar "-" e números (ex.: -150,50)
+    const limpo = raw.replace(/[^\d,.\-]/g, "");
+    const partes = limpo.split("-");
+    const negativo = limpo.trimStart().startsWith("-");
+    const resto = partes.join("").replace(/-/g, "");
+    setValores((prev) => ({
+      ...prev,
+      [id]: negativo ? `-${resto}` : resto,
+    }));
   }
 
   function limpar() {
@@ -118,17 +124,18 @@ export function DashboardRascunhoClient({ pontos }: Props) {
           Rascunho · não grava
         </p>
         <h1 className="text-2xl font-semibold tracking-tight text-white">
-          Dashboard fake
+          {titulo.trim() || "Rascunho"}
         </h1>
         <p className="text-[13px] leading-relaxed text-slate-500">
-          Digite quanto cada ponto fez. O total e o resumo montam na hora. Ao
-          atualizar a página, tudo some — o dashboard real não muda.
+          Digite o valor na frente de cada ponto. Use{" "}
+          <span className="text-slate-400">-</span> na frente para negativo. O
+          total e o resumo montam na hora — ao atualizar a página, some.
         </p>
         <input
           type="text"
           value={titulo}
           onChange={(e) => setTitulo(e.target.value)}
-          placeholder="Título do rascunho (opcional)"
+          placeholder="Título (opcional)"
           className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-slate-600"
         />
       </header>
@@ -136,7 +143,12 @@ export function DashboardRascunhoClient({ pontos }: Props) {
       <section className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-4">
           <p className="text-[11px] uppercase tracking-wide text-slate-500">Total</p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-emerald-300">
+          <p
+            className={cn(
+              "mt-1 text-2xl font-semibold tabular-nums",
+              total < 0 ? "text-rose-300" : "text-emerald-300"
+            )}
+          >
             {formatCurrency(total)}
           </p>
         </div>
@@ -159,7 +171,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
       <section className="space-y-3">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
-            Valores manuais
+            Todos os pontos
           </h2>
           <button
             type="button"
@@ -172,32 +184,43 @@ export function DashboardRascunhoClient({ pontos }: Props) {
         </div>
 
         {!lista.length ? (
-          <p className="text-[13px] text-slate-500">Nenhum ponto ativo cadastrado.</p>
+          <p className="text-[13px] text-slate-500">Nenhum ponto cadastrado.</p>
         ) : (
           <ul className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.06]">
-            {lista.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center gap-3 bg-white/[0.02] px-3 py-2.5"
-              >
-                <span className="min-w-0 flex-1 truncate text-[13px] text-slate-200">
-                  {p.nome}
-                </span>
-                <div className="relative w-[8.5rem] shrink-0">
-                  <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-slate-500">
-                    R$
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0,00"
-                    value={valores[p.id] ?? ""}
-                    onChange={(e) => setValor(p.id, e.target.value)}
-                    className="w-full rounded-lg border border-white/10 bg-slate-950/60 py-2 pl-8 pr-2 text-right text-[13px] tabular-nums text-white placeholder:text-slate-600"
-                  />
-                </div>
-              </li>
-            ))}
+            {lista.map((p) => {
+              const v = parseMoneyInput(valores[p.id] ?? "");
+              return (
+                <li
+                  key={p.id}
+                  className="flex items-center gap-3 bg-white/[0.02] px-3 py-2.5"
+                >
+                  <div className="relative w-[8.5rem] shrink-0">
+                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-slate-500">
+                      R$
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="0,00"
+                      value={valores[p.id] ?? ""}
+                      onChange={(e) => setValor(p.id, e.target.value)}
+                      className={cn(
+                        "w-full rounded-lg border border-white/10 bg-slate-950/60 py-2 pl-8 pr-2 text-right text-[13px] tabular-nums placeholder:text-slate-600",
+                        v < 0 ? "text-rose-300" : "text-white"
+                      )}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[13px] text-slate-200">{p.nome}</p>
+                    {p.status !== "ativo" ? (
+                      <p className="text-[11px] capitalize text-slate-600">
+                        {p.status}
+                      </p>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -247,7 +270,12 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                       </span>
                       {r.nome}
                     </span>
-                    <span className="shrink-0 font-medium tabular-nums text-white">
+                    <span
+                      className={cn(
+                        "shrink-0 font-medium tabular-nums",
+                        r.valor < 0 ? "text-rose-300" : "text-white"
+                      )}
+                    >
                       {formatCurrency(r.valor)}
                     </span>
                   </li>

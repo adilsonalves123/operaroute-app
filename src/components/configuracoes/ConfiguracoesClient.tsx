@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import {
   Bell,
   Building2,
+  ClipboardPen,
   CreditCard,
   LifeBuoy,
   ShieldAlert,
@@ -29,6 +30,7 @@ import { CancelarAssinaturaCard } from "@/components/configuracoes/CancelarAssin
 import { ConfiguracoesContaCard } from "@/components/configuracoes/ConfiguracoesContaCard";
 import { ConfiguracoesAtalhosCard } from "@/components/configuracoes/ConfiguracoesAtalhosCard";
 import { PushNotificacoesCard } from "@/components/configuracoes/PushNotificacoesCard";
+import { ConfigRascunhoCard } from "@/components/configuracoes/ConfigRascunhoCard";
 import { ZerarDadosButton } from "@/components/configuracoes/ZerarDadosButton";
 import {
   ConfigHero,
@@ -52,6 +54,8 @@ type Props = {
   podeCancelar: boolean;
   podeZerar: boolean;
   temCassino: boolean;
+  rascunhoDashboardAtivo: boolean;
+  podeEditarRascunho: boolean;
 };
 
 export function ConfiguracoesClient(props: Props) {
@@ -94,6 +98,7 @@ export function ConfiguracoesClient(props: Props) {
     { id: "conta", label: "Conta" },
     { id: "alertas", label: "Alertas" },
     { id: "atalhos", label: "Atalhos" },
+    { id: "rascunho", label: "Rascunho" },
   ];
   if (props.temCassino) navItems.push({ id: "cassino", label: "Cassino" });
   if (props.podeZerar) navItems.push({ id: "perigo", label: "Zona crítica" });
@@ -207,6 +212,19 @@ export function ConfiguracoesClient(props: Props) {
         icon={Users}
       >
         <ConfiguracoesAtalhosCard embedded />
+      </ConfigSection>
+
+      <ConfigSection
+        id="rascunho"
+        title="Rascunho"
+        description="Tela opcional para digitar valores dos pontos e montar um resumo na hora."
+        icon={ClipboardPen}
+      >
+        <ConfigRascunhoCard
+          ativo={props.rascunhoDashboardAtivo}
+          podeEditar={props.podeEditarRascunho}
+          embedded
+        />
       </ConfigSection>
 
       {props.temCassino && (
