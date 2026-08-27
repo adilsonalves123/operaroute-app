@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Instrument_Serif, Outfit } from "next/font/google";
-import { Eraser, MessageCircle, Pencil, Share2 } from "lucide-react";
+import { CalendarDays, Eraser, Loader2, MessageCircle, Pencil, Share2 } from "lucide-react";
 import { whatsAppUrlRota } from "@/lib/rotas/whatsapp-rota";
 import { cn, formatCurrency, parseMoneyInput } from "@/lib/utils";
 
@@ -27,12 +27,37 @@ type Props = {
   pontos: PontoRascunho[];
 };
 
-function hojeLabel(): string {
-  return new Date().toLocaleDateString("pt-BR", {
+function hojeISO(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function dataLabel(iso: string): string {
+  const d = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(d.getTime())) {
+    return new Date().toLocaleDateString("pt-BR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+  }
+  return d.toLocaleDateString("pt-BR", {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
+}
+
+function numberToMoneyInput(n: number): string {
+  if (!Number.isFinite(n) || Math.abs(n) < 0.0001) return "";
+  const formatted = new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Math.abs(n));
+  return n < 0 ? `-${formatted}` : formatted;
 }
 
 function sanitizarMoney(raw: string): string {
@@ -44,6 +69,7 @@ function sanitizarMoney(raw: string): string {
 
 function montarTextoResumo(opts: {
   titulo: string;
+  dataISO: string;
   total: number;
   preenchidos: number;
   pix: number;
@@ -52,7 +78,7 @@ function montarTextoResumo(opts: {
 }): string {
   const linhas = [
     `*${opts.titulo || "Dashboard"} — OperaRoute*`,
-    hojeLabel(),
+    dataLabel(opts.dataISO),
     "",
     `Total: *${formatCurrency(opts.total)}*`,
     `Pontos: ${opts.preenchidos}`,
@@ -72,12 +98,52 @@ function montarTextoResumo(opts: {
 
 /** Digita valores → Salvar → lista some e ficam só os números. */
 export function DashboardRascunhoClient({ pontos }: Props) {
+  const [dataSelecionada, setDataSelecionada] = useState(hojeISO);
   const [valores, setValores] = useState<Record<string, string>>({});
   const [pixStr, setPixStr] = useState("");
   const [dinheiroStr, setDinheiroStr] = useState("");
   const [titulo, setTitulo] = useState("Dashboard");
   const [salvo, setSalvo] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [carregandoDia, setCarregandoDia] = useState(false);
+  const [puxouDia, setPuxouDia] = useState(false);
+
+  const puxarDia = useCallback(async (dataISO: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataISO)) return;
+    setCarregandoDia(true);
+    setFeedback(null);
+    try {
+      const res = await fetch(`/api/rascunho/dia?data=${encodeURIComponent(dataISO)}`);
+      const body = (await res.json()) as {
+        error?: string;
+        porPonto?: Record<string, number>;
+        pix?: number;
+        dinheiro?: number;
+      };
+      if (!res.ok) {
+        setFeedback(body.error ?? "Não foi possível carregar o dia.");
+        return;
+      }
+
+      const nextValores: Record<string, string> = {};
+      for (const [pontoId, valor] of Object.entries(body.porPonto ?? {})) {
+        nextValores[pontoId] = numberToMoneyInput(valor);
+      }
+      setValores(nextValores);
+      setPixStr(numberToMoneyInput(body.pix ?? 0));
+      setDinheiroStr(numberToMoneyInput(body.dinheiro ?? 0));
+      setPuxouDia(Object.keys(body.porPonto ?? {}).length > 0);
+      setSalvo(false);
+    } catch {
+      setFeedback("Não foi possível carregar o dia.");
+    } finally {
+      setCarregandoDia(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void puxarDia(dataSelecionada);
+  }, [dataSelecionada, puxarDia]);
 
   const lista = useMemo(
     () => [...pontos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
@@ -118,6 +184,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
     setDinheiroStr("");
     setSalvo(false);
     setFeedback(null);
+    setPuxouDia(false);
   }
 
   function salvar() {
@@ -132,6 +199,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
 
   const texto = montarTextoResumo({
     titulo: titulo.trim() || "Dashboard",
+    dataISO: dataSelecionada,
     total,
     preenchidos,
     pix,
@@ -197,12 +265,58 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                 Dashboard
               </h1>
               <p className="max-w-md text-[14px] leading-relaxed text-slate-400">
-                Folha da rota: anote o valor de cada ponto. Use{" "}
-                <span className="text-slate-300">-</span> se for negativo. Ao
-                salvar, a lista some — fica o fechamento.
+                Escolha o dia no calendário — os valores das coletas entram
+                automaticamente. Você pode editar qualquer número antes de fechar.
               </p>
+
+              <label className="block space-y-2">
+                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  Dia da rota
+                </span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="relative">
+                    <CalendarDays className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#c4a574]/80" />
+                    <input
+                      type="date"
+                      value={dataSelecionada}
+                      onChange={(e) => {
+                        if (e.target.value) setDataSelecionada(e.target.value);
+                      }}
+                      className="w-full min-w-[11rem] border-0 border-b border-white/15 bg-transparent py-2 pl-6 pr-1 text-[15px] text-[#f4efe6] [color-scheme:dark] focus:border-[#c4a574]/50 focus:outline-none"
+                    />
+                  </div>
+                  {carregandoDia ? (
+                    <span className="inline-flex items-center gap-1.5 text-[12px] text-slate-500">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Carregando…
+                    </span>
+                  ) : (
+                    <>
+                      {puxouDia ? (
+                        <span className="text-[12px] text-[#c4a574]/90">
+                          Coletas do dia importadas
+                        </span>
+                      ) : (
+                        <span className="text-[12px] text-slate-600">
+                          Nenhuma coleta neste dia
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => void puxarDia(dataSelecionada)}
+                        className="text-[12px] text-slate-500 underline-offset-2 transition hover:text-slate-300 hover:underline"
+                      >
+                        Atualizar
+                      </button>
+                    </>
+                  )}
+                </div>
+              </label>
+
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-white/[0.08] pt-4 text-[12px] text-slate-500">
-                <span className="capitalize text-slate-400">{hojeLabel()}</span>
+                <span className="capitalize text-slate-400">
+                  {dataLabel(dataSelecionada)}
+                </span>
                 <span className="text-slate-700">·</span>
                 <span>
                   {lista.length} ponto{lista.length === 1 ? "" : "s"} na folha
@@ -390,7 +504,9 @@ export function DashboardRascunhoClient({ pontos }: Props) {
               >
                 {titulo.trim() || "Dashboard"}
               </h1>
-              <p className="capitalize text-[13px] text-slate-500">{hojeLabel()}</p>
+              <p className="capitalize text-[13px] text-slate-500">
+                {dataLabel(dataSelecionada)}
+              </p>
               <div
                 className="h-px w-full origin-left bg-gradient-to-r from-[#c4a574]/55 via-white/10 to-transparent"
                 style={{ animation: "dashLine 0.9s 0.15s ease-out both" }}
