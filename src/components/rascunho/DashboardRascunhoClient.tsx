@@ -23,6 +23,19 @@ export type PontoRascunho = {
   status: string;
 };
 
+type PontoMetaRascunho = {
+  pix: number;
+  dinheiro: number;
+  forma: "pix" | "dinheiro" | "misto" | null;
+};
+
+function formaLabel(forma: PontoMetaRascunho["forma"]): string {
+  if (forma === "pix") return "Pix";
+  if (forma === "dinheiro") return "Dinheiro";
+  if (forma === "misto") return "Pix + Dinheiro";
+  return "";
+}
+
 type Props = {
   pontos: PontoRascunho[];
 };
@@ -74,13 +87,14 @@ function montarTextoResumo(opts: {
   preenchidos: number;
   pix: number;
   dinheiro: number;
-  ranking: { nome: string; valor: number }[];
+  ranking: { nome: string; valor: number; forma?: string }[];
 }): string {
   const linhas = [
     `*${opts.titulo || "Dashboard"} — OperaRoute*`,
     dataLabel(opts.dataISO),
     "",
     `Total: *${formatCurrency(opts.total)}*`,
+    `Recebido (Pix + Dinheiro): *${formatCurrency(opts.pix + opts.dinheiro)}*`,
     `Pontos: ${opts.preenchidos}`,
     `Pix: ${formatCurrency(opts.pix)}`,
     `Dinheiro: ${formatCurrency(opts.dinheiro)}`,
@@ -89,7 +103,8 @@ function montarTextoResumo(opts: {
   if (opts.ranking.length) {
     linhas.push("", "*Pontos:*");
     opts.ranking.forEach((r, i) => {
-      linhas.push(`${i + 1}. ${r.nome}: ${formatCurrency(r.valor)}`);
+      const forma = r.forma ? ` · ${r.forma}` : "";
+      linhas.push(`${i + 1}. ${r.nome}: ${formatCurrency(r.valor)}${forma}`);
     });
   }
 
@@ -100,6 +115,7 @@ function montarTextoResumo(opts: {
 export function DashboardRascunhoClient({ pontos }: Props) {
   const [dataSelecionada, setDataSelecionada] = useState(hojeISO);
   const [valores, setValores] = useState<Record<string, string>>({});
+  const [metaPorPonto, setMetaPorPonto] = useState<Record<string, PontoMetaRascunho>>({});
   const [pixStr, setPixStr] = useState("");
   const [dinheiroStr, setDinheiroStr] = useState("");
   const [titulo, setTitulo] = useState("Dashboard");
@@ -116,7 +132,10 @@ export function DashboardRascunhoClient({ pontos }: Props) {
       const res = await fetch(`/api/rascunho/dia?data=${encodeURIComponent(dataISO)}`);
       const body = (await res.json()) as {
         error?: string;
-        porPonto?: Record<string, number>;
+        porPonto?: Record<
+          string,
+          { valor: number; pix: number; dinheiro: number; forma: PontoMetaRascunho["forma"] }
+        >;
         pix?: number;
         dinheiro?: number;
       };
@@ -126,10 +145,17 @@ export function DashboardRascunhoClient({ pontos }: Props) {
       }
 
       const nextValores: Record<string, string> = {};
-      for (const [pontoId, valor] of Object.entries(body.porPonto ?? {})) {
-        nextValores[pontoId] = numberToMoneyInput(valor);
+      const nextMeta: Record<string, PontoMetaRascunho> = {};
+      for (const [pontoId, item] of Object.entries(body.porPonto ?? {})) {
+        nextValores[pontoId] = numberToMoneyInput(item.valor);
+        nextMeta[pontoId] = {
+          pix: item.pix,
+          dinheiro: item.dinheiro,
+          forma: item.forma,
+        };
       }
       setValores(nextValores);
+      setMetaPorPonto(nextMeta);
       setPixStr(numberToMoneyInput(body.pix ?? 0));
       setDinheiroStr(numberToMoneyInput(body.dinheiro ?? 0));
       setPuxouDia(Object.keys(body.porPonto ?? {}).length > 0);
@@ -156,10 +182,11 @@ export function DashboardRascunhoClient({ pontos }: Props) {
         id: p.id,
         nome: p.nome,
         valor: parseMoneyInput(valores[p.id] ?? ""),
+        forma: formaLabel(metaPorPonto[p.id]?.forma ?? null),
       }))
       .filter((r) => Math.abs(r.valor) > 0.0001)
       .sort((a, b) => b.valor - a.valor);
-  }, [lista, valores]);
+  }, [lista, valores, metaPorPonto]);
 
   const total = useMemo(
     () => ranking.reduce((s, r) => s + r.valor, 0),
@@ -170,6 +197,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   const maxAbs = Math.max(...ranking.map((r) => Math.abs(r.valor)), 1);
   const pix = parseMoneyInput(pixStr);
   const dinheiro = parseMoneyInput(dinheiroStr);
+  const totalRecebido = pix + dinheiro;
 
   function setValor(id: string, raw: string) {
     setValores((prev) => ({
@@ -180,6 +208,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
 
   function limpar() {
     setValores({});
+    setMetaPorPonto({});
     setPixStr("");
     setDinheiroStr("");
     setSalvo(false);
@@ -265,8 +294,8 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                 Dashboard
               </h1>
               <p className="max-w-md text-[14px] leading-relaxed text-slate-400">
-                Escolha o dia no calendário — os valores das coletas entram
-                automaticamente. Você pode editar qualquer número antes de fechar.
+                Escolha o dia — valores, Pix e Dinheiro entram das coletas.
+                Você pode editar qualquer número antes de fechar.
               </p>
 
               <label className="block space-y-2">
@@ -358,6 +387,8 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                   {lista.map((p, idx) => {
                     const v = parseMoneyInput(valores[p.id] ?? "");
                     const preenchido = Math.abs(v) > 0.0001;
+                    const meta = metaPorPonto[p.id];
+                    const forma = formaLabel(meta?.forma ?? null);
                     return (
                       <li key={p.id} className="relative pb-5 last:pb-0">
                         <span
@@ -393,11 +424,27 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                             <p className="truncate text-[14px] text-slate-200">
                               {p.nome}
                             </p>
-                            {p.status !== "ativo" ? (
-                              <p className="text-[11px] capitalize text-slate-600">
-                                {p.status}
-                              </p>
-                            ) : null}
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                              {p.status !== "ativo" ? (
+                                <p className="text-[11px] capitalize text-slate-600">
+                                  {p.status}
+                                </p>
+                              ) : null}
+                              {forma ? (
+                                <p
+                                  className={cn(
+                                    "text-[10px] font-medium uppercase tracking-[0.14em]",
+                                    meta?.forma === "pix"
+                                      ? "text-emerald-400/85"
+                                      : meta?.forma === "dinheiro"
+                                        ? "text-amber-300/85"
+                                        : "text-sky-300/85"
+                                  )}
+                                >
+                                  {forma}
+                                </p>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                       </li>
@@ -460,6 +507,23 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                     className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[#f4efe6] placeholder:text-slate-700 focus:border-[#c4a574]/50 focus:outline-none"
                   />
                 </label>
+              </div>
+
+              <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+                <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  Total recebido (Pix + Dinheiro)
+                </p>
+                <p
+                  className="mt-1 text-[1.5rem] tabular-nums leading-none text-[#f4efe6]"
+                  style={{
+                    fontFamily: "var(--font-rasc-display), Georgia, serif",
+                  }}
+                >
+                  {formatCurrency(totalRecebido)}
+                </p>
+                <p className="mt-1.5 text-[11px] text-slate-600">
+                  Calculado automaticamente a partir das coletas do dia
+                </p>
               </div>
               {feedback ? (
                 <p className="text-[12px] text-rose-400">{feedback}</p>
@@ -540,7 +604,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
               </p>
             </section>
 
-            <section className="grid gap-6 border-y border-white/[0.08] py-6 sm:grid-cols-2">
+            <section className="grid gap-6 border-y border-white/[0.08] py-6 sm:grid-cols-3">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
                   Pix
@@ -567,6 +631,19 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                   {formatCurrency(dinheiro)}
                 </p>
               </div>
+              <div className="sm:col-span-1">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                  Recebido
+                </p>
+                <p
+                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[#c4a574]"
+                  style={{
+                    fontFamily: "var(--font-rasc-display), Georgia, serif",
+                  }}
+                >
+                  {formatCurrency(totalRecebido)}
+                </p>
+              </div>
             </section>
 
             <section className="space-y-5">
@@ -584,6 +661,11 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                             {String(i + 1).padStart(2, "0")}
                           </span>
                           {r.nome}
+                          {r.forma ? (
+                            <span className="ml-2 text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                              {r.forma}
+                            </span>
+                          ) : null}
                         </p>
                         <p
                           className={cn(
