@@ -217,7 +217,7 @@ export function ConfiguracoesClient(props: Props) {
       <ConfigSection
         id="rascunho"
         title="Rascunho"
-        description="Tela opcional para digitar valores dos pontos e montar um resumo na hora."
+        description="Tela opcional para digitar valores dos pontos e ver o resumo."
         icon={ClipboardPen}
       >
         <ConfigRascunhoCard

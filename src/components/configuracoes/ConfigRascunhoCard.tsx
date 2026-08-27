@@ -55,8 +55,8 @@ export function ConfigRascunhoCard({ ativo, podeEditar, embedded }: Props) {
             <p className="text-[14px] font-medium text-white">Menu Rascunho</p>
           </div>
           <p className="text-[13px] leading-relaxed text-slate-500">
-            Mostra no menu uma tela para digitar valores dos pontos e montar um
-            resumo na hora. Não grava no sistema e some ao atualizar a página.
+            Mostra no menu a tela Rascunho: digite os valores dos pontos, salve e
+            veja só o resumo com os números.
           </p>
         </div>
         <button

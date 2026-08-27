@@ -2,10 +2,9 @@
 
 import { useMemo, useState } from "react";
 import {
-  ChevronDown,
-  ChevronUp,
   Eraser,
   MessageCircle,
+  Pencil,
   Share2,
 } from "lucide-react";
 import { whatsAppUrlRota } from "@/lib/rotas/whatsapp-rota";
@@ -22,20 +21,20 @@ type Props = {
 };
 
 function montarTextoResumo(opts: {
+  titulo: string;
   total: number;
   preenchidos: number;
   ranking: { nome: string; valor: number }[];
 }): string {
   const linhas = [
-    "*Rascunho — OperaRoute*",
-    "(valores manuais · não grava no sistema)",
+    `*${opts.titulo || "Rascunho"} — OperaRoute*`,
     "",
     `Total: *${formatCurrency(opts.total)}*`,
-    `Pontos com valor: ${opts.preenchidos}`,
+    `Pontos: ${opts.preenchidos}`,
   ];
 
   if (opts.ranking.length) {
-    linhas.push("", "*Resumo dos pontos:*");
+    linhas.push("", "*Pontos:*");
     opts.ranking.forEach((r, i) => {
       linhas.push(`${i + 1}. ${r.nome}: ${formatCurrency(r.valor)}`);
     });
@@ -44,16 +43,15 @@ function montarTextoResumo(opts: {
   return linhas.join("\n");
 }
 
-/** Valores manuais por ponto — some ao sair da página. */
+/** Digita valores → Salvar → lista some e ficam só os números. */
 export function DashboardRascunhoClient({ pontos }: Props) {
   const [valores, setValores] = useState<Record<string, string>>({});
   const [titulo, setTitulo] = useState("Rascunho");
-  const [resumoAberto, setResumoAberto] = useState(true);
+  const [salvo, setSalvo] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
   const lista = useMemo(
-    () =>
-      [...pontos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+    () => [...pontos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
     [pontos]
   );
 
@@ -76,11 +74,9 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   const media = preenchidos > 0 ? total / preenchidos : 0;
 
   function setValor(id: string, raw: string) {
-    // Permite digitar "-" e números (ex.: -150,50)
     const limpo = raw.replace(/[^\d,.\-]/g, "");
-    const partes = limpo.split("-");
     const negativo = limpo.trimStart().startsWith("-");
-    const resto = partes.join("").replace(/-/g, "");
+    const resto = limpo.split("-").join("").replace(/-/g, "");
     setValores((prev) => ({
       ...prev,
       [id]: negativo ? `-${resto}` : resto,
@@ -89,16 +85,34 @@ export function DashboardRascunhoClient({ pontos }: Props) {
 
   function limpar() {
     setValores({});
+    setSalvo(false);
     setFeedback(null);
   }
 
-  const texto = montarTextoResumo({ total, preenchidos, ranking });
+  function salvar() {
+    if (preenchidos === 0) {
+      setFeedback("Preencha pelo menos um valor.");
+      return;
+    }
+    setFeedback(null);
+    setSalvo(true);
+  }
+
+  const texto = montarTextoResumo({
+    titulo: titulo.trim() || "Rascunho",
+    total,
+    preenchidos,
+    ranking,
+  });
 
   async function compartilhar() {
     setFeedback(null);
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({ title: titulo || "Rascunho", text: texto });
+        await navigator.share({
+          title: titulo.trim() || "Rascunho",
+          text: texto,
+        });
         return;
       }
       if (navigator.clipboard?.writeText) {
@@ -120,24 +134,33 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   return (
     <div className="mx-auto max-w-3xl space-y-8 pb-12">
       <header className="space-y-2">
-        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-amber-400/90">
-          Rascunho · não grava
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+          Rascunho
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">
-          {titulo.trim() || "Rascunho"}
-        </h1>
-        <p className="text-[13px] leading-relaxed text-slate-500">
-          Digite o valor na frente de cada ponto. Use{" "}
-          <span className="text-slate-400">-</span> na frente para negativo. O
-          total e o resumo montam na hora — ao atualizar a página, some.
-        </p>
-        <input
-          type="text"
-          value={titulo}
-          onChange={(e) => setTitulo(e.target.value)}
-          placeholder="Título (opcional)"
-          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-slate-600"
-        />
+        {salvo ? (
+          <h1 className="text-2xl font-semibold tracking-tight text-white">
+            {titulo.trim() || "Rascunho"}
+          </h1>
+        ) : (
+          <>
+            <h1 className="text-2xl font-semibold tracking-tight text-white">
+              Rascunho
+            </h1>
+            <p className="text-[13px] leading-relaxed text-slate-500">
+              Digite o valor na frente de cada ponto. Use{" "}
+              <span className="text-slate-400">-</span> para negativo. Depois
+              toque em <span className="text-slate-300">Salvar</span> — a lista
+              some e ficam só os números.
+            </p>
+            <input
+              type="text"
+              value={titulo}
+              onChange={(e) => setTitulo(e.target.value)}
+              placeholder="Título (opcional)"
+              className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-slate-600"
+            />
+          </>
+        )}
       </header>
 
       <section className="grid gap-3 sm:grid-cols-3">
@@ -154,7 +177,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
         </div>
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-4">
           <p className="text-[11px] uppercase tracking-wide text-slate-500">
-            Pontos com valor
+            Pontos
           </p>
           <p className="mt-1 text-2xl font-semibold tabular-nums text-white">
             {preenchidos}
@@ -168,145 +191,151 @@ export function DashboardRascunhoClient({ pontos }: Props) {
         </div>
       </section>
 
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
-            Todos os pontos
-          </h2>
+      {!salvo ? (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+              Todos os pontos
+            </h2>
+            <button
+              type="button"
+              onClick={limpar}
+              className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[12px] text-slate-400 transition hover:border-white/20 hover:text-slate-200"
+            >
+              <Eraser className="h-3.5 w-3.5" />
+              Limpar
+            </button>
+          </div>
+
+          {!lista.length ? (
+            <p className="text-[13px] text-slate-500">Nenhum ponto cadastrado.</p>
+          ) : (
+            <ul className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.06]">
+              {lista.map((p) => {
+                const v = parseMoneyInput(valores[p.id] ?? "");
+                return (
+                  <li
+                    key={p.id}
+                    className="flex items-center gap-3 bg-white/[0.02] px-3 py-2.5"
+                  >
+                    <div className="relative w-[8.5rem] shrink-0">
+                      <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-slate-500">
+                        R$
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        placeholder="0,00"
+                        value={valores[p.id] ?? ""}
+                        onChange={(e) => setValor(p.id, e.target.value)}
+                        className={cn(
+                          "w-full rounded-lg border border-white/10 bg-slate-950/60 py-2 pl-8 pr-2 text-right text-[13px] tabular-nums placeholder:text-slate-600",
+                          v < 0 ? "text-rose-300" : "text-white"
+                        )}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-[13px] text-slate-200">{p.nome}</p>
+                      {p.status !== "ativo" ? (
+                        <p className="text-[11px] capitalize text-slate-600">
+                          {p.status}
+                        </p>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
           <button
             type="button"
-            onClick={limpar}
-            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[12px] text-slate-400 transition hover:border-white/20 hover:text-slate-200"
+            onClick={salvar}
+            disabled={preenchidos === 0}
+            className="flex w-full items-center justify-center rounded-xl bg-[#c4a574] px-4 py-3 text-[14px] font-semibold text-slate-950 transition hover:bg-[#d4b584] disabled:opacity-40"
           >
-            <Eraser className="h-3.5 w-3.5" />
-            Limpar
+            Salvar
           </button>
-        </div>
-
-        {!lista.length ? (
-          <p className="text-[13px] text-slate-500">Nenhum ponto cadastrado.</p>
-        ) : (
-          <ul className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.06]">
-            {lista.map((p) => {
-              const v = parseMoneyInput(valores[p.id] ?? "");
-              return (
+          {feedback ? <p className="text-[12px] text-slate-400">{feedback}</p> : null}
+        </section>
+      ) : (
+        <section className="space-y-4">
+          <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+            <div className="border-b border-white/[0.06] px-4 py-3">
+              <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+                Resumo
+              </h2>
+            </div>
+            <ol className="divide-y divide-white/[0.06]">
+              {ranking.map((r, i) => (
                 <li
-                  key={p.id}
-                  className="flex items-center gap-3 bg-white/[0.02] px-3 py-2.5"
+                  key={r.id}
+                  className="flex items-center justify-between gap-3 px-4 py-3 text-[14px]"
                 >
-                  <div className="relative w-[8.5rem] shrink-0">
-                    <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-slate-500">
-                      R$
-                    </span>
-                    <input
-                      type="text"
-                      inputMode="decimal"
-                      placeholder="0,00"
-                      value={valores[p.id] ?? ""}
-                      onChange={(e) => setValor(p.id, e.target.value)}
-                      className={cn(
-                        "w-full rounded-lg border border-white/10 bg-slate-950/60 py-2 pl-8 pr-2 text-right text-[13px] tabular-nums placeholder:text-slate-600",
-                        v < 0 ? "text-rose-300" : "text-white"
-                      )}
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] text-slate-200">{p.nome}</p>
-                    {p.status !== "ativo" ? (
-                      <p className="text-[11px] capitalize text-slate-600">
-                        {p.status}
-                      </p>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <section className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
-        <button
-          type="button"
-          onClick={() => setResumoAberto((v) => !v)}
-          className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
-        >
-          <div>
-            <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
-              Resumo dos pontos
-            </h2>
-            <p className="mt-1 text-[13px] text-slate-400">
-              {preenchidos === 0
-                ? "Preencha os valores acima"
-                : `${preenchidos} ponto${preenchidos === 1 ? "" : "s"} · ${formatCurrency(total)}`}
-            </p>
-          </div>
-          {resumoAberto ? (
-            <ChevronUp className="h-4 w-4 text-slate-500" />
-          ) : (
-            <ChevronDown className="h-4 w-4 text-slate-500" />
-          )}
-        </button>
-
-        {resumoAberto ? (
-          <div className="space-y-4 border-t border-white/[0.06] px-4 pb-4 pt-3">
-            {ranking.length === 0 ? (
-              <p className="text-[13px] text-slate-500">Nenhum valor ainda.</p>
-            ) : (
-              <ol className="space-y-2">
-                {ranking.map((r, i) => (
-                  <li
-                    key={r.id}
-                    className="flex items-center justify-between gap-3 text-[13px]"
-                  >
-                    <span className="min-w-0 truncate text-slate-300">
-                      <span
-                        className={cn(
-                          "mr-2 inline-block w-5 tabular-nums",
-                          i === 0 ? "text-amber-300" : "text-slate-600"
-                        )}
-                      >
-                        {i + 1}.
-                      </span>
-                      {r.nome}
-                    </span>
+                  <span className="min-w-0 truncate text-slate-300">
                     <span
                       className={cn(
-                        "shrink-0 font-medium tabular-nums",
-                        r.valor < 0 ? "text-rose-300" : "text-white"
+                        "mr-2 inline-block w-5 tabular-nums",
+                        i === 0 ? "text-amber-300" : "text-slate-600"
                       )}
                     >
-                      {formatCurrency(r.valor)}
+                      {i + 1}.
                     </span>
-                  </li>
-                ))}
-              </ol>
-            )}
-
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={enviarWhatsApp}
-                disabled={preenchidos === 0}
-                className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-[13px] font-medium text-emerald-200 transition hover:bg-emerald-500/15 disabled:opacity-40"
-              >
-                <MessageCircle className="h-3.5 w-3.5" />
-                WhatsApp
-              </button>
-              <button
-                type="button"
-                onClick={() => void compartilhar()}
-                disabled={preenchidos === 0}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-[13px] font-medium text-slate-200 transition hover:bg-white/[0.08] disabled:opacity-40"
-              >
-                <Share2 className="h-3.5 w-3.5" />
-                Compartilhar
-              </button>
-            </div>
-            {feedback ? <p className="text-[12px] text-slate-400">{feedback}</p> : null}
+                    {r.nome}
+                  </span>
+                  <span
+                    className={cn(
+                      "shrink-0 font-semibold tabular-nums",
+                      r.valor < 0 ? "text-rose-300" : "text-white"
+                    )}
+                  >
+                    {formatCurrency(r.valor)}
+                  </span>
+                </li>
+              ))}
+            </ol>
           </div>
-        ) : null}
-      </section>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={enviarWhatsApp}
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-[13px] font-medium text-emerald-200 transition hover:bg-emerald-500/15"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              WhatsApp
+            </button>
+            <button
+              type="button"
+              onClick={() => void compartilhar()}
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-[13px] font-medium text-slate-200 transition hover:bg-white/[0.08]"
+            >
+              <Share2 className="h-3.5 w-3.5" />
+              Compartilhar
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setSalvo(false);
+                setFeedback(null);
+              }}
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-[13px] font-medium text-slate-200 transition hover:bg-white/[0.08]"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Editar
+            </button>
+            <button
+              type="button"
+              onClick={limpar}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 px-3.5 py-2 text-[13px] text-slate-400 transition hover:border-white/20 hover:text-slate-200"
+            >
+              <Eraser className="h-3.5 w-3.5" />
+              Limpar
+            </button>
+          </div>
+          {feedback ? <p className="text-[12px] text-slate-400">{feedback}</p> : null}
+        </section>
+      )}
     </div>
   );
 }
