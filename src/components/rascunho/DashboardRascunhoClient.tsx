@@ -35,10 +35,19 @@ function hojeLabel(): string {
   });
 }
 
+function sanitizarMoney(raw: string): string {
+  const limpo = raw.replace(/[^\d,.\-]/g, "");
+  const negativo = limpo.trimStart().startsWith("-");
+  const resto = limpo.split("-").join("").replace(/-/g, "");
+  return negativo ? `-${resto}` : resto;
+}
+
 function montarTextoResumo(opts: {
   titulo: string;
   total: number;
   preenchidos: number;
+  pix: number;
+  dinheiro: number;
   ranking: { nome: string; valor: number }[];
 }): string {
   const linhas = [
@@ -47,6 +56,8 @@ function montarTextoResumo(opts: {
     "",
     `Total: *${formatCurrency(opts.total)}*`,
     `Pontos: ${opts.preenchidos}`,
+    `Pix: ${formatCurrency(opts.pix)}`,
+    `Dinheiro: ${formatCurrency(opts.dinheiro)}`,
   ];
 
   if (opts.ranking.length) {
@@ -62,6 +73,8 @@ function montarTextoResumo(opts: {
 /** Digita valores → Salvar → lista some e ficam só os números. */
 export function DashboardRascunhoClient({ pontos }: Props) {
   const [valores, setValores] = useState<Record<string, string>>({});
+  const [pixStr, setPixStr] = useState("");
+  const [dinheiroStr, setDinheiroStr] = useState("");
   const [titulo, setTitulo] = useState("Dashboard");
   const [salvo, setSalvo] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
@@ -89,19 +102,20 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   const preenchidos = ranking.length;
   const media = preenchidos > 0 ? total / preenchidos : 0;
   const maxAbs = Math.max(...ranking.map((r) => Math.abs(r.valor)), 1);
+  const pix = parseMoneyInput(pixStr);
+  const dinheiro = parseMoneyInput(dinheiroStr);
 
   function setValor(id: string, raw: string) {
-    const limpo = raw.replace(/[^\d,.\-]/g, "");
-    const negativo = limpo.trimStart().startsWith("-");
-    const resto = limpo.split("-").join("").replace(/-/g, "");
     setValores((prev) => ({
       ...prev,
-      [id]: negativo ? `-${resto}` : resto,
+      [id]: sanitizarMoney(raw),
     }));
   }
 
   function limpar() {
     setValores({});
+    setPixStr("");
+    setDinheiroStr("");
     setSalvo(false);
     setFeedback(null);
   }
@@ -120,6 +134,8 @@ export function DashboardRascunhoClient({ pontos }: Props) {
     titulo: titulo.trim() || "Dashboard",
     total,
     preenchidos,
+    pix,
+    dinheiro,
     ranking,
   });
 
@@ -209,34 +225,16 @@ export function DashboardRascunhoClient({ pontos }: Props) {
               />
             </header>
 
-            {preenchidos > 0 ? (
-              <div className="flex items-end justify-between gap-4 border-b border-white/[0.06] pb-4">
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                    Parcial
-                  </p>
-                  <p
-                    className={cn(
-                      "mt-1 text-[1.75rem] tabular-nums leading-none",
-                      total < 0 ? "text-rose-300" : "text-[#f4efe6]"
-                    )}
-                    style={{
-                      fontFamily: "var(--font-rasc-display), Georgia, serif",
-                    }}
-                  >
-                    {formatCurrency(total)}
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={limpar}
-                  className="inline-flex items-center gap-1.5 text-[12px] text-slate-500 transition hover:text-slate-300"
-                >
-                  <Eraser className="h-3.5 w-3.5" />
-                  Limpar folha
-                </button>
-              </div>
-            ) : null}
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={limpar}
+                className="inline-flex items-center gap-1.5 text-[12px] text-slate-500 transition hover:text-slate-300"
+              >
+                <Eraser className="h-3.5 w-3.5" />
+                Limpar folha
+              </button>
+            </div>
 
             <section>
               {!lista.length ? (
@@ -293,8 +291,64 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                   })}
                 </ol>
               )}
+            </section>
+
+            {/* Soma + Pix / Dinheiro — depois da lista, antes de salvar */}
+            <section className="space-y-5 border-t border-white/[0.08] pt-8">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                  Soma do que você colocou
+                </p>
+                <p
+                  className={cn(
+                    "mt-2 text-[clamp(2rem,7vw,2.75rem)] tabular-nums leading-none",
+                    total < 0 ? "text-rose-300" : "text-[#f4efe6]"
+                  )}
+                  style={{
+                    fontFamily: "var(--font-rasc-display), Georgia, serif",
+                  }}
+                >
+                  {formatCurrency(total)}
+                </p>
+                <p className="mt-2 text-[12px] text-slate-500">
+                  {preenchidos === 0
+                    ? "Nenhum valor ainda"
+                    : `${preenchidos} ponto${preenchidos === 1 ? "" : "s"} preenchido${preenchidos === 1 ? "" : "s"}`}
+                </p>
+              </div>
+
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                    Pix
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={pixStr}
+                    onChange={(e) => setPixStr(sanitizarMoney(e.target.value))}
+                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[#f4efe6] placeholder:text-slate-700 focus:border-[#c4a574]/50 focus:outline-none"
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                    Dinheiro
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={dinheiroStr}
+                    onChange={(e) =>
+                      setDinheiroStr(sanitizarMoney(e.target.value))
+                    }
+                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[#f4efe6] placeholder:text-slate-700 focus:border-[#c4a574]/50 focus:outline-none"
+                  />
+                </label>
+              </div>
               {feedback ? (
-                <p className="mt-4 text-[12px] text-rose-400">{feedback}</p>
+                <p className="text-[12px] text-rose-400">{feedback}</p>
               ) : null}
             </section>
 
@@ -368,6 +422,35 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                   </>
                 ) : null}
               </p>
+            </section>
+
+            <section className="grid gap-6 border-y border-white/[0.08] py-6 sm:grid-cols-2">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                  Pix
+                </p>
+                <p
+                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[#f4efe6]"
+                  style={{
+                    fontFamily: "var(--font-rasc-display), Georgia, serif",
+                  }}
+                >
+                  {formatCurrency(pix)}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                  Dinheiro
+                </p>
+                <p
+                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[#f4efe6]"
+                  style={{
+                    fontFamily: "var(--font-rasc-display), Georgia, serif",
+                  }}
+                >
+                  {formatCurrency(dinheiro)}
+                </p>
+              </div>
             </section>
 
             <section className="space-y-5">
