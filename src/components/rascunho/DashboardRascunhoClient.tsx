@@ -1,0 +1,284 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Eraser,
+  MessageCircle,
+  Share2,
+} from "lucide-react";
+import { whatsAppUrlRota } from "@/lib/rotas/whatsapp-rota";
+import { cn, formatCurrency, parseMoneyInput } from "@/lib/utils";
+
+export type PontoRascunho = {
+  id: string;
+  nome: string;
+  status: string;
+};
+
+type Props = {
+  pontos: PontoRascunho[];
+};
+
+function montarTextoResumo(opts: {
+  total: number;
+  preenchidos: number;
+  ranking: { nome: string; valor: number }[];
+}): string {
+  const linhas = [
+    "*Dashboard rascunho — OperaRoute*",
+    "(valores manuais · não grava no sistema)",
+    "",
+    `Total: *${formatCurrency(opts.total)}*`,
+    `Pontos com valor: ${opts.preenchidos}`,
+  ];
+
+  if (opts.ranking.length) {
+    linhas.push("", "*Resumo dos pontos:*");
+    opts.ranking.forEach((r, i) => {
+      linhas.push(`${i + 1}. ${r.nome}: ${formatCurrency(r.valor)}`);
+    });
+  }
+
+  return linhas.join("\n");
+}
+
+/** Dashboard e resumo 100% manuais — some ao sair da página. */
+export function DashboardRascunhoClient({ pontos }: Props) {
+  const [valores, setValores] = useState<Record<string, string>>({});
+  const [titulo, setTitulo] = useState("Rascunho");
+  const [resumoAberto, setResumoAberto] = useState(true);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const lista = useMemo(
+    () =>
+      [...pontos]
+        .filter((p) => p.status === "ativo" || valores[p.id])
+        .sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
+    [pontos, valores]
+  );
+
+  const ranking = useMemo(() => {
+    return lista
+      .map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        valor: parseMoneyInput(valores[p.id] ?? ""),
+      }))
+      .filter((r) => r.valor > 0.0001)
+      .sort((a, b) => b.valor - a.valor);
+  }, [lista, valores]);
+
+  const total = useMemo(
+    () => ranking.reduce((s, r) => s + r.valor, 0),
+    [ranking]
+  );
+  const preenchidos = ranking.length;
+  const media = preenchidos > 0 ? total / preenchidos : 0;
+
+  function setValor(id: string, raw: string) {
+    setValores((prev) => ({ ...prev, [id]: raw }));
+  }
+
+  function limpar() {
+    setValores({});
+    setFeedback(null);
+  }
+
+  const texto = montarTextoResumo({ total, preenchidos, ranking });
+
+  async function compartilhar() {
+    setFeedback(null);
+    try {
+      if (typeof navigator !== "undefined" && navigator.share) {
+        await navigator.share({ title: titulo || "Rascunho", text: texto });
+        return;
+      }
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(texto);
+        setFeedback("Resumo copiado.");
+        return;
+      }
+      setFeedback("Não foi possível compartilhar.");
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      setFeedback("Não foi possível compartilhar.");
+    }
+  }
+
+  function enviarWhatsApp() {
+    window.open(whatsAppUrlRota(null, texto), "_blank", "noopener,noreferrer");
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-8 pb-12">
+      <header className="space-y-2">
+        <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-amber-400/90">
+          Rascunho · não grava
+        </p>
+        <h1 className="text-2xl font-semibold tracking-tight text-white">
+          Dashboard fake
+        </h1>
+        <p className="text-[13px] leading-relaxed text-slate-500">
+          Digite quanto cada ponto fez. O total e o resumo montam na hora. Ao
+          atualizar a página, tudo some — o dashboard real não muda.
+        </p>
+        <input
+          type="text"
+          value={titulo}
+          onChange={(e) => setTitulo(e.target.value)}
+          placeholder="Título do rascunho (opcional)"
+          className="mt-2 w-full rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2.5 text-sm text-white placeholder:text-slate-600"
+        />
+      </header>
+
+      <section className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-4">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">Total</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-emerald-300">
+            {formatCurrency(total)}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-4">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">
+            Pontos com valor
+          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-white">
+            {preenchidos}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-4">
+          <p className="text-[11px] uppercase tracking-wide text-slate-500">Média</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-sky-300">
+            {formatCurrency(media)}
+          </p>
+        </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+            Valores manuais
+          </h2>
+          <button
+            type="button"
+            onClick={limpar}
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/10 px-3 py-1.5 text-[12px] text-slate-400 transition hover:border-white/20 hover:text-slate-200"
+          >
+            <Eraser className="h-3.5 w-3.5" />
+            Limpar
+          </button>
+        </div>
+
+        {!lista.length ? (
+          <p className="text-[13px] text-slate-500">Nenhum ponto ativo cadastrado.</p>
+        ) : (
+          <ul className="divide-y divide-white/[0.06] overflow-hidden rounded-2xl border border-white/[0.06]">
+            {lista.map((p) => (
+              <li
+                key={p.id}
+                className="flex items-center gap-3 bg-white/[0.02] px-3 py-2.5"
+              >
+                <span className="min-w-0 flex-1 truncate text-[13px] text-slate-200">
+                  {p.nome}
+                </span>
+                <div className="relative w-[8.5rem] shrink-0">
+                  <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[12px] text-slate-500">
+                    R$
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={valores[p.id] ?? ""}
+                    onChange={(e) => setValor(p.id, e.target.value)}
+                    className="w-full rounded-lg border border-white/10 bg-slate-950/60 py-2 pl-8 pr-2 text-right text-[13px] tabular-nums text-white placeholder:text-slate-600"
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.02]">
+        <button
+          type="button"
+          onClick={() => setResumoAberto((v) => !v)}
+          className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left"
+        >
+          <div>
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+              Resumo dos pontos
+            </h2>
+            <p className="mt-1 text-[13px] text-slate-400">
+              {preenchidos === 0
+                ? "Preencha os valores acima"
+                : `${preenchidos} ponto${preenchidos === 1 ? "" : "s"} · ${formatCurrency(total)}`}
+            </p>
+          </div>
+          {resumoAberto ? (
+            <ChevronUp className="h-4 w-4 text-slate-500" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-slate-500" />
+          )}
+        </button>
+
+        {resumoAberto ? (
+          <div className="space-y-4 border-t border-white/[0.06] px-4 pb-4 pt-3">
+            {ranking.length === 0 ? (
+              <p className="text-[13px] text-slate-500">Nenhum valor ainda.</p>
+            ) : (
+              <ol className="space-y-2">
+                {ranking.map((r, i) => (
+                  <li
+                    key={r.id}
+                    className="flex items-center justify-between gap-3 text-[13px]"
+                  >
+                    <span className="min-w-0 truncate text-slate-300">
+                      <span
+                        className={cn(
+                          "mr-2 inline-block w-5 tabular-nums",
+                          i === 0 ? "text-amber-300" : "text-slate-600"
+                        )}
+                      >
+                        {i + 1}.
+                      </span>
+                      {r.nome}
+                    </span>
+                    <span className="shrink-0 font-medium tabular-nums text-white">
+                      {formatCurrency(r.valor)}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={enviarWhatsApp}
+                disabled={preenchidos === 0}
+                className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3.5 py-2 text-[13px] font-medium text-emerald-200 transition hover:bg-emerald-500/15 disabled:opacity-40"
+              >
+                <MessageCircle className="h-3.5 w-3.5" />
+                WhatsApp
+              </button>
+              <button
+                type="button"
+                onClick={() => void compartilhar()}
+                disabled={preenchidos === 0}
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-[13px] font-medium text-slate-200 transition hover:bg-white/[0.08] disabled:opacity-40"
+              >
+                <Share2 className="h-3.5 w-3.5" />
+                Compartilhar
+              </button>
+            </div>
+            {feedback ? <p className="text-[12px] text-slate-400">{feedback}</p> : null}
+          </div>
+        ) : null}
+      </section>
+    </div>
+  );
+}

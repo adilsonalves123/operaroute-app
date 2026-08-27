@@ -3,6 +3,7 @@ import type { PermissaoModulo } from "@/lib/equipe/permissions";
 import {
   BarChart3,
   Bot,
+  ClipboardPen,
   GraduationCap,
   LayoutDashboard,
   LineChart,
@@ -31,6 +32,7 @@ export type AppNavItem = {
 /** Menu principal — igual ao painel dono (lista contínua). */
 export const APP_NAV_MAIN: AppNavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, modulo: "dashboard" },
+  { href: "/rascunho", label: "Rascunho", icon: ClipboardPen, modulo: "dashboard" },
   { href: "/analise", label: "Análise", icon: LineChart, modulo: "analise" },
   { href: "/pontos", label: "Pontos", icon: MapPin, modulo: "pontos" },
   { href: "/equipamentos", label: "Máquinas", icon: Gamepad2, modulo: "pontos" },
