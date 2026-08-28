@@ -9,24 +9,30 @@ export async function carregarResumoRascunhoPorToken(
   supabase: SupabaseClient,
   token: string
 ): Promise<{ snapshot: ResumoRascunhoSnapshot } | null> {
-  const { data, error } = await supabase.rpc("get_public_rascunho_resumo", {
-    p_token: token,
-  });
+  const { data, error } = await supabase
+    .from("public_rascunho_resumos")
+    .select("snapshot, expires_at, revoked_at")
+    .eq("token", token)
+    .maybeSingle();
 
   if (error) {
     if (
-      error.message.includes("get_public_rascunho_resumo") ||
-      error.code === "PGRST202"
+      error.message.includes("public_rascunho_resumos") ||
+      error.code === "PGRST204" ||
+      error.code === "42501"
     ) {
       throw new Error(
-        "Rode no Supabase o SQL supabase/rascunho-compartilhar.sql (função get_public_rascunho_resumo)."
+        "Rode no Supabase o SQL supabase/rascunho-compartilhar.sql (política de leitura pública)."
       );
     }
     return null;
   }
 
-  if (!data || typeof data !== "object") return null;
-  return { snapshot: data as ResumoRascunhoSnapshot };
+  if (!data?.snapshot) return null;
+  if (data.revoked_at) return null;
+  if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) return null;
+
+  return { snapshot: data.snapshot as ResumoRascunhoSnapshot };
 }
 
 export async function gravarResumoRascunhoPublico(

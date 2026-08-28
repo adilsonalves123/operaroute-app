@@ -34,28 +34,16 @@ CREATE POLICY "Empresa scoped select public_rascunho_resumos"
 GRANT SELECT, INSERT ON public.public_rascunho_resumos TO authenticated;
 GRANT ALL ON public.public_rascunho_resumos TO service_role;
 
--- Leitura pública segura por token (sem service role na Vercel).
-CREATE OR REPLACE FUNCTION public.get_public_rascunho_resumo(p_token text)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_snapshot jsonb;
-BEGIN
-  UPDATE public.public_rascunho_resumos
-  SET last_viewed_at = NOW()
-  WHERE token = p_token
-    AND revoked_at IS NULL
+-- Leitura pública do link (/r/TOKEN) sem login.
+DROP POLICY IF EXISTS "Anon read public resumo by token" ON public.public_rascunho_resumos;
+CREATE POLICY "Anon read public resumo by token"
+  ON public.public_rascunho_resumos FOR SELECT
+  TO anon
+  USING (
+    revoked_at IS NULL
     AND (expires_at IS NULL OR expires_at > NOW())
-  RETURNING snapshot INTO v_snapshot;
+  );
 
-  RETURN v_snapshot;
-END;
-$$;
-
-REVOKE ALL ON FUNCTION public.get_public_rascunho_resumo(text) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.get_public_rascunho_resumo(text) TO anon, authenticated;
+GRANT SELECT ON public.public_rascunho_resumos TO anon;
 
 NOTIFY pgrst, 'reload schema';
