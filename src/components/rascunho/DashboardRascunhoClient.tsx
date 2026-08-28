@@ -234,15 +234,8 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
     [valores, metaPorPonto, pontoIds]
   );
 
-  useEffect(() => {
-    if (pixEditadoManual) return;
-    setPixStr(numberToMoneyInput(totaisPagamentoCalculados.pix));
-  }, [totaisPagamentoCalculados.pix, pixEditadoManual]);
-
-  useEffect(() => {
-    if (dinheiroEditadoManual) return;
-    setDinheiroStr(numberToMoneyInput(totaisPagamentoCalculados.dinheiro));
-  }, [totaisPagamentoCalculados.dinheiro, dinheiroEditadoManual]);
+  const pixCalculado = totaisPagamentoCalculados.pix;
+  const dinheiroCalculado = totaisPagamentoCalculados.dinheiro;
 
   const ranking = useMemo(() => {
     return lista
@@ -263,8 +256,14 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
   const preenchidos = ranking.length;
   const media = preenchidos > 0 ? total / preenchidos : 0;
   const maxAbs = Math.max(...ranking.map((r) => Math.abs(r.valor)), 1);
-  const pix = parseMoneyInput(pixStr);
-  const dinheiro = parseMoneyInput(dinheiroStr);
+  const pix = pixEditadoManual ? parseMoneyInput(pixStr) : pixCalculado;
+  const dinheiro = dinheiroEditadoManual ? parseMoneyInput(dinheiroStr) : dinheiroCalculado;
+  const pixInputValue = pixEditadoManual
+    ? pixStr
+    : numberToMoneyInput(pixCalculado);
+  const dinheiroInputValue = dinheiroEditadoManual
+    ? dinheiroStr
+    : numberToMoneyInput(dinheiroCalculado);
   const totalRecebido = pix + dinheiro;
 
   const resumoCaixa = useMemo(
@@ -331,10 +330,16 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
   function setValor(id: string, raw: string) {
     setPixEditadoManual(false);
     setDinheiroEditadoManual(false);
-    setValores((prev) => ({
-      ...prev,
-      [id]: sanitizarMoney(raw),
-    }));
+    const limpo = sanitizarMoney(raw);
+    setValores((prev) => {
+      const next = { ...prev };
+      if (!limpo.trim()) {
+        delete next[id];
+      } else {
+        next[id] = limpo;
+      }
+      return next;
+    });
   }
 
   function limpar() {
@@ -592,7 +597,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                     type="text"
                     inputMode="decimal"
                     placeholder="0,00"
-                    value={pixStr}
+                    value={pixInputValue}
                     onChange={(e) => {
                       setPixEditadoManual(true);
                       setPixStr(sanitizarMoney(e.target.value));
@@ -608,7 +613,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                     type="text"
                     inputMode="decimal"
                     placeholder="0,00"
-                    value={dinheiroStr}
+                    value={dinheiroInputValue}
                     onChange={(e) => {
                       setDinheiroEditadoManual(true);
                       setDinheiroStr(sanitizarMoney(e.target.value));
