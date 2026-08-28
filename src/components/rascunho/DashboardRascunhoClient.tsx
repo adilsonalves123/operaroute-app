@@ -27,7 +27,60 @@ type PontoMetaRascunho = {
   pix: number;
   dinheiro: number;
   forma: "pix" | "dinheiro" | "misto" | null;
+  /** Valor original importado da coleta (base para repartir ao editar). */
+  valorImportado: number;
 };
+
+const TITULO_PADRAO = "Resumo";
+
+function round2(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+/** Reparte o valor editado entre Pix e Dinheiro conforme a forma da coleta. */
+function repartirValorPorForma(
+  valor: number,
+  meta?: PontoMetaRascunho
+): { pix: number; dinheiro: number } {
+  if (Math.abs(valor) < 0.0001) return { pix: 0, dinheiro: 0 };
+
+  const forma = meta?.forma;
+  const origPix = Math.abs(meta?.pix ?? 0);
+  const origDin = Math.abs(meta?.dinheiro ?? 0);
+  const origValor = Math.abs(meta?.valorImportado ?? origPix + origDin);
+
+  if (forma === "pix") return { pix: valor, dinheiro: 0 };
+  if (forma === "dinheiro") return { pix: 0, dinheiro: valor };
+
+  const base = origPix + origDin;
+  if (base > 0.0001) {
+    const pix = round2(valor * (origPix / base));
+    return { pix, dinheiro: round2(valor - pix) };
+  }
+  if (origValor > 0.0001 && (origPix > 0.0001 || origDin > 0.0001)) {
+    const pix = round2(valor * (origPix / origValor));
+    return { pix, dinheiro: round2(valor - pix) };
+  }
+
+  return { pix: valor, dinheiro: 0 };
+}
+
+function calcularPixDinheiroDosPontos(
+  valores: Record<string, string>,
+  metaPorPonto: Record<string, PontoMetaRascunho>,
+  pontoIds: string[]
+): { pix: number; dinheiro: number } {
+  let pix = 0;
+  let dinheiro = 0;
+  for (const id of pontoIds) {
+    const valor = parseMoneyInput(valores[id] ?? "");
+    if (Math.abs(valor) < 0.0001) continue;
+    const partes = repartirValorPorForma(valor, metaPorPonto[id]);
+    pix += partes.pix;
+    dinheiro += partes.dinheiro;
+  }
+  return { pix: round2(pix), dinheiro: round2(dinheiro) };
+}
 
 function formaLabel(forma: PontoMetaRascunho["forma"]): string {
   if (forma === "pix") return "Pix";
@@ -90,7 +143,7 @@ function montarTextoResumo(opts: {
   ranking: { nome: string; valor: number; forma?: string }[];
 }): string {
   const linhas = [
-    `*${opts.titulo || "Dashboard"} — OperaRoute*`,
+    `*${opts.titulo || TITULO_PADRAO} — OperaRoute*`,
     dataLabel(opts.dataISO),
     "",
     `Total recebido: *${formatCurrency(opts.total)}*`,
@@ -116,7 +169,9 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   const [metaPorPonto, setMetaPorPonto] = useState<Record<string, PontoMetaRascunho>>({});
   const [pixStr, setPixStr] = useState("");
   const [dinheiroStr, setDinheiroStr] = useState("");
-  const [titulo, setTitulo] = useState("Dashboard");
+  const [pixEditadoManual, setPixEditadoManual] = useState(false);
+  const [dinheiroEditadoManual, setDinheiroEditadoManual] = useState(false);
+  const [titulo, setTitulo] = useState(TITULO_PADRAO);
   const [salvo, setSalvo] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [carregandoDia, setCarregandoDia] = useState(false);
@@ -150,10 +205,13 @@ export function DashboardRascunhoClient({ pontos }: Props) {
           pix: item.pix,
           dinheiro: item.dinheiro,
           forma: item.forma,
+          valorImportado: item.valor,
         };
       }
       setValores(nextValores);
       setMetaPorPonto(nextMeta);
+      setPixEditadoManual(false);
+      setDinheiroEditadoManual(false);
       setPixStr(numberToMoneyInput(body.pix ?? 0));
       setDinheiroStr(numberToMoneyInput(body.dinheiro ?? 0));
       setPuxouDia(Object.keys(body.porPonto ?? {}).length > 0);
@@ -173,6 +231,23 @@ export function DashboardRascunhoClient({ pontos }: Props) {
     () => [...pontos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
     [pontos]
   );
+
+  const pontoIds = useMemo(() => lista.map((p) => p.id), [lista]);
+
+  const totaisPagamentoCalculados = useMemo(
+    () => calcularPixDinheiroDosPontos(valores, metaPorPonto, pontoIds),
+    [valores, metaPorPonto, pontoIds]
+  );
+
+  useEffect(() => {
+    if (pixEditadoManual) return;
+    setPixStr(numberToMoneyInput(totaisPagamentoCalculados.pix));
+  }, [totaisPagamentoCalculados.pix, pixEditadoManual]);
+
+  useEffect(() => {
+    if (dinheiroEditadoManual) return;
+    setDinheiroStr(numberToMoneyInput(totaisPagamentoCalculados.dinheiro));
+  }, [totaisPagamentoCalculados.dinheiro, dinheiroEditadoManual]);
 
   const ranking = useMemo(() => {
     return lista
@@ -198,6 +273,8 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   const totalRecebido = pix + dinheiro;
 
   function setValor(id: string, raw: string) {
+    setPixEditadoManual(false);
+    setDinheiroEditadoManual(false);
     setValores((prev) => ({
       ...prev,
       [id]: sanitizarMoney(raw),
@@ -209,6 +286,8 @@ export function DashboardRascunhoClient({ pontos }: Props) {
     setMetaPorPonto({});
     setPixStr("");
     setDinheiroStr("");
+    setPixEditadoManual(false);
+    setDinheiroEditadoManual(false);
     setSalvo(false);
     setFeedback(null);
     setPuxouDia(false);
@@ -225,7 +304,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   }
 
   const texto = montarTextoResumo({
-    titulo: titulo.trim() || "Dashboard",
+    titulo: titulo.trim() || TITULO_PADRAO,
     dataISO: dataSelecionada,
     total: totalRecebido,
     preenchidos,
@@ -239,7 +318,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({
-          title: titulo.trim() || "Dashboard",
+          title: titulo.trim() || TITULO_PADRAO,
           text: texto,
         });
         return;
@@ -289,7 +368,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                 className="text-[clamp(2.4rem,8vw,3.4rem)] font-normal leading-[0.95] tracking-tight text-[#f4efe6]"
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
-                Dashboard
+                Resumo
               </h1>
               <p className="max-w-md text-[14px] leading-relaxed text-slate-400">
                 Escolha o dia — puxa quanto cada ponto mandou (Pix e Dinheiro).
@@ -464,7 +543,10 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                     inputMode="decimal"
                     placeholder="0,00"
                     value={pixStr}
-                    onChange={(e) => setPixStr(sanitizarMoney(e.target.value))}
+                    onChange={(e) => {
+                      setPixEditadoManual(true);
+                      setPixStr(sanitizarMoney(e.target.value));
+                    }}
                     className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[#f4efe6] placeholder:text-slate-700 focus:border-[#c4a574]/50 focus:outline-none"
                   />
                 </label>
@@ -477,9 +559,10 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                     inputMode="decimal"
                     placeholder="0,00"
                     value={dinheiroStr}
-                    onChange={(e) =>
-                      setDinheiroStr(sanitizarMoney(e.target.value))
-                    }
+                    onChange={(e) => {
+                      setDinheiroEditadoManual(true);
+                      setDinheiroStr(sanitizarMoney(e.target.value));
+                    }}
                     className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[#f4efe6] placeholder:text-slate-700 focus:border-[#c4a574]/50 focus:outline-none"
                   />
                 </label>
@@ -509,7 +592,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                   onClick={salvar}
                   className="flex w-full items-center justify-center rounded-lg bg-[#c4a574] px-4 py-3.5 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:brightness-110"
                 >
-                  Fechar dashboard
+                  Fechar resumo
                 </button>
               </div>
             </div>
@@ -538,7 +621,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                 className="text-[clamp(2.2rem,7vw,3rem)] font-normal leading-[0.95] tracking-tight text-[#f4efe6]"
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
-                {titulo.trim() || "Dashboard"}
+                {titulo.trim() || TITULO_PADRAO}
               </h1>
               <p className="capitalize text-[13px] text-slate-500">
                 {dataLabel(dataSelecionada)}
