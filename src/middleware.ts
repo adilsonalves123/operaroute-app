@@ -12,6 +12,7 @@ const publicRoutes = [
   "/suporte-contato",
   "/parceiro",
   "/c",
+  "/r",
   "/downloads",
 ];
 const authRoutes = ["/login", "/cadastro", "/esqueci-senha"];

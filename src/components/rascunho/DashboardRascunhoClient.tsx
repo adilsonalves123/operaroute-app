@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Instrument_Serif, Outfit } from "next/font/google";
 import { CalendarDays, Eraser, Loader2, MessageCircle, Pencil, Share2 } from "lucide-react";
-import { whatsAppUrlRota } from "@/lib/rotas/whatsapp-rota";
+import {
+  criarLinkResumoRascunho,
+  compartilharSomenteLink,
+  type ResumoRascunhoSnapshot,
+} from "@/lib/rascunho/compartilhar";
 import { cn, formatCurrency, parseMoneyInput } from "@/lib/utils";
 
 const display = Instrument_Serif({
@@ -65,6 +69,24 @@ function repartirValorPorForma(
   return { pix: valor, dinheiro: 0 };
 }
 
+function calcularResumoCaixa(
+  valores: Record<string, string>,
+  pontoIds: string[]
+): { recebido: number; deixado: number; liquido: number } {
+  let recebido = 0;
+  let deixado = 0;
+  for (const id of pontoIds) {
+    const v = parseMoneyInput(valores[id] ?? "");
+    if (v < -0.0001) deixado += Math.abs(v);
+    else if (v > 0.0001) recebido += v;
+  }
+  return {
+    recebido: round2(recebido),
+    deixado: round2(deixado),
+    liquido: round2(recebido - deixado),
+  };
+}
+
 function calcularPixDinheiroDosPontos(
   valores: Record<string, string>,
   metaPorPonto: Record<string, PontoMetaRascunho>,
@@ -91,6 +113,7 @@ function formaLabel(forma: PontoMetaRascunho["forma"]): string {
 
 type Props = {
   pontos: PontoRascunho[];
+  empresaNome: string;
 };
 
 function hojeISO(): string {
@@ -133,37 +156,8 @@ function sanitizarMoney(raw: string): string {
   return negativo ? `-${resto}` : resto;
 }
 
-function montarTextoResumo(opts: {
-  titulo: string;
-  dataISO: string;
-  total: number;
-  preenchidos: number;
-  pix: number;
-  dinheiro: number;
-  ranking: { nome: string; valor: number; forma?: string }[];
-}): string {
-  const linhas = [
-    `*${opts.titulo || TITULO_PADRAO} — OperaRoute*`,
-    dataLabel(opts.dataISO),
-    "",
-    `Total recebido: *${formatCurrency(opts.total)}*`,
-    `Pix: ${formatCurrency(opts.pix)} · Dinheiro: ${formatCurrency(opts.dinheiro)}`,
-    `Pontos: ${opts.preenchidos}`,
-  ];
-
-  if (opts.ranking.length) {
-    linhas.push("", "*Pontos:*");
-    opts.ranking.forEach((r, i) => {
-      const forma = r.forma ? ` · ${r.forma}` : "";
-      linhas.push(`${i + 1}. ${r.nome}: ${formatCurrency(r.valor)}${forma}`);
-    });
-  }
-
-  return linhas.join("\n");
-}
-
 /** Digita valores → Salvar → lista some e ficam só os números. */
-export function DashboardRascunhoClient({ pontos }: Props) {
+export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
   const [dataSelecionada, setDataSelecionada] = useState(hojeISO);
   const [valores, setValores] = useState<Record<string, string>>({});
   const [metaPorPonto, setMetaPorPonto] = useState<Record<string, PontoMetaRascunho>>({});
@@ -176,6 +170,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   const [feedback, setFeedback] = useState<string | null>(null);
   const [carregandoDia, setCarregandoDia] = useState(false);
   const [puxouDia, setPuxouDia] = useState(false);
+  const [compartilhandoLink, setCompartilhandoLink] = useState(false);
 
   const puxarDia = useCallback(async (dataISO: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dataISO)) return;
@@ -272,6 +267,67 @@ export function DashboardRascunhoClient({ pontos }: Props) {
   const dinheiro = parseMoneyInput(dinheiroStr);
   const totalRecebido = pix + dinheiro;
 
+  const resumoCaixa = useMemo(
+    () => calcularResumoCaixa(valores, pontoIds),
+    [valores, pontoIds]
+  );
+
+  function montarSnapshot(): ResumoRascunhoSnapshot {
+    return {
+      empresaNome,
+      titulo: titulo.trim() || TITULO_PADRAO,
+      dataISO: dataSelecionada,
+      recebido: resumoCaixa.recebido,
+      deixado: resumoCaixa.deixado,
+      totalLiquido: resumoCaixa.liquido,
+      pix,
+      dinheiro,
+      pontos: ranking.map((r) => ({
+        nome: r.nome,
+        valor: r.valor,
+        forma: r.forma || undefined,
+      })),
+    };
+  }
+
+  async function gerarLinkCompartilhamento(): Promise<string> {
+    return criarLinkResumoRascunho(montarSnapshot());
+  }
+
+  async function compartilhar() {
+    setFeedback(null);
+    setCompartilhandoLink(true);
+    try {
+      const url = await gerarLinkCompartilhamento();
+      const resultado = await compartilharSomenteLink(url);
+      if (resultado === "copied") setFeedback("Link copiado.");
+      else if (resultado === "shared") setFeedback("Link compartilhado.");
+      else if (resultado === "failed") setFeedback("Não foi possível compartilhar.");
+    } catch (e) {
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      setFeedback(e instanceof Error ? e.message : "Não foi possível compartilhar.");
+    } finally {
+      setCompartilhandoLink(false);
+    }
+  }
+
+  async function enviarWhatsApp() {
+    setFeedback(null);
+    setCompartilhandoLink(true);
+    try {
+      const url = await gerarLinkCompartilhamento();
+      window.open(
+        `https://wa.me/?text=${encodeURIComponent(url)}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
+    } catch (e) {
+      setFeedback(e instanceof Error ? e.message : "Não foi possível gerar o link.");
+    } finally {
+      setCompartilhandoLink(false);
+    }
+  }
+
   function setValor(id: string, raw: string) {
     setPixEditadoManual(false);
     setDinheiroEditadoManual(false);
@@ -301,42 +357,6 @@ export function DashboardRascunhoClient({ pontos }: Props) {
     setFeedback(null);
     setSalvo(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  const texto = montarTextoResumo({
-    titulo: titulo.trim() || TITULO_PADRAO,
-    dataISO: dataSelecionada,
-    total: totalRecebido,
-    preenchidos,
-    pix,
-    dinheiro,
-    ranking,
-  });
-
-  async function compartilhar() {
-    setFeedback(null);
-    try {
-      if (typeof navigator !== "undefined" && navigator.share) {
-        await navigator.share({
-          title: titulo.trim() || TITULO_PADRAO,
-          text: texto,
-        });
-        return;
-      }
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(texto);
-        setFeedback("Resumo copiado.");
-        return;
-      }
-      setFeedback("Não foi possível compartilhar.");
-    } catch (e) {
-      if (e instanceof DOMException && e.name === "AbortError") return;
-      setFeedback("Não foi possível compartilhar.");
-    }
-  }
-
-  function enviarWhatsApp() {
-    window.open(whatsAppUrlRota(null, texto), "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -533,6 +553,36 @@ export function DashboardRascunhoClient({ pontos }: Props) {
 
             {/* Pix / Dinheiro — depois da lista, antes de salvar */}
             <section className="space-y-5 border-t border-white/[0.08] pt-8">
+              <div className="space-y-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-4">
+                <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                  <span className="text-slate-500">Recebido</span>
+                  <span className="tabular-nums text-[#f4efe6]">
+                    {formatCurrency(resumoCaixa.recebido)}
+                  </span>
+                </div>
+                {resumoCaixa.deixado > 0.009 ? (
+                  <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                    <span className="text-slate-500">Deixado no ponto</span>
+                    <span className="tabular-nums text-rose-300">
+                      − {formatCurrency(resumoCaixa.deixado)}
+                    </span>
+                  </div>
+                ) : null}
+                <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3">
+                  <span className="text-[12px] uppercase tracking-[0.16em] text-slate-500">
+                    Total líquido
+                  </span>
+                  <span
+                    className="text-[1.35rem] tabular-nums text-[#c4a574]"
+                    style={{
+                      fontFamily: "var(--font-rasc-display), Georgia, serif",
+                    }}
+                  >
+                    {formatCurrency(resumoCaixa.liquido)}
+                  </span>
+                </div>
+              </div>
+
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="block space-y-2">
                   <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
@@ -573,7 +623,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                 ) : (
                   <>
                     <span className="tabular-nums text-[#f4efe6]">
-                      {formatCurrency(totalRecebido)}
+                      {formatCurrency(resumoCaixa.liquido)}
                     </span>
                     {" · "}
                     {preenchidos} ponto{preenchidos === 1 ? "" : "s"}
@@ -632,18 +682,35 @@ export function DashboardRascunhoClient({ pontos }: Props) {
               />
             </header>
 
+            <section className="space-y-3">
+              <div className="flex justify-between text-[13px] text-slate-500">
+                <span>Recebido</span>
+                <span className="tabular-nums text-slate-300">
+                  {formatCurrency(resumoCaixa.recebido)}
+                </span>
+              </div>
+              {resumoCaixa.deixado > 0.009 ? (
+                <div className="flex justify-between text-[13px] text-slate-500">
+                  <span>Deixado no ponto</span>
+                  <span className="tabular-nums text-rose-300">
+                    − {formatCurrency(resumoCaixa.deixado)}
+                  </span>
+                </div>
+              ) : null}
+            </section>
+
             <section className="space-y-2">
               <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                Total recebido
+                Total líquido
               </p>
               <p
                 className={cn(
                   "text-[clamp(2.8rem,10vw,4rem)] font-normal leading-none tracking-tight tabular-nums",
-                  totalRecebido < 0 ? "text-rose-300" : "text-[#f4efe6]"
+                  resumoCaixa.liquido < 0 ? "text-rose-300" : "text-[#f4efe6]"
                 )}
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
-                {formatCurrency(totalRecebido)}
+                {formatCurrency(resumoCaixa.liquido)}
               </p>
               <p className="text-[13px] text-slate-500">
                 {preenchidos} ponto{preenchidos === 1 ? "" : "s"}
@@ -659,7 +726,7 @@ export function DashboardRascunhoClient({ pontos }: Props) {
               </p>
             </section>
 
-            <section className="grid gap-6 border-y border-white/[0.08] py-6 sm:grid-cols-3">
+            <section className="grid gap-6 border-y border-white/[0.08] py-6 sm:grid-cols-2">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
                   Pix
@@ -684,19 +751,6 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                   }}
                 >
                   {formatCurrency(dinheiro)}
-                </p>
-              </div>
-              <div className="sm:col-span-1">
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                  Recebido
-                </p>
-                <p
-                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[#c4a574]"
-                  style={{
-                    fontFamily: "var(--font-rasc-display), Georgia, serif",
-                  }}
-                >
-                  {formatCurrency(totalRecebido)}
                 </p>
               </div>
             </section>
@@ -751,21 +805,30 @@ export function DashboardRascunhoClient({ pontos }: Props) {
             </section>
 
             <div className="flex flex-wrap gap-x-5 gap-y-3 border-t border-white/[0.08] pt-6 text-[13px]">
+              <p className="w-full text-[11px] text-slate-600">
+                WhatsApp e compartilhar enviam só o link da página web.
+              </p>
               <button
                 type="button"
-                onClick={enviarWhatsApp}
-                className="inline-flex items-center gap-2 text-[#c4a574] transition hover:text-[#e8d5b0]"
+                onClick={() => void enviarWhatsApp()}
+                disabled={compartilhandoLink}
+                className="inline-flex items-center gap-2 text-[#c4a574] transition hover:text-[#e8d5b0] disabled:opacity-50"
               >
-                <MessageCircle className="h-3.5 w-3.5" />
-                WhatsApp
+                {compartilhandoLink ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <MessageCircle className="h-3.5 w-3.5" />
+                )}
+                WhatsApp (link)
               </button>
               <button
                 type="button"
                 onClick={() => void compartilhar()}
-                className="inline-flex items-center gap-2 text-slate-400 transition hover:text-slate-200"
+                disabled={compartilhandoLink}
+                className="inline-flex items-center gap-2 text-slate-400 transition hover:text-slate-200 disabled:opacity-50"
               >
                 <Share2 className="h-3.5 w-3.5" />
-                Compartilhar
+                Compartilhar link
               </button>
               <button
                 type="button"

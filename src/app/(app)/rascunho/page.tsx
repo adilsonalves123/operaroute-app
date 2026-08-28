@@ -10,8 +10,11 @@ export default async function RascunhoPage() {
     redirect("/dashboard");
   }
 
+  const empresaNome =
+    empresa?.nome_operacao?.trim() || empresa?.nome?.trim() || "Operação";
+
   if (!profile?.empresa_id) {
-    return <DashboardRascunhoClient pontos={[]} />;
+    return <DashboardRascunhoClient pontos={[]} empresaNome={empresaNome} />;
   }
 
   const { data: pontos } = await supabase
@@ -20,5 +23,7 @@ export default async function RascunhoPage() {
     .eq("empresa_id", profile.empresa_id)
     .order("nome");
 
-  return <DashboardRascunhoClient pontos={pontos ?? []} />;
+  return (
+    <DashboardRascunhoClient pontos={pontos ?? []} empresaNome={empresaNome} />
+  );
 }

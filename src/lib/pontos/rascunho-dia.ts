@@ -22,6 +22,10 @@ export type RascunhoDiaDados = {
   porPonto: Record<string, RascunhoPontoDia>;
   pix: number;
   dinheiro: number;
+  /** Entradas brutas (antes de descontar o deixado no ponto). */
+  recebido: number;
+  /** Valor deixado em visita(s) negativa(s). */
+  deixado: number;
 };
 
 function inferirForma(pix: number, dinheiro: number): RascunhoFormaPagamento {
@@ -90,6 +94,8 @@ export async function fetchRascunhoDia(
     porPonto: {},
     pix: 0,
     dinheiro: 0,
+    recebido: 0,
+    deixado: 0,
   };
 
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dataISO)) return vazio;
@@ -124,6 +130,9 @@ export async function fetchRascunhoDia(
     const porPonto = new Map<string, RascunhoPontoDia>();
     let pix = 0;
     let dinheiro = 0;
+    let entradaPix = 0;
+    let entradaDinheiro = 0;
+    let deixado = 0;
 
     for (const v of visitas ?? []) {
       if (!v.ponto_id) continue;
@@ -134,10 +143,11 @@ export async function fetchRascunhoDia(
       if (negativa) {
         const pPix = Math.max(0, Number(v.adiantamento_pix ?? 0));
         const pDin = Math.max(0, Number(v.adiantamento_dinheiro ?? 0));
-        const deixado = valorDeixadoNegativoCassino(v);
-        if (deixado <= 0.009) continue;
+        const deixadoVisita = valorDeixadoNegativoCassino(v);
+        if (deixadoVisita <= 0.009) continue;
 
-        const recebido = -deixado;
+        deixado += deixadoVisita;
+        const recebido = -deixadoVisita;
         if (pPix + pDin > 0.009) {
           somarPonto(porPonto, v.ponto_id, {
             recebido,
@@ -150,9 +160,9 @@ export async function fetchRascunhoDia(
           somarPonto(porPonto, v.ponto_id, {
             recebido,
             pix: 0,
-            dinheiro: -deixado,
+            dinheiro: -deixadoVisita,
           });
-          dinheiro -= deixado;
+          dinheiro -= deixadoVisita;
         }
         continue;
       }
@@ -172,6 +182,8 @@ export async function fetchRascunhoDia(
         });
         pix += pagamento.pix;
         dinheiro += pagamento.dinheiro;
+        entradaPix += pagamento.pix;
+        entradaDinheiro += pagamento.dinheiro;
       }
     }
 
@@ -192,6 +204,8 @@ export async function fetchRascunhoDia(
         });
         pix += pagamento.pix;
         dinheiro += pagamento.dinheiro;
+        entradaPix += pagamento.pix;
+        entradaDinheiro += pagamento.dinheiro;
       }
     }
 
@@ -211,6 +225,8 @@ export async function fetchRascunhoDia(
       porPonto: porPontoObj,
       pix: round2(pix),
       dinheiro: round2(dinheiro),
+      recebido: round2(entradaPix + entradaDinheiro),
+      deixado: round2(deixado),
     };
   } catch {
     return vazio;
