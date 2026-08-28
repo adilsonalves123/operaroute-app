@@ -2,17 +2,19 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ResumoPublicView } from "@/components/rascunho/ResumoPublicView";
 import { carregarResumoRascunhoPorToken } from "@/lib/rascunho/compartilhar-server";
-import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
+import { createPublicClient } from "@/lib/supabase/public";
 
 type Props = { params: Promise<{ token: string }> };
 
+async function loadSnapshot(token: string) {
+  const supabase = createPublicClient();
+  return carregarResumoRascunhoPorToken(supabase, token);
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { token } = await params;
-  if (!isAdminConfigured()) {
-    return { title: "Resumo · OperaRoute" };
-  }
   try {
-    const data = await carregarResumoRascunhoPorToken(createAdminClient(), token);
+    const data = await loadSnapshot(token);
     if (!data) return { title: "Resumo · OperaRoute" };
     return {
       title: `${data.snapshot.titulo || "Resumo"} — ${data.snapshot.empresaNome}`,
@@ -26,15 +28,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ResumoPublicPage({ params }: Props) {
   const { token } = await params;
 
-  if (!isAdminConfigured()) {
+  let loaded: Awaited<ReturnType<typeof loadSnapshot>>;
+  try {
+    loaded = await loadSnapshot(token);
+  } catch (e) {
     return (
       <main className="min-h-screen bg-[#0a0e16] px-4 py-16 text-center text-slate-300">
-        <p>Link indisponível no momento.</p>
+        <p className="text-[15px]">
+          {e instanceof Error ? e.message : "Link indisponível no momento."}
+        </p>
       </main>
     );
   }
 
-  const loaded = await carregarResumoRascunhoPorToken(createAdminClient(), token);
   if (!loaded) notFound();
 
   return <ResumoPublicView snap={loaded.snapshot} />;

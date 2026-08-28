@@ -9,28 +9,31 @@ export async function carregarResumoRascunhoPorToken(
   supabase: SupabaseClient,
   token: string
 ): Promise<{ snapshot: ResumoRascunhoSnapshot } | null> {
-  const { data, error } = await supabase
-    .from("public_rascunho_resumos")
-    .select("snapshot, expires_at, revoked_at")
-    .eq("token", token)
-    .maybeSingle();
+  const { data, error } = await supabase.rpc("get_public_rascunho_resumo", {
+    p_token: token,
+  });
 
-  if (error || !data?.snapshot) return null;
-  if (data.revoked_at) return null;
-  if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) return null;
+  if (error) {
+    if (
+      error.message.includes("get_public_rascunho_resumo") ||
+      error.code === "PGRST202"
+    ) {
+      throw new Error(
+        "Rode no Supabase o SQL supabase/rascunho-compartilhar.sql (função get_public_rascunho_resumo)."
+      );
+    }
+    return null;
+  }
 
-  await supabase
-    .from("public_rascunho_resumos")
-    .update({ last_viewed_at: new Date().toISOString() })
-    .eq("token", token);
-
-  return { snapshot: data.snapshot as ResumoRascunhoSnapshot };
+  if (!data || typeof data !== "object") return null;
+  return { snapshot: data as ResumoRascunhoSnapshot };
 }
 
 export async function gravarResumoRascunhoPublico(
   supabase: SupabaseClient,
   empresaId: string,
-  snapshot: ResumoRascunhoSnapshot
+  snapshot: ResumoRascunhoSnapshot,
+  origin?: string
 ): Promise<{ token: string; url: string }> {
   const token = gerarTokenResumoRascunho();
   const { error } = await supabase.from("public_rascunho_resumos").insert({
@@ -50,5 +53,5 @@ export async function gravarResumoRascunhoPublico(
     }
     throw new Error(error.message);
   }
-  return { token, url: resumoRascunhoPublicUrl(token) };
+  return { token, url: resumoRascunhoPublicUrl(token, origin) };
 }

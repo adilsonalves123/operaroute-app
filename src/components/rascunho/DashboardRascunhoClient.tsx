@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Instrument_Serif, Outfit } from "next/font/google";
-import { CalendarDays, Eraser, Loader2, MessageCircle, Pencil, Share2 } from "lucide-react";
+import { CalendarDays, Copy, Eraser, Link2, Loader2, MessageCircle, Pencil, Share2 } from "lucide-react";
 import {
   criarLinkResumoRascunho,
   compartilharSomenteLink,
@@ -171,6 +171,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
   const [carregandoDia, setCarregandoDia] = useState(false);
   const [puxouDia, setPuxouDia] = useState(false);
   const [compartilhandoLink, setCompartilhandoLink] = useState(false);
+  const [linkCompartilhamento, setLinkCompartilhamento] = useState<string | null>(null);
 
   const puxarDia = useCallback(async (dataISO: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dataISO)) return;
@@ -211,6 +212,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
       setDinheiroStr(numberToMoneyInput(body.dinheiro ?? 0));
       setPuxouDia(Object.keys(body.porPonto ?? {}).length > 0);
       setSalvo(false);
+      setLinkCompartilhamento(null);
     } catch {
       setFeedback("Não foi possível carregar o dia.");
     } finally {
@@ -289,8 +291,33 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
     };
   }
 
+  async function garantirLinkCompartilhamento(): Promise<string> {
+    if (linkCompartilhamento) return linkCompartilhamento;
+    const url = await criarLinkResumoRascunho(montarSnapshot());
+    setLinkCompartilhamento(url);
+    return url;
+  }
+
   async function gerarLinkCompartilhamento(): Promise<string> {
-    return criarLinkResumoRascunho(montarSnapshot());
+    return garantirLinkCompartilhamento();
+  }
+
+  async function copiarLink() {
+    setFeedback(null);
+    setCompartilhandoLink(true);
+    try {
+      const url = await garantirLinkCompartilhamento();
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(url);
+        setFeedback("Link copiado.");
+      } else {
+        setFeedback(url);
+      }
+    } catch (e) {
+      setFeedback(e instanceof Error ? e.message : "Não foi possível copiar o link.");
+    } finally {
+      setCompartilhandoLink(false);
+    }
   }
 
   async function compartilhar() {
@@ -350,6 +377,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
     setPixEditadoManual(false);
     setDinheiroEditadoManual(false);
     setSalvo(false);
+    setLinkCompartilhamento(null);
     setFeedback(null);
     setPuxouDia(false);
   }
@@ -360,8 +388,20 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
       return;
     }
     setFeedback(null);
+    setLinkCompartilhamento(null);
     setSalvo(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
+    void (async () => {
+      setCompartilhandoLink(true);
+      try {
+        const url = await criarLinkResumoRascunho(montarSnapshot());
+        setLinkCompartilhamento(url);
+      } catch (e) {
+        setFeedback(e instanceof Error ? e.message : "Não foi possível gerar o link.");
+      } finally {
+        setCompartilhandoLink(false);
+      }
+    })();
   }
 
   return (
@@ -810,9 +850,40 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
             </section>
 
             <div className="flex flex-wrap gap-x-5 gap-y-3 border-t border-white/[0.08] pt-6 text-[13px]">
-              <p className="w-full text-[11px] text-slate-600">
-                WhatsApp e compartilhar enviam só o link da página web.
-              </p>
+              <div className="w-full space-y-3">
+                <p className="text-[11px] text-slate-600">
+                  WhatsApp e compartilhar enviam só o link da página web.
+                </p>
+                {compartilhandoLink && !linkCompartilhamento ? (
+                  <p className="inline-flex items-center gap-2 text-[12px] text-slate-500">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    Gerando link…
+                  </p>
+                ) : linkCompartilhamento ? (
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
+                      <Link2 className="h-3.5 w-3.5 shrink-0 text-[#c4a574]/80" />
+                      <a
+                        href={linkCompartilhamento}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-w-0 truncate text-[12px] text-[#c4a574] underline-offset-2 hover:underline"
+                      >
+                        {linkCompartilhamento}
+                      </a>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void copiarLink()}
+                      disabled={compartilhandoLink}
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-[12px] text-slate-300 transition hover:border-white/20 hover:text-white disabled:opacity-50"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                      Copiar link
+                    </button>
+                  </div>
+                ) : null}
+              </div>
               <button
                 type="button"
                 onClick={() => void enviarWhatsApp()}
@@ -839,6 +910,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                 type="button"
                 onClick={() => {
                   setSalvo(false);
+                  setLinkCompartilhamento(null);
                   setFeedback(null);
                 }}
                 className="inline-flex items-center gap-2 text-slate-400 transition hover:text-slate-200"

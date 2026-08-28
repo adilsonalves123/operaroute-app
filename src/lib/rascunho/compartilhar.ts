@@ -33,13 +33,19 @@ export function resumoRascunhoPublicUrl(token: string): string {
 }
 
 export async function criarLinkResumoRascunho(
-  snapshot: ResumoRascunhoSnapshot
+  snapshot: ResumoRascunhoSnapshot,
+  origin?: string
 ): Promise<string> {
   const res = await fetch("/api/rascunho/compartilhar", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ snapshot }),
+    body: JSON.stringify({
+      snapshot,
+      origin:
+        origin ??
+        (typeof window !== "undefined" ? window.location.origin : undefined),
+    }),
   });
   const data = (await res.json()) as { error?: string; url?: string };
   if (!res.ok || !data.url) {

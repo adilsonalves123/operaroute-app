@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import type { ResumoRascunhoSnapshot } from "@/lib/rascunho/compartilhar";
 import { gravarResumoRascunhoPublico } from "@/lib/rascunho/compartilhar-server";
-import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,17 +14,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Menu Rascunho desativado." }, { status: 403 });
   }
 
-  if (!isAdminConfigured()) {
-    return NextResponse.json(
-      {
-        error:
-          "SUPABASE_SERVICE_ROLE_KEY não configurada no servidor para links públicos.",
-      },
-      { status: 503 }
-    );
-  }
-
-  let body: { snapshot?: ResumoRascunhoSnapshot };
+  let body: { snapshot?: ResumoRascunhoSnapshot; origin?: string };
   try {
     body = await request.json();
   } catch {
@@ -37,12 +26,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Snapshot do resumo inválido." }, { status: 400 });
   }
 
+  const origin =
+    typeof body.origin === "string" && body.origin.startsWith("http")
+      ? body.origin
+      : new URL(request.url).origin;
+
   try {
-    const db = createAdminClient();
     const { url } = await gravarResumoRascunhoPublico(
-      db,
+      auth.supabase,
       auth.profile.empresa_id!,
-      snapshot
+      snapshot,
+      origin
     );
     return NextResponse.json({ success: true, url });
   } catch (e) {
