@@ -10,8 +10,7 @@ export default async function RascunhoPage() {
     redirect("/dashboard");
   }
 
-  const empresaNome =
-    empresa?.nome_operacao?.trim() || empresa?.nome?.trim() || "Operação";
+  const empresaNome = empresa?.nome_operacao?.trim() || "Operação";
 
   if (!profile?.empresa_id) {
     return <DashboardRascunhoClient pontos={[]} empresaNome={empresaNome} />;

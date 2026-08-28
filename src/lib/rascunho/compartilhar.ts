@@ -28,8 +28,8 @@ export function gerarTokenResumoRascunho(): string {
   return s;
 }
 
-export function resumoRascunhoPublicUrl(token: string): string {
-  return absoluteUrl(`/r/${token}`);
+export function resumoRascunhoPublicUrl(token: string, origin?: string): string {
+  return absoluteUrl(`/r/${token}`, origin);
 }
 
 export async function criarLinkResumoRascunho(
