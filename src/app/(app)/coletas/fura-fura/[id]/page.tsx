@@ -14,6 +14,10 @@ import {
   saldoPendenteColeta,
 } from "@/lib/nichos/fura-fura";
 import { snapshotFromColetaRow } from "@/lib/comprovantes/from-relatorio-nicho";
+import {
+  cobrancaDetalheFromColetaSalva,
+  totalPagoInformadoColeta,
+} from "@/lib/coletas/cobranca-coleta-salva";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { labelFormaPagamento } from "@/lib/financeiro/forma-pagamento";
 
@@ -78,6 +82,9 @@ export default async function ColetaFuraFuraDetailPage({
   const calculo = calculoFromColetaSalva(coleta);
   const brindes = parseBrindesSalvos(coleta.brindes_entregues);
   const pendente = saldoPendenteColeta(coleta);
+  const cobrancaSalva = cobrancaDetalheFromColetaSalva(coleta);
+  const totalPagoVisita = totalPagoInformadoColeta(coleta);
+  const pagamentoColeta = pagamentos?.[0];
   const snapshot = {
     ...snapshotFromColetaRow({
       empresaNome: empresa?.nome_operacao ?? "Operação",
@@ -106,6 +113,7 @@ export default async function ColetaFuraFuraDetailPage({
       calculo,
       kitNome: (coleta as { kit_nome?: string | null }).kit_nome ?? null,
       fotoUrl: coleta.foto_url ?? null,
+      cobranca: cobrancaSalva,
     },
   };
 
@@ -130,7 +138,11 @@ export default async function ColetaFuraFuraDetailPage({
         </div>
       </div>
 
-      <ColetaFuraFuraResumo calculo={calculo} />
+      <ColetaFuraFuraResumo
+        calculo={calculo}
+        cobrancaSalva={cobrancaSalva}
+        totalPagoVisita={totalPagoVisita}
+      />
 
       <div className="glass-card p-6 grid gap-4 sm:grid-cols-2 text-sm">
         <div>
@@ -140,12 +152,12 @@ export default async function ColetaFuraFuraDetailPage({
           </p>
         </div>
         <div>
-          <p className="text-slate-500">Pagamento</p>
+          <p className="text-slate-500">Pagamento desta coleta</p>
           <p className="font-medium text-white">
             {labelFormaPagamento(
-              coleta.forma_pagamento,
-              coleta.valor_pix,
-              coleta.valor_dinheiro
+              pagamentoColeta?.forma_pagamento ?? coleta.forma_pagamento,
+              pagamentoColeta?.valor_pix ?? coleta.valor_pix,
+              pagamentoColeta?.valor_dinheiro ?? coleta.valor_dinheiro
             )}
           </p>
         </div>

@@ -13,6 +13,7 @@ import { ColetaReceberClienteBox } from "@/components/coletas/ColetaReceberClien
 import { ColetaContinuarPagamentoHint } from "@/components/coletas/ColetaContinuarPagamentoHint";
 import { ColetaRecebimentoFields } from "@/components/coletas/layout";
 import { ComissaoStaffLinha } from "@/components/equipe/ComissaoStaffLinha";
+import type { RelatorioCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 import { cn, formatCurrency } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -39,6 +40,8 @@ export function ColetaFuraFuraResumo({
   receberAgora = false,
   finalizarSemPagar = false,
   modoFecharSlot,
+  cobrancaSalva = null,
+  totalPagoVisita,
 }: {
   calculo: CalculoColetaFuraFuraResult;
   className?: string;
@@ -53,6 +56,10 @@ export function ColetaFuraFuraResumo({
   receberAgora?: boolean;
   finalizarSemPagar?: boolean;
   modoFecharSlot?: ReactNode;
+  /** Dívida anterior quitada nesta coleta (detalhe salvo). */
+  cobrancaSalva?: RelatorioCobrancaDetalhe | null;
+  /** Pix + dinheiro informados na visita (pode incluir dívida). */
+  totalPagoVisita?: number;
 }) {
   const resumo = resumoColetaFuraFura(calculo);
   const mostrandoPagamento = !modoVisitaPonto || receberAgora;
@@ -196,12 +203,29 @@ export function ColetaFuraFuraResumo({
           <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             Recebimento
           </p>
+          {(cobrancaSalva?.dividaAnterior ?? 0) > 0.009 ? (
+            <div className="flex justify-between gap-3">
+              <span className="text-amber-300">Dívida anterior quitada</span>
+              <span className="font-semibold text-amber-400 tabular-nums">
+                {formatCurrency(cobrancaSalva!.dividaAnterior!)}
+              </span>
+            </div>
+          ) : null}
           <div className="flex justify-between gap-3">
-            <span className="text-slate-400">Recebido</span>
+            <span className="text-slate-400">Recebido desta coleta</span>
             <span className="font-semibold text-green-400 tabular-nums">
               {formatCurrency(calculo.valorPagoRecebido)}
             </span>
           </div>
+          {totalPagoVisita != null &&
+          totalPagoVisita > calculo.valorPagoRecebido + 0.009 ? (
+            <div className="flex justify-between gap-3">
+              <span className="text-slate-400">Total pago na visita</span>
+              <span className="font-medium text-slate-200 tabular-nums">
+                {formatCurrency(totalPagoVisita)}
+              </span>
+            </div>
+          ) : null}
           {calculo.saldoPendente > 0.009 ? (
             <div className="flex justify-between gap-3">
               <span className="text-amber-300">Pendente</span>

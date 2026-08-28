@@ -283,6 +283,7 @@ async function postColetaFuraFura(request: Request) {
     observacao: body.observacao ?? null,
     kit_id: kitId,
     kit_nome: kitNome,
+    divida_quitada: cobrandoAgora ? recebimentoRateado.aplicadoDividaAnterior : 0,
   };
 
   const { data: coleta, error: coletaError } = await supabase

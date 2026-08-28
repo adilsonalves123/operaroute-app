@@ -225,6 +225,7 @@ export interface Coleta {
   valor_pago_recebido?: number | null;
   valor_pix?: number | null;
   valor_dinheiro?: number | null;
+  divida_quitada?: number | null;
   custo_brindes?: number | null;
   lucro_real?: number | null;
   relatorio_enviado?: boolean | null;
