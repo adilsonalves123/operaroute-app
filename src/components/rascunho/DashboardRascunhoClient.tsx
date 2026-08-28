@@ -452,30 +452,8 @@ export function DashboardRascunhoClient({ pontos }: Props) {
               )}
             </section>
 
-            {/* Totais — depois da lista, antes de salvar */}
+            {/* Pix / Dinheiro — depois da lista, antes de salvar */}
             <section className="space-y-5 border-t border-white/[0.08] pt-8">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
-                  Total recebido na rota
-                </p>
-                <p
-                  className={cn(
-                    "mt-2 text-[clamp(2rem,7vw,2.75rem)] tabular-nums leading-none",
-                    total < 0 ? "text-rose-300" : "text-[#f4efe6]"
-                  )}
-                  style={{
-                    fontFamily: "var(--font-rasc-display), Georgia, serif",
-                  }}
-                >
-                  {formatCurrency(totalRecebido)}
-                </p>
-                <p className="mt-2 text-[12px] text-slate-500">
-                  {preenchidos === 0
-                    ? "Nenhum valor ainda"
-                    : `${preenchidos} ponto${preenchidos === 1 ? "" : "s"} · soma dos pontos: ${formatCurrency(total)}`}
-                </p>
-              </div>
-
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="block space-y-2">
                   <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
@@ -506,12 +484,19 @@ export function DashboardRascunhoClient({ pontos }: Props) {
                   />
                 </label>
               </div>
-              {Math.abs(total - totalRecebido) > 0.05 && preenchidos > 0 ? (
-                <p className="text-[11px] text-amber-400/90">
-                  Pix + Dinheiro ({formatCurrency(totalRecebido)}) difere da soma
-                  dos pontos ({formatCurrency(total)}) — confira os valores.
-                </p>
-              ) : null}
+              <p className="text-[13px] text-slate-500">
+                {preenchidos === 0 ? (
+                  "Nenhum ponto com valor ainda"
+                ) : (
+                  <>
+                    <span className="tabular-nums text-[#f4efe6]">
+                      {formatCurrency(totalRecebido)}
+                    </span>
+                    {" · "}
+                    {preenchidos} ponto{preenchidos === 1 ? "" : "s"}
+                  </>
+                )}
+              </p>
               {feedback ? (
                 <p className="text-[12px] text-rose-400">{feedback}</p>
               ) : null}

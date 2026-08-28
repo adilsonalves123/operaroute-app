@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
+import { valorDeixadoNegativoCassino } from "@/lib/nichos/cassino/lucro-recebido";
 import type { FormaPagamento } from "@/lib/types/database";
 
 function round2(n: number): number {
@@ -104,7 +105,7 @@ export async function fetchRascunhoDia(
       supabase
         .from("visitas")
         .select(
-          "ponto_id, total_lucro_centavos, saldo_negativo, valor_pago, valor_pix, valor_dinheiro, adiantamento_pix, adiantamento_dinheiro, forma_pagamento"
+          "ponto_id, total_lucro_centavos, saldo_negativo, valor_pago, valor_pix, valor_dinheiro, adiantamento_pix, adiantamento_dinheiro, desconto, forma_pagamento"
         )
         .eq("empresa_id", empresaId)
         .gte("created_at", periodo.inicioISO)
@@ -131,15 +132,27 @@ export async function fetchRascunhoDia(
         Number(v.total_lucro_centavos ?? 0) < -0.9;
 
       if (negativa) {
-        const pPix = Number(v.adiantamento_pix ?? 0);
-        const pDin = Number(v.adiantamento_dinheiro ?? 0);
-        const recebido = -round2(pPix + pDin);
-        if (Math.abs(recebido) > 0.0001) {
+        const pPix = Math.max(0, Number(v.adiantamento_pix ?? 0));
+        const pDin = Math.max(0, Number(v.adiantamento_dinheiro ?? 0));
+        const deixado = valorDeixadoNegativoCassino(v);
+        if (deixado <= 0.009) continue;
+
+        const recebido = -deixado;
+        if (pPix + pDin > 0.009) {
+          somarPonto(porPonto, v.ponto_id, {
+            recebido,
+            pix: -pPix,
+            dinheiro: -pDin,
+          });
+          pix -= pPix;
+          dinheiro -= pDin;
+        } else {
           somarPonto(porPonto, v.ponto_id, {
             recebido,
             pix: 0,
-            dinheiro: 0,
+            dinheiro: -deixado,
           });
+          dinheiro -= deixado;
         }
         continue;
       }
@@ -186,8 +199,8 @@ export async function fetchRascunhoDia(
     for (const [id, item] of porPonto) {
       if (
         Math.abs(item.valor) > 0.0001 ||
-        item.pix > 0.0001 ||
-        item.dinheiro > 0.0001
+        Math.abs(item.pix) > 0.0001 ||
+        Math.abs(item.dinheiro) > 0.0001
       ) {
         porPontoObj[id] = item;
       }
