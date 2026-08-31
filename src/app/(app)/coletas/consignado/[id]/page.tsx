@@ -3,10 +3,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { labelFormaPagamento } from "@/lib/financeiro/forma-pagamento";
 import { saldoPendenteColeta } from "@/lib/nichos/fura-fura";
 import { NICHO_MODULO_CONSIGNADO } from "@/lib/nichos/consignado";
 import { snapshotFromColetaRow } from "@/lib/comprovantes/from-relatorio-nicho";
+import {
+  cobrancaFromColetaRow,
+  ColetaHistoricoRecebimentoCards,
+} from "@/components/coletas/ColetaHistoricoRecebimentoCards";
 import { CompartilharColetaHistoricoActions } from "@/components/coletas/CompartilharColetaHistoricoActions";
 import { CorrigirPagamentoButton } from "@/components/coletas/CorrigirPagamentoButton";
 
@@ -28,6 +31,12 @@ export default async function ColetaConsignadoDetalhePage({
     .maybeSingle();
 
   if (!coleta) notFound();
+
+  const { data: pagamentos } = await supabase
+    .from("coleta_pagamentos")
+    .select("*")
+    .eq("coleta_id", id)
+    .order("created_at");
 
   const [{ data: empresa }, { data: itemVisita }] = await Promise.all([
     profile?.empresa_id
@@ -71,11 +80,8 @@ export default async function ColetaConsignadoDetalhePage({
   const valorAReceber = Number(coleta.valor_a_receber ?? coleta.valor_liquido ?? 0);
   const valorPago = Number(coleta.valor_pago_recebido ?? 0);
   const saldoPendente = saldoPendenteColeta(coleta);
-  const formaPagamento = labelFormaPagamento(
-    coleta.forma_pagamento,
-    coleta.valor_pix,
-    coleta.valor_dinheiro
-  );
+  const cobrancaSalva = cobrancaFromColetaRow(coleta);
+  const pagamentoColeta = pagamentos?.[0];
   const totalVendido = Number(coleta.quantidade_furos ?? coleta.entrada_periodo ?? 0);
   const ponto = coleta.pontos as { nome?: string; whatsapp?: string | null } | null;
   const snapshot = {
@@ -140,6 +146,7 @@ export default async function ColetaConsignadoDetalhePage({
         saldoPendente,
         haver: Math.max(0, valorPago - valorAReceber),
       },
+      cobranca: cobrancaSalva,
     },
   };
 
@@ -206,17 +213,12 @@ export default async function ColetaConsignadoDetalhePage({
               {formatCurrency(Number(coleta.lucro_real ?? coleta.valor_liquido ?? 0))}
             </p>
           </div>
-          <div className="rounded-lg bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-500">Recebido</p>
-            <p className="font-semibold text-green-400">{formatCurrency(valorPago)}</p>
-            <p className="mt-1 text-xs text-slate-500">{formaPagamento}</p>
-          </div>
-          <div className="rounded-lg bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-500">Saldo pendente</p>
-            <p className={`font-semibold ${saldoPendente > 0.009 ? "text-amber-400" : "text-green-400"}`}>
-              {formatCurrency(saldoPendente)}
-            </p>
-          </div>
+          <ColetaHistoricoRecebimentoCards
+            coleta={coleta}
+            valorPago={valorPago}
+            saldoPendente={saldoPendente}
+            pagamentoColeta={pagamentoColeta}
+          />
         </div>
 
         <div className="space-y-3">

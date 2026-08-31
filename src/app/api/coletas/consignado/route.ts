@@ -251,6 +251,8 @@ export async function POST(request: Request) {
           brindes_entregues: brindesVendidos,
           latitude: body.latitude ?? null,
           longitude: body.longitude ?? null,
+          divida_quitada:
+            cobrandoAgora && index === 0 ? recebimentoRateado.aplicadoDividaAnterior : 0,
         })
         .select("id")
         .single();

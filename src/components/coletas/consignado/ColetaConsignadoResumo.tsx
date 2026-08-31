@@ -12,6 +12,8 @@ import { ColetaReceberClienteBox } from "@/components/coletas/ColetaReceberClien
 import { ColetaContinuarPagamentoHint } from "@/components/coletas/ColetaContinuarPagamentoHint";
 import { ColetaRecebimentoFields } from "@/components/coletas/layout";
 import { ComissaoStaffLinha } from "@/components/equipe/ComissaoStaffLinha";
+import { ColetaRecebimentoSalvoLinhas } from "@/components/coletas/ColetaRecebimentoSalvoLinhas";
+import type { RelatorioCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 import { cn, formatCurrency } from "@/lib/utils";
 import { Package, Wallet } from "lucide-react";
 import type { ReactNode } from "react";
@@ -39,6 +41,8 @@ export function ColetaConsignadoResumo({
   receberAgora = false,
   finalizarSemPagar = false,
   modoFecharSlot,
+  cobrancaSalva = null,
+  totalPagoVisita,
 }: {
   calculo: CalculoColetaConsignado;
   className?: string;
@@ -53,6 +57,8 @@ export function ColetaConsignadoResumo({
   receberAgora?: boolean;
   finalizarSemPagar?: boolean;
   modoFecharSlot?: ReactNode;
+  cobrancaSalva?: RelatorioCobrancaDetalhe | null;
+  totalPagoVisita?: number;
 }) {
   const mostrandoPagamento = !modoVisitaPonto || receberAgora;
   const pendenciaSaldo = pendenciaPonto?.totalPendente ?? 0;
@@ -252,36 +258,13 @@ export function ColetaConsignadoResumo({
             </>
           )}
         </div>
-      ) : calculo.valorPagoRecebido > 0.009 ? (
-        <div className="border-t border-slate-800 pt-4 space-y-2 text-xs">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-            Recebimento
-          </p>
-          <div className="flex justify-between gap-3">
-            <span className="text-slate-400">Recebido</span>
-            <span className="font-semibold text-green-400 tabular-nums">
-              {formatCurrency(calculo.valorPagoRecebido)}
-            </span>
-          </div>
-          {calculo.saldoPendente > 0.009 ? (
-            <div className="flex justify-between gap-3">
-              <span className="text-amber-300">Pendente</span>
-              <span className="font-bold text-amber-400 tabular-nums">
-                {formatCurrency(calculo.saldoPendente)}
-              </span>
-            </div>
-          ) : calculo.haver > 0.009 ? (
-            <div className="flex justify-between gap-3">
-              <span className="text-cyan-300">Haver</span>
-              <span className="font-bold text-cyan-400 tabular-nums">
-                + {formatCurrency(calculo.haver)}
-              </span>
-            </div>
-          ) : (
-            <p className="text-green-400">Quitado</p>
-          )}
-        </div>
-      ) : null}
+      ) : (
+        <ColetaRecebimentoSalvoLinhas
+          calculo={calculo}
+          cobrancaSalva={cobrancaSalva}
+          totalPagoVisita={totalPagoVisita}
+        />
+      )}
     </div>
   );
 }
