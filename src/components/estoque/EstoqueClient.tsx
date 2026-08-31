@@ -1322,13 +1322,13 @@ export function EstoqueClient({
               <div className="space-y-3">
                 {itemsFiltrados.length > 12 ? (
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <Search className="pointer-events-none absolute left-3.5 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-slate-500" />
                     <input
                       type="search"
                       value={buscaItem}
                       onChange={(e) => setBuscaItem(e.target.value)}
                       placeholder="Buscar item pelo nome..."
-                      className="w-full rounded-lg border border-white/[0.08] bg-slate-950/60 py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#c4a574]/40"
+                      className="w-full rounded-lg border border-white/[0.08] bg-slate-950/60 py-2.5 !pl-11 pr-4 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#c4a574]/40"
                     />
                   </div>
                 ) : null}

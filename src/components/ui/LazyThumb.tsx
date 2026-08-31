@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
-import { ImageIcon } from "lucide-react";
 import { thumbnailUrl } from "@/lib/storage/thumbnail-url";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +14,7 @@ type Props = {
 
 /**
  * Miniatura leve: só monta a tag img perto da viewport.
- * Se a miniatura Supabase falhar, mostra ícone — não baixa a foto original (2–5 MB).
+ * Tenta miniatura Supabase primeiro; se falhar, usa a URL original.
  */
 export const LazyThumb = memo(function LazyThumb({
   src,
@@ -26,7 +25,7 @@ export const LazyThumb = memo(function LazyThumb({
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [failed, setFailed] = useState(false);
+  const [useOriginal, setUseOriginal] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -44,45 +43,43 @@ export const LazyThumb = memo(function LazyThumb({
           obs.disconnect();
         }
       },
-      { rootMargin: "80px 0px", threshold: 0 }
+      { rootMargin: "120px 0px", threshold: 0 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
-  const imgSrc = thumbnailUrl(src, size);
+  const imgSrc = useOriginal ? src : thumbnailUrl(src, size);
 
   return (
     <div
       ref={ref}
-      className={cn(
-        "relative overflow-hidden bg-slate-900/70",
-        className
-      )}
+      className={cn("relative overflow-hidden bg-slate-900/70", className)}
     >
-      {visible && !failed ? (
+      {visible ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          key={imgSrc}
           src={imgSrc}
           alt={alt}
           loading="lazy"
           decoding="async"
           fetchPriority="low"
           onLoad={() => setLoaded(true)}
-          onError={() => setFailed(true)}
+          onError={() => {
+            if (!useOriginal) {
+              setUseOriginal(true);
+              setLoaded(false);
+            }
+          }}
           className={cn(
             "h-full w-full object-cover",
             loaded ? "opacity-100" : "opacity-0"
           )}
         />
       ) : null}
-      {!loaded || failed ? (
-        <div
-          className="absolute inset-0 flex items-center justify-center bg-slate-800/80 text-slate-600"
-          aria-hidden={!failed}
-        >
-          {failed ? <ImageIcon className="h-4 w-4" /> : null}
-        </div>
+      {!loaded ? (
+        <div className="absolute inset-0 bg-slate-800/70" aria-hidden />
       ) : null}
     </div>
   );
