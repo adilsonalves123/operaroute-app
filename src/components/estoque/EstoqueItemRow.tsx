@@ -49,7 +49,6 @@ export const EstoqueItemRow = memo(function EstoqueItemRow({
       ref={rowRef}
       className={cn(
         "overflow-hidden border border-white/[0.06] bg-white/[0.02]",
-        !isEditing && "estoque-item-card",
         isEditing &&
           "border-[#c4a574]/30 bg-white/[0.03] ring-1 ring-[#c4a574]/15 lg:col-span-2"
       )}
