@@ -67,6 +67,7 @@ export default async function PontoDetailPage({
 
   const [
     kitAtivoResult,
+    kitReposicaoResult,
     estoqueCentralResult,
     equipamentosResult,
     estoqueEquipamentosResult,
@@ -99,6 +100,12 @@ export default async function PontoDetailPage({
           .eq("empresa_id", profile.empresa_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    isFuraFura && ponto.kit_ativo_id
+      ? supabase
+          .from("fura_kit_reposicao_itens")
+          .select("nome, quantidade, estoque_item_id, custo_unitario")
+          .eq("kit_id", ponto.kit_ativo_id)
+      : Promise.resolve({ data: [] }),
     precisaEstoqueCentral && profile?.empresa_id
       ? supabase
           .from("estoque")
@@ -284,7 +291,11 @@ export default async function PontoDetailPage({
   ]);
 
   const kitAtivoNome = kitAtivoResult.data?.nome ?? null;
+  const kitReposicao = kitReposicaoResult.data ?? [];
   const estoqueCentral = estoqueCentralResult.data ?? [];
+  const fotosPorItemId = Object.fromEntries(
+    estoqueCentral.map((i) => [i.id, i.foto_url ?? null] as const)
+  );
   const equipamentos = equipamentosResult.data ?? [];
   const estoqueEquipamentos = estoqueEquipamentosResult.data ?? [];
   const todosPontos = todosPontosResult.data ?? [];
@@ -521,6 +532,11 @@ export default async function PontoDetailPage({
                 kitAtivoId={ponto.kit_ativo_id ?? null}
                 kitInstaladoEm={ponto.kit_instalado_em ?? null}
                 kitAtivoNome={kitAtivoNome}
+                estoqueBrindes={
+                  Array.isArray(ponto.estoque_brindes) ? ponto.estoque_brindes : []
+                }
+                kitReposicao={kitReposicao}
+                fotosPorItemId={fotosPorItemId}
               />
               <PontoFuraFuraSettings
                 pontoId={id}

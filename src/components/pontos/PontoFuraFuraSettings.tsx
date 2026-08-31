@@ -49,7 +49,9 @@ export function PontoFuraFuraSettings({
   const [alocarQty, setAlocarQty] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
-  const [brindesAberto, setBrindesAberto] = useState(false);
+  const [brindesAberto, setBrindesAberto] = useState(
+    estoqueBrindes.some((b) => Number(b.quantidade) > 0)
+  );
 
   const catalogoDisponivel = estoqueCentral.filter((i) => Number(i.quantidade) > 0);
   const brindesComEstoque = brindes.filter((b) => b.quantidade > 0).length;
@@ -98,6 +100,40 @@ export function PontoFuraFuraSettings({
         i === index ? { ...b, quantidade: Math.max(0, Number(value) || 0) } : b
       )
     );
+  }
+
+  async function removerBrinde(index: number) {
+    const brinde = brindes[index];
+    if (!brinde) return;
+
+    const ok = window.confirm(
+      `Remover ${brinde.quantidade}× ${brinde.nome} deste ponto?\n\nVolta ao estoque central.`
+    );
+    if (!ok) return;
+
+    setLoading(true);
+    setMsg("");
+    try {
+      const res = await fetch(`/api/pontos/${pontoId}/brindes/devolver`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          item_id: brinde.item_id,
+          nome: brinde.nome,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setMsg(data.error ?? "Erro ao remover.");
+        return;
+      }
+      setBrindes((prev) => prev.filter((_, j) => j !== index));
+      setMsg("Item removido do ponto.");
+      router.refresh();
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function save() {
@@ -273,9 +309,10 @@ export function PontoFuraFuraSettings({
                   />
                   <button
                     type="button"
-                    onClick={() => setBrindes((prev) => prev.filter((_, j) => j !== i))}
-                    className="rounded-lg p-2 text-red-400 hover:bg-red-500/10 mb-0.5"
-                    title="Remover do ponto"
+                    onClick={() => void removerBrinde(i)}
+                    disabled={loading}
+                    className="rounded-lg p-2 text-red-400 hover:bg-red-500/10 mb-0.5 disabled:opacity-40"
+                    title="Remover do ponto (volta ao central)"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

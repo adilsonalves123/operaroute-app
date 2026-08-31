@@ -171,3 +171,86 @@ export async function devolverEstoqueBrindesPontoParaCentral(
 
   return { totalUnidades: total };
 }
+
+/** Remove brinde(s) do ponto e devolve ao estoque central. */
+export async function devolverBrindeDoPontoParaCentral(
+  supabase: SupabaseClient,
+  params: {
+    empresaId: string;
+    pontoId: string;
+    itemId?: string;
+    nome?: string;
+    quantidade?: number;
+    observacao?: string;
+  }
+): Promise<{ devolvido: number; error?: string }> {
+  const { data: ponto, error: pontoError } = await supabase
+    .from("pontos")
+    .select("id, estoque_brindes")
+    .eq("id", params.pontoId)
+    .eq("empresa_id", params.empresaId)
+    .maybeSingle();
+
+  if (pontoError || !ponto) {
+    return { devolvido: 0, error: pontoError?.message ?? "Ponto não encontrado." };
+  }
+
+  const brindes: BrindePonto[] = Array.isArray(ponto.estoque_brindes)
+    ? (ponto.estoque_brindes as BrindePonto[]).map((b) => ({ ...b }))
+    : [];
+
+  const idx = params.itemId
+    ? brindes.findIndex((b) => b.item_id === params.itemId)
+    : brindes.findIndex(
+        (b) => b.nome.trim().toLowerCase() === String(params.nome ?? "").trim().toLowerCase()
+      );
+
+  if (idx < 0) {
+    return { devolvido: 0, error: "Item não encontrado neste ponto." };
+  }
+
+  const linha = brindes[idx];
+  const disponivel = Math.max(0, Math.floor(Number(linha.quantidade) || 0));
+  if (disponivel <= 0) {
+    return { devolvido: 0, error: "Este item já está zerado no ponto." };
+  }
+
+  const qty =
+    params.quantidade != null
+      ? Math.min(disponivel, Math.max(0, Math.floor(params.quantidade)))
+      : disponivel;
+
+  if (qty <= 0) {
+    return { devolvido: 0, error: "Quantidade inválida." };
+  }
+
+  const devolucao = await devolverEstoqueBrindesPontoParaCentral(supabase, {
+    empresaId: params.empresaId,
+    pontoId: params.pontoId,
+    brindes: [{ ...linha, quantidade: qty }],
+    observacao: params.observacao ?? `Devolução de ${linha.nome} do ponto`,
+  });
+
+  if (devolucao.error) {
+    return { devolvido: 0, error: devolucao.error };
+  }
+
+  const restante = disponivel - qty;
+  if (restante <= 0) {
+    brindes.splice(idx, 1);
+  } else {
+    brindes[idx] = { ...linha, quantidade: restante };
+  }
+
+  const { error: updateError } = await supabase
+    .from("pontos")
+    .update({ estoque_brindes: brindes })
+    .eq("id", params.pontoId)
+    .eq("empresa_id", params.empresaId);
+
+  if (updateError) {
+    return { devolvido: 0, error: updateError.message };
+  }
+
+  return { devolvido: devolucao.totalUnidades };
+}

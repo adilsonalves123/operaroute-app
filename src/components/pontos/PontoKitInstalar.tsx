@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronDown, ImageIcon, Loader2, Package } from "lucide-react";
+import { ChevronDown, ImageIcon, Loader2, Package, Trash2 } from "lucide-react";
+import { LazyThumb } from "@/components/ui/LazyThumb";
+import { resumirKitNoPonto } from "@/lib/estoque/alocados-pontos";
+import { normalizarEstoqueBrindesPonto } from "@/lib/estoque/brindes-ponto";
 import { cn } from "@/lib/utils";
 
 type KitOption = {
@@ -12,6 +15,19 @@ type KitOption = {
   foto_url?: string | null;
   quantidade_montada?: number;
   reposicao_itens: { nome: string; quantidade: number; foto_url?: string | null }[];
+};
+
+type BrindePonto = {
+  item_id?: string;
+  nome: string;
+  quantidade: number;
+  custo_unitario?: number;
+};
+
+type ReposicaoLinha = {
+  nome: string;
+  quantidade: number;
+  estoque_item_id?: string | null;
 };
 
 function fotoDoKit(kit: Pick<KitOption, "foto_url" | "reposicao_itens">): string | null {
@@ -24,6 +40,9 @@ type Props = {
   kitAtivoId: string | null;
   kitInstaladoEm: string | null;
   kitAtivoNome?: string | null;
+  estoqueBrindes: BrindePonto[];
+  kitReposicao?: ReposicaoLinha[];
+  fotosPorItemId?: Record<string, string | null>;
 };
 
 function KitThumb({
@@ -63,14 +82,28 @@ export function PontoKitInstalar({
   kitAtivoId,
   kitInstaladoEm,
   kitAtivoNome,
+  estoqueBrindes,
+  kitReposicao = [],
+  fotosPorItemId = {},
 }: Props) {
   const router = useRouter();
   const [kits, setKits] = useState<KitOption[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [removendo, setRemovendo] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
   const rootRef = useRef<HTMLDivElement>(null);
+
+  const brindesNoPonto = useMemo(
+    () => normalizarEstoqueBrindesPonto(estoqueBrindes),
+    [estoqueBrindes]
+  );
+
+  const resumoKit = useMemo(
+    () => resumirKitNoPonto(estoqueBrindes, kitReposicao),
+    [estoqueBrindes, kitReposicao]
+  );
 
   useEffect(() => {
     fetch("/api/fura-kits", { credentials: "include" })
@@ -122,6 +155,53 @@ export function PontoKitInstalar({
     }
   }
 
+  async function removerItem(item: BrindePonto) {
+    const key = item.item_id ?? item.nome;
+    if (removendo === key) return;
+
+    const ok = window.confirm(
+      `Remover ${item.quantidade}× ${item.nome} deste ponto?\n\nAs unidades voltam ao estoque central.`
+    );
+    if (!ok) return;
+
+    setRemovendo(key);
+    setMsg("");
+    try {
+      const res = await fetch(`/api/pontos/${pontoId}/brindes/devolver`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          item_id: item.item_id,
+          nome: item.nome,
+        }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        devolvido?: number;
+      };
+      if (!res.ok) {
+        setMsg(data.error ?? "Erro ao remover item.");
+        return;
+      }
+      setMsg(
+        `${item.nome} removido do ponto${data.devolvido ? ` · ${data.devolvido} un. no central` : ""}.`
+      );
+      router.refresh();
+    } finally {
+      setRemovendo(null);
+    }
+  }
+
+  function fotoDoItem(nome: string, itemId?: string): string | null {
+    if (itemId && fotosPorItemId[itemId]) return fotosPorItemId[itemId];
+    const brinde = brindesNoPonto.find((b) => b.item_id === itemId || b.nome === nome);
+    if (brinde?.item_id && fotosPorItemId[brinde.item_id]) {
+      return fotosPorItemId[brinde.item_id];
+    }
+    return null;
+  }
+
   const selected = kits.find((k) => k.id === selectedId);
 
   return (
@@ -129,11 +209,10 @@ export function PontoKitInstalar({
       <div className="flex items-start gap-3">
         <Package className="h-5 w-5 text-cyan-400 shrink-0 mt-0.5" />
         <div>
-          <h2 className="font-semibold text-white">Alocar kit no ponto</h2>
+          <h2 className="font-semibold text-white">Kit no ponto</h2>
           <p className="text-xs text-slate-500 mt-1">
-            Ex.: saíram 3 facas e sobraram 2 — ao colocar um kit novo de 5 facas, as 2 que sobraram
-            voltam ao estoque central (avulso) e o kit completo entra no bar. Na coleta, dê baixa
-            item por item.
+            Alocar kit montado no depósito. Veja abaixo o que está no bar e remova item a item se
+            precisar — tudo volta ao estoque central.
           </p>
         </div>
       </div>
@@ -147,8 +226,83 @@ export function PontoKitInstalar({
               desde {new Date(kitInstaladoEm).toLocaleDateString("pt-BR")}
             </span>
           )}
+          {resumoKit.totalOriginal > 0 && (
+            <p className="mt-1 text-xs text-slate-400">
+              Restante do kit:{" "}
+              <span className="font-medium text-cyan-200 tabular-nums">
+                {resumoKit.pctRestante}%
+              </span>
+              {" · "}
+              {resumoKit.totalAtual}/{resumoKit.totalOriginal} un.
+            </p>
+          )}
         </div>
       )}
+
+      {brindesNoPonto.length > 0 ? (
+        <div className="space-y-2 rounded-lg border border-white/[0.08] bg-slate-950/40 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+            Itens alocados neste ponto ({brindesNoPonto.length})
+          </p>
+          <ul className="space-y-2">
+            {(resumoKit.itens.length > 0 ? resumoKit.itens : brindesNoPonto.map((b) => ({
+              nome: b.nome,
+              original: 0,
+              atual: b.quantidade,
+              pct: 100,
+            }))).map((item) => {
+              const brinde = brindesNoPonto.find(
+                (b) => b.nome.trim().toLowerCase() === item.nome.trim().toLowerCase()
+              );
+              if (!brinde || brinde.quantidade <= 0) return null;
+              const foto = fotoDoItem(item.nome, brinde.item_id);
+              const key = brinde.item_id ?? brinde.nome;
+              return (
+                <li
+                  key={key}
+                  className="flex items-center gap-3 rounded-lg border border-slate-800/80 bg-slate-900/50 px-3 py-2"
+                >
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-white/[0.08]">
+                    {foto ? (
+                      <LazyThumb src={foto} alt={item.nome} className="h-12 w-12" size={96} />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-slate-600">
+                        <Package className="h-4 w-4" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-white truncate">{item.nome}</p>
+                    <p className="text-xs text-slate-500 tabular-nums">
+                      {item.atual} un. no ponto
+                      {item.original > 0 ? ` · kit tinha ${item.original}` : ""}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={removendo === key}
+                    onClick={() => void removerItem(brinde)}
+                    className="shrink-0 rounded-lg p-2 text-rose-400 hover:bg-rose-500/10 disabled:opacity-40"
+                    title="Remover do ponto (volta ao central)"
+                    aria-label={`Remover ${item.nome} do ponto`}
+                  >
+                    {removendo === key ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : kitAtivoId ? (
+        <p className="text-xs text-amber-400/90">
+          Kit marcado como ativo, mas sem itens no estoque do ponto. Alocar de novo ou repor pelo
+          estoque central.
+        </p>
+      ) : null}
 
       {kits.length === 0 ? (
         <p className="text-sm text-slate-500">
@@ -160,7 +314,7 @@ export function PontoKitInstalar({
       ) : (
         <>
           <div ref={rootRef} className="relative">
-            <label className="text-xs text-slate-500">Kit para alocar no ponto</label>
+            <label className="text-xs text-slate-500">Kit para alocar / trocar</label>
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
