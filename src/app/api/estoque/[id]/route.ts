@@ -14,6 +14,17 @@ export async function PATCH(
   const body = await request.json();
   const supabase = await createClient();
 
+  let quantidadeAnterior: number | null = null;
+  if (body.quantidade != null) {
+    const { data: atual } = await supabase
+      .from("estoque")
+      .select("quantidade")
+      .eq("id", id)
+      .eq("empresa_id", profile.empresa_id)
+      .maybeSingle();
+    quantidadeAnterior = Math.max(0, Math.floor(Number(atual?.quantidade ?? 0)));
+  }
+
   const updates: Record<string, unknown> = {};
   if (body.nome_item != null) updates.nome_item = String(body.nome_item).trim();
   if (body.descricao !== undefined) {
@@ -53,6 +64,23 @@ export async function PATCH(
       );
     }
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (quantidadeAnterior != null && "quantidade" in updates) {
+    const nova = updates.quantidade as number;
+    const delta = nova - quantidadeAnterior;
+    if (delta !== 0) {
+      const { error: movErr } = await supabase.from("estoque_movimentacoes").insert({
+        empresa_id: profile.empresa_id,
+        item_id: id,
+        tipo: delta > 0 ? "entrada" : "saida",
+        quantidade: Math.abs(delta),
+        observacao: delta > 0 ? "Entrada rápida" : "Saída rápida",
+      });
+      if (movErr) {
+        console.error("estoque_movimentacoes:", movErr.message);
+      }
+    }
   }
 
   const { auditarAcao } = await import("@/lib/auditoria/auditar");

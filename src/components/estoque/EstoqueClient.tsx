@@ -13,6 +13,7 @@ import type { Equipamento, EstoqueItem, Nicho, Ponto } from "@/lib/types/databas
 import {
   Package,
   Plus,
+  Minus,
   Trash2,
   ArrowRightLeft,
   ImageIcon,
@@ -155,6 +156,8 @@ export function EstoqueClient({
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const [removeFoto, setRemoveFoto] = useState(false);
   const [expandedKitId, setExpandedKitId] = useState<string | null>(null);
+  const [items, setItems] = useState(initialItems);
+  const [adjustingItemId, setAdjustingItemId] = useState<string | null>(null);
   const editRowRef = useRef<HTMLDivElement | null>(null);
   const novoFormRef = useRef<HTMLDivElement | null>(null);
 
@@ -163,6 +166,10 @@ export function EstoqueClient({
       if (fotoPreview?.startsWith("blob:")) URL.revokeObjectURL(fotoPreview);
     };
   }, [fotoPreview]);
+
+  useEffect(() => {
+    setItems(initialItems);
+  }, [initialItems]);
 
   useEffect(() => {
     if (editingId && editRowRef.current) {
@@ -260,6 +267,55 @@ export function EstoqueClient({
     setFotoPreview(item.foto_url ?? null);
     setNovoPainel(null);
     setMsg("");
+  }
+
+  async function quickAdjustQty(itemId: string, delta: number) {
+    const item = items.find((i) => i.id === itemId);
+    if (!item || adjustingItemId === itemId) return;
+
+    const current = Math.max(0, Math.floor(Number(item.quantidade ?? 0)));
+    const next = Math.max(0, current + delta);
+    if (next === current) return;
+
+    setAdjustingItemId(itemId);
+    setItems((prev) =>
+      prev.map((i) => (i.id === itemId ? { ...i, quantidade: next } : i))
+    );
+    if (editingId === itemId) {
+      setForm((f) => ({ ...f, quantidade: String(next) }));
+    }
+
+    try {
+      const res = await fetch(`/api/estoque/${itemId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ quantidade: next }),
+      });
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      if (!res.ok) {
+        setItems((prev) =>
+          prev.map((i) => (i.id === itemId ? { ...i, quantidade: current } : i))
+        );
+        if (editingId === itemId) {
+          setForm((f) => ({ ...f, quantidade: String(current) }));
+        }
+        setMsg(data.error ?? "Erro ao atualizar quantidade.");
+        return;
+      }
+      setMsg("");
+      router.refresh();
+    } catch {
+      setItems((prev) =>
+        prev.map((i) => (i.id === itemId ? { ...i, quantidade: current } : i))
+      );
+      if (editingId === itemId) {
+        setForm((f) => ({ ...f, quantidade: String(current) }));
+      }
+      setMsg("Erro ao atualizar quantidade.");
+    } finally {
+      setAdjustingItemId(null);
+    }
   }
 
   async function saveItem(options?: { continueCadastro?: boolean }) {
@@ -531,12 +587,12 @@ export function EstoqueClient({
     }
   }
 
-  const totalUnidades = initialItems.reduce((s, i) => s + Number(i.quantidade ?? 0), 0);
+  const totalUnidades = items.reduce((s, i) => s + Number(i.quantidade ?? 0), 0);
   const totalKits = initialKits.reduce((s, k) => s + (k.quantidade_montada ?? 0), 0);
-  const itensBaixos = initialItems.filter(
+  const itensBaixos = items.filter(
     (i) => Number(i.quantidade_minima) > 0 && Number(i.quantidade) <= Number(i.quantidade_minima)
   );
-  const itemsFiltrados = initialItems.filter((item) => {
+  const itemsFiltrados = items.filter((item) => {
     if (filtroCategoria === "Equipamentos") return false;
     if (filtroCategoria === "todos") return true;
     if (filtroCategoria === "Pecas") return isCategoriaPecas(item.categoria);
@@ -863,7 +919,7 @@ export function EstoqueClient({
   }
 
   const estoqueVazio =
-    initialItems.length === 0 &&
+    items.length === 0 &&
     initialKits.length === 0 &&
     equipamentosEstoque.length === 0;
 
@@ -1219,60 +1275,96 @@ export function EstoqueClient({
                           "border-[#c4a574]/30 bg-white/[0.03] ring-1 ring-[#c4a574]/15 lg:col-span-2"
                       )}
                     >
-                      <button
-                        type="button"
-                        onClick={() => openEdit(item)}
-                        aria-expanded={isEditing}
-                        className="flex w-full items-center gap-3 p-4 text-left sm:gap-4"
-                      >
-                        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-white/[0.08] bg-slate-900/50">
-                          {item.foto_url ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={item.foto_url}
-                              alt=""
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-slate-600">
-                              {ehPeca ? (
-                                <Cpu className="h-5 w-5" />
-                              ) : (
-                                <ImageIcon className="h-5 w-5" />
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="font-medium text-[#f4efe6]">{item.nome_item}</p>
-                            {baixo && (
-                              <AlertBadge variant="warning">Estoque baixo</AlertBadge>
+                      <div className="flex w-full items-center gap-2 p-4 sm:gap-3">
+                        <button
+                          type="button"
+                          onClick={() => openEdit(item)}
+                          aria-expanded={isEditing}
+                          className="flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-4"
+                        >
+                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-white/[0.08] bg-slate-900/50">
+                            {item.foto_url ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={item.foto_url}
+                                alt=""
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-slate-600">
+                                {ehPeca ? (
+                                  <Cpu className="h-5 w-5" />
+                                ) : (
+                                  <ImageIcon className="h-5 w-5" />
+                                )}
+                              </div>
                             )}
                           </div>
-                          {item.descricao?.trim() && (
-                            <p className="mt-0.5 truncate text-sm text-slate-300">
-                              {item.descricao}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <p className="font-medium text-[#f4efe6]">{item.nome_item}</p>
+                              {baixo && (
+                                <AlertBadge variant="warning">Estoque baixo</AlertBadge>
+                              )}
+                            </div>
+                            {item.descricao?.trim() && (
+                              <p className="mt-0.5 truncate text-sm text-slate-300">
+                                {item.descricao}
+                              </p>
+                            )}
+                            <p className="mt-1 text-xs text-slate-500">
+                              {labelCategoriaEstoque(item.categoria)} ·{" "}
+                              {formatCurrency(Number(item.custo_unitario))}/un
+                              {item.quantidade_minima > 0 &&
+                                ` · mín. ${item.quantidade_minima}`}
                             </p>
-                          )}
-                          <p className="mt-1 text-xs text-slate-500">
-                            {labelCategoriaEstoque(item.categoria)} ·{" "}
-                            {formatCurrency(Number(item.custo_unitario))}/un
-                            {item.quantidade_minima > 0 &&
-                              ` · mín. ${item.quantidade_minima}`}
-                          </p>
+                          </div>
+                        </button>
+
+                        <div className="flex shrink-0 items-center gap-0.5">
+                          <button
+                            type="button"
+                            disabled={
+                              adjustingItemId === item.id || Number(item.quantidade) <= 0
+                            }
+                            onClick={() => void quickAdjustQty(item.id, -1)}
+                            aria-label={`Diminuir ${item.nome_item}`}
+                            className="flex h-9 w-9 items-center justify-center rounded-sm border border-white/[0.08] text-slate-300 hover:bg-white/[0.04] disabled:pointer-events-none disabled:opacity-40"
+                          >
+                            <Minus className="h-4 w-4" />
+                          </button>
+                          <div className="min-w-[3.25rem] px-1 text-center">
+                            <p className="text-lg font-semibold tabular-nums text-[#f4efe6]">
+                              {item.quantidade}
+                            </p>
+                            <p className="text-[10px] leading-3 text-slate-500">un.</p>
+                          </div>
+                          <button
+                            type="button"
+                            disabled={adjustingItemId === item.id}
+                            onClick={() => void quickAdjustQty(item.id, 1)}
+                            aria-label={`Aumentar ${item.nome_item}`}
+                            className="flex h-9 w-9 items-center justify-center rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/10 text-[#e8d5b0] hover:bg-[#c4a574]/20 disabled:pointer-events-none disabled:opacity-40"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </button>
                         </div>
-                        <p className="shrink-0 text-lg font-semibold tabular-nums text-[#f4efe6]">
-                          {item.quantidade}{" "}
-                          <span className="text-sm font-normal text-slate-500">un.</span>
-                        </p>
-                        <ChevronDown
-                          className={cn(
-                            "h-5 w-5 shrink-0 text-slate-500 transition-transform",
-                            isEditing && "rotate-180 text-[#c4a574]"
-                          )}
-                        />
-                      </button>
+
+                        <button
+                          type="button"
+                          onClick={() => openEdit(item)}
+                          aria-expanded={isEditing}
+                          aria-label={isEditing ? "Fechar edição" : "Editar item"}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-slate-500 hover:bg-white/[0.04] hover:text-[#c4a574]"
+                        >
+                          <ChevronDown
+                            className={cn(
+                              "h-5 w-5 transition-transform",
+                              isEditing && "rotate-180 text-[#c4a574]"
+                            )}
+                          />
+                        </button>
+                      </div>
 
                       <div
                         className={cn(
@@ -1356,7 +1448,7 @@ export function EstoqueClient({
                     >
                       <EstoqueKitRow
                         kit={kit}
-                        estoqueQtds={initialItems.map((i) => ({
+                        estoqueQtds={items.map((i) => ({
                           id: i.id,
                           quantidade: Number(i.quantidade) || 0,
                         }))}
