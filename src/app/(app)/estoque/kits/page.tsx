@@ -50,7 +50,7 @@ export default async function KitsEstoquePage() {
   }));
 
   return (
-    <div className="max-w-5xl space-y-4">
+    <div className="w-full space-y-4">
       <div className="flex flex-wrap gap-2">
         <Link
           href="/estoque"

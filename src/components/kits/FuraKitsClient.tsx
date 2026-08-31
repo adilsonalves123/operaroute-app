@@ -548,7 +548,7 @@ export function FuraKitsClient({
       </div>
 
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="max-w-2xl">
+        <div className="min-w-0 flex-1">
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300/70">
             Fura-fura
           </p>
@@ -614,6 +614,7 @@ export function FuraKitsClient({
               <FotoKit preview={fotoPreview} onChange={handleFotoChange} />
             </div>
 
+            <div className="grid gap-6 xl:grid-cols-2 xl:items-start xl:gap-8">
             <div>
               <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
                 <div>
@@ -634,7 +635,7 @@ export function FuraKitsClient({
                   Toque nas fotos do estoque para montar a receita.
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-2 2xl:grid-cols-3">
                   {reposicao.map((r, i) => {
                     const foto = fotoDoEstoque(estoque, r.estoque_item_id);
                     const q = parseInt(r.quantidade, 10) || 1;
@@ -681,6 +682,7 @@ export function FuraKitsClient({
               )}
             </div>
 
+            <div className="space-y-6">
             <div>
               <h3 className="mb-1 text-sm font-semibold text-white">Adicionar do estoque</h3>
               <p className="mb-3 text-xs text-slate-500">
@@ -727,7 +729,53 @@ export function FuraKitsClient({
                       Nenhum item com “{buscaEstoque.trim()}”.
                     </p>
                   ) : (
-                    <div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:thin]">
+                    <>
+                      <div className="hidden gap-2 lg:grid lg:grid-cols-6 xl:grid-cols-5 2xl:grid-cols-6">
+                        {estoqueFiltrado.map((e) => {
+                          const noKit = reposicao.find((r) => r.estoque_item_id === e.id);
+                          return (
+                            <button
+                              key={e.id}
+                              type="button"
+                              title={`${e.nome_item} · ${e.quantidade} no estoque`}
+                              onClick={() => adicionarItem(e.id)}
+                              className={cn(
+                                "flex flex-col items-center gap-1.5 rounded-xl border p-2 text-center transition",
+                                noKit
+                                  ? "border-cyan-400/40 bg-cyan-500/10 ring-1 ring-cyan-400/20"
+                                  : "border-white/[0.06] bg-slate-900/40 hover:border-cyan-400/30 hover:bg-slate-900/70"
+                              )}
+                            >
+                              <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-slate-950">
+                                {e.foto_url ? (
+                                  <LazyThumb
+                                    src={e.foto_url}
+                                    alt={e.nome_item}
+                                    className="h-full w-full"
+                                    size={128}
+                                  />
+                                ) : (
+                                  <div className="flex h-full w-full items-center justify-center text-slate-600">
+                                    <Package className="h-5 w-5" />
+                                  </div>
+                                )}
+                                <span className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-primary-neon text-slate-950">
+                                  <Plus className="h-3 w-3" strokeWidth={3} />
+                                </span>
+                                {noKit ? (
+                                  <span className="absolute left-1 top-1 rounded-full bg-cyan-400 px-1.5 py-px text-[9px] font-bold leading-none text-slate-950">
+                                    ×{noKit.quantidade}
+                                  </span>
+                                ) : null}
+                              </div>
+                              <p className="line-clamp-2 w-full text-[10px] font-medium leading-tight text-slate-300">
+                                {e.nome_item}
+                              </p>
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="-mx-1 overflow-x-auto pb-1 [scrollbar-width:thin] lg:hidden">
                       <div className="flex w-max gap-2 px-1">
                         {estoqueFiltrado.map((e) => {
                           const noKit = reposicao.find((r) => r.estoque_item_id === e.id);
@@ -774,6 +822,7 @@ export function FuraKitsClient({
                         })}
                       </div>
                     </div>
+                    </>
                   )}
                   {!buscaEstoque.trim() && estoque.length > 48 ? (
                     <p className="text-xs text-slate-500">
@@ -852,6 +901,8 @@ export function FuraKitsClient({
                   </ul>
                 )}
               </div>
+            </div>
+            </div>
 
             {msg && showForm && <p className="text-sm text-amber-400">{msg}</p>}
 
@@ -897,7 +948,7 @@ export function FuraKitsClient({
         </p>
       )}
 
-      <div className="space-y-5">
+      <div className="space-y-5 xl:grid xl:grid-cols-2 xl:items-start xl:gap-5 xl:space-y-0">
         {kits.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-700 px-6 py-16 text-center">
             <Package className="mx-auto mb-4 h-12 w-12 text-slate-600" />
