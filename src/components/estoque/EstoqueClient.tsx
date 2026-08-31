@@ -57,7 +57,7 @@ type EquipamentoEstoqueRow = Pick<
 
 type FiltroEstoque = "todos" | "Brindes" | "Pecas" | "Equipamentos";
 
-const ITENS_POR_PAGINA = 24;
+const ITENS_POR_PAGINA = 16;
 
 function filtroFromCategoriaParam(raw: string | null | undefined): FiltroEstoque {
   const cat = (raw ?? "").toLowerCase();
@@ -213,7 +213,7 @@ export function EstoqueClient({
           setLimiteItens((prev) => prev + ITENS_POR_PAGINA);
         }
       },
-      { rootMargin: "320px 0px", threshold: 0 }
+      { rootMargin: "160px 0px", threshold: 0 }
     );
     obs.observe(el);
     return () => obs.disconnect();

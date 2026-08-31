@@ -1,7 +1,11 @@
 "use client";
 
-import { memo, useEffect, useRef, useState } from "react";
-import { thumbnailUrl } from "@/lib/storage/thumbnail-url";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { ImageIcon } from "lucide-react";
+import {
+  nextOptimizedImageUrl,
+  supabaseThumbnailUrl,
+} from "@/lib/storage/thumbnail-url";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -12,9 +16,21 @@ type Props = {
   size?: number;
 };
 
+type ThumbStage = "supabase" | "next" | "failed";
+
+function resolveThumbSrc(src: string, size: number, stage: ThumbStage): string | null {
+  if (stage === "failed") return null;
+  if (stage === "next") return nextOptimizedImageUrl(src, size);
+  return supabaseThumbnailUrl(src, size);
+}
+
+function initialStage(src: string): ThumbStage {
+  return supabaseThumbnailUrl(src) ? "supabase" : "next";
+}
+
 /**
- * Miniatura leve: só monta a tag img perto da viewport.
- * Tenta miniatura Supabase primeiro; se falhar, usa a URL original.
+ * Miniatura leve na lista: Supabase render → proxy Next (pequeno) → ícone.
+ * Nunca carrega a foto original inteira no scroll.
  */
 export const LazyThumb = memo(function LazyThumb({
   src,
@@ -25,7 +41,12 @@ export const LazyThumb = memo(function LazyThumb({
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [useOriginal, setUseOriginal] = useState(false);
+  const [stage, setStage] = useState<ThumbStage>(() => initialStage(src));
+
+  useEffect(() => {
+    setLoaded(false);
+    setStage(initialStage(src));
+  }, [src]);
 
   useEffect(() => {
     const el = ref.current;
@@ -43,23 +64,26 @@ export const LazyThumb = memo(function LazyThumb({
           obs.disconnect();
         }
       },
-      { rootMargin: "120px 0px", threshold: 0 }
+      { rootMargin: "64px 0px", threshold: 0 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
-  const imgSrc = useOriginal ? src : thumbnailUrl(src, size);
+  const imgSrc = useMemo(
+    () => resolveThumbSrc(src, size, stage),
+    [src, size, stage]
+  );
 
   return (
     <div
       ref={ref}
       className={cn("relative overflow-hidden bg-slate-900/70", className)}
     >
-      {visible ? (
+      {visible && imgSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          key={imgSrc}
+          key={`${stage}:${imgSrc}`}
           src={imgSrc}
           alt={alt}
           loading="lazy"
@@ -67,10 +91,12 @@ export const LazyThumb = memo(function LazyThumb({
           fetchPriority="low"
           onLoad={() => setLoaded(true)}
           onError={() => {
-            if (!useOriginal) {
-              setUseOriginal(true);
-              setLoaded(false);
-            }
+            setLoaded(false);
+            setStage((current) => {
+              if (current === "supabase") return "next";
+              if (current === "next") return "failed";
+              return "failed";
+            });
           }}
           className={cn(
             "h-full w-full object-cover",
@@ -79,7 +105,12 @@ export const LazyThumb = memo(function LazyThumb({
         />
       ) : null}
       {!loaded ? (
-        <div className="absolute inset-0 bg-slate-800/70" aria-hidden />
+        <div
+          className="absolute inset-0 flex items-center justify-center bg-slate-800/70 text-slate-600"
+          aria-hidden={stage !== "failed"}
+        >
+          {stage === "failed" ? <ImageIcon className="h-4 w-4" /> : null}
+        </div>
       ) : null}
     </div>
   );
