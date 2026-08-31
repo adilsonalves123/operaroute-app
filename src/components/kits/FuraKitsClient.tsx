@@ -298,7 +298,7 @@ export function FuraKitsClient({
     setEditingId(kit.id);
     setNome(kit.nome);
     setDescricao(kit.descricao ?? "");
-    setQuantidadeMontar(1);
+    setQuantidadeMontar(0);
     setBuscaEstoque("");
     resetFoto();
     setFotoPreview(kit.foto_url ?? null);
@@ -330,7 +330,9 @@ export function FuraKitsClient({
         return;
       }
 
-      const qtd = editingId ? 1 : Math.min(999, Math.max(1, Math.floor(quantidadeMontar) || 1));
+      const qtd = editingId
+        ? Math.min(999, Math.max(0, Math.floor(quantidadeMontar) || 0))
+        : Math.min(999, Math.max(1, Math.floor(quantidadeMontar) || 1));
 
       const payload: Record<string, unknown> = {
         nome,
@@ -387,6 +389,26 @@ export function FuraKitsClient({
       }
 
       const wasEdit = Boolean(editingId);
+      let montadosExtras = 0;
+      if (wasEdit && qtd > 0 && kitId) {
+        const montarRes = await fetch(`/api/fura-kits/${kitId}/montar`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ quantidade: qtd }),
+        });
+        const montarData = await montarRes.json().catch(() => ({}));
+        if (!montarRes.ok) {
+          setMsg(
+            (montarData as { error?: string }).error ??
+              "Receita salva, mas falhou ao montar kits extras."
+          );
+          router.refresh();
+          return;
+        }
+        montadosExtras = Number((montarData as { montados?: number }).montados ?? qtd);
+      }
+
       const montados = Number(data.quantidade_montada ?? qtd);
       resetForm();
       router.refresh();
@@ -395,7 +417,11 @@ export function FuraKitsClient({
       if (listRes.ok) setKits(listData.kits ?? []);
       setMsg(
         wasEdit
-          ? "Kit atualizado. Estoque ajustado."
+          ? montadosExtras > 0
+            ? montadosExtras === 1
+              ? "Receita salva e +1 kit montado no depósito."
+              : `Receita salva e +${montadosExtras} kits montados no depósito.`
+            : "Kit atualizado. Estoque ajustado."
           : montados === 1
             ? "1 kit montado e pronto no depósito."
             : `${montados} kits montados e prontos no depósito.`
@@ -505,7 +531,9 @@ export function FuraKitsClient({
   }
 
   const totalNoKit = reposicao.reduce((s, r) => s + (parseInt(r.quantidade, 10) || 0), 0);
-  const qtdSalvar = Math.min(999, Math.max(1, Math.floor(quantidadeMontar) || 1));
+  const qtdSalvar = editingId
+    ? Math.min(999, Math.max(0, Math.floor(quantidadeMontar) || 0))
+    : Math.min(999, Math.max(1, Math.floor(quantidadeMontar) || 1));
 
   return (
     <div className="space-y-8">
@@ -554,7 +582,7 @@ export function FuraKitsClient({
               </h2>
               <p className="text-xs text-slate-500">
                 {editingId
-                  ? "Ajuste o que entra em cada kit. Ao salvar, o depósito é sincronizado."
+                  ? "Passo 1: o que entra em cada kit. Passo 2: monte mais kits no depósito (opcional)."
                   : "Passo 1: o que entra em cada kit. Passo 2: quantos kits iguais montar."}
               </p>
             </div>
@@ -756,39 +784,61 @@ export function FuraKitsClient({
               )}
             </div>
 
-            {!editingId && (
-              <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] px-4 py-5 sm:px-5">
+            <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.06] px-4 py-5 sm:px-5">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-amber-200/80">
                   Passo 2 · Quantidade
                 </p>
                 <h3 className="mt-1 text-base font-semibold text-white">
-                  Quantos kits iguais montar agora?
+                  {editingId
+                    ? "Montar mais kits no depósito (opcional)"
+                    : "Quantos kits iguais montar agora?"}
                 </h3>
                 <p className="mt-1 text-xs text-slate-400">
-                  Cada um leva a receita do passo 1. Ex.: 5 facas por kit × {qtdSalvar} kits ={" "}
-                  {totalNoKit * qtdSalvar} peças saem do estoque.
+                  {editingId ? (
+                    <>
+                      Deixe <span className="text-slate-200">0</span> para só salvar a receita.
+                      Aumente para montar mais kits iguais — ex.: {totalNoKit || 1} peça
+                      {(totalNoKit || 1) === 1 ? "" : "s"} por kit × {Math.max(qtdSalvar, 1)} ={" "}
+                      {(totalNoKit || 1) * Math.max(qtdSalvar, 1)} saem do estoque avulso.
+                    </>
+                  ) : (
+                    <>
+                      Cada um leva a receita do passo 1. Ex.: 5 facas por kit × {qtdSalvar} kits ={" "}
+                      {totalNoKit * qtdSalvar} peças saem do estoque.
+                    </>
+                  )}
                 </p>
                 <div className="mt-4 flex flex-wrap items-center gap-6">
                   <QtyStepper
                     value={qtdSalvar}
                     onChange={setQuantidadeMontar}
-                    min={1}
-                    max={maxPossivelNovo > 0 ? Math.max(1, maxPossivelNovo) : 999}
+                    min={editingId ? 0 : 1}
+                    max={
+                      maxPossivelNovo > 0
+                        ? Math.max(editingId ? 0 : 1, maxPossivelNovo)
+                        : 999
+                    }
                     label="Quantidade de kits"
                   />
                   <div className="text-sm text-slate-400">
                     <p>
                       <span className="font-semibold tabular-nums text-white">{qtdSalvar}</span>{" "}
-                      kit{qtdSalvar === 1 ? "" : "s"} no depósito
+                      kit{qtdSalvar === 1 ? "" : "s"}
+                      {editingId ? " a montar agora" : " no depósito"}
                     </p>
-                    {receitaNumeros.length > 0 && (
+                    {receitaNumeros.length > 0 && maxPossivelNovo > 0 && (
                       <p className="mt-0.5 text-xs text-slate-500">
-                        Estoque permite até {maxPossivelNovo} agora
+                        Estoque permite montar até {maxPossivelNovo} agora
                       </p>
                     )}
+                    {editingId && qtdSalvar === 0 ? (
+                      <p className="mt-0.5 text-xs text-slate-500">
+                        Só a receita será atualizada.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
-                {receitaNumeros.length > 0 && (
+                {receitaNumeros.length > 0 && qtdSalvar > 0 && (
                   <ul className="mt-4 space-y-1 border-t border-amber-500/15 pt-3 text-xs text-slate-400">
                     {receitaNumeros.map((r) => (
                       <li key={r.estoque_item_id}>
@@ -802,7 +852,6 @@ export function FuraKitsClient({
                   </ul>
                 )}
               </div>
-            )}
 
             {msg && showForm && <p className="text-sm text-amber-400">{msg}</p>}
 
@@ -814,7 +863,11 @@ export function FuraKitsClient({
                 className="rounded-full bg-primary-neon px-5 py-2.5 text-sm font-semibold text-slate-900 disabled:opacity-50"
               >
                 {editingId
-                  ? "Salvar receita"
+                  ? qtdSalvar > 0
+                    ? qtdSalvar === 1
+                      ? "Salvar e montar 1 kit"
+                      : `Salvar e montar ${qtdSalvar} kits`
+                    : "Salvar receita"
                   : qtdSalvar === 1
                     ? "Montar 1 kit"
                     : `Montar ${qtdSalvar} kits`}
