@@ -151,8 +151,11 @@ export function FuraKitsClient({
 
   const estoqueFiltrado = useMemo(() => {
     const q = buscaEstoque.trim().toLowerCase();
-    if (!q) return estoque;
-    return estoque.filter((e) => e.nome_item.toLowerCase().includes(q));
+    let list = q
+      ? estoque.filter((e) => e.nome_item.toLowerCase().includes(q))
+      : estoque;
+    if (!q && list.length > 48) list = list.slice(0, 48);
+    return list;
   }, [estoque, buscaEstoque]);
 
   const receitaNumeros = useMemo(
@@ -685,6 +688,12 @@ export function FuraKitsClient({
                     ) : null}
                   </div>
 
+                  {estoque.length > 20 ? (
+                    <p className="text-[11px] text-slate-500">
+                      {estoque.length} itens no estoque — use a busca para achar rápido.
+                    </p>
+                  ) : null}
+
                   {estoqueFiltrado.length === 0 ? (
                     <p className="rounded-xl border border-dashed border-slate-700 px-3 py-5 text-center text-sm text-slate-500">
                       Nenhum item com “{buscaEstoque.trim()}”.
@@ -738,6 +747,11 @@ export function FuraKitsClient({
                       </div>
                     </div>
                   )}
+                  {!buscaEstoque.trim() && estoque.length > 48 ? (
+                    <p className="text-xs text-slate-500">
+                      Mostrando 48 de {estoque.length}. Busque pelo nome para ver o restante.
+                    </p>
+                  ) : null}
                 </div>
               )}
             </div>

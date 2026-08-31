@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Instrument_Serif, Outfit } from "next/font/google";
-import { AlertBadge } from "@/components/ui/AlertBadge";
 import { FormInput } from "@/components/ui/FormInput";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { LazyThumb } from "@/components/ui/LazyThumb";
@@ -13,21 +12,20 @@ import type { Equipamento, EstoqueItem, Nicho, Ponto } from "@/lib/types/databas
 import {
   Package,
   Plus,
-  Minus,
+  Search,
   Trash2,
   ArrowRightLeft,
-  ImageIcon,
   Wrench,
   Box,
   Gift,
   Store,
   Cpu,
   Gamepad2,
-  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FotoItemEstoque } from "@/components/estoque/FotoItemEstoque";
 import { normalizeFotoParaUpload } from "@/lib/storage/normalize-foto-upload";
+import { EstoqueItemRow } from "@/components/estoque/EstoqueItemRow";
 import { EstoqueKitRow, type KitNoEstoqueCentral } from "@/components/estoque/EstoqueKitRow";
 import { CadastrarEquipamentoEstoqueForm } from "@/components/equipamentos/CadastrarEquipamentoEstoqueForm";
 import { SelectCard } from "@/components/ui/SelectCard";
@@ -58,6 +56,8 @@ type EquipamentoEstoqueRow = Pick<
 >;
 
 type FiltroEstoque = "todos" | "Brindes" | "Pecas" | "Equipamentos";
+
+const ITENS_POR_PAGINA = 24;
 
 function filtroFromCategoriaParam(raw: string | null | undefined): FiltroEstoque {
   const cat = (raw ?? "").toLowerCase();
@@ -114,6 +114,31 @@ function parseMoney(v: string): number {
   return Number(String(v).replace(",", ".")) || 0;
 }
 
+function filtrarItemsLista(
+  items: EstoqueItem[],
+  filtroCategoria: FiltroEstoque,
+  busca: string
+): EstoqueItem[] {
+  let list = items.filter((item) => {
+    if (filtroCategoria === "Equipamentos") return false;
+    if (filtroCategoria === "todos") return true;
+    if (filtroCategoria === "Pecas") return isCategoriaPecas(item.categoria);
+    return (
+      !isCategoriaPecas(item.categoria) && labelCategoriaEstoque(item.categoria) !== "Consignado"
+    );
+  });
+
+  const q = busca.trim().toLowerCase();
+  if (!q) return list;
+
+  return list.filter(
+    (item) =>
+      item.nome_item.toLowerCase().includes(q) ||
+      (item.descricao ?? "").toLowerCase().includes(q) ||
+      labelCategoriaEstoque(item.categoria).toLowerCase().includes(q)
+  );
+}
+
 export function EstoqueClient({
   items: initialItems,
   kits: initialKits,
@@ -158,6 +183,9 @@ export function EstoqueClient({
   const [expandedKitId, setExpandedKitId] = useState<string | null>(null);
   const [items, setItems] = useState(initialItems);
   const [adjustingItemId, setAdjustingItemId] = useState<string | null>(null);
+  const [buscaItem, setBuscaItem] = useState("");
+  const [limiteItens, setLimiteItens] = useState(ITENS_POR_PAGINA);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const editRowRef = useRef<HTMLDivElement | null>(null);
   const novoFormRef = useRef<HTMLDivElement | null>(null);
 
@@ -170,6 +198,26 @@ export function EstoqueClient({
   useEffect(() => {
     setItems(initialItems);
   }, [initialItems]);
+
+  useEffect(() => {
+    setLimiteItens(ITENS_POR_PAGINA);
+  }, [filtroCategoria, buscaItem]);
+
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          setLimiteItens((prev) => prev + ITENS_POR_PAGINA);
+        }
+      },
+      { rootMargin: "320px 0px", threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [buscaItem, filtroCategoria, limiteItens]);
 
   useEffect(() => {
     if (editingId && editRowRef.current) {
@@ -267,6 +315,12 @@ export function EstoqueClient({
     setFotoPreview(item.foto_url ?? null);
     setNovoPainel(null);
     setMsg("");
+    const idx = filtrarItemsLista(items, filtroCategoria, buscaItem).findIndex(
+      (i) => i.id === item.id
+    );
+    if (idx >= 0) {
+      setLimiteItens((prev) => Math.max(prev, idx + 1));
+    }
   }
 
   async function quickAdjustQty(itemId: string, delta: number) {
@@ -592,12 +646,19 @@ export function EstoqueClient({
   const itensBaixos = items.filter(
     (i) => Number(i.quantidade_minima) > 0 && Number(i.quantidade) <= Number(i.quantidade_minima)
   );
-  const itemsFiltrados = items.filter((item) => {
-    if (filtroCategoria === "Equipamentos") return false;
-    if (filtroCategoria === "todos") return true;
-    if (filtroCategoria === "Pecas") return isCategoriaPecas(item.categoria);
-    return !isCategoriaPecas(item.categoria) && labelCategoriaEstoque(item.categoria) !== "Consignado";
-  });
+  const itemsFiltrados = useMemo(
+    () => filtrarItemsLista(items, filtroCategoria, buscaItem),
+    [items, filtroCategoria, buscaItem]
+  );
+  const itemsVisiveis = useMemo(
+    () => itemsFiltrados.slice(0, limiteItens),
+    [itemsFiltrados, limiteItens]
+  );
+  const temMaisItens = itemsVisiveis.length < itemsFiltrados.length;
+  const estoqueQtds = useMemo(
+    () => items.map((i) => ({ id: i.id, quantidade: Number(i.quantidade) || 0 })),
+    [items]
+  );
   const mostraKits = filtroCategoria !== "Pecas" && filtroCategoria !== "Equipamentos";
   const totalEquipamentos = equipamentosEstoque.length;
 
@@ -943,7 +1004,7 @@ export function EstoqueClient({
         className={cn(
           display.variable,
           sans.variable,
-          "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-16 text-[15px] sm:-mx-6 sm:px-6"
+          "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-x-hidden px-4 pb-16 text-[15px] sm:-mx-6 sm:px-6"
         )}
         style={{ fontFamily: "var(--font-estoque-sans), system-ui, sans-serif" }}
       >
@@ -1258,157 +1319,54 @@ export function EstoqueClient({
                     )}
               </p>
             ) : (
-              <div className="grid gap-3 lg:grid-cols-2">
-                {itemsFiltrados.map((item) => {
-                  const baixo =
-                    Number(item.quantidade_minima) > 0 &&
-                    Number(item.quantidade) <= Number(item.quantidade_minima);
-                  const isEditing = editingId === item.id;
-                  const ehPeca = isCategoriaPecas(item.categoria);
-                  return (
-                    <div
+              <div className="space-y-3">
+                {itemsFiltrados.length > 12 ? (
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="search"
+                      value={buscaItem}
+                      onChange={(e) => setBuscaItem(e.target.value)}
+                      placeholder="Buscar item pelo nome..."
+                      className="w-full rounded-lg border border-white/[0.08] bg-slate-950/60 py-2.5 pl-10 pr-3 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#c4a574]/40"
+                    />
+                  </div>
+                ) : null}
+
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {itemsVisiveis.map((item) => (
+                    <EstoqueItemRow
                       key={item.id}
-                      ref={isEditing ? editRowRef : undefined}
-                      className={cn(
-                        "overflow-hidden border border-white/[0.06] bg-white/[0.02] transition",
-                        !isEditing && "estoque-item-card",
-                        isEditing &&
-                          "border-[#c4a574]/30 bg-white/[0.03] ring-1 ring-[#c4a574]/15 lg:col-span-2"
-                      )}
-                    >
-                      <div className="flex w-full items-center gap-2 p-4 sm:gap-3">
-                        <button
-                          type="button"
-                          onClick={() => openEdit(item)}
-                          aria-expanded={isEditing}
-                          className="flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-4"
-                        >
-                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-white/[0.08]">
-                            {item.foto_url ? (
-                              <LazyThumb
-                                src={item.foto_url}
-                                alt={item.nome_item}
-                                className="h-14 w-14"
-                                size={112}
-                              />
-                            ) : (
-                              <div className="flex h-full w-full items-center justify-center text-slate-600">
-                                {ehPeca ? (
-                                  <Cpu className="h-5 w-5" />
-                                ) : (
-                                  <ImageIcon className="h-5 w-5" />
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-medium text-[#f4efe6]">{item.nome_item}</p>
-                              {baixo && (
-                                <AlertBadge variant="warning">Estoque baixo</AlertBadge>
-                              )}
-                            </div>
-                            {item.descricao?.trim() && (
-                              <p className="mt-0.5 truncate text-sm text-slate-300">
-                                {item.descricao}
-                              </p>
-                            )}
-                            <p className="mt-1 text-xs text-slate-500">
-                              {labelCategoriaEstoque(item.categoria)} ·{" "}
-                              {formatCurrency(Number(item.custo_unitario))}/un
-                              {item.quantidade_minima > 0 &&
-                                ` · mín. ${item.quantidade_minima}`}
-                            </p>
-                          </div>
-                        </button>
+                      item={item}
+                      isEditing={editingId === item.id}
+                      adjustingItemId={adjustingItemId}
+                      rowRef={editingId === item.id ? editRowRef : undefined}
+                      onOpenEdit={openEdit}
+                      onAdjustQty={(id, delta) => void quickAdjustQty(id, delta)}
+                      onTransfer={(id) => {
+                        setTransferItemId(id);
+                        setTransferKitId(null);
+                        setTransferQty("");
+                        setMsg("");
+                      }}
+                      onDelete={(id) => void deleteItem(id)}
+                      editPanel={editingId === item.id ? renderInlineEditForm() : null}
+                    />
+                  ))}
+                </div>
 
-                        <div className="flex shrink-0 items-center gap-0.5">
-                          <button
-                            type="button"
-                            disabled={
-                              adjustingItemId === item.id || Number(item.quantidade) <= 0
-                            }
-                            onClick={() => void quickAdjustQty(item.id, -1)}
-                            aria-label={`Diminuir ${item.nome_item}`}
-                            className="flex h-9 w-9 items-center justify-center rounded-sm border border-white/[0.08] text-slate-300 hover:bg-white/[0.04] disabled:pointer-events-none disabled:opacity-40"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </button>
-                          <div className="min-w-[3.25rem] px-1 text-center">
-                            <p className="text-lg font-semibold tabular-nums text-[#f4efe6]">
-                              {item.quantidade}
-                            </p>
-                            <p className="text-[10px] leading-3 text-slate-500">un.</p>
-                          </div>
-                          <button
-                            type="button"
-                            disabled={adjustingItemId === item.id}
-                            onClick={() => void quickAdjustQty(item.id, 1)}
-                            aria-label={`Aumentar ${item.nome_item}`}
-                            className="flex h-9 w-9 items-center justify-center rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/10 text-[#e8d5b0] hover:bg-[#c4a574]/20 disabled:pointer-events-none disabled:opacity-40"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </button>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => openEdit(item)}
-                          aria-expanded={isEditing}
-                          aria-label={isEditing ? "Fechar edição" : "Editar item"}
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-slate-500 hover:bg-white/[0.04] hover:text-[#c4a574]"
-                        >
-                          <ChevronDown
-                            className={cn(
-                              "h-5 w-5 transition-transform",
-                              isEditing && "rotate-180 text-[#c4a574]"
-                            )}
-                          />
-                        </button>
-                      </div>
-
-                      <div
-                        className={cn(
-                          "grid transition-[grid-template-rows] duration-300 ease-out",
-                          isEditing ? "grid-rows-[1fr]" : "grid-rows-[0fr]"
-                        )}
-                      >
-                        <div className="overflow-hidden">
-                          {isEditing && (
-                            <div className="space-y-3 border-t border-white/[0.06] px-4 pb-4 pt-3">
-                              <div className="flex flex-wrap gap-2">
-                                {!ehPeca && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      setTransferItemId(item.id);
-                                      setTransferKitId(null);
-                                      setTransferQty("");
-                                      setMsg("");
-                                    }}
-                                    className="inline-flex items-center gap-1 rounded-sm border border-amber-500/30 px-3 py-1.5 text-xs text-amber-400 hover:bg-amber-500/10"
-                                  >
-                                    <ArrowRightLeft className="h-3.5 w-3.5" />
-                                    Alocar ponto
-                                  </button>
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={() => deleteItem(item.id)}
-                                  className="inline-flex items-center gap-1 rounded-sm border border-rose-500/25 px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                  Excluir
-                                </button>
-                              </div>
-                              {renderInlineEditForm()}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {temMaisItens ? (
+                  <div
+                    ref={loadMoreRef}
+                    className="py-4 text-center text-xs text-slate-500"
+                  >
+                    Carregando mais itens… ({itemsVisiveis.length} de {itemsFiltrados.length})
+                  </div>
+                ) : itemsFiltrados.length > ITENS_POR_PAGINA ? (
+                  <p className="text-center text-xs text-slate-600">
+                    {itemsFiltrados.length} itens exibidos
+                  </p>
+                ) : null}
               </div>
             )}
           </section>
@@ -1449,10 +1407,7 @@ export function EstoqueClient({
                     >
                       <EstoqueKitRow
                         kit={kit}
-                        estoqueQtds={items.map((i) => ({
-                          id: i.id,
-                          quantidade: Number(i.quantidade) || 0,
-                        }))}
+                        estoqueQtds={estoqueQtds}
                         expanded={expandedKitId === kit.id}
                         onToggle={() => {
                           setExpandedKitId((prev) => (prev === kit.id ? null : kit.id));

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { memo } from "react";
 import {
   ArrowRightLeft,
   ChevronDown,
@@ -48,7 +49,7 @@ type Props = {
   onMsg?: (text: string, isError?: boolean) => void;
 };
 
-export function EstoqueKitRow({
+export const EstoqueKitRow = memo(function EstoqueKitRow({
   kit,
   expanded,
   onToggle,
@@ -181,7 +182,7 @@ export function EstoqueKitRow({
       </div>
     </div>
   );
-}
+});
 
 export function custoKitFromReposicao(
   reposicao: { quantidade: number; custo_unitario: number }[]

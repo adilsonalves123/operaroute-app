@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useRef, useState } from "react";
+import { ImageIcon } from "lucide-react";
 import { thumbnailUrl } from "@/lib/storage/thumbnail-url";
 import { cn } from "@/lib/utils";
 
@@ -13,8 +14,8 @@ type Props = {
 };
 
 /**
- * Miniatura que só carrega perto da viewport — evita baixar dezenas de fotos
- * grandes ao abrir o estoque no tablet.
+ * Miniatura leve: só monta a tag img perto da viewport.
+ * Se a miniatura Supabase falhar, mostra ícone — não baixa a foto original (2–5 MB).
  */
 export const LazyThumb = memo(function LazyThumb({
   src,
@@ -25,7 +26,7 @@ export const LazyThumb = memo(function LazyThumb({
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const [useOriginal, setUseOriginal] = useState(false);
+  const [failed, setFailed] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -43,41 +44,45 @@ export const LazyThumb = memo(function LazyThumb({
           obs.disconnect();
         }
       },
-      { rootMargin: "240px 0px", threshold: 0.01 }
+      { rootMargin: "80px 0px", threshold: 0 }
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, []);
 
-  const imgSrc = useOriginal ? src : thumbnailUrl(src, size);
+  const imgSrc = thumbnailUrl(src, size);
 
   return (
-    <div ref={ref} className={cn("relative overflow-hidden bg-slate-900/60", className)}>
-      {visible ? (
+    <div
+      ref={ref}
+      className={cn(
+        "relative overflow-hidden bg-slate-900/70",
+        className
+      )}
+    >
+      {visible && !failed ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={imgSrc}
           alt={alt}
           loading="lazy"
           decoding="async"
+          fetchPriority="low"
           onLoad={() => setLoaded(true)}
-          onError={() => {
-            if (!useOriginal) {
-              setUseOriginal(true);
-              setLoaded(false);
-            }
-          }}
+          onError={() => setFailed(true)}
           className={cn(
-            "h-full w-full object-cover transition-opacity duration-150",
+            "h-full w-full object-cover",
             loaded ? "opacity-100" : "opacity-0"
           )}
         />
       ) : null}
-      {!loaded ? (
+      {!loaded || failed ? (
         <div
-          className="absolute inset-0 bg-slate-800/70"
-          aria-hidden
-        />
+          className="absolute inset-0 flex items-center justify-center bg-slate-800/80 text-slate-600"
+          aria-hidden={!failed}
+        >
+          {failed ? <ImageIcon className="h-4 w-4" /> : null}
+        </div>
       ) : null}
     </div>
   );
