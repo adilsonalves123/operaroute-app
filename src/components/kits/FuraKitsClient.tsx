@@ -273,27 +273,6 @@ export function FuraKitsClient({
     setMontarKitId(null);
   }
 
-  useEffect(() => {
-    const montarId = searchParams.get("montar");
-    if (montarId) {
-      setMontarKitId(montarId);
-      setMontarQtd(1);
-      setShowForm(false);
-      router.replace("/estoque/kits", { scroll: false });
-      requestAnimationFrame(() => {
-        document.getElementById(`kit-${montarId}`)?.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-        });
-      });
-      return;
-    }
-    if (searchParams.get("novo") !== "1") return;
-    openNovoForm();
-    router.replace("/estoque/kits", { scroll: false });
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- open once from query
-  }, [searchParams, router]);
-
   function startEdit(kit: KitCompleto) {
     setEditingId(kit.id);
     setNome(kit.nome);
@@ -315,6 +294,45 @@ export function FuraKitsClient({
     setShowForm(true);
     setMontarKitId(null);
   }
+
+  useEffect(() => {
+    const editId = searchParams.get("edit");
+    if (editId) {
+      const kit = kits.find((k) => k.id === editId);
+      if (kit) startEdit(kit);
+      router.replace("/estoque/kits", { scroll: false });
+      return;
+    }
+    const montarId = searchParams.get("montar");
+    if (montarId) {
+      setMontarKitId(montarId);
+      setMontarQtd(1);
+      setShowForm(false);
+      router.replace("/estoque/kits", { scroll: false });
+      requestAnimationFrame(() => {
+        document.getElementById(`kit-${montarId}`)?.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      });
+      return;
+    }
+    if (searchParams.get("novo") !== "1") return;
+    openNovoForm();
+    router.replace("/estoque/kits", { scroll: false });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- open once from query
+  }, [searchParams, router, kits]);
+
+  useEffect(() => {
+    if (!showForm || !editingId) return;
+    const t = window.setTimeout(() => {
+      document.getElementById("kit-edit-form")?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [showForm, editingId]);
 
   async function save() {
     setLoading(true);
@@ -574,7 +592,10 @@ export function FuraKitsClient({
       </div>
 
       {showForm && (
-        <div className="overflow-hidden rounded-3xl border border-amber-500/15 bg-slate-950/60 shadow-[0_20px_60px_rgba(0,0,0,0.35)]">
+        <div
+          id="kit-edit-form"
+          className="overflow-hidden rounded-3xl border border-amber-500/15 bg-slate-950/60 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
+        >
           <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4 sm:px-6">
             <div>
               <h2 className="text-lg font-semibold text-white">
