@@ -835,5 +835,10 @@ input::placeholder, textarea::placeholder {
   }
 }
 
+/* Estoque: cards fora da tela não bloqueiam o scroll no tablet */
+.estoque-item-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 88px;
+}
 
 

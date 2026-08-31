@@ -7,7 +7,7 @@ import { Instrument_Serif, Outfit } from "next/font/google";
 import { AlertBadge } from "@/components/ui/AlertBadge";
 import { FormInput } from "@/components/ui/FormInput";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
-import { ExpandableImage } from "@/components/ui/ExpandableImage";
+import { LazyThumb } from "@/components/ui/LazyThumb";
 import { formatCurrency } from "@/lib/utils";
 import type { Equipamento, EstoqueItem, Nicho, Ponto } from "@/lib/types/database";
 import {
@@ -1189,11 +1189,11 @@ export function EstoqueClient({
                 >
                   <div className="shrink-0">
                     {eq.foto_url ? (
-                      <ExpandableImage
+                      <LazyThumb
                         src={eq.foto_url}
                         alt={getEquipamentoDisplayNome(eq)}
-                        fullWidth={false}
-                        className="h-14 w-14 rounded-sm object-cover"
+                        className="h-14 w-14 rounded-sm"
+                        size={112}
                       />
                     ) : (
                       <div className="flex h-14 w-14 items-center justify-center rounded-sm border border-white/[0.08] bg-slate-900/50 text-slate-600">
@@ -1271,6 +1271,7 @@ export function EstoqueClient({
                       ref={isEditing ? editRowRef : undefined}
                       className={cn(
                         "overflow-hidden border border-white/[0.06] bg-white/[0.02] transition",
+                        !isEditing && "estoque-item-card",
                         isEditing &&
                           "border-[#c4a574]/30 bg-white/[0.03] ring-1 ring-[#c4a574]/15 lg:col-span-2"
                       )}
@@ -1282,13 +1283,13 @@ export function EstoqueClient({
                           aria-expanded={isEditing}
                           className="flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-4"
                         >
-                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-white/[0.08] bg-slate-900/50">
+                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-white/[0.08]">
                             {item.foto_url ? (
-                              // eslint-disable-next-line @next/next/no-img-element
-                              <img
+                              <LazyThumb
                                 src={item.foto_url}
-                                alt=""
-                                className="h-full w-full object-cover"
+                                alt={item.nome_item}
+                                className="h-14 w-14"
+                                size={112}
                               />
                             ) : (
                               <div className="flex h-full w-full items-center justify-center text-slate-600">

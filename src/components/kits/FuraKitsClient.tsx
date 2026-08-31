@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Minus, Package, Plus, Search, Trash2, X } from "lucide-react";
 import { FormInput, FormTextarea } from "@/components/ui/FormInput";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
-import { ExpandableImage } from "@/components/ui/ExpandableImage";
+import { LazyThumb } from "@/components/ui/LazyThumb";
 import { FotoKit } from "@/components/kits/FotoKit";
 import { KitDepositoControles } from "@/components/kits/KitDepositoControles";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -614,10 +614,11 @@ export function FuraKitsClient({
                       >
                         <div className="relative aspect-square">
                           {foto ? (
-                            <ExpandableImage
+                            <LazyThumb
                               src={foto}
                               alt={r.nome}
-                              className="h-full w-full object-cover"
+                              className="aspect-square h-full w-full"
+                              size={200}
                             />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center bg-slate-950 text-slate-600">
@@ -708,11 +709,11 @@ export function FuraKitsClient({
                             >
                               <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-slate-950">
                                 {e.foto_url ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img
+                                  <LazyThumb
                                     src={e.foto_url}
-                                    alt=""
-                                    className="h-full w-full object-cover"
+                                    alt={e.nome_item}
+                                    className="h-12 w-12"
+                                    size={96}
                                   />
                                 ) : (
                                   <div className="flex h-full w-full items-center justify-center text-slate-600">

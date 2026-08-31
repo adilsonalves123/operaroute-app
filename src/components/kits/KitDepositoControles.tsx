@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Package, PackageOpen } from "lucide-react";
-import { ExpandableImage } from "@/components/ui/ExpandableImage";
+import { LazyThumb } from "@/components/ui/LazyThumb";
 import { cn, formatCurrency } from "@/lib/utils";
 
 export type KitComposicaoVisual = {
@@ -28,11 +28,11 @@ function ItemFoto({ item }: { item: KitComposicaoVisual }) {
   return (
     <div className="relative w-[5.5rem] shrink-0 space-y-1.5">
       {item.foto_url ? (
-        <ExpandableImage
+        <LazyThumb
           src={item.foto_url}
           alt={item.nome}
-          fullWidth={false}
-          className="h-20 w-20 rounded-xl object-cover ring-1 ring-white/10"
+          className="h-20 w-20 rounded-xl ring-1 ring-white/10"
+          size={160}
         />
       ) : (
         <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-white/10 text-slate-600">
@@ -80,11 +80,11 @@ export function KitDepositoControles({
         {showCapa && (
           <div className="flex flex-wrap items-start gap-3">
             {fotoUrl ? (
-              <ExpandableImage
+              <LazyThumb
                 src={fotoUrl}
                 alt={nomeKit}
-                fullWidth={false}
-                className="h-16 w-16 shrink-0 rounded-xl object-cover ring-1 ring-white/10 sm:h-20 sm:w-20"
+                className="h-16 w-16 shrink-0 rounded-xl ring-1 ring-white/10 sm:h-20 sm:w-20"
+                size={160}
               />
             ) : actions ? (
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-white/10 text-slate-600 sm:h-20 sm:w-20">

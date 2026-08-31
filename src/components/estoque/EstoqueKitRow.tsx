@@ -9,6 +9,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { AlertBadge } from "@/components/ui/AlertBadge";
+import { LazyThumb } from "@/components/ui/LazyThumb";
 import { KitDepositoControles } from "@/components/kits/KitDepositoControles";
 import { cn, formatCurrency } from "@/lib/utils";
 
@@ -81,8 +82,12 @@ export function EstoqueKitRow({
       >
         <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-cyan-500/20 bg-cyan-500/5">
           {kit.foto_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={kit.foto_url} alt="" className="h-full w-full object-cover" />
+            <LazyThumb
+              src={kit.foto_url}
+              alt={kit.nome}
+              className="h-14 w-14"
+              size={112}
+            />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-cyan-600">
               <ImageIcon className="h-5 w-5" />
@@ -102,12 +107,12 @@ export function EstoqueKitRow({
             <div className="mt-2 flex gap-1.5 overflow-hidden">
               {kit.reposicao_itens.slice(0, 5).map((r, i) =>
                 r.foto_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <LazyThumb
                     key={`${r.nome}-${i}`}
                     src={r.foto_url}
-                    alt=""
-                    className="h-8 w-8 rounded-md object-cover ring-1 ring-white/10"
+                    alt={r.nome}
+                    className="h-8 w-8 rounded-md ring-1 ring-white/10"
+                    size={64}
                   />
                 ) : (
                   <div
