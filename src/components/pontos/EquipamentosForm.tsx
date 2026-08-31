@@ -331,7 +331,9 @@ export function EquipamentosForm({
                       />
                     )}
 
-                    {((isEquipamentoTipoComBrindes(tipoEfetivo) && tipoEfetivo !== "bolinha") ||
+                    {((isEquipamentoTipoComBrindes(tipoEfetivo) &&
+                      tipoEfetivo !== "bolinha" &&
+                      tipoEfetivo !== "consignado") ||
                       isEquipamentoTipoDiversao(tipoEfetivo)) && (
                       <FormInput
                         label="Entrada atual (visor) *"
@@ -354,9 +356,9 @@ export function EquipamentosForm({
 
                     {tipoEfetivo === "consignado" && (
                       <div className="rounded-lg border border-amber-500/15 bg-amber-500/5 p-3 text-xs text-amber-200/90">
+                        Consignado não usa contador de entrada — só itens vendidos no recolhe.
                         Depois de criar, toque no expositor e use a aba{" "}
-                        <span className="font-medium">Produtos</span> para alocar itens (igual aos
-                        brindes da máquina de ursinho).
+                        <span className="font-medium">Produtos</span> para alocar o estoque.
                       </div>
                     )}
 
@@ -379,6 +381,7 @@ export function EquipamentosForm({
 
                     {!isBolinha &&
                       (tipoEfetivo === "cassino" ||
+                        tipoEfetivo === "fura_fura" ||
                         isEquipamentoTipoComBrindes(tipoEfetivo) ||
                         isEquipamentoTipoDiversao(tipoEfetivo)) && (
                         <FotoEquipamento
