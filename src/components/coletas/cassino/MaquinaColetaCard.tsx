@@ -15,8 +15,7 @@ import { analyzePhotoQuality } from "@/lib/ia/photo-quality";
 import { preprocessOcrCrop } from "@/lib/ia/preprocess-ocr-image";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
-import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
-import { LerNumeroDaFoto } from "@/components/coletas/LerNumeroDaFoto";
+import { FotoColetaLeitura } from "@/components/coletas/FotoColetaLeitura";
 import {
   EXCECAO_CONTADOR_OPCOES,
   flagsIndicamRegressao,
@@ -471,13 +470,6 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           {erroEntrada ? (
             <p className="text-xs leading-snug text-red-400">{erroEntrada}</p>
           ) : null}
-          <LerNumeroDaFoto
-            contexto="entrada"
-            disabled={lendoIa}
-            onUsar={(valor) =>
-              onUpdate(leitura.equipamentoId, "entradaAtualInput", valor)
-            }
-          />
         </div>
         <div className="space-y-1.5">
           <label className="block text-xs font-medium text-slate-400">
@@ -504,13 +496,6 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           {erroSaida ? (
             <p className="text-xs leading-snug text-red-400">{erroSaida}</p>
           ) : null}
-          <LerNumeroDaFoto
-            contexto="saida"
-            disabled={lendoIa}
-            onUsar={(valor) =>
-              onUpdate(leitura.equipamentoId, "saidaAtualInput", valor)
-            }
-          />
         </div>
       </div>
 
@@ -583,12 +568,21 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         </div>
       ) : null}
 
-      <FotoColetaCaptura
+      <FotoColetaLeitura
         preview={leitura.fotoPreview}
+        file={leitura.fotoFile}
         onChange={(file) => onFotoChange(leitura.equipamentoId, file)}
+        modo="entrada_saida"
+        entradaPreenchida={Boolean(leitura.entradaAtualInput.trim())}
+        saidaPreenchida={Boolean(leitura.saidaAtualInput.trim())}
+        onEntrada={(valor) =>
+          onUpdate(leitura.equipamentoId, "entradaAtualInput", valor)
+        }
+        onSaida={(valor) =>
+          onUpdate(leitura.equipamentoId, "saidaAtualInput", valor)
+        }
         erro={erroFoto}
         label="Foto do painel *"
-        hint="Toque em Foto → Câmera ou Galeria. Depois use a IA."
         alt={`Foto ${leitura.nome}`}
         buttonClassName="py-6 rounded-xl"
       />

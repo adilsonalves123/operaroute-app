@@ -4,8 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Trash2, ImageIcon } from "lucide-react";
-import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
-import { LerNumeroDaFoto } from "@/components/coletas/LerNumeroDaFoto";
+import { FotoColetaLeitura } from "@/components/coletas/FotoColetaLeitura";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { uploadFotosMaquinasParalelo } from "@/lib/storage/coleta-fotos";
@@ -875,13 +874,6 @@ export function NovaColetaUrsinhoForm() {
                         }
                         className={inputClass(false)}
                       />
-                      <LerNumeroDaFoto
-                        onUsar={(valor) =>
-                          updateMaquina(maquina.equipamentoId, {
-                            entradaAtualInput: valor,
-                          })
-                        }
-                      />
                     </div>
                     <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2.5">
                       <p className="text-xs text-slate-500">Arrecadação da máquina</p>
@@ -1028,10 +1020,15 @@ export function NovaColetaUrsinhoForm() {
                     )}
                   </div>
 
-                  <FotoColetaCaptura
+                  <FotoColetaLeitura
                     preview={maquina.fotoPreview}
+                    file={maquina.fotoFile}
                     onChange={(file) => handleFoto(maquina.equipamentoId, file)}
-                    hint="Tire uma foto da numeração/visor da máquina para validar a leitura."
+                    onContador={(valor) =>
+                      updateMaquina(maquina.equipamentoId, {
+                        entradaAtualInput: valor,
+                      })
+                    }
                     alt={`Foto ${maquina.nome}`}
                     buttonClassName="py-6 hover:border-pink-500/40 hover:text-pink-300"
                   />
