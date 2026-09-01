@@ -123,9 +123,7 @@ export function FotoColetaLeitura({
 
   const erroExibido = erroLocal ?? erro;
   const hintPadrao =
-    modo === "entrada_saida"
-      ? "Anexe a foto e digite manualmente, ou use \"Ler números na foto\" se quiser ajuda da IA."
-      : "Anexe a foto e digite manualmente, ou use \"Ler números na foto\" se quiser ajuda da IA.";
+    "Anexe a foto e digite manualmente, ou toque na foto para marcar e copiar um grupo de números.";
 
   return (
     <div className={cn("space-y-2", className)}>
