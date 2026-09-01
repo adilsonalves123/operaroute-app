@@ -34,7 +34,7 @@ export function FotoColetaLeitura({
   preview,
   file,
   onChange,
-  modo: _modo = "contador",
+  modo = "contador",
   onContador: _onContador,
   onEntrada: _onEntrada,
   onSaida: _onSaida,
@@ -123,7 +123,9 @@ export function FotoColetaLeitura({
 
   const erroExibido = erroLocal ?? erro;
   const hintPadrao =
-    "A IA identifica os números na foto — toque no que quer, Copiar e cole no campo.";
+    modo === "entrada_saida"
+      ? "Toque no número da entrada ou saída na foto, Copiar e cole no campo."
+      : "Toque no número na foto, Copiar e cole no campo.";
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -153,7 +155,7 @@ export function FotoColetaLeitura({
       {preview ? (
         <div className="relative space-y-2">
           {file ? (
-            <FotoLeituraSegurar file={file} previewUrl={preview} />
+            <FotoLeituraSegurar file={file} previewUrl={preview} modo={modo} />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
