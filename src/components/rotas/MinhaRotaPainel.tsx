@@ -95,8 +95,8 @@ export function MinhaRotaPainel({
           <Route className="mx-auto h-9 w-9 text-slate-600 mb-3" />
           <p className="text-sm font-medium text-slate-300">Nenhuma rota atribuída</p>
           <p className="mt-1 text-xs text-slate-500 max-w-xs mx-auto">
-            Peça ao gerente para montar a rota e clicar em Enviar — chega no app e pode vir no
-            WhatsApp.
+            Peça ao gerente para montar a rota e atribuir a você no app — ela aparece aqui para
+            executar (próximo ponto → Coletar).
           </p>
         </div>
       </div>

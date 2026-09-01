@@ -157,7 +157,7 @@ export function RotasBoard({
           </p>
           <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
             {rotas.length === 0
-              ? "Crie a primeira rota do dia: escolha os pontos, organize a ordem e envie para o ajudante."
+              ? "Crie a primeira rota do dia: escolha a cidade, marque os pontos e atribua ao ajudante."
               : "Tente outro status ou responsável."}
           </p>
           {rotas.length === 0 && (
