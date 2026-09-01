@@ -5,6 +5,7 @@ import { Plus, Trash2 } from "lucide-react";
 import { FormInput, FormTextarea } from "@/components/ui/FormInput";
 import { SelectCard } from "@/components/ui/SelectCard";
 import { FotoEquipamento } from "@/components/pontos/FotoEquipamento";
+import { LerNumeroDaFoto } from "@/components/coletas/LerNumeroDaFoto";
 import { EquipamentoIdentificacaoFields } from "@/components/pontos/EquipamentoIdentificacaoFields";
 import { AlocarBrindeCadastroEquipamento } from "@/components/pontos/AlocarBrindeCadastroEquipamento";
 import {
@@ -298,24 +299,34 @@ export function EquipamentosForm({
                           entrada/saída anterior.
                         </p>
                         <div className="grid gap-4 sm:grid-cols-2">
-                          <FormInput
-                            label="Entrada atual *"
-                            inputMode="numeric"
-                            placeholder="0,00"
-                            value={eq.numero_entrada}
-                            onChange={(e) =>
-                              updateContador(eq.id, "numero_entrada", e.target.value)
-                            }
-                          />
-                          <FormInput
-                            label="Saída atual *"
-                            inputMode="numeric"
-                            placeholder="0,00"
-                            value={eq.numero_saida}
-                            onChange={(e) =>
-                              updateContador(eq.id, "numero_saida", e.target.value)
-                            }
-                          />
+                          <div className="space-y-1.5">
+                            <FormInput
+                              label="Entrada atual *"
+                              inputMode="numeric"
+                              placeholder="0,00"
+                              value={eq.numero_entrada}
+                              onChange={(e) =>
+                                updateContador(eq.id, "numero_entrada", e.target.value)
+                              }
+                            />
+                            <LerNumeroDaFoto
+                              onUsar={(valor) => updateContador(eq.id, "numero_entrada", valor)}
+                            />
+                          </div>
+                          <div className="space-y-1.5">
+                            <FormInput
+                              label="Saída atual *"
+                              inputMode="numeric"
+                              placeholder="0,00"
+                              value={eq.numero_saida}
+                              onChange={(e) =>
+                                updateContador(eq.id, "numero_saida", e.target.value)
+                              }
+                            />
+                            <LerNumeroDaFoto
+                              onUsar={(valor) => updateContador(eq.id, "numero_saida", valor)}
+                            />
+                          </div>
                         </div>
                       </>
                     )}
@@ -335,16 +346,21 @@ export function EquipamentosForm({
                       tipoEfetivo !== "bolinha" &&
                       tipoEfetivo !== "consignado") ||
                       isEquipamentoTipoDiversao(tipoEfetivo)) && (
-                      <FormInput
-                        label="Entrada atual (visor) *"
-                        inputMode="numeric"
-                        placeholder="0,00"
-                        value={eq.entrada_atual}
-                        onChange={(e) =>
-                          updateContador(eq.id, "entrada_atual", e.target.value)
-                        }
-                        hint="Leitura atual — na coleta vira valor anterior"
-                      />
+                      <div className="space-y-1.5">
+                        <FormInput
+                          label="Entrada atual (visor) *"
+                          inputMode="numeric"
+                          placeholder="0,00"
+                          value={eq.entrada_atual}
+                          onChange={(e) =>
+                            updateContador(eq.id, "entrada_atual", e.target.value)
+                          }
+                          hint="Leitura atual — na coleta vira valor anterior"
+                        />
+                        <LerNumeroDaFoto
+                          onUsar={(valor) => updateContador(eq.id, "entrada_atual", valor)}
+                        />
+                      </div>
                     )}
 
                     {tipoEfetivo === "fura_fura" && (

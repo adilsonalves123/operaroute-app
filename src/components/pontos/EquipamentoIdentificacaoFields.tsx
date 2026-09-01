@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { FormInput } from "@/components/ui/FormInput";
 import { HistoricoNumeroSerie } from "@/components/pontos/HistoricoNumeroSerie";
+import { LerNumeroDaFoto } from "@/components/coletas/LerNumeroDaFoto";
 import { cn } from "@/lib/utils";
 
 export const LABEL_NUMERO_PONTO = "Nº no ponto";
@@ -82,6 +83,7 @@ export function EquipamentoIdentificacaoFields({
           onChange={(e) => onSerieChange(e.target.value)}
           hint="Deixe em branco se a máquina não tiver painel com série."
         />
+        <LerNumeroDaFoto modo="texto" onUsar={onSerieChange} />
         <FormInput
           label={`${LABEL_NUMERO_PONTO}${numeroMaquinaObrigatorio ? " *" : ""}`}
           placeholder="Ex: 01, A12"
@@ -114,6 +116,7 @@ export function EquipamentoIdentificacaoFields({
         onChange={(e) => handleSerieChange(e.target.value)}
         hint={HINT_SERIE_PAINEL}
       />
+      <LerNumeroDaFoto modo="texto" onUsar={handleSerieChange} />
 
       {numeroSerie.trim().length >= 2 && onHistoricoSugestao && (
         <HistoricoNumeroSerie

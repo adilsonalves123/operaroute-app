@@ -7,6 +7,7 @@ import { Edit3, Loader2, X } from "lucide-react";
 import { FormInput, FormTextarea } from "@/components/ui/FormInput";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { FotoEquipamento } from "@/components/pontos/FotoEquipamento";
+import { LerNumeroDaFoto } from "@/components/coletas/LerNumeroDaFoto";
 import { EquipamentoIdentificacaoFields } from "@/components/pontos/EquipamentoIdentificacaoFields";
 import { getEquipamentoTipoLabel, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
 import { salvarFotoEquipamento } from "@/lib/equipamentos/salvar-foto-equipamento";
@@ -248,46 +249,67 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
 
                 {equipamento.tipo === "cassino" && (
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <FormInput
-                      label="Entrada atual"
-                      inputMode="numeric"
-                      placeholder="0,00"
-                      value={form.numero_entrada}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          numero_entrada: formatContadorInput(e.target.value),
-                        }))
-                      }
-                    />
-                    <FormInput
-                      label="Saída atual"
-                      inputMode="numeric"
-                      placeholder="0,00"
-                      value={form.numero_saida}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          numero_saida: formatContadorInput(e.target.value),
-                        }))
-                      }
-                    />
+                    <div className="space-y-1.5">
+                      <FormInput
+                        label="Entrada atual"
+                        inputMode="numeric"
+                        placeholder="0,00"
+                        value={form.numero_entrada}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            numero_entrada: formatContadorInput(e.target.value),
+                          }))
+                        }
+                      />
+                      <LerNumeroDaFoto
+                        onUsar={(valor) =>
+                          setForm((prev) => ({ ...prev, numero_entrada: valor }))
+                        }
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <FormInput
+                        label="Saída atual"
+                        inputMode="numeric"
+                        placeholder="0,00"
+                        value={form.numero_saida}
+                        onChange={(e) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            numero_saida: formatContadorInput(e.target.value),
+                          }))
+                        }
+                      />
+                      <LerNumeroDaFoto
+                        onUsar={(valor) =>
+                          setForm((prev) => ({ ...prev, numero_saida: valor }))
+                        }
+                      />
+                    </div>
                   </div>
                 )}
 
                 {(equipamento.tipo === "ursinho" || equipamento.tipo === "vending_ursinho") && (
-                  <FormInput
-                    label="Entrada atual (visor)"
-                    inputMode="numeric"
-                    placeholder="0,00"
-                    value={form.entrada_atual}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        entrada_atual: formatContadorInput(e.target.value),
-                      }))
-                    }
-                  />
+                  <div className="space-y-1.5">
+                    <FormInput
+                      label="Entrada atual (visor)"
+                      inputMode="numeric"
+                      placeholder="0,00"
+                      value={form.entrada_atual}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          entrada_atual: formatContadorInput(e.target.value),
+                        }))
+                      }
+                    />
+                    <LerNumeroDaFoto
+                      onUsar={(valor) =>
+                        setForm((prev) => ({ ...prev, entrada_atual: valor }))
+                      }
+                    />
+                  </div>
                 )}
 
                 {equipamento.tipo === "bolinha" && (

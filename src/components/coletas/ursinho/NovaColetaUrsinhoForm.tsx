@@ -5,6 +5,7 @@ import { useSubmitLock } from "@/hooks/use-submit-lock";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Trash2, ImageIcon } from "lucide-react";
 import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
+import { LerNumeroDaFoto } from "@/components/coletas/LerNumeroDaFoto";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { uploadFotosMaquinasParalelo } from "@/lib/storage/coleta-fotos";
@@ -24,7 +25,7 @@ import {
   type EstoqueBrindePonto,
   type BrindeEntreguePonto,
 } from "@/lib/estoque/brindes-ponto";
-import { agregarDividaCobravelPorPonto } from "@/lib/visitas-ponto/divida-ponto";
+import { agregarDividaCobravelPorPonto, fetchAgregadoDividaCobravelEmpresa } from "@/lib/visitas-ponto/divida-ponto";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { ColetaUrsinhoResumo } from "@/components/coletas/ursinho/ColetaUrsinhoResumo";
@@ -212,6 +213,19 @@ export function NovaColetaUrsinhoForm() {
     }
     loadPontos();
   }, []);
+
+  useEffect(() => {
+    if (!empresaId) return;
+    let cancelled = false;
+    void (async () => {
+      const supabase = createClient();
+      const map = await fetchAgregadoDividaCobravelEmpresa(supabase, empresaId);
+      if (!cancelled) setPendenciasPorPonto(map);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [empresaId, pontoId]);
 
   useEffect(() => {
     if (!pontoId) {
@@ -860,6 +874,13 @@ export function NovaColetaUrsinhoForm() {
                           })
                         }
                         className={inputClass(false)}
+                      />
+                      <LerNumeroDaFoto
+                        onUsar={(valor) =>
+                          updateMaquina(maquina.equipamentoId, {
+                            entradaAtualInput: valor,
+                          })
+                        }
                       />
                     </div>
                     <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2.5">
