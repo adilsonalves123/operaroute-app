@@ -7,7 +7,10 @@ import {
 } from "@/lib/dashboard-pulso";
 import type { DashboardRankingPoint } from "@/components/dashboard/DashboardRanking";
 import { fetchCartelaPontos, type CartelaPontos } from "@/lib/dashboard-cartela-pontos";
-import { fetchDashboardPontosBase } from "@/lib/dashboard-pontos-base";
+import {
+  fetchDashboardPontosBase,
+  pontoSemColetaHaMaisDe,
+} from "@/lib/dashboard-pontos-base";
 import { fetchPendenciasAbertas, somarPendenciasPorNicho } from "@/lib/dashboard-pendencias-abertas";
 import {
   buildSaudeResumoFromEventos,
@@ -15,7 +18,12 @@ import {
   type SaudePontosResumo,
 } from "@/lib/dashboard-saude-pontos";
 import { liquidoRecebidoCassinoVisita, lucroOperacaoCassinoVisita } from "@/lib/nichos/cassino/lucro-recebido";
+import { cobravelCassinoVisita } from "@/lib/visitas-ponto/resumo";
 import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
+
+function round2(n: number) {
+  return Math.round(n * 100) / 100;
+}
 
 function isPendenciaOperacaoTipo(tipo: string | null | undefined): boolean {
   const t = (tipo ?? "").toLowerCase();
@@ -86,11 +94,12 @@ export async function getCassinoDashboardStats(
     pontos,
     pendenciasAbertas,
     { data: coletasMes },
+    { count: maquinasAtivas },
   ] = await Promise.all([
     supabase
       .from("visitas")
       .select(
-        "id, ponto_id, total_lucro_centavos, valor_operacao, valor_operacao_efetivo, valor_pago, restante, saldo_negativo, desconto, adiantamento_pix, adiantamento_dinheiro, created_at, pontos(nome)"
+        "id, ponto_id, total_lucro_centavos, valor_operacao, valor_operacao_efetivo, valor_pago, restante, debito_abatido, saldo_negativo, desconto, adiantamento_pix, adiantamento_dinheiro, created_at, pontos(nome)"
       )
       .eq("empresa_id", empresaId)
       .gte("created_at", lookbackISO)
@@ -104,13 +113,21 @@ export async function getCassinoDashboardStats(
       .gte("created_at", inicioISO)
       .lte("created_at", fimISO)
       .not("visita_id", "is", null),
+    supabase
+      .from("equipamentos")
+      .select("*", { count: "exact", head: true })
+      .eq("empresa_id", empresaId)
+      .eq("tipo", "cassino")
+      .eq("status", "ativo"),
   ]);
 
   const visitasList = (visitasRaw ?? []).filter(
     (v) => v.created_at >= inicioISO && v.created_at <= fimISO
   );
   const visitasPulso = visitasRaw ?? [];
-  const pendenciasCount = pendenciasAbertas.length;
+  const visitasComDivida = (visitasRaw ?? []).filter(
+    (v) => !v.saldo_negativo && cobravelCassinoVisita(v) > 0.009
+  );
   const openOpByVisita = mapaPendenciaOperacaoAberta(pendenciasAbertas);
   const totalLucroReais = visitasList.reduce(
     (s, v) => s + lucroOperacaoCassinoVisita(v),
@@ -133,9 +150,7 @@ export async function getCassinoDashboardStats(
 
   const pontosAtivos = pontos?.filter((p) => p.status === "ativo").length ?? 0;
   const pontosSemColeta =
-    pontos?.filter(
-      (p) => !p.ultima_coleta || new Date(p.ultima_coleta) < sevenDaysAgo
-    ).length ?? 0;
+    pontos?.filter((p) => pontoSemColetaHaMaisDe(p, sevenDaysAgo)).length ?? 0;
 
   const rankingMap = new Map<string, number>();
   visitasList.forEach((v) => {
@@ -165,6 +180,13 @@ export async function getCassinoDashboardStats(
 
   const saldoEntradaSaida = totalEntradaPeriodo - totalSaidaPeriodo;
   const pendSums = somarPendenciasPorNicho(pendenciasAbertas);
+  // Fonte da verdade do "A receber": cobravel das visitas (igual ao badge Quitada).
+  // Pendências espelhadas podem ficar abertas após "corrigir pagamento".
+  const aReceberVisitas = round2(
+    (visitasRaw ?? [])
+      .filter((v) => !v.saldo_negativo)
+      .reduce((s, v) => s + cobravelCassinoVisita(v), 0)
+  );
 
   const pulso: PulsoOperacao = computePulsoOperacao(
     visitasToPulsoEventos(visitasPulso)
@@ -188,12 +210,12 @@ export async function getCassinoDashboardStats(
       lucro_estimado: totalLucroReais,
       coletas_realizadas: visitasList.length,
       visitas: visitasList.length,
-      maquinas_ativas: pontosAtivos,
+      maquinas_ativas: maquinasAtivas ?? 0,
       clientes_ativos: pontosAtivos,
       pontos_ativos: pontosAtivos,
       pontos_pendentes: pontosSemColeta,
-      pendencias: pendenciasCount ?? 0,
-      a_receber_pendente: pendSums.cassinoPendente,
+      pendencias: visitasComDivida.length,
+      a_receber_pendente: aReceberVisitas,
       haver_ponto: pendSums.cassinoHaver,
       receita_mes: totalOperacaoRecebida,
       operacao_gerada_mes: totalOperacaoGerada,

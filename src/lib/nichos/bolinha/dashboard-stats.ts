@@ -7,7 +7,10 @@ import {
   coletasToEventosPonto,
   type SaudePontosResumo,
 } from "@/lib/dashboard-saude-pontos";
-import { fetchDashboardPontosBase } from "@/lib/dashboard-pontos-base";
+import {
+  fetchDashboardPontosBase,
+  pontoSemColetaHaMaisDe,
+} from "@/lib/dashboard-pontos-base";
 import { fetchPendenciasAbertas } from "@/lib/dashboard-pendencias-abertas";
 import { NICHO_MODULO_BOLINHA } from "@/lib/nichos/bolinha";
 import type { Ponto } from "@/lib/types/database";
@@ -125,8 +128,7 @@ export async function getBolinhaDashboardStats(
 
   const pontosAtivos = pontos?.filter((p) => p.status === "ativo").length ?? 0;
   const pontosSemColeta =
-    pontos?.filter((p) => !p.ultima_coleta || new Date(p.ultima_coleta) < sevenDaysAgo)
-      .length ?? 0;
+    pontos?.filter((p) => pontoSemColetaHaMaisDe(p, sevenDaysAgo)).length ?? 0;
 
   const rankingMap = new Map<string, number>();
   list.forEach((c) => {

@@ -112,7 +112,8 @@ function linhaFromCassinoStats(
   );
   return linhaFromMovimento(stats, {
     liquidoOperacao,
-    aReceber: pendencias.cassinoPendente,
+    // Preferir cobravel das visitas (já em a_receber_pendente) — pendências espelhadas mentem.
+    aReceber: stats.a_receber_pendente ?? pendencias.cassinoPendente,
     haver: pendencias.cassinoHaver,
   });
 }
