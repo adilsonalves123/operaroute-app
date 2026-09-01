@@ -5,6 +5,7 @@ import { Camera, Check, Copy, ImageIcon, Loader2, Sparkles, X } from "lucide-rea
 import { capturarFotoNativa } from "@/lib/camera/captura-nativa";
 import { isNativeAndroidApp } from "@/lib/push/client";
 import { cn } from "@/lib/utils";
+import { SelecionarAreaNaFoto } from "@/components/coletas/SelecionarAreaNaFoto";
 import type { ContextoLeituraNumeroFoto, ModoLeituraNumeroFoto } from "@/lib/ia/ler-numero-foto";
 
 type Props = {
@@ -64,14 +65,15 @@ export function LerNumeroDaFoto({
     preview: string;
   } | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [fotoPendente, setFotoPendente] = useState<{ file: File; preview: string } | null>(
+    null
+  );
 
-  async function processarFoto(file: File) {
+  async function processarFoto(file: File, previewUrl: string) {
     setLendo(true);
     setErro(null);
     setCopiado(false);
     setResultado(null);
-
-    const preview = URL.createObjectURL(file);
 
     try {
       const foto = await comprimirFoto(file);
@@ -92,13 +94,13 @@ export function LerNumeroDaFoto({
       };
 
       if (!res.ok) {
-        URL.revokeObjectURL(preview);
+        URL.revokeObjectURL(previewUrl);
         setErro(json.error || "Não foi possível ler a foto.");
         return;
       }
 
       if (!json.numero?.trim()) {
-        URL.revokeObjectURL(preview);
+        URL.revokeObjectURL(previewUrl);
         setErro("Nenhum número encontrado na foto.");
         return;
       }
@@ -107,15 +109,34 @@ export function LerNumeroDaFoto({
         numero: json.numero.trim(),
         confianca: Number(json.confianca ?? 0),
         rotulo: json.rotulo ?? null,
-        preview,
+        preview: previewUrl,
       });
     } catch {
-      URL.revokeObjectURL(preview);
+      URL.revokeObjectURL(previewUrl);
       setErro("Erro ao enviar a foto. Verifique a conexão.");
     } finally {
       setLendo(false);
       setMenuAberto(false);
     }
+  }
+
+  function iniciarSelecao(file: File) {
+    setErro(null);
+    setMenuAberto(false);
+    setFotoPendente({ file, preview: URL.createObjectURL(file) });
+  }
+
+  function cancelarSelecao() {
+    if (fotoPendente?.preview) URL.revokeObjectURL(fotoPendente.preview);
+    setFotoPendente(null);
+  }
+
+  function confirmarSelecao(file: File, preview: string) {
+    if (fotoPendente?.preview && fotoPendente.preview !== preview) {
+      URL.revokeObjectURL(fotoPendente.preview);
+    }
+    setFotoPendente(null);
+    void processarFoto(file, preview);
   }
 
   async function abrir(modoCaptura: "camera" | "galeria") {
@@ -125,7 +146,7 @@ export function LerNumeroDaFoto({
     try {
       if (isNativeAndroidApp()) {
         const file = await capturarFotoNativa(modoCaptura);
-        if (file) await processarFoto(file);
+        if (file) iniciarSelecao(file);
         return;
       }
 
@@ -141,7 +162,7 @@ export function LerNumeroDaFoto({
   function handleInputChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
-    if (file) void processarFoto(file);
+    if (file) iniciarSelecao(file);
   }
 
   async function copiar() {
@@ -170,6 +191,21 @@ export function LerNumeroDaFoto({
 
   return (
     <div className={cn("space-y-2", className)}>
+      {fotoPendente ? (
+        <SelecionarAreaNaFoto
+          file={fotoPendente.file}
+          previewUrl={fotoPendente.preview}
+          titulo={
+            contexto === "entrada"
+              ? "Selecione a entrada na foto"
+              : contexto === "saida"
+                ? "Selecione a saída na foto"
+                : "Selecione o número na foto"
+          }
+          onCancel={cancelarSelecao}
+          onConfirm={confirmarSelecao}
+        />
+      ) : null}
       <input
         id={cameraId}
         ref={cameraRef}
