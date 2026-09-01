@@ -572,15 +572,6 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         preview={leitura.fotoPreview}
         file={leitura.fotoFile}
         onChange={(file) => onFotoChange(leitura.equipamentoId, file)}
-        modo="entrada_saida"
-        entradaPreenchida={Boolean(leitura.entradaAtualInput.trim())}
-        saidaPreenchida={Boolean(leitura.saidaAtualInput.trim())}
-        onEntrada={(valor) =>
-          onUpdate(leitura.equipamentoId, "entradaAtualInput", valor)
-        }
-        onSaida={(valor) =>
-          onUpdate(leitura.equipamentoId, "saidaAtualInput", valor)
-        }
         erro={erroFoto}
         label="Foto do painel *"
         alt={`Foto ${leitura.nome}`}

@@ -2,369 +2,375 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Loader2, X, ZoomIn } from "lucide-react";
-import { cropFileByPixelRect } from "@/lib/ia/crop-image";
-import {
-  getFotoImageLayout,
-  pixelRectParaDisplay,
-  pontoDisplayParaRecorte,
-} from "@/lib/ia/foto-image-layout";
+import { Check, Copy, Loader2, Maximize2, X } from "lucide-react";
+import { cropFileByPixelRect, type PixelRect } from "@/lib/ia/crop-image";
+import { getFotoImageLayout, type FotoImageLayout } from "@/lib/ia/foto-image-layout";
 import { cn } from "@/lib/utils";
 
-const LONG_PRESS_MS = 480;
-const MOVE_CANCEL_PX = 14;
+type DisplayRect = { x: number; y: number; width: number; height: number };
 
-type SelecaoVisivel = {
-  id: string;
-  left: number;
-  top: number;
-  width: number;
-  height: number;
-  numero: string | null;
-};
-
-type Props = {
-  file: File;
-  previewUrl: string;
-  modo: "contador" | "entrada_saida";
-  onContador?: (valor: string) => void;
-  onEntrada?: (valor: string) => void;
-  onSaida?: (valor: string) => void;
-  entradaPreenchida?: boolean;
-  saidaPreenchida?: boolean;
-  className?: string;
-};
-
-function resolverCampo(
-  modo: Props["modo"],
-  entradaPreenchida: boolean,
-  saidaPreenchida: boolean
-): "entrada" | "saida" | "contador" {
-  if (modo === "contador") return "contador";
-  if (!entradaPreenchida) return "entrada";
-  if (!saidaPreenchida) return "saida";
-  return "entrada";
+function normalizeRect(x1: number, y1: number, x2: number, y2: number): DisplayRect {
+  return {
+    x: Math.min(x1, x2),
+    y: Math.min(y1, y2),
+    width: Math.abs(x2 - x1),
+    height: Math.abs(y2 - y1),
+  };
 }
 
-type AreaProps = {
+function displayRectToPixelRect(rect: DisplayRect, layout: FotoImageLayout): PixelRect | null {
+  const x1 = rect.x - layout.offsetX;
+  const y1 = rect.y - layout.offsetY;
+  const x2 = rect.x + rect.width - layout.offsetX;
+  const y2 = rect.y + rect.height - layout.offsetY;
+
+  const clampedX1 = Math.max(0, Math.min(layout.displayW, x1));
+  const clampedY1 = Math.max(0, Math.min(layout.displayH, y1));
+  const clampedX2 = Math.max(0, Math.min(layout.displayW, x2));
+  const clampedY2 = Math.max(0, Math.min(layout.displayH, y2));
+
+  const width = clampedX2 - clampedX1;
+  const height = clampedY2 - clampedY1;
+  if (width < 8 || height < 8) return null;
+
+  return {
+    x: clampedX1 / layout.scale,
+    y: clampedY1 / layout.scale,
+    width: width / layout.scale,
+    height: height / layout.scale,
+  };
+}
+
+function MascaraEscurecida({ rect }: { rect: DisplayRect }) {
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute left-0 right-0 top-0 bg-black/60"
+        style={{ height: Math.max(0, rect.y) }}
+      />
+      <div
+        className="pointer-events-none absolute left-0 right-0 bg-black/60"
+        style={{ top: rect.y + rect.height, bottom: 0 }}
+      />
+      <div
+        className="pointer-events-none absolute bg-black/60"
+        style={{ top: rect.y, left: 0, width: Math.max(0, rect.x), height: rect.height }}
+      />
+      <div
+        className="pointer-events-none absolute bg-black/60"
+        style={{ top: rect.y, left: rect.x + rect.width, right: 0, height: rect.height }}
+      />
+    </>
+  );
+}
+
+type SeletorProps = {
+  file: File;
   previewUrl: string;
-  selecoes: SelecaoVisivel[];
-  lendo: boolean;
-  modo: Props["modo"];
-  entradaPreenchida: boolean;
-  saidaPreenchida: boolean;
-  onLongPress: (
-    clientX: number,
-    clientY: number,
-    container: HTMLDivElement,
-    img: HTMLImageElement
-  ) => void;
-  onTap: () => void;
-  className?: string;
-  minHeight?: string;
+  aberto: boolean;
+  onFechar: () => void;
 };
 
-function AreaFotoToque({
-  previewUrl,
-  selecoes,
-  lendo,
-  modo,
-  entradaPreenchida,
-  saidaPreenchida,
-  onLongPress,
-  onTap,
-  className,
-  minHeight = "220px",
-}: AreaProps) {
+function SeletorFullscreen({ file, previewUrl, aberto, onFechar }: SeletorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
-  const timerRef = useRef<number | null>(null);
+  const [layout, setLayout] = useState<FotoImageLayout | null>(null);
+  const [rect, setRect] = useState<DisplayRect | null>(null);
+  const [arrastando, setArrastando] = useState(false);
   const startRef = useRef<{ x: number; y: number } | null>(null);
-  const longPressRef = useRef(false);
-  const [, setLayoutTick] = useState(0);
+  const [lendo, setLendo] = useState(false);
+  const [textoLido, setTextoLido] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
+  const recalcularLayout = useCallback(() => {
     const container = containerRef.current;
-    if (!container) return;
-    const observer = new ResizeObserver(() => setLayoutTick((n) => n + 1));
-    observer.observe(container);
-    return () => observer.disconnect();
+    const img = imgRef.current;
+    if (!container || !img || !img.naturalWidth || !img.naturalHeight) return;
+    const bounds = container.getBoundingClientRect();
+    setLayout(
+      getFotoImageLayout(img.naturalWidth, img.naturalHeight, bounds.width, bounds.height)
+    );
   }, []);
 
-  function limparTimer() {
-    if (timerRef.current != null) {
-      window.clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
+  useEffect(() => {
+    if (!aberto) return;
+    setRect(null);
+    setTextoLido(null);
+    setCopiado(false);
+    setErro(null);
+    setArrastando(false);
+    startRef.current = null;
+  }, [aberto, previewUrl]);
+
+  useEffect(() => {
+    if (!aberto) return;
+    const prevOverflow = document.body.style.overflow;
+    const prevTouch = document.body.style.touchAction;
+    document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouch;
+    };
+  }, [aberto]);
+
+  useEffect(() => {
+    if (!aberto) return;
+    recalcularLayout();
+    const container = containerRef.current;
+    if (!container) return;
+    const observer = new ResizeObserver(() => recalcularLayout());
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [aberto, recalcularLayout]);
+
+  function pontoNoContainer(clientX: number, clientY: number) {
+    const bounds = containerRef.current?.getBoundingClientRect();
+    if (!bounds) return null;
+    return { x: clientX - bounds.left, y: clientY - bounds.top };
   }
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (lendo) return;
     e.preventDefault();
-    longPressRef.current = false;
-    startRef.current = { x: e.clientX, y: e.clientY };
-    limparTimer();
-    timerRef.current = window.setTimeout(() => {
-      const container = containerRef.current;
-      const img = imgRef.current;
-      if (!container || !img) return;
-      longPressRef.current = true;
-      onLongPress(e.clientX, e.clientY, container, img);
-    }, LONG_PRESS_MS);
+    const ponto = pontoNoContainer(e.clientX, e.clientY);
+    if (!ponto) return;
+    setErro(null);
+    setTextoLido(null);
+    setCopiado(false);
+    startRef.current = ponto;
+    setRect({ x: ponto.x, y: ponto.y, width: 0, height: 0 });
+    setArrastando(true);
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!startRef.current) return;
-    const dx = e.clientX - startRef.current.x;
-    const dy = e.clientY - startRef.current.y;
-    if (Math.hypot(dx, dy) > MOVE_CANCEL_PX) limparTimer();
+    if (!arrastando || !startRef.current) return;
+    e.preventDefault();
+    const ponto = pontoNoContainer(e.clientX, e.clientY);
+    if (!ponto) return;
+    setRect(normalizeRect(startRef.current.x, startRef.current.y, ponto.x, ponto.y));
   }
 
   function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    limparTimer();
-    if (!longPressRef.current && startRef.current) onTap();
+    if (!arrastando) return;
+    e.preventDefault();
+    setArrastando(false);
     startRef.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
   }
 
-  return (
-    <div
-      ref={containerRef}
-      className={cn(
-        "relative w-full overflow-hidden rounded-xl border-2 border-slate-700 bg-black cursor-zoom-in",
-        className
-      )}
-      style={{
-        minHeight,
-        touchAction: "manipulation",
-        WebkitUserSelect: "none",
-        userSelect: "none",
-        WebkitTouchCallout: "none",
-      }}
-      onContextMenu={(e) => e.preventDefault()}
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        ref={imgRef}
-        src={previewUrl}
-        alt="Foto da coleta"
-        className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
-        draggable={false}
-      />
+  function limparSelecao() {
+    setRect(null);
+    setTextoLido(null);
+    setCopiado(false);
+    setErro(null);
+  }
 
-      {selecoes.map((sel) => (
-        <div
-          key={sel.id}
-          className="pointer-events-none absolute z-10 rounded-md border-[3px] border-yellow-300 bg-yellow-400/30 shadow-[0_0_0_2px_rgba(0,0,0,0.5)]"
-          style={{
-            left: sel.left,
-            top: sel.top,
-            width: sel.width,
-            height: sel.height,
-          }}
+  async function copiarSelecao() {
+    if (!layout || !rect) {
+      setErro("Arraste na foto para marcar o número.");
+      return;
+    }
+    const pixelRect = displayRectToPixelRect(rect, layout);
+    if (!pixelRect) {
+      setErro("Seleção muito pequena. Marque só o visor com o número.");
+      return;
+    }
+
+    setLendo(true);
+    setErro(null);
+    setCopiado(false);
+    try {
+      const recorte = await cropFileByPixelRect(file, pixelRect, "selecao.jpg");
+      const form = new FormData();
+      form.append("foto", recorte);
+      form.append("modo", "contador");
+      const res = await fetch("/api/equipamentos/ler-numero-foto", {
+        method: "POST",
+        body: form,
+      });
+      const json = (await res.json()) as { error?: string; numero?: string };
+      if (!res.ok || !json.numero?.trim()) {
+        setErro(json.error || "Não leu esse trecho. Ajuste a seleção e tente de novo.");
+        return;
+      }
+      const numero = json.numero.trim();
+      setTextoLido(numero);
+      await navigator.clipboard.writeText(numero);
+      setCopiado(true);
+      window.setTimeout(() => setCopiado(false), 2500);
+    } catch {
+      setErro("Não foi possível copiar. Tente de novo.");
+    } finally {
+      setLendo(false);
+    }
+  }
+
+  if (!aberto) return null;
+
+  const temSelecao = Boolean(rect && rect.width > 12 && rect.height > 12);
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[12000] flex flex-col bg-black"
+      role="dialog"
+      aria-modal="true"
+      onContextMenu={(e) => e.preventDefault()}
+    >
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-white">Selecione o número</p>
+          <p className="text-xs text-slate-400">
+            Toque e arraste em cima do número · depois toque em Copiar e cole no campo
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onFechar}
+          className="shrink-0 rounded-full p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+          aria-label="Fechar"
         >
-          {sel.numero ? (
-            <span className="absolute -top-7 left-0 max-w-[min(100%,160px)] truncate rounded-md bg-yellow-300 px-2 py-0.5 text-[11px] font-bold text-slate-900 tabular-nums shadow">
-              {sel.numero}
-            </span>
+          <X className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="relative min-h-0 flex-1 p-2 sm:p-3">
+        <div
+          ref={containerRef}
+          className="relative mx-auto h-full w-full overflow-hidden rounded-xl border border-slate-700 bg-black"
+          style={{ touchAction: "none", WebkitUserSelect: "none", userSelect: "none" }}
+          onContextMenu={(e) => e.preventDefault()}
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={onPointerUp}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            ref={imgRef}
+            src={previewUrl}
+            alt="Foto para seleção"
+            className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
+            draggable={false}
+            onLoad={recalcularLayout}
+          />
+
+          {rect && temSelecao ? (
+            <>
+              <MascaraEscurecida rect={rect} />
+              <div
+                className="pointer-events-none absolute border-[3px] border-yellow-300 bg-yellow-400/20"
+                style={{
+                  left: rect.x,
+                  top: rect.y,
+                  width: rect.width,
+                  height: rect.height,
+                }}
+              />
+            </>
+          ) : null}
+
+          {lendo ? (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40">
+              <Loader2 className="h-8 w-8 animate-spin text-yellow-300" />
+            </div>
+          ) : null}
+
+          {!temSelecao && !lendo ? (
+            <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center px-4">
+              <span className="rounded-full border border-yellow-400/40 bg-black/80 px-4 py-2 text-xs font-medium text-yellow-100">
+                Arraste em cima do número
+              </span>
+            </div>
           ) : null}
         </div>
-      ))}
-
-      {lendo ? (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40">
-          <Loader2 className="h-7 w-7 animate-spin text-yellow-300" />
-        </div>
-      ) : null}
-
-      <div className="pointer-events-none absolute bottom-2 left-0 right-0 flex justify-center px-3">
-        <span className="rounded-full bg-black/75 px-3 py-1 text-[10px] text-slate-200 text-center">
-          Toque = zoom · Segure no número = selecionar
-          {modo === "entrada_saida"
-            ? ` (${!entradaPreenchida ? "próximo: entrada" : !saidaPreenchida ? "próximo: saída" : "entrada/saída"})`
-            : ""}
-        </span>
       </div>
-    </div>
+
+      <div className="space-y-2 border-t border-white/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        {textoLido ? (
+          <p className="text-center text-lg font-semibold tabular-nums text-yellow-100">{textoLido}</p>
+        ) : null}
+        {copiado ? (
+          <p className="text-center text-xs text-emerald-300">Copiado — cole no campo de leitura.</p>
+        ) : null}
+        {erro ? <p className="text-center text-xs text-amber-400">{erro}</p> : null}
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            disabled={lendo || !temSelecao}
+            onClick={() => void copiarSelecao()}
+            className={cn(
+              "inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50",
+              temSelecao ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-slate-500"
+            )}
+          >
+            {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {lendo ? "Lendo…" : copiado ? "Copiado!" : "Copiar"}
+          </button>
+          <button
+            type="button"
+            disabled={lendo || !temSelecao}
+            onClick={limparSelecao}
+            className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-4 py-3 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+          >
+            Limpar
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
-export function FotoLeituraSegurar({
-  file,
-  previewUrl,
-  modo,
-  onContador,
-  onEntrada,
-  onSaida,
-  entradaPreenchida = false,
-  saidaPreenchida = false,
-  className,
-}: Props) {
-  const [zoomAberto, setZoomAberto] = useState(false);
-  const [selecoes, setSelecoes] = useState<SelecaoVisivel[]>([]);
-  const [lendo, setLendo] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-  const [mensagem, setMensagem] = useState<string | null>(null);
+type Props = {
+  file: File;
+  previewUrl: string;
+  className?: string;
+};
+
+export function FotoLeituraSegurar({ file, previewUrl, className }: Props) {
+  const [seletorAberto, setSeletorAberto] = useState(false);
 
   useEffect(() => {
-    setSelecoes([]);
-    setErro(null);
-    setMensagem(null);
+    setSeletorAberto(true);
   }, [file, previewUrl]);
 
-  useEffect(() => {
-    if (!zoomAberto) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setZoomAberto(false);
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = prev;
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [zoomAberto]);
-
-  const lerNoPonto = useCallback(
-    async (
-      clientX: number,
-      clientY: number,
-      container: HTMLDivElement,
-      img: HTMLImageElement
-    ) => {
-      if (!img.naturalWidth || !img.naturalHeight) return;
-
-      const bounds = container.getBoundingClientRect();
-      const layout = getFotoImageLayout(
-        img.naturalWidth,
-        img.naturalHeight,
-        bounds.width,
-        bounds.height
-      );
-      const pixelRect = pontoDisplayParaRecorte(
-        clientX,
-        clientY,
-        bounds,
-        layout,
-        img.naturalWidth,
-        img.naturalHeight
-      );
-      if (!pixelRect) {
-        setErro("Segure em cima do número na foto.");
-        return;
-      }
-
-      const displayRect = pixelRectParaDisplay(pixelRect, layout);
-      const selId = `sel-${Date.now()}`;
-      setSelecoes((prev) => [...prev, { id: selId, ...displayRect, numero: null }]);
-      setLendo(true);
-      setErro(null);
-
-      try {
-        const recorte = await cropFileByPixelRect(file, pixelRect, "leitura-ponto.jpg");
-        const form = new FormData();
-        form.append("foto", recorte);
-        form.append("modo", "contador");
-
-        const res = await fetch("/api/equipamentos/ler-numero-foto", {
-          method: "POST",
-          body: form,
-        });
-        const json = (await res.json()) as { error?: string; numero?: string };
-        if (!res.ok || !json.numero?.trim()) {
-          setSelecoes((prev) => prev.filter((s) => s.id !== selId));
-          setErro(json.error || "Não leu esse trecho. Segure bem em cima do número.");
-          return;
-        }
-
-        const numero = json.numero.trim();
-        setSelecoes((prev) =>
-          prev.map((s) => (s.id === selId ? { ...s, numero } : s))
-        );
-
-        const campo = resolverCampo(modo, entradaPreenchida, saidaPreenchida);
-        if (campo === "entrada") {
-          onEntrada?.(numero);
-          setMensagem(`${numero} → entrada`);
-        } else if (campo === "saida") {
-          onSaida?.(numero);
-          setMensagem(`${numero} → saída`);
-        } else {
-          onContador?.(numero);
-          setMensagem(`${numero} colocado no campo`);
-        }
-      } catch {
-        setSelecoes((prev) => prev.filter((s) => s.id !== selId));
-        setErro("Erro ao ler o trecho selecionado.");
-      } finally {
-        setLendo(false);
-      }
-    },
-    [file, modo, onContador, onEntrada, onSaida, entradaPreenchida, saidaPreenchida]
-  );
-
-  const areaComum = {
-    previewUrl,
-    selecoes,
-    lendo,
-    modo,
-    entradaPreenchida,
-    saidaPreenchida,
-    onTap: () => setZoomAberto(true),
-    onLongPress: (x: number, y: number, c: HTMLDivElement, i: HTMLImageElement) => {
-      void lerNoPonto(x, y, c, i);
-    },
-  };
-
   return (
-    <div className={cn("space-y-2", className)}>
-      <AreaFotoToque {...areaComum} />
+    <div className={cn("w-full space-y-2", className)}>
+      <button
+        type="button"
+        onClick={() => setSeletorAberto(true)}
+        className="relative block w-full overflow-hidden rounded-xl border border-slate-700 bg-black text-left"
+        aria-label="Abrir foto para selecionar número"
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={previewUrl}
+          alt="Foto da coleta"
+          className="block w-full h-auto"
+          draggable={false}
+        />
+        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-1 text-[10px] font-medium text-yellow-100">
+          <Maximize2 className="h-3 w-3" />
+          Selecionar número
+        </span>
+      </button>
 
-      {mensagem ? <p className="text-xs font-medium text-emerald-300">{mensagem}</p> : null}
-      {erro ? <p className="text-xs text-amber-400">{erro}</p> : null}
+      <p className="text-center text-[11px] text-slate-500">
+        Toque na foto → arraste no número → Copiar → cole no campo
+      </p>
 
-      {zoomAberto
-        ? createPortal(
-            <div
-              className="fixed inset-0 z-[12000] flex flex-col bg-black/95"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Zoom da foto"
-              onContextMenu={(e) => e.preventDefault()}
-            >
-              <div className="flex items-center justify-between border-b border-white/10 px-4 py-3">
-                <p className="flex items-center gap-2 text-sm text-slate-300">
-                  <ZoomIn className="h-4 w-4" />
-                  Segure no número para selecionar
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setZoomAberto(false)}
-                  className="rounded-full p-2 text-slate-400 hover:bg-white/10 hover:text-white"
-                  aria-label="Fechar zoom"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="min-h-0 flex-1 p-3">
-                <AreaFotoToque
-                  {...areaComum}
-                  minHeight="100%"
-                  className="h-full max-h-[calc(100vh-80px)]"
-                />
-              </div>
-            </div>,
-            document.body
-          )
-        : null}
+      <SeletorFullscreen
+        file={file}
+        previewUrl={previewUrl}
+        aberto={seletorAberto}
+        onFechar={() => setSeletorAberto(false)}
+      />
     </div>
   );
 }

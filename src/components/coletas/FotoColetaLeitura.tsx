@@ -28,19 +28,18 @@ type Props = {
 };
 
 /**
- * Foto da coleta: toque = zoom, segurar no número = selecionar e preencher campo.
- * Sem detecção automática ao abrir a foto.
+ * Foto da coleta em largura total: arraste para selecionar, Copiar, colar manualmente.
  */
 export function FotoColetaLeitura({
   preview,
   file,
   onChange,
-  modo = "contador",
-  onContador,
-  onEntrada,
-  onSaida,
-  entradaPreenchida,
-  saidaPreenchida,
+  modo: _modo = "contador",
+  onContador: _onContador,
+  onEntrada: _onEntrada,
+  onSaida: _onSaida,
+  entradaPreenchida: _entradaPreenchida,
+  saidaPreenchida: _saidaPreenchida,
   erro,
   label = "Foto da coleta *",
   hint,
@@ -124,9 +123,7 @@ export function FotoColetaLeitura({
 
   const erroExibido = erroLocal ?? erro;
   const hintPadrao =
-    modo === "entrada_saida"
-      ? "Toque na foto para zoom. Segure em cima de cada número (entrada, depois saída)."
-      : "Toque na foto para zoom. Segure em cima do número do visor.";
+    "Arraste na foto para selecionar o número, toque Copiar e cole no campo. Toque rápido = zoom.";
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -156,16 +153,7 @@ export function FotoColetaLeitura({
       {preview ? (
         <div className="relative space-y-2">
           {file ? (
-            <FotoLeituraSegurar
-              file={file}
-              previewUrl={preview}
-              modo={modo}
-              onContador={onContador}
-              onEntrada={onEntrada}
-              onSaida={onSaida}
-              entradaPreenchida={entradaPreenchida}
-              saidaPreenchida={saidaPreenchida}
-            />
+            <FotoLeituraSegurar file={file} previewUrl={preview} />
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img

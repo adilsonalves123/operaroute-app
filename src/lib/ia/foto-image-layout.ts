@@ -73,3 +73,39 @@ export function pixelRectParaDisplay(
     height: rect.height * layout.scale,
   };
 }
+
+export function displayRectParaPixelRect(
+  rect: { x: number; y: number; width: number; height: number },
+  layout: FotoImageLayout
+): PixelRect | null {
+  const x1 = rect.x - layout.offsetX;
+  const y1 = rect.y - layout.offsetY;
+  const x2 = rect.x + rect.width - layout.offsetX;
+  const y2 = rect.y + rect.height - layout.offsetY;
+
+  const clampedX1 = Math.max(0, Math.min(layout.displayW, x1));
+  const clampedY1 = Math.max(0, Math.min(layout.displayH, y1));
+  const clampedX2 = Math.max(0, Math.min(layout.displayW, x2));
+  const clampedY2 = Math.max(0, Math.min(layout.displayH, y2));
+
+  const width = clampedX2 - clampedX1;
+  const height = clampedY2 - clampedY1;
+  if (width < 6 || height < 6) return null;
+
+  return {
+    x: clampedX1 / layout.scale,
+    y: clampedY1 / layout.scale,
+    width: width / layout.scale,
+    height: height / layout.scale,
+  };
+}
+
+/** Imagem em largura total (w-full h-auto). */
+export function getFotoImageLayoutFromElement(img: HTMLImageElement): FotoImageLayout | null {
+  if (!img.naturalWidth || !img.naturalHeight) return null;
+  const displayW = img.clientWidth;
+  const displayH = img.clientHeight;
+  if (displayW <= 0 || displayH <= 0) return null;
+  const scale = displayW / img.naturalWidth;
+  return { offsetX: 0, offsetY: 0, displayW, displayH, scale };
+}
