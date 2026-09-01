@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Camera, ImageIcon, X } from "lucide-react";
-import { FotoNumerosInterativos } from "@/components/coletas/FotoNumerosInterativos";
+import { FotoLeituraSegurar } from "@/components/coletas/FotoLeituraSegurar";
 import { capturarFotoNativa } from "@/lib/camera/captura-nativa";
 import { isNativeAndroidApp } from "@/lib/push/client";
 import { cn } from "@/lib/utils";
@@ -28,8 +28,8 @@ type Props = {
 };
 
 /**
- * Foto da coleta com leitura interativa: ao adicionar a foto, detecta os números
- * e o operador toca no grupo desejado (marcação visível) — sem botão "Ler da foto".
+ * Foto da coleta: toque = zoom, segurar no número = selecionar e preencher campo.
+ * Sem detecção automática ao abrir a foto.
  */
 export function FotoColetaLeitura({
   preview,
@@ -125,8 +125,8 @@ export function FotoColetaLeitura({
   const erroExibido = erroLocal ?? erro;
   const hintPadrao =
     modo === "entrada_saida"
-      ? "Toque em Foto → depois toque nos números da imagem (entrada e saída)."
-      : "Toque em Foto → depois toque no número do visor na imagem.";
+      ? "Toque na foto para zoom. Segure em cima de cada número (entrada, depois saída)."
+      : "Toque na foto para zoom. Segure em cima do número do visor.";
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -156,7 +156,7 @@ export function FotoColetaLeitura({
       {preview ? (
         <div className="relative space-y-2">
           {file ? (
-            <FotoNumerosInterativos
+            <FotoLeituraSegurar
               file={file}
               previewUrl={preview}
               modo={modo}
