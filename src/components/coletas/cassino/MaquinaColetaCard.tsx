@@ -16,6 +16,7 @@ import { preprocessOcrCrop } from "@/lib/ia/preprocess-ocr-image";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
+import { LerNumeroDaFoto } from "@/components/coletas/LerNumeroDaFoto";
 import {
   EXCECAO_CONTADOR_OPCOES,
   flagsIndicamRegressao,
@@ -470,6 +471,13 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           {erroEntrada ? (
             <p className="text-xs leading-snug text-red-400">{erroEntrada}</p>
           ) : null}
+          <LerNumeroDaFoto
+            contexto="entrada"
+            disabled={lendoIa}
+            onUsar={(valor) =>
+              onUpdate(leitura.equipamentoId, "entradaAtualInput", valor)
+            }
+          />
         </div>
         <div className="space-y-1.5">
           <label className="block text-xs font-medium text-slate-400">
@@ -496,6 +504,13 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           {erroSaida ? (
             <p className="text-xs leading-snug text-red-400">{erroSaida}</p>
           ) : null}
+          <LerNumeroDaFoto
+            contexto="saida"
+            disabled={lendoIa}
+            onUsar={(valor) =>
+              onUpdate(leitura.equipamentoId, "saidaAtualInput", valor)
+            }
+          />
         </div>
       </div>
 

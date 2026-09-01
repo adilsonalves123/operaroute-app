@@ -5,10 +5,11 @@ import { Camera, Check, Copy, ImageIcon, Loader2, Sparkles, X } from "lucide-rea
 import { capturarFotoNativa } from "@/lib/camera/captura-nativa";
 import { isNativeAndroidApp } from "@/lib/push/client";
 import { cn } from "@/lib/utils";
-import type { ModoLeituraNumeroFoto } from "@/lib/ia/ler-numero-foto";
+import type { ContextoLeituraNumeroFoto, ModoLeituraNumeroFoto } from "@/lib/ia/ler-numero-foto";
 
 type Props = {
   modo?: ModoLeituraNumeroFoto;
+  contexto?: ContextoLeituraNumeroFoto;
   onUsar: (valorFormatado: string) => void;
   className?: string;
   disabled?: boolean;
@@ -43,6 +44,7 @@ async function comprimirFoto(file: File): Promise<File> {
 
 export function LerNumeroDaFoto({
   modo = "contador",
+  contexto = null,
   onUsar,
   className,
   disabled = false,
@@ -76,6 +78,7 @@ export function LerNumeroDaFoto({
       const form = new FormData();
       form.append("foto", foto);
       form.append("modo", modo);
+      if (contexto) form.append("contexto", contexto);
 
       const res = await fetch("/api/equipamentos/ler-numero-foto", {
         method: "POST",

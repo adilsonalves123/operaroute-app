@@ -4,6 +4,7 @@ import { formatMoneyInputOnBlur } from "@/lib/utils";
 import { z } from "zod";
 
 export type ModoLeituraNumeroFoto = "contador" | "moeda" | "texto";
+export type ContextoLeituraNumeroFoto = "entrada" | "saida" | null;
 
 export type LeituraNumeroFotoResult = {
   numeroRaw: string;
@@ -32,7 +33,7 @@ function formatarPorModo(raw: string, modo: ModoLeituraNumeroFoto): string {
   return raw.trim();
 }
 
-function montarPrompt(modo: ModoLeituraNumeroFoto): string {
+function montarPrompt(modo: ModoLeituraNumeroFoto, contexto: ContextoLeituraNumeroFoto): string {
   const base = `Você lê o número principal exibido em visor/painel/placa de equipamento (máquina de diversão, contador, medidor).
 
 TAREFA: identificar o número mais relevante na foto e devolver JSON.
@@ -43,6 +44,17 @@ Regras:
 - Se houver vírgula/ponto decimal visível, preserve a parte decimal nos dígitos (ex.: 12.345,67 → numero "1234567").
 - Se for contador sem casas decimais visíveis, devolva todos os dígitos lidos.
 - Se ilegível ou ambíguo, numero vazio e confianca baixa.`;
+
+  const contextoCassino =
+    contexto === "entrada"
+      ? `
+
+Contexto CASSINO — leia só o contador de ENTRADA (IN, CREDIT, CR, ENTRADA, TOTAL IN).`
+      : contexto === "saida"
+        ? `
+
+Contexto CASSINO — leia só o contador de SAÍDA (OUT, PAY, PAYOUT, SAÍDA, TOTAL OUT).`
+        : "";
 
   if (modo === "moeda") {
     return `${base}
@@ -58,7 +70,7 @@ Contexto: número de série ou identificação alfanumérica.
 Campo numero: texto exatamente como aparece (letras e números), sem espaços extras.`;
   }
 
-  return `${base}
+  return `${base}${contextoCassino}
 
 Contexto: leitura de contador/visor de máquina (formato brasileiro com decimais).
 Campo numero: somente dígitos; trate os 2 últimos como centésimos quando houver vírgula decimal no visor.`;
@@ -67,11 +79,12 @@ Campo numero: somente dígitos; trate os 2 últimos como centésimos quando houv
 export async function lerNumeroDaFoto(args: {
   imageDataUrl: string;
   modo: ModoLeituraNumeroFoto;
+  contexto?: ContextoLeituraNumeroFoto;
 }): Promise<
   | { ok: true; result: LeituraNumeroFotoResult }
   | { ok: false; message: string }
 > {
-  const prompt = montarPrompt(args.modo);
+  const prompt = montarPrompt(args.modo, args.contexto ?? null);
 
   const llm = await chatCompletionVision(
     [

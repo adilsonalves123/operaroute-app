@@ -19,6 +19,12 @@ async function fileToDataUrl(file: File): Promise<string> {
   return `data:${mime};base64,${b64}`;
 }
 
+function parseContexto(raw: FormDataEntryValue | null): "entrada" | "saida" | null {
+  const value = String(raw ?? "").trim();
+  if (value === "entrada" || value === "saida") return value;
+  return null;
+}
+
 function parseModo(raw: FormDataEntryValue | null): ModoLeituraNumeroFoto {
   const value = String(raw ?? "").trim();
   if (value === "moeda" || value === "texto") return value;
@@ -64,8 +70,9 @@ export async function POST(request: Request) {
   }
 
   const modo = parseModo(form.get("modo"));
+  const contexto = parseContexto(form.get("contexto"));
   const imageDataUrl = await fileToDataUrl(foto);
-  const leitura = await lerNumeroDaFoto({ imageDataUrl, modo });
+  const leitura = await lerNumeroDaFoto({ imageDataUrl, modo, contexto });
 
   if (!leitura.ok) {
     return NextResponse.json({ error: leitura.message }, { status: 422 });
