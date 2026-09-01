@@ -68,6 +68,54 @@ export async function cropFileByPixelRect(
   }
 }
 
+/** Recorta e comprime em uma única passagem (mais rápido). */
+export async function cropAndCompressForOcr(
+  file: File,
+  rect: PixelRect,
+  outputName = "selecao.jpg",
+  paddingRatio = 0.04,
+  maxSide = 720,
+  quality = 0.78
+): Promise<File> {
+  const bitmap = await createImageBitmap(file);
+  try {
+    const padX = rect.width * paddingRatio;
+    const padY = rect.height * paddingRatio;
+    const cropX = clamp(Math.floor(rect.x - padX), 0, bitmap.width - 1);
+    const cropY = clamp(Math.floor(rect.y - padY), 0, bitmap.height - 1);
+    const cropRight = clamp(Math.ceil(rect.x + rect.width + padX), cropX + 1, bitmap.width);
+    const cropBottom = clamp(Math.ceil(rect.y + rect.height + padY), cropY + 1, bitmap.height);
+    let cropW = Math.max(1, cropRight - cropX);
+    let cropH = Math.max(1, cropBottom - cropY);
+
+    const minH = 64;
+    const scaleUp = cropH < minH ? minH / cropH : 1;
+    const scaleDown = Math.min(1, maxSide / Math.max(cropW * scaleUp, cropH * scaleUp));
+    const scale = scaleUp * scaleDown;
+    const outW = Math.max(1, Math.round(cropW * scale));
+    const outH = Math.max(1, Math.round(cropH * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = outW;
+    canvas.height = outH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      throw new Error("Não foi possível preparar o recorte da imagem.");
+    }
+    ctx.drawImage(bitmap, cropX, cropY, cropW, cropH, 0, 0, outW, outH);
+
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((b) => resolve(b), "image/jpeg", quality)
+    );
+    if (!blob) {
+      throw new Error("Não foi possível gerar o recorte da imagem.");
+    }
+    return new File([blob], outputName, { type: "image/jpeg", lastModified: Date.now() });
+  } finally {
+    bitmap.close();
+  }
+}
+
 /** Reduz recorte pequeno antes do OCR (menos upload, resposta mais rápida). */
 export async function comprimirRecorteParaOcr(
   file: File,

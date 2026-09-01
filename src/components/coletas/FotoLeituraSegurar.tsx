@@ -3,7 +3,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Copy, Loader2, X } from "lucide-react";
-import { cropFileByPixelRect, comprimirRecorteParaOcr, type PixelRect } from "@/lib/ia/crop-image";
+import { cropAndCompressForOcr, type PixelRect } from "@/lib/ia/crop-image";
+import { lerDigitosRecorteLocal, preaquecerOcrLocal } from "@/lib/ia/ocr-recorte-local";
+import { formatContadorInput } from "@/lib/nichos/cassino/contadores";
 import {
   displayRectParaPixelRect,
   getFotoImageLayoutFromElement,
@@ -59,6 +61,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
 
   useEffect(() => {
     if (!aberto) return;
+    preaquecerOcrLocal();
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
@@ -89,8 +92,18 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
       setErro(null);
       setCopiado(false);
       try {
-        const recorteBruto = await cropFileByPixelRect(file, alvo, "selecao.jpg", 0.04);
-        const recorte = await comprimirRecorteParaOcr(recorteBruto);
+        const recorte = await cropAndCompressForOcr(file, alvo);
+
+        const digitosLocal = await lerDigitosRecorteLocal(recorte);
+        if (digitosLocal) {
+          const numero = formatContadorInput(digitosLocal);
+          setTextoLido(numero);
+          void navigator.clipboard.writeText(numero);
+          setCopiado(true);
+          window.setTimeout(() => setCopiado(false), 2500);
+          return;
+        }
+
         const form = new FormData();
         form.append("foto", recorte);
         form.append("modo", "contador");
@@ -305,6 +318,10 @@ type Props = {
 
 export function FotoLeituraSegurar({ file, previewUrl, className }: Props) {
   const [aberto, setAberto] = useState(false);
+
+  useEffect(() => {
+    preaquecerOcrLocal();
+  }, [file, previewUrl]);
 
   return (
     <div className={cn("w-full space-y-2", className)}>
