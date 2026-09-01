@@ -2,67 +2,38 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, Loader2, Maximize2, X } from "lucide-react";
-import { cropFileByPixelRect, type PixelRect } from "@/lib/ia/crop-image";
-import { getFotoImageLayout, type FotoImageLayout } from "@/lib/ia/foto-image-layout";
+import { Check, Copy, Loader2, Maximize2, RefreshCw, X } from "lucide-react";
+import {
+  boxNormalizadaParaDisplay,
+  getFotoImageLayout,
+  type FotoImageLayout,
+} from "@/lib/ia/foto-image-layout";
+import type { CaixaNormalizada } from "@/lib/nichos/cassino/localizar-contadores-ia";
 import { cn } from "@/lib/utils";
 
-type DisplayRect = { x: number; y: number; width: number; height: number };
+type NumeroDetectado = {
+  id: string;
+  numero: string;
+  numeroRaw: string;
+  rotulo: string | null;
+  tipo: "entrada" | "saida" | "contador" | "outro";
+  box: CaixaNormalizada;
+  confianca: number;
+};
 
-function normalizeRect(x1: number, y1: number, x2: number, y2: number): DisplayRect {
-  return {
-    x: Math.min(x1, x2),
-    y: Math.min(y1, y2),
-    width: Math.abs(x2 - x1),
-    height: Math.abs(y2 - y1),
-  };
-}
+const TIPO_LABEL: Record<NumeroDetectado["tipo"], string> = {
+  entrada: "Entrada",
+  saida: "Saída",
+  contador: "Contador",
+  outro: "Número",
+};
 
-function displayRectToPixelRect(rect: DisplayRect, layout: FotoImageLayout): PixelRect | null {
-  const x1 = rect.x - layout.offsetX;
-  const y1 = rect.y - layout.offsetY;
-  const x2 = rect.x + rect.width - layout.offsetX;
-  const y2 = rect.y + rect.height - layout.offsetY;
-
-  const clampedX1 = Math.max(0, Math.min(layout.displayW, x1));
-  const clampedY1 = Math.max(0, Math.min(layout.displayH, y1));
-  const clampedX2 = Math.max(0, Math.min(layout.displayW, x2));
-  const clampedY2 = Math.max(0, Math.min(layout.displayH, y2));
-
-  const width = clampedX2 - clampedX1;
-  const height = clampedY2 - clampedY1;
-  if (width < 8 || height < 8) return null;
-
-  return {
-    x: clampedX1 / layout.scale,
-    y: clampedY1 / layout.scale,
-    width: width / layout.scale,
-    height: height / layout.scale,
-  };
-}
-
-function MascaraEscurecida({ rect }: { rect: DisplayRect }) {
-  return (
-    <>
-      <div
-        className="pointer-events-none absolute left-0 right-0 top-0 bg-black/60"
-        style={{ height: Math.max(0, rect.y) }}
-      />
-      <div
-        className="pointer-events-none absolute left-0 right-0 bg-black/60"
-        style={{ top: rect.y + rect.height, bottom: 0 }}
-      />
-      <div
-        className="pointer-events-none absolute bg-black/60"
-        style={{ top: rect.y, left: 0, width: Math.max(0, rect.x), height: rect.height }}
-      />
-      <div
-        className="pointer-events-none absolute bg-black/60"
-        style={{ top: rect.y, left: rect.x + rect.width, right: 0, height: rect.height }}
-      />
-    </>
-  );
-}
+const TIPO_COR: Record<NumeroDetectado["tipo"], string> = {
+  entrada: "border-cyan-400 bg-cyan-400/15 hover:bg-cyan-400/25",
+  saida: "border-violet-400 bg-violet-400/15 hover:bg-violet-400/25",
+  contador: "border-yellow-400 bg-yellow-400/15 hover:bg-yellow-400/25",
+  outro: "border-slate-400 bg-slate-400/10 hover:bg-slate-400/20",
+};
 
 type SeletorProps = {
   file: File;
@@ -71,17 +42,17 @@ type SeletorProps = {
   onFechar: () => void;
 };
 
-function SeletorFullscreen({ file, previewUrl, aberto, onFechar }: SeletorProps) {
+function SeletorNumerosDetectados({ file, previewUrl, aberto, onFechar }: SeletorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [layout, setLayout] = useState<FotoImageLayout | null>(null);
-  const [rect, setRect] = useState<DisplayRect | null>(null);
-  const [arrastando, setArrastando] = useState(false);
-  const startRef = useRef<{ x: number; y: number } | null>(null);
-  const [lendo, setLendo] = useState(false);
-  const [textoLido, setTextoLido] = useState<string | null>(null);
-  const [copiado, setCopiado] = useState(false);
+  const [detectando, setDetectando] = useState(false);
+  const [numeros, setNumeros] = useState<NumeroDetectado[]>([]);
+  const [selecionadoId, setSelecionadoId] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [copiado, setCopiado] = useState(false);
+
+  const selecionado = numeros.find((n) => n.id === selecionadoId) ?? null;
 
   const recalcularLayout = useCallback(() => {
     const container = containerRef.current;
@@ -93,25 +64,68 @@ function SeletorFullscreen({ file, previewUrl, aberto, onFechar }: SeletorProps)
     );
   }, []);
 
+  const detectarNumeros = useCallback(async () => {
+    setDetectando(true);
+    setErro(null);
+    setNumeros([]);
+    setSelecionadoId(null);
+    setCopiado(false);
+    try {
+      const form = new FormData();
+      form.append("foto", file);
+      const res = await fetch("/api/equipamentos/localizar-numeros-foto", {
+        method: "POST",
+        body: form,
+      });
+      const json = (await res.json()) as {
+        error?: string;
+        numeros?: Array<{
+          id: string;
+          numero: string;
+          numero_raw: string;
+          rotulo: string | null;
+          tipo: NumeroDetectado["tipo"];
+          box: CaixaNormalizada;
+          confianca: number;
+        }>;
+      };
+      if (!res.ok || !json.numeros?.length) {
+        setErro(json.error || "Não encontrou números na foto. Tente outra foto ou mais perto.");
+        return;
+      }
+      const lista = json.numeros.map((n) => ({
+        id: n.id,
+        numero: n.numero,
+        numeroRaw: n.numero_raw,
+        rotulo: n.rotulo,
+        tipo: n.tipo ?? "contador",
+        box: n.box,
+        confianca: n.confianca ?? 0.6,
+      }));
+      setNumeros(lista);
+      if (lista.length === 1) setSelecionadoId(lista[0].id);
+    } catch {
+      setErro("Não foi possível analisar a foto. Verifique a conexão e tente de novo.");
+    } finally {
+      setDetectando(false);
+    }
+  }, [file]);
+
   useEffect(() => {
     if (!aberto) return;
-    setRect(null);
-    setTextoLido(null);
-    setCopiado(false);
+    setNumeros([]);
+    setSelecionadoId(null);
     setErro(null);
-    setArrastando(false);
-    startRef.current = null;
-  }, [aberto, previewUrl]);
+    setCopiado(false);
+    void detectarNumeros();
+  }, [aberto, previewUrl, detectarNumeros]);
 
   useEffect(() => {
     if (!aberto) return;
     const prevOverflow = document.body.style.overflow;
-    const prevTouch = document.body.style.touchAction;
     document.body.style.overflow = "hidden";
-    document.body.style.touchAction = "none";
     return () => {
       document.body.style.overflow = prevOverflow;
-      document.body.style.touchAction = prevTouch;
     };
   }, [aberto]);
 
@@ -125,94 +139,28 @@ function SeletorFullscreen({ file, previewUrl, aberto, onFechar }: SeletorProps)
     return () => observer.disconnect();
   }, [aberto, recalcularLayout]);
 
-  function pontoNoContainer(clientX: number, clientY: number) {
-    const bounds = containerRef.current?.getBoundingClientRect();
-    if (!bounds) return null;
-    return { x: clientX - bounds.left, y: clientY - bounds.top };
-  }
-
-  function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
-    if (lendo) return;
-    e.preventDefault();
-    const ponto = pontoNoContainer(e.clientX, e.clientY);
-    if (!ponto) return;
-    setErro(null);
-    setTextoLido(null);
-    setCopiado(false);
-    startRef.current = ponto;
-    setRect({ x: ponto.x, y: ponto.y, width: 0, height: 0 });
-    setArrastando(true);
-    e.currentTarget.setPointerCapture(e.pointerId);
-  }
-
-  function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
-    if (!arrastando || !startRef.current) return;
-    e.preventDefault();
-    const ponto = pontoNoContainer(e.clientX, e.clientY);
-    if (!ponto) return;
-    setRect(normalizeRect(startRef.current.x, startRef.current.y, ponto.x, ponto.y));
-  }
-
-  function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
-    if (!arrastando) return;
-    e.preventDefault();
-    setArrastando(false);
-    startRef.current = null;
-    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    }
-  }
-
-  function limparSelecao() {
-    setRect(null);
-    setTextoLido(null);
-    setCopiado(false);
-    setErro(null);
-  }
-
-  async function copiarSelecao() {
-    if (!layout || !rect) {
-      setErro("Arraste na foto para marcar o número.");
+  async function copiarSelecionado() {
+    if (!selecionado) {
+      setErro("Toque em um número na foto ou na lista.");
       return;
     }
-    const pixelRect = displayRectToPixelRect(rect, layout);
-    if (!pixelRect) {
-      setErro("Seleção muito pequena. Marque só o visor com o número.");
-      return;
-    }
-
-    setLendo(true);
-    setErro(null);
-    setCopiado(false);
     try {
-      const recorte = await cropFileByPixelRect(file, pixelRect, "selecao.jpg");
-      const form = new FormData();
-      form.append("foto", recorte);
-      form.append("modo", "contador");
-      const res = await fetch("/api/equipamentos/ler-numero-foto", {
-        method: "POST",
-        body: form,
-      });
-      const json = (await res.json()) as { error?: string; numero?: string };
-      if (!res.ok || !json.numero?.trim()) {
-        setErro(json.error || "Não leu esse trecho. Ajuste a seleção e tente de novo.");
-        return;
-      }
-      const numero = json.numero.trim();
-      setTextoLido(numero);
-      await navigator.clipboard.writeText(numero);
+      await navigator.clipboard.writeText(selecionado.numero);
       setCopiado(true);
+      setErro(null);
       window.setTimeout(() => setCopiado(false), 2500);
     } catch {
-      setErro("Não foi possível copiar. Tente de novo.");
-    } finally {
-      setLendo(false);
+      setErro("Não foi possível copiar. Segure o número e copie manualmente.");
     }
+  }
+
+  function selecionar(id: string) {
+    setSelecionadoId(id);
+    setCopiado(false);
+    setErro(null);
   }
 
   if (!aberto) return null;
-
-  const temSelecao = Boolean(rect && rect.width > 12 && rect.height > 12);
 
   return createPortal(
     <div
@@ -223,9 +171,9 @@ function SeletorFullscreen({ file, previewUrl, aberto, onFechar }: SeletorProps)
     >
       <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-white">Selecione o número</p>
+          <p className="text-sm font-semibold text-white">Números na foto</p>
           <p className="text-xs text-slate-400">
-            Toque e arraste em cima do número · depois toque em Copiar e cole no campo
+            Toque no número que quer · Copiar · cole no campo
           </p>
         </div>
         <button
@@ -238,62 +186,106 @@ function SeletorFullscreen({ file, previewUrl, aberto, onFechar }: SeletorProps)
         </button>
       </div>
 
-      <div className="relative min-h-0 flex-1 p-2 sm:p-3">
+      <div className="relative min-h-0 flex-1 overflow-auto p-2 sm:p-3">
         <div
           ref={containerRef}
-          className="relative mx-auto h-full w-full overflow-hidden rounded-xl border border-slate-700 bg-black"
-          style={{ touchAction: "none", WebkitUserSelect: "none", userSelect: "none" }}
-          onContextMenu={(e) => e.preventDefault()}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
+          className="relative mx-auto h-[min(52vh,480px)] w-full overflow-hidden rounded-xl border border-slate-700 bg-black"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             ref={imgRef}
             src={previewUrl}
-            alt="Foto para seleção"
+            alt="Foto com números detectados"
             className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
             draggable={false}
             onLoad={recalcularLayout}
           />
 
-          {rect && temSelecao ? (
-            <>
-              <MascaraEscurecida rect={rect} />
-              <div
-                className="pointer-events-none absolute border-[3px] border-yellow-300 bg-yellow-400/20"
-                style={{
-                  left: rect.x,
-                  top: rect.y,
-                  width: rect.width,
-                  height: rect.height,
-                }}
-              />
-            </>
-          ) : null}
-
-          {lendo ? (
-            <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40">
-              <Loader2 className="h-8 w-8 animate-spin text-yellow-300" />
+          {detectando ? (
+            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/70">
+              <Loader2 className="h-9 w-9 animate-spin text-yellow-300" />
+              <p className="text-sm text-slate-200">Identificando números…</p>
             </div>
           ) : null}
 
-          {!temSelecao && !lendo ? (
-            <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center px-4">
-              <span className="rounded-full border border-yellow-400/40 bg-black/80 px-4 py-2 text-xs font-medium text-yellow-100">
-                Arraste em cima do número
-              </span>
-            </div>
-          ) : null}
+          {layout && !detectando
+            ? numeros.map((item) => {
+                const box = boxNormalizadaParaDisplay(item.box, layout);
+                const ativo = item.id === selecionadoId;
+                const pad = 4;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => selecionar(item.id)}
+                    className={cn(
+                      "absolute z-10 min-h-[36px] min-w-[48px] rounded border-2 transition",
+                      ativo
+                        ? "z-20 border-emerald-300 bg-emerald-400/30 ring-2 ring-emerald-200/80"
+                        : TIPO_COR[item.tipo]
+                    )}
+                    style={{
+                      left: Math.max(0, box.left - pad),
+                      top: Math.max(0, box.top - pad),
+                      width: box.width + pad * 2,
+                      height: box.height + pad * 2,
+                    }}
+                    aria-label={`${item.rotulo ?? TIPO_LABEL[item.tipo]}: ${item.numero}`}
+                    aria-pressed={ativo}
+                  >
+                    {box.height >= 28 ? (
+                      <span className="pointer-events-none block truncate px-1 text-[10px] font-semibold tabular-nums text-white drop-shadow">
+                        {item.numero}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })
+            : null}
         </div>
+
+        {!detectando && numeros.length > 0 ? (
+          <div className="mt-3 space-y-2">
+            <p className="text-xs text-slate-500">Ou escolha na lista:</p>
+            <div className="flex flex-wrap gap-2">
+              {numeros.map((item) => {
+                const ativo = item.id === selecionadoId;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => selecionar(item.id)}
+                    className={cn(
+                      "rounded-xl border px-3 py-2 text-left transition",
+                      ativo
+                        ? "border-emerald-400 bg-emerald-500/15"
+                        : "border-slate-700 bg-slate-900/80 hover:border-slate-500"
+                    )}
+                  >
+                    <span className="block text-[10px] uppercase tracking-wide text-slate-500">
+                      {item.rotulo ?? TIPO_LABEL[item.tipo]}
+                    </span>
+                    <span className="block text-sm font-semibold tabular-nums text-white">
+                      {item.numero}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : null}
       </div>
 
       <div className="space-y-2 border-t border-white/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        {textoLido ? (
-          <p className="text-center text-lg font-semibold tabular-nums text-yellow-100">{textoLido}</p>
+        {selecionado ? (
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-wide text-slate-500">
+              {selecionado.rotulo ?? TIPO_LABEL[selecionado.tipo]}
+            </p>
+            <p className="text-xl font-semibold tabular-nums text-yellow-100">{selecionado.numero}</p>
+          </div>
         ) : null}
+
         {copiado ? (
           <p className="text-center text-xs text-emerald-300">Copiado — cole no campo de leitura.</p>
         ) : null}
@@ -302,23 +294,24 @@ function SeletorFullscreen({ file, previewUrl, aberto, onFechar }: SeletorProps)
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            disabled={lendo || !temSelecao}
-            onClick={() => void copiarSelecao()}
+            disabled={detectando || !selecionado}
+            onClick={() => void copiarSelecionado()}
             className={cn(
               "inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50",
-              temSelecao ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-slate-500"
+              selecionado ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-slate-500"
             )}
           >
             {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {lendo ? "Lendo…" : copiado ? "Copiado!" : "Copiar"}
+            {copiado ? "Copiado!" : "Copiar"}
           </button>
           <button
             type="button"
-            disabled={lendo || !temSelecao}
-            onClick={limparSelecao}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-4 py-3 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+            disabled={detectando}
+            onClick={() => void detectarNumeros()}
+            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-600 px-4 py-3 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
           >
-            Limpar
+            <RefreshCw className={cn("h-4 w-4", detectando && "animate-spin")} />
+            Redetectar
           </button>
         </div>
       </div>
@@ -346,7 +339,7 @@ export function FotoLeituraSegurar({ file, previewUrl, className }: Props) {
         type="button"
         onClick={() => setSeletorAberto(true)}
         className="relative block w-full overflow-hidden rounded-xl border border-slate-700 bg-black text-left"
-        aria-label="Abrir foto para selecionar número"
+        aria-label="Abrir foto e escolher número detectado"
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -357,15 +350,15 @@ export function FotoLeituraSegurar({ file, previewUrl, className }: Props) {
         />
         <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-1 text-[10px] font-medium text-yellow-100">
           <Maximize2 className="h-3 w-3" />
-          Selecionar número
+          Escolher número
         </span>
       </button>
 
       <p className="text-center text-[11px] text-slate-500">
-        Toque na foto → arraste no número → Copiar → cole no campo
+        A IA marca os números — toque no que quer, Copiar e cole no campo
       </p>
 
-      <SeletorFullscreen
+      <SeletorNumerosDetectados
         file={file}
         previewUrl={previewUrl}
         aberto={seletorAberto}

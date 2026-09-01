@@ -123,7 +123,7 @@ export function FotoColetaLeitura({
 
   const erroExibido = erroLocal ?? erro;
   const hintPadrao =
-    "Arraste na foto para selecionar o número, toque Copiar e cole no campo. Toque rápido = zoom.";
+    "A IA identifica os números na foto — toque no que quer, Copiar e cole no campo.";
 
   return (
     <div className={cn("space-y-2", className)}>
