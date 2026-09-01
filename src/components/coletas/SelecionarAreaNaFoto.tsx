@@ -69,6 +69,55 @@ function displayRectToPixelRect(rect: DisplayRect, layout: ImageLayout): PixelRe
   };
 }
 
+function CantosSelecao({ rect }: { rect: DisplayRect }) {
+  const handle =
+    "absolute h-4 w-4 rounded-full border-[3px] border-yellow-300 bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.9)]";
+  return (
+    <>
+      <span className={handle} style={{ left: rect.x - 8, top: rect.y - 8 }} />
+      <span className={handle} style={{ left: rect.x + rect.width - 8, top: rect.y - 8 }} />
+      <span className={handle} style={{ left: rect.x - 8, top: rect.y + rect.height - 8 }} />
+      <span
+        className={handle}
+        style={{ left: rect.x + rect.width - 8, top: rect.y + rect.height - 8 }}
+      />
+    </>
+  );
+}
+
+function MascaraEscurecida({ rect }: { rect: DisplayRect }) {
+  return (
+    <>
+      <div
+        className="pointer-events-none absolute left-0 right-0 top-0 bg-black/65"
+        style={{ height: Math.max(0, rect.y) }}
+      />
+      <div
+        className="pointer-events-none absolute left-0 right-0 bg-black/65"
+        style={{ top: rect.y + rect.height, bottom: 0 }}
+      />
+      <div
+        className="pointer-events-none absolute bg-black/65"
+        style={{
+          top: rect.y,
+          left: 0,
+          width: Math.max(0, rect.x),
+          height: rect.height,
+        }}
+      />
+      <div
+        className="pointer-events-none absolute bg-black/65"
+        style={{
+          top: rect.y,
+          left: rect.x + rect.width,
+          right: 0,
+          height: rect.height,
+        }}
+      />
+    </>
+  );
+}
+
 export function SelecionarAreaNaFoto({
   file,
   previewUrl,
@@ -96,14 +145,19 @@ export function SelecionarAreaNaFoto({
   }, []);
 
   useEffect(() => {
-    const prev = document.body.style.overflow;
+    const prevOverflow = document.body.style.overflow;
+    const prevTouch = document.body.style.touchAction;
     document.body.style.overflow = "hidden";
+    document.body.style.touchAction = "none";
+
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onCancel();
     };
     document.addEventListener("keydown", onKey);
+
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = prevOverflow;
+      document.body.style.touchAction = prevTouch;
       document.removeEventListener("keydown", onKey);
     };
   }, [onCancel]);
@@ -128,6 +182,7 @@ export function SelecionarAreaNaFoto({
 
   function onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     if (processando) return;
+    e.preventDefault();
     const ponto = pontoNoContainer(e.clientX, e.clientY);
     if (!ponto) return;
     setErro(null);
@@ -139,6 +194,7 @@ export function SelecionarAreaNaFoto({
 
   function onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
     if (!arrastando || !startRef.current) return;
+    e.preventDefault();
     const ponto = pontoNoContainer(e.clientX, e.clientY);
     if (!ponto) return;
     setRect(normalizeRect(startRef.current.x, startRef.current.y, ponto.x, ponto.y));
@@ -146,6 +202,7 @@ export function SelecionarAreaNaFoto({
 
   function onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
     if (!arrastando) return;
+    e.preventDefault();
     setArrastando(false);
     startRef.current = null;
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
@@ -180,20 +237,22 @@ export function SelecionarAreaNaFoto({
     onConfirm(file, previewUrl);
   }
 
-  const temSelecao = Boolean(rect && rect.width > 12 && rect.height > 12);
+  const temSelecao = Boolean(rect && rect.width > 16 && rect.height > 16);
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[12000] flex flex-col bg-slate-950/95 backdrop-blur-sm"
+      className="fixed inset-0 z-[12000] flex flex-col bg-slate-950"
       role="dialog"
       aria-modal="true"
       aria-label={titulo}
+      onContextMenu={(e) => e.preventDefault()}
     >
       <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white">{titulo}</p>
           <p className="text-xs text-slate-400">
-            Arraste com o dedo ou mouse em cima do número que quer ler.
+            <span className="text-yellow-300 font-medium">Toque e arraste</span> — não segure parado
+            (no tablet isso abre o menu do sistema). Marque só o visor com o número.
           </p>
         </div>
         <button
@@ -209,7 +268,9 @@ export function SelecionarAreaNaFoto({
       <div className="relative min-h-0 flex-1 p-3 sm:p-4">
         <div
           ref={containerRef}
-          className="relative mx-auto h-full max-h-[min(70vh,720px)] w-full max-w-4xl touch-none select-none overflow-hidden rounded-2xl border border-white/10 bg-black/40"
+          className="relative mx-auto h-full max-h-[min(70vh,720px)] w-full max-w-4xl overflow-hidden rounded-2xl border-2 border-slate-700 bg-black"
+          style={{ touchAction: "none", WebkitUserSelect: "none", userSelect: "none" }}
+          onContextMenu={(e) => e.preventDefault()}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -220,59 +281,57 @@ export function SelecionarAreaNaFoto({
             ref={imgRef}
             src={previewUrl}
             alt="Foto para seleção"
-            className="absolute inset-0 h-full w-full object-contain"
+            className="pointer-events-none absolute inset-0 h-full w-full select-none object-contain"
             draggable={false}
             onLoad={recalcularLayout}
           />
 
-          {layout ? (
-            <div
-              className="pointer-events-none absolute border border-cyan-400/30"
-              style={{
-                left: layout.offsetX,
-                top: layout.offsetY,
-                width: layout.displayW,
-                height: layout.displayH,
-              }}
-            />
-          ) : null}
-
           {rect && temSelecao ? (
-            <div
-              className="pointer-events-none absolute border-2 border-primary-neon bg-primary-neon/15 shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]"
-              style={{
-                left: rect.x,
-                top: rect.y,
-                width: rect.width,
-                height: rect.height,
-              }}
-            />
+            <>
+              <MascaraEscurecida rect={rect} />
+              <div
+                className="pointer-events-none absolute border-[3px] border-yellow-300 bg-yellow-400/20 ring-2 ring-yellow-200/80"
+                style={{
+                  left: rect.x,
+                  top: rect.y,
+                  width: rect.width,
+                  height: rect.height,
+                }}
+              />
+              <CantosSelecao rect={rect} />
+            </>
           ) : null}
 
           {!temSelecao ? (
             <div className="pointer-events-none absolute inset-x-0 bottom-4 flex justify-center px-4">
-              <span className="rounded-full bg-black/70 px-3 py-1.5 text-xs text-slate-200">
-                Toque e arraste para selecionar o número
+              <span className="rounded-full border border-yellow-400/40 bg-black/80 px-4 py-2 text-xs font-medium text-yellow-100">
+                Toque em um canto do número e arraste até o outro
               </span>
             </div>
           ) : null}
         </div>
       </div>
 
-      <div className="space-y-2 border-t border-white/10 px-4 py-3">
+      <div className="space-y-2 border-t border-white/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {erro ? <p className="text-xs text-red-400">{erro}</p> : null}
+        {temSelecao ? (
+          <p className="text-xs text-emerald-300">
+            Área marcada em amarelo. Toque em &quot;Ler este trecho&quot; — o app coloca o número no
+            campo (não precisa colar).
+          </p>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
             disabled={processando || !temSelecao}
             onClick={() => void confirmarRecorte()}
             className={cn(
-              "inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold sm:flex-none disabled:cursor-not-allowed disabled:opacity-50",
+              "inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold sm:flex-none disabled:cursor-not-allowed disabled:opacity-50",
               temSelecao ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-slate-500"
             )}
           >
             <Crop className="h-4 w-4" />
-            {processando ? "Recortando…" : "Ler este trecho"}
+            {processando ? "Lendo trecho…" : "Ler este trecho"}
           </button>
           <button
             type="button"
@@ -280,7 +339,7 @@ export function SelecionarAreaNaFoto({
             onClick={usarFotoInteira}
             className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50"
           >
-            Usar foto inteira
+            Foto inteira
           </button>
           <button
             type="button"

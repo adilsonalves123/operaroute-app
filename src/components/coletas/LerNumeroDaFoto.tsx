@@ -6,6 +6,7 @@ import { capturarFotoNativa } from "@/lib/camera/captura-nativa";
 import { isNativeAndroidApp } from "@/lib/push/client";
 import { cn } from "@/lib/utils";
 import { SelecionarAreaNaFoto } from "@/components/coletas/SelecionarAreaNaFoto";
+import { isIOSBrowser, isTouchTablet } from "@/lib/device";
 import type { ContextoLeituraNumeroFoto, ModoLeituraNumeroFoto } from "@/lib/ia/ler-numero-foto";
 
 type Props = {
@@ -65,11 +66,18 @@ export function LerNumeroDaFoto({
     preview: string;
   } | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const [sucesso, setSucesso] = useState<string | null>(null);
   const [fotoPendente, setFotoPendente] = useState<{ file: File; preview: string } | null>(
     null
   );
 
-  async function processarFoto(file: File, previewUrl: string) {
+  const autoColocarNoCampo = isTouchTablet();
+
+  async function processarFoto(
+    file: File,
+    previewUrl: string,
+    opts?: { autoUsar?: boolean }
+  ) {
     setLendo(true);
     setErro(null);
     setCopiado(false);
@@ -105,8 +113,18 @@ export function LerNumeroDaFoto({
         return;
       }
 
+      const numero = json.numero.trim();
+
+      if (opts?.autoUsar || autoColocarNoCampo) {
+        onUsar(numero);
+        URL.revokeObjectURL(previewUrl);
+        setSucesso(`${numero} colocado no campo`);
+        window.setTimeout(() => setSucesso(null), 3200);
+        return;
+      }
+
       setResultado({
-        numero: json.numero.trim(),
+        numero,
         confianca: Number(json.confianca ?? 0),
         rotulo: json.rotulo ?? null,
         preview: previewUrl,
@@ -123,6 +141,14 @@ export function LerNumeroDaFoto({
   function iniciarSelecao(file: File) {
     setErro(null);
     setMenuAberto(false);
+    setSucesso(null);
+
+    // iPhone/iPad: galeria + leitura direta (Live Text do sistema ou IA lê a foto inteira).
+    if (isIOSBrowser()) {
+      void processarFoto(file, URL.createObjectURL(file), { autoUsar: true });
+      return;
+    }
+
     setFotoPendente({ file, preview: URL.createObjectURL(file) });
   }
 
@@ -136,7 +162,7 @@ export function LerNumeroDaFoto({
       URL.revokeObjectURL(fotoPendente.preview);
     }
     setFotoPendente(null);
-    void processarFoto(file, preview);
+    void processarFoto(file, preview, { autoUsar: autoColocarNoCampo });
   }
 
   async function abrir(modoCaptura: "camera" | "galeria") {
@@ -305,22 +331,29 @@ export function LerNumeroDaFoto({
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
+              onClick={usarNoCampo}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-neon px-2.5 py-1.5 text-xs font-semibold text-slate-900"
+            >
+              Usar no campo
+            </button>
+            <button
+              type="button"
               onClick={() => void copiar()}
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
             >
               {copiado ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
               {copiado ? "Copiado" : "Copiar"}
             </button>
-            <button
-              type="button"
-              onClick={usarNoCampo}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-primary-neon px-2.5 py-1.5 text-xs font-semibold text-slate-900"
-            >
-              Usar no campo
-            </button>
           </div>
         </div>
       )}
+
+      {sucesso ? (
+        <p className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1.5 text-xs font-medium text-emerald-300">
+          <Check className="h-3.5 w-3.5" />
+          {sucesso}
+        </p>
+      ) : null}
 
       {erro ? <p className="text-xs text-red-400">{erro}</p> : null}
     </div>
