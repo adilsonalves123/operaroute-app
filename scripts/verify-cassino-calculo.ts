@@ -1054,4 +1054,84 @@ if (!linhaRecebido?.hint?.includes("falta operação")) {
   process.exit(1);
 }
 
+// Deixou R$ 2.000 sem leitura (pendência) + visita negativa R$ 1.000 → receber R$ 1.000 do ponto
+const pendenciaSemLeitura = calcularVisitaCassino({
+  leituras: [
+    {
+      equipamentoId: "m-sem-leitura",
+      nome: "Máquina",
+      entradaAnterior: 100_000,
+      saidaAnterior: 100_000,
+      entradaAtual: 100_000,
+      saidaAtual: 200_000,
+    },
+  ],
+  pendenciasNegativas: [],
+  pendenciasOperacao: [{ id: "po-2k", valor: 2000, observacao: null }],
+  abaterPendenciaOperacaoNegativa: true,
+  comissaoPercentual: 30,
+  descontoManualReais: 0,
+  descontoRecebimentoReais: 0,
+  abaterAutomatico: true,
+  valorPixReais: 0,
+  valorDinheiroReais: 0,
+});
+
+if (Math.abs(pendenciaSemLeitura.pendenciaOperacaoAbatidaReais - 1000) > 0.02) {
+  console.error(
+    "FAIL: abate automático esperado 1000, got",
+    pendenciaSemLeitura.pendenciaOperacaoAbatidaReais
+  );
+  process.exit(1);
+}
+if (Math.abs(pendenciaSemLeitura.saldoLiquidoReais - 1000) > 0.02) {
+  console.error("FAIL: saldo a receber esperado 1000, got", pendenciaSemLeitura.saldoLiquidoReais);
+  process.exit(1);
+}
+if (Math.abs(pendenciaSemLeitura.novoDebitoReais) > 0.02) {
+  console.error("FAIL: não deveria gerar novo negativo, got", pendenciaSemLeitura.novoDebitoReais);
+  process.exit(1);
+}
+
+const pendenciaSemLeituraPaga = calcularVisitaCassino({
+  leituras: [
+    {
+      equipamentoId: "m-sem-leitura",
+      nome: "Máquina",
+      entradaAnterior: 100_000,
+      saidaAnterior: 100_000,
+      entradaAtual: 100_000,
+      saidaAtual: 200_000,
+    },
+  ],
+  pendenciasNegativas: [],
+  pendenciasOperacao: [{ id: "po-2k", valor: 2000, observacao: null }],
+  abaterPendenciaOperacaoNegativa: true,
+  comissaoPercentual: 30,
+  descontoManualReais: 0,
+  descontoRecebimentoReais: 0,
+  abaterAutomatico: true,
+  valorPixReais: 1000,
+  valorDinheiroReais: 0,
+});
+
+if (Math.abs(pendenciaSemLeituraPaga.pendenciaOperacaoAbatidaReais - 2000) > 0.02) {
+  console.error(
+    "FAIL: baixa total pendência esperada 2000, got",
+    pendenciaSemLeituraPaga.pendenciaOperacaoAbatidaReais
+  );
+  process.exit(1);
+}
+if (Math.abs(pendenciaSemLeituraPaga.pendenciaOperacaoRestanteReais) > 0.02) {
+  console.error(
+    "FAIL: pendência restante deveria ser 0, got",
+    pendenciaSemLeituraPaga.pendenciaOperacaoRestanteReais
+  );
+  process.exit(1);
+}
+if (Math.abs(pendenciaSemLeituraPaga.valorPagoReais - 1000) > 0.02) {
+  console.error("FAIL: valor pago esperado 1000, got", pendenciaSemLeituraPaga.valorPagoReais);
+  process.exit(1);
+}
+
 console.log("\n✓ Verificação OK");

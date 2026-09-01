@@ -96,17 +96,15 @@ function resultadoNegativo(
       valorAplicadoNoPrejuizoReais
   );
 
-  const valorPagoReais = abaterPendenciaOperacaoNegativa ? 0 : valorPixReais + valorDinheiroReais;
+  const valorPagoReais = valorPixReais + valorDinheiroReais;
   const valorPagoCentavos = reaisToCentesimos(valorPagoReais);
+  const totalBaixaPendenciaCentavos = reaisToCentesimos(
+    (abaterPendenciaOperacaoNegativa ? abatimentoAutomaticoPendenciaReais : 0) + valorPagoReais
+  );
   const payPendenciaOperacao =
-    abatimentoAutomaticoPendenciaReais > 0.009
-      ? calcularBaixasValorPendencia(
-          pendenciasOperacao,
-          reaisToCentesimos(abatimentoAutomaticoPendenciaReais)
-        )
-      : pendenciaOperacaoTotalReais > 0.009 && valorPagoCentavos > 0
-        ? calcularBaixasValorPendencia(pendenciasOperacao, valorPagoCentavos)
-        : { abatimentos: [], abatidoCentavos: 0 };
+    pendenciaOperacaoTotalReais > 0.009 && totalBaixaPendenciaCentavos > 0
+      ? calcularBaixasValorPendencia(pendenciasOperacao, totalBaixaPendenciaCentavos)
+      : { abatimentos: [], abatidoCentavos: 0 };
   const pendenciaOperacaoAbatidaReais = centesimosToReais(
     payPendenciaOperacao.abatidoCentavos
   );
@@ -140,10 +138,12 @@ function resultadoNegativo(
   );
 
   /** Total financiado pelo operador nesta visita — recupera inteiro nas positivas. */
-  const novoDebitoReais = Math.max(
-    0,
-    prejuizoMaquinasReais - haverGeradoReais - haverCompensadoReais
-  );
+  const prejuizoCobertoSóPorPendencia =
+    valorDeixadoOperadorReais <= 0.009 &&
+    abatimentoAutomaticoPendenciaReais >= prejuizoMaquinasReais - 0.009;
+  const novoDebitoReais = prejuizoCobertoSóPorPendencia
+    ? 0
+    : Math.max(0, prejuizoMaquinasReais - haverGeradoReais - haverCompensadoReais);
 
   const saldoLiquidoReais =
     valorDeixadoOperadorReais > 0.009

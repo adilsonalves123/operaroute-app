@@ -13,8 +13,8 @@ import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
 
 const TITULOS_PADRAO: Record<string, string> = {
-  negativo: "Débito manual",
-  pagamento_pendente: "Pagamento pendente",
+  negativo: "Deixei no ponto (sem leitura)",
+  pagamento_pendente: "Ponto me deve (sem leitura)",
   parcial: "Pagamento parcial",
   haver: "Haver do ponto",
 };
@@ -26,9 +26,9 @@ export default function NovaPendenciaPage() {
   const [pontos, setPontos] = useState<Ponto[]>([]);
   const [form, setForm] = useState({
     ponto_id: "",
-    tipo: "negativo",
+    tipo: "pagamento_pendente",
     valor: "",
-    titulo: TITULOS_PADRAO.negativo,
+    titulo: TITULOS_PADRAO.pagamento_pendente,
     descricao: "",
   });
 
@@ -128,12 +128,30 @@ export default function NovaPendenciaPage() {
           value={form.tipo}
           onChange={(e) => onTipoChange(e.target.value)}
           options={[
-            { value: "negativo", label: "Débito negativo" },
-            { value: "pagamento_pendente", label: "Pagamento pendente" },
+            {
+              value: "pagamento_pendente",
+              label: "Ponto me deve — vou receber na coleta",
+            },
+            {
+              value: "negativo",
+              label: "Deixei no ponto — recupero nas positivas",
+            },
             { value: "parcial", label: "Pagamento parcial" },
             { value: "haver", label: "Haver (crédito do ponto)" },
           ]}
         />
+        {form.tipo === "pagamento_pendente" && (
+          <p className="text-xs text-amber-300/90">
+            Use quando repôs o ponto sem leitura (ex.: cliente ganhou e você deixou o dinheiro). Na
+            próxima coleta negativa, o valor abate o prejuízo e você informa quanto recebeu do ponto.
+          </p>
+        )}
+        {form.tipo === "negativo" && (
+          <p className="text-xs text-amber-300/90">
+            Use quando você adiantou dinheiro no ponto e quer recuperar nas próximas coletas
+            positivas (abatimento automático no lucro).
+          </p>
+        )}
         {form.tipo === "haver" && (
           <p className="text-xs text-emerald-400/90">
             Crédito a favor do ponto — entra nas próximas coletas como haver para abater.

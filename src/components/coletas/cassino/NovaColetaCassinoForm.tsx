@@ -1762,18 +1762,48 @@ export function NovaColetaCassinoForm() {
                   }
                 />
               ) : (
-                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm">
-                  <div className="flex justify-between gap-4">
-                    <span className="text-slate-300">Abatimento aplicado agora</span>
-                    <span className="font-semibold tabular-nums text-emerald-400">
-                      {formatCurrency(calculo.pendenciaOperacaoAbatidaReais)}
-                    </span>
+                <div className="space-y-3">
+                  <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-slate-300">Abatimento aplicado agora</span>
+                      <span className="font-semibold tabular-nums text-emerald-400">
+                        {formatCurrency(calculo.pendenciaOperacaoAbatidaReais)}
+                      </span>
+                    </div>
+                    {calculo.pendenciaOperacaoRestanteReais > 0.009 && (
+                      <p className="mt-1 text-xs text-slate-400">
+                        Ainda fica pendente {formatCurrency(calculo.pendenciaOperacaoRestanteReais)} da
+                        dívida antiga.
+                      </p>
+                    )}
                   </div>
-                  {calculo.pendenciaOperacaoRestanteReais > 0.009 && (
-                    <p className="mt-1 text-xs text-slate-400">
-                      Ainda fica pendente {formatCurrency(calculo.pendenciaOperacaoRestanteReais)} da
-                      dívida antiga.
-                    </p>
+                  {calculo.saldoLiquidoReais > 0.009 && (
+                    <div className="space-y-2 rounded-lg border border-green-500/25 bg-green-500/5 p-3">
+                      <p className="text-sm font-medium text-green-300">
+                        Receber do ponto: {formatCurrency(calculo.saldoLiquidoReais)}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        O prejuízo de hoje já abateu parte da pendência. Informe quanto o ponto te
+                        pagou agora.
+                      </p>
+                      <PagamentoCaixaFields
+                        modo="entrada"
+                        pix={pagamento.valor_pix}
+                        dinheiro={pagamento.valor_dinheiro}
+                        pixDoCaixa={pagamento.recebimento_pix_do_caixa}
+                        dinheiroDoCaixa={pagamento.recebimento_dinheiro_do_caixa}
+                        pixLabel="Pix recebido do ponto (R$)"
+                        dinheiroLabel="Dinheiro recebido do ponto (R$)"
+                        onPixChange={(v) => setPagamento((p) => ({ ...p, valor_pix: v }))}
+                        onDinheiroChange={(v) => setPagamento((p) => ({ ...p, valor_dinheiro: v }))}
+                        onPixDoCaixaChange={(checked) =>
+                          setPagamento((p) => ({ ...p, recebimento_pix_do_caixa: checked }))
+                        }
+                        onDinheiroDoCaixaChange={(checked) =>
+                          setPagamento((p) => ({ ...p, recebimento_dinheiro_do_caixa: checked }))
+                        }
+                      />
+                    </div>
                   )}
                 </div>
               )}
