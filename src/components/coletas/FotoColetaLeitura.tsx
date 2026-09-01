@@ -124,8 +124,8 @@ export function FotoColetaLeitura({
   const erroExibido = erroLocal ?? erro;
   const hintPadrao =
     modo === "entrada_saida"
-      ? "Toque no número da entrada ou saída na foto, Copiar e cole no campo."
-      : "Toque no número na foto, Copiar e cole no campo.";
+      ? "Anexe a foto e digite manualmente, ou use \"Ler números na foto\" se quiser ajuda da IA."
+      : "Anexe a foto e digite manualmente, ou use \"Ler números na foto\" se quiser ajuda da IA.";
 
   return (
     <div className={cn("space-y-2", className)}>

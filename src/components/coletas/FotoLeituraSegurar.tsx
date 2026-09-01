@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Check, Copy, Loader2, Maximize2, RefreshCw, X } from "lucide-react";
+import { Check, Copy, Loader2, RefreshCw, ScanLine, X } from "lucide-react";
 import {
   boxNormalizadaParaDisplay,
   getFotoImageLayout,
@@ -94,10 +94,18 @@ type SeletorProps = {
   previewUrl: string;
   aberto: boolean;
   modo: Modo;
+  detectarAoAbrir: boolean;
   onFechar: () => void;
 };
 
-function SeletorNumerosDetectados({ file, previewUrl, aberto, modo, onFechar }: SeletorProps) {
+function SeletorNumerosDetectados({
+  file,
+  previewUrl,
+  aberto,
+  modo,
+  detectarAoAbrir,
+  onFechar,
+}: SeletorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const [layout, setLayout] = useState<FotoImageLayout | null>(null);
@@ -172,13 +180,18 @@ function SeletorNumerosDetectados({ file, previewUrl, aberto, modo, onFechar }: 
   }, [file, modo]);
 
   useEffect(() => {
-    if (!aberto) return;
+    if (aberto) return;
     setNumeros([]);
     setSelecionadoId(null);
     setErro(null);
     setCopiado(false);
+    setDetectando(false);
+  }, [aberto]);
+
+  useEffect(() => {
+    if (!aberto || !detectarAoAbrir) return;
     void detectarNumeros();
-  }, [aberto, previewUrl, detectarNumeros]);
+  }, [aberto, detectarAoAbrir, detectarNumeros]);
 
   useEffect(() => {
     if (!aberto) return;
@@ -264,7 +277,13 @@ function SeletorNumerosDetectados({ file, previewUrl, aberto, modo, onFechar }: 
           {detectando ? (
             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-black/70">
               <Loader2 className="h-9 w-9 animate-spin text-yellow-300" />
-              <p className="text-sm text-slate-200">Identificando fileiras de números…</p>
+              <p className="text-sm text-slate-200">Identificando números…</p>
+            </div>
+          ) : !numeros.length ? (
+            <div className="absolute inset-x-0 bottom-4 flex justify-center px-4">
+              <span className="rounded-full bg-black/75 px-4 py-2 text-xs text-slate-300">
+                Toque em &quot;Identificar números&quot; abaixo
+              </span>
             </div>
           ) : null}
 
@@ -332,26 +351,33 @@ function SeletorNumerosDetectados({ file, previewUrl, aberto, modo, onFechar }: 
         {erro ? <p className="text-center text-xs text-amber-400">{erro}</p> : null}
 
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled={detectando || !selecionado}
-            onClick={() => void copiarSelecionado()}
-            className={cn(
-              "inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50",
-              selecionado ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-slate-500"
-            )}
-          >
-            {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {copiado ? "Copiado!" : "Copiar"}
-          </button>
+          {numeros.length > 0 ? (
+            <button
+              type="button"
+              disabled={detectando || !selecionado}
+              onClick={() => void copiarSelecionado()}
+              className={cn(
+                "inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50",
+                selecionado ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-slate-500"
+              )}
+            >
+              {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copiado ? "Copiado!" : "Copiar"}
+            </button>
+          ) : null}
           <button
             type="button"
             disabled={detectando}
             onClick={() => void detectarNumeros()}
-            className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-600 px-4 py-3 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+            className={cn(
+              "inline-flex items-center justify-center gap-1.5 rounded-xl px-4 py-3 text-sm font-semibold disabled:opacity-50",
+              numeros.length > 0
+                ? "border border-slate-600 text-slate-200 hover:bg-slate-800"
+                : "flex-1 bg-primary-neon text-slate-900"
+            )}
           >
             <RefreshCw className={cn("h-4 w-4", detectando && "animate-spin")} />
-            Redetectar
+            {detectando ? "Identificando…" : numeros.length > 0 ? "Redetectar" : "Identificar números"}
           </button>
         </div>
       </div>
@@ -369,34 +395,39 @@ type Props = {
 
 export function FotoLeituraSegurar({ file, previewUrl, modo = "contador", className }: Props) {
   const [seletorAberto, setSeletorAberto] = useState(false);
+  const [detectarAoAbrir, setDetectarAoAbrir] = useState(false);
 
-  useEffect(() => {
+  function abrirLeitor(comDeteccao: boolean) {
+    setDetectarAoAbrir(comDeteccao);
     setSeletorAberto(true);
-  }, [file, previewUrl]);
+  }
+
+  function fecharLeitor() {
+    setSeletorAberto(false);
+    setDetectarAoAbrir(false);
+  }
 
   return (
     <div className={cn("w-full space-y-2", className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={previewUrl}
+        alt="Foto da coleta"
+        className="block w-full h-auto rounded-xl border border-slate-700 bg-black"
+        draggable={false}
+      />
+
       <button
         type="button"
-        onClick={() => setSeletorAberto(true)}
-        className="relative block w-full overflow-hidden rounded-xl border border-slate-700 bg-black text-left"
-        aria-label="Abrir foto e tocar nos números"
+        onClick={() => abrirLeitor(true)}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-cyan-500/30 bg-cyan-500/10 px-3 py-2.5 text-sm font-medium text-cyan-200 hover:bg-cyan-500/15"
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={previewUrl}
-          alt="Foto da coleta"
-          className="block w-full h-auto"
-          draggable={false}
-        />
-        <span className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full bg-black/75 px-2.5 py-1 text-[10px] font-medium text-yellow-100">
-          <Maximize2 className="h-3 w-3" />
-          Tocar nos números
-        </span>
+        <ScanLine className="h-4 w-4" />
+        Ler números na foto
       </button>
 
       <p className="text-center text-[11px] text-slate-500">
-        Toque só no número (entrada, saída…) · Copiar · cole no campo
+        Opcional — você pode digitar os valores manualmente nos campos
       </p>
 
       <SeletorNumerosDetectados
@@ -404,7 +435,8 @@ export function FotoLeituraSegurar({ file, previewUrl, modo = "contador", classN
         previewUrl={previewUrl}
         modo={modo}
         aberto={seletorAberto}
-        onFechar={() => setSeletorAberto(false)}
+        detectarAoAbrir={detectarAoAbrir}
+        onFechar={fecharLeitor}
       />
     </div>
   );
