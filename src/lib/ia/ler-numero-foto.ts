@@ -1,4 +1,4 @@
-import { chatCompletionVision } from "@/lib/ia/openai-client";
+import { chatCompletionVision, modeloTexto } from "@/lib/ia/openai-client";
 import { formatContadorInput } from "@/lib/nichos/cassino/contadores";
 import { formatMoneyInputOnBlur } from "@/lib/utils";
 import { z } from "zod";
@@ -80,10 +80,65 @@ export async function lerNumeroDaFoto(args: {
   imageDataUrl: string;
   modo: ModoLeituraNumeroFoto;
   contexto?: ContextoLeituraNumeroFoto;
+  /** Recorte pequeno já marcado pelo usuário — usa modelo e imagem mais leves. */
+  rapido?: boolean;
 }): Promise<
   | { ok: true; result: LeituraNumeroFotoResult }
   | { ok: false; message: string }
 > {
+  if (args.rapido) {
+    const llm = await chatCompletionVision(
+      [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text:
+                'Leia APENAS os dígitos visíveis neste recorte de visor. JSON: {"numero":"somente digitos","confianca":0.9}',
+            },
+            {
+              type: "image_url",
+              image_url: { url: args.imageDataUrl, detail: "low" },
+            },
+          ],
+        },
+      ],
+      { maxTokens: 64, temperature: 0, json: true, model: modeloTexto() }
+    );
+
+    if (!llm.ok) {
+      return { ok: false, message: llm.message };
+    }
+
+    let parsed: z.infer<typeof IaJsonSchema>;
+    try {
+      parsed = IaJsonSchema.parse(JSON.parse(llm.text));
+    } catch {
+      return { ok: false, message: "Não foi possível interpretar a leitura." };
+    }
+
+    const numeroRaw = soDigitos(parsed.numero);
+    if (!numeroRaw) {
+      return {
+        ok: false,
+        message: parsed.motivo?.trim() || "Não leu os dígitos. Marque de novo o grupo de números.",
+      };
+    }
+
+    return {
+      ok: true,
+      result: {
+        numeroRaw,
+        numeroFormatado: formatarPorModo(numeroRaw, args.modo),
+        confianca: Math.max(0, Math.min(1, Number(parsed.confianca ?? 0.7))),
+        rotulo: parsed.rotulo?.trim() || null,
+        modelo: llm.model,
+        motivo: parsed.motivo?.trim() || null,
+      },
+    };
+  }
+
   const prompt = montarPrompt(args.modo, args.contexto ?? null);
 
   const llm = await chatCompletionVision(

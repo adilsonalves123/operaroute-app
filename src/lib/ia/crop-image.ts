@@ -68,6 +68,38 @@ export async function cropFileByPixelRect(
   }
 }
 
+/** Reduz recorte pequeno antes do OCR (menos upload, resposta mais rápida). */
+export async function comprimirRecorteParaOcr(
+  file: File,
+  maxSide = 720,
+  quality = 0.78
+): Promise<File> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    try {
+      const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+      if (scale >= 1 && file.size < 180_000) return file;
+      const w = Math.max(1, Math.round(bitmap.width * scale));
+      const h = Math.max(1, Math.round(bitmap.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return file;
+      ctx.drawImage(bitmap, 0, 0, w, h);
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob((b) => resolve(b), "image/jpeg", quality)
+      );
+      if (!blob) return file;
+      return new File([blob], file.name, { type: "image/jpeg", lastModified: Date.now() });
+    } finally {
+      bitmap.close();
+    }
+  } catch {
+    return file;
+  }
+}
+
 export async function cropFileByNormalizedBox(
   file: File,
   box: CaixaNormalizada,

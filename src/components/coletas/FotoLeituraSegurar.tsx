@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, Copy, Loader2, X } from "lucide-react";
-import { cropFileByPixelRect, type PixelRect } from "@/lib/ia/crop-image";
+import { cropFileByPixelRect, comprimirRecorteParaOcr, type PixelRect } from "@/lib/ia/crop-image";
 import {
   displayRectParaPixelRect,
   getFotoImageLayoutFromElement,
@@ -52,6 +52,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
     setTextoLido(null);
     setCopiado(false);
     setErro(null);
+    lendoRef.current = false;
     startRef.current = null;
     rectRef.current = null;
   }, [aberto]);
@@ -72,6 +73,51 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
     if (!layout) return null;
     return displayRectParaPixelRect(rect, layout);
   }, []);
+
+  const lendoRef = useRef(false);
+
+  const copiarSelecao = useCallback(
+    async (px?: PixelRect | null) => {
+      const alvo = px ?? pixelRect;
+      if (!alvo) {
+        setErro("Arraste em cima do grupo de números que quer copiar.");
+        return;
+      }
+      if (lendoRef.current) return;
+      lendoRef.current = true;
+      setLendo(true);
+      setErro(null);
+      setCopiado(false);
+      try {
+        const recorteBruto = await cropFileByPixelRect(file, alvo, "selecao.jpg", 0.04);
+        const recorte = await comprimirRecorteParaOcr(recorteBruto);
+        const form = new FormData();
+        form.append("foto", recorte);
+        form.append("modo", "contador");
+        form.append("rapido", "1");
+        const res = await fetch("/api/equipamentos/ler-numero-foto", {
+          method: "POST",
+          body: form,
+        });
+        const json = (await res.json()) as { error?: string; numero?: string };
+        if (!res.ok || !json.numero?.trim()) {
+          setErro(json.error || "Não leu esse trecho. Marque de novo só o grupo de números.");
+          return;
+        }
+        const numero = json.numero.trim();
+        setTextoLido(numero);
+        void navigator.clipboard.writeText(numero);
+        setCopiado(true);
+        window.setTimeout(() => setCopiado(false), 2500);
+      } catch {
+        setErro("Não foi possível copiar. Tente marcar de novo.");
+      } finally {
+        lendoRef.current = false;
+        setLendo(false);
+      }
+    },
+    [file, pixelRect]
+  );
 
   function pontoLocal(clientX: number, clientY: number) {
     const bounds = areaRef.current?.getBoundingClientRect();
@@ -133,6 +179,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
     setRectTemp(null);
     rectRef.current = null;
     setTextoLido(null);
+    void copiarSelecao(px);
   }
 
   function limparSelecao() {
@@ -142,40 +189,6 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
     setTextoLido(null);
     setCopiado(false);
     setErro(null);
-  }
-
-  async function copiarSelecao() {
-    if (!pixelRect) {
-      setErro("Arraste em cima do grupo de números que quer copiar.");
-      return;
-    }
-    setLendo(true);
-    setErro(null);
-    setCopiado(false);
-    try {
-      const recorte = await cropFileByPixelRect(file, pixelRect, "selecao.jpg");
-      const form = new FormData();
-      form.append("foto", recorte);
-      form.append("modo", "contador");
-      const res = await fetch("/api/equipamentos/ler-numero-foto", {
-        method: "POST",
-        body: form,
-      });
-      const json = (await res.json()) as { error?: string; numero?: string };
-      if (!res.ok || !json.numero?.trim()) {
-        setErro(json.error || "Não leu esse trecho. Marque de novo só o grupo de números.");
-        return;
-      }
-      const numero = json.numero.trim();
-      setTextoLido(numero);
-      await navigator.clipboard.writeText(numero);
-      setCopiado(true);
-      window.setTimeout(() => setCopiado(false), 2500);
-    } catch {
-      setErro("Não foi possível copiar. Tente marcar de novo.");
-    } finally {
-      setLendo(false);
-    }
   }
 
   if (!aberto) return null;
@@ -194,7 +207,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white">Marque o grupo de números</p>
           <p className="text-xs text-slate-400">
-            Arraste em cima dos dígitos · Copiar · cole no campo
+            Arraste nos dígitos e solte — copia automaticamente
           </p>
         </div>
         <button
@@ -266,7 +279,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
             )}
           >
             {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-            {lendo ? "Lendo…" : copiado ? "Copiado!" : "Copiar"}
+            {lendo ? "Lendo…" : copiado ? "Copiado!" : "Copiar de novo"}
           </button>
           <button
             type="button"
@@ -311,7 +324,7 @@ export function FotoLeituraSegurar({ file, previewUrl, className }: Props) {
       </button>
 
       <p className="text-center text-[11px] text-slate-500">
-        Toque na foto → marque o grupo de números → Copiar → cole no campo
+        Toque na foto → marque o grupo → solte (copia sozinho) → cole no campo
       </p>
 
       <SeletorManualFullscreen

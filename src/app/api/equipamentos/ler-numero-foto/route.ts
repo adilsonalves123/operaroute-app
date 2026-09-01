@@ -71,8 +71,9 @@ export async function POST(request: Request) {
 
   const modo = parseModo(form.get("modo"));
   const contexto = parseContexto(form.get("contexto"));
+  const rapido = String(form.get("rapido") ?? "").trim() === "1";
   const imageDataUrl = await fileToDataUrl(foto);
-  const leitura = await lerNumeroDaFoto({ imageDataUrl, modo, contexto });
+  const leitura = await lerNumeroDaFoto({ imageDataUrl, modo, contexto, rapido });
 
   if (!leitura.ok) {
     return NextResponse.json({ error: leitura.message }, { status: 422 });
