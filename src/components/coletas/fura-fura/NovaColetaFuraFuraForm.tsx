@@ -52,7 +52,7 @@ import {
   type EstoqueBrindePonto,
   type CalculoColetaFuraFuraResult,
 } from "@/lib/nichos/fura-fura";
-import { agregarDividaCobravelPorPonto } from "@/lib/visitas-ponto/divida-ponto";
+import { agregarDividaCobravelPorPonto, fetchAgregadoDividaCobravelEmpresa } from "@/lib/visitas-ponto/divida-ponto";
 import type { RelatorioFuraFuraData } from "@/lib/nichos/fura-fura/relatorio";
 import {
   estoqueAvulsosDoKit,
@@ -180,6 +180,19 @@ export function NovaColetaFuraFuraForm() {
     }
     load();
   }, []);
+
+  useEffect(() => {
+    if (!empresaId) return;
+    let cancelled = false;
+    void (async () => {
+      const supabase = createClient();
+      const map = await fetchAgregadoDividaCobravelEmpresa(supabase, empresaId);
+      if (!cancelled) setPendenciasPorPonto(map);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [empresaId, form.ponto_id]);
 
   useEffect(() => {
     if (!editarColetaId || !empresaId) return;

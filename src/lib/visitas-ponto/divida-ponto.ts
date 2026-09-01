@@ -138,3 +138,17 @@ export function agregarDividaCobravelPorPonto(
 
   return map;
 }
+
+/** Mapa atualizado de dívida cobrável por ponto (telas de coleta). */
+export async function fetchAgregadoDividaCobravelEmpresa(
+  supabase: SupabaseClient,
+  empresaId: string
+): Promise<Map<string, { totalPendente: number; coletasAbertas: number }>> {
+  const { data } = await supabase
+    .from("pendencias")
+    .select("ponto_id, tipo, titulo, valor, descricao")
+    .eq("empresa_id", empresaId)
+    .eq("status", "aberta");
+
+  return agregarDividaCobravelPorPonto(data ?? []);
+}

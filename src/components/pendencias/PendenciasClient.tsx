@@ -101,6 +101,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
   const [editForms, setEditForms] = useState<
     Record<string, { valor: string; titulo: string; observacao_edit: string; erro?: string }>
   >({});
+  const [mostrarFiltrosExtras, setMostrarFiltrosExtras] = useState(false);
 
   const lista = pendencias.filter((p) => {
     const statusOk = mostrarTodas || p.status === "aberta";
@@ -383,37 +384,106 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
     );
   }
 
+  const totalAberto = pendencias
+    .filter((p) => p.status === "aberta")
+    .reduce((s, p) => s + valorPendenciaAberta(p), 0);
+  const abertasCount = pendencias.filter((p) => p.status === "aberta").length;
+
+  const filtrosComItens = filtrosTipo.filter(
+    (f) => f.id === "todos" || countTipo(f.id) > 0
+  );
+  const filtrosExtras = filtrosTipo.filter(
+    (f) => f.id !== "todos" && countTipo(f.id) === 0
+  );
+  const filtroAtivoEhExtra = filtrosExtras.some((f) => f.id === filtroTipo);
+
   return (
     <>
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        {filtrosTipo.map((f) => (
+      <div className="rounded-xl border border-white/[0.06] bg-slate-950/50 p-3 sm:p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-slate-400">
+            <span className="font-medium text-slate-200">{abertasCount}</span>{" "}
+            {abertasCount === 1 ? "aberta" : "abertas"}
+            {totalAberto > 0.009 ? (
+              <>
+                {" "}
+                · total{" "}
+                <span className="font-medium text-amber-300">{formatCurrency(totalAberto)}</span>
+              </>
+            ) : null}
+          </p>
           <button
-            key={f.id}
             type="button"
-            onClick={() => {
-              setFiltroTipo(f.id);
-              setExpandedId(null);
-            }}
-            className={`rounded-lg px-3 py-1.5 text-xs font-medium ${
-              filtroTipo === f.id
-                ? "bg-primary-neon text-slate-900"
-                : "bg-slate-800 text-slate-400 hover:text-white"
-            }`}
+            onClick={() => setMostrarTodas((v) => !v)}
+            className="text-xs text-slate-500 hover:text-slate-300 underline-offset-2 hover:underline"
           >
-            {f.label}
-            <span className="ml-1 opacity-70">({countTipo(f.id)})</span>
+            {mostrarTodas ? "Só abertas" : "Incluir resolvidas"}
           </button>
-        ))}
-      </div>
+        </div>
 
-      <button
-        type="button"
-        onClick={() => setMostrarTodas((v) => !v)}
-        className="text-xs text-slate-500 hover:text-slate-300"
-      >
-        {mostrarTodas ? "Mostrando todas · ver só abertas" : "Mostrando abertas · ver resolvidas também"}
-      </button>
+        <div className="flex flex-wrap gap-1.5">
+          {filtrosComItens.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => {
+                setFiltroTipo(f.id);
+                setExpandedId(null);
+              }}
+              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                filtroTipo === f.id
+                  ? "bg-primary-neon text-slate-900"
+                  : "bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              {f.label}
+              {f.id !== "todos" ? (
+                <span className="ml-1 tabular-nums opacity-80">({countTipo(f.id)})</span>
+              ) : null}
+            </button>
+          ))}
+          {filtrosExtras.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setMostrarFiltrosExtras((v) => !v)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                mostrarFiltrosExtras || filtroAtivoEhExtra
+                  ? "border-slate-600 bg-slate-800 text-slate-200"
+                  : "border-slate-700/80 text-slate-500 hover:border-slate-600 hover:text-slate-300"
+              }`}
+            >
+              Outros tipos
+              {!mostrarFiltrosExtras && !filtroAtivoEhExtra ? (
+                <span className="ml-1 opacity-70">({filtrosExtras.length})</span>
+              ) : null}
+            </button>
+          ) : null}
+        </div>
+
+        {(mostrarFiltrosExtras || filtroAtivoEhExtra) && filtrosExtras.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 border-t border-white/[0.05] pt-3">
+            {filtrosExtras.map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => {
+                  setFiltroTipo(f.id);
+                  setExpandedId(null);
+                }}
+                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                  filtroTipo === f.id
+                    ? "bg-primary-neon text-slate-900"
+                    : "bg-slate-900 text-slate-500 hover:bg-slate-800 hover:text-slate-300"
+                }`}
+              >
+                {f.label}
+                <span className="ml-1 opacity-60">(0)</span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+      </div>
 
       {lista.length === 0 ? (
         <p className="text-sm text-slate-400 text-center py-8">
@@ -443,16 +513,25 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
             const editando = editingId === p.id;
             const editForm = editForms[p.id] ?? emptyEditForm(p);
 
+            const contextoLabel = [
+              isFura ? "Fura-fura" : null,
+              isVisita ? "Visita ao ponto" : null,
+              p.pontos?.nome ?? null,
+              formatDate(p.created_at),
+            ]
+              .filter(Boolean)
+              .join(" · ");
+
             return (
-              <div key={p.id} className="glass-card p-4 space-y-3">
+              <div key={p.id} className="glass-card overflow-hidden">
                 <button
                   type="button"
                   onClick={() => setExpandedId(isOpen ? null : p.id)}
-                  className="w-full text-left flex items-start justify-between gap-3"
+                  className="w-full text-left flex items-center justify-between gap-3 p-4 hover:bg-white/[0.02] transition"
                 >
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-white">{p.titulo}</p>
+                      <p className="font-medium text-white truncate">{p.titulo}</p>
                       <AlertBadge
                         variant={
                           p.tipo === "haver" &&
@@ -463,45 +542,25 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                       >
                         {p.tipo === "haver" &&
                         /pagou ganhadores/i.test(`${p.titulo ?? ""} ${p.descricao ?? ""}`)
-                          ? "Haver (pagou negativo)"
+                          ? "Haver negativo"
                           : p.tipo === "haver"
-                            ? "Haver (troco/crédito)"
+                            ? "Haver"
                             : (tipoLabels[p.tipo] ?? p.tipo)}
                       </AlertBadge>
                       {p.status === "resolvida" && (
                         <AlertBadge variant="success">Resolvida</AlertBadge>
                       )}
-                      {isFura && <AlertBadge variant="info">Fura Fura</AlertBadge>}
-                      {isVisita && <AlertBadge variant="info">Visita unificada</AlertBadge>}
                     </div>
-                    <p className="text-sm text-slate-400 mt-1">
-                      {p.pontos?.nome ?? "—"} · {formatDate(p.created_at)}
-                    </p>
-                    {isFura && p.coleta_id && (
-                      <a
-                        href={`/coletas/fura-fura/${p.coleta_id}`}
-                        className="text-xs text-primary-neon hover:underline mt-1 inline-block"
-                      >
-                        Ver coleta
-                      </a>
-                    )}
-                    {isVisita && p.visita_ponto_id && (
-                      <a
-                        href={`/visitas-ponto/${p.visita_ponto_id}/resumo`}
-                        className="text-xs text-primary-neon hover:underline mt-1 inline-block"
-                      >
-                        Ver resumo da visita
-                      </a>
-                    )}
+                    <p className="text-xs text-slate-500 mt-1 truncate">{contextoLabel}</p>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     <p
-                      className={`font-semibold ${
+                      className={`text-base font-semibold tabular-nums ${
                         p.tipo === "haver"
                           ? /pagou ganhadores/i.test(`${p.titulo ?? ""} ${p.descricao ?? ""}`)
                             ? "text-violet-400"
                             : "text-cyan-400"
-                          : "text-amber-400"
+                          : "text-amber-300"
                       }`}
                     >
                       {p.tipo === "haver" ? "+" : ""}
@@ -516,15 +575,40 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-slate-800 pt-4 space-y-4">
-                    {p.descricao && (
-                      <div>
-                        <p className="text-xs font-medium text-slate-400 mb-1">Histórico</p>
-                        <p className="text-xs text-slate-500 whitespace-pre-line">
+                  <div className="border-t border-slate-800 px-4 pb-4 pt-3 space-y-4">
+                    {(isFura && p.coleta_id) || (isVisita && p.visita_ponto_id) ? (
+                      <div className="flex flex-wrap gap-2">
+                        {isFura && p.coleta_id ? (
+                          <a
+                            href={`/coletas/fura-fura/${p.coleta_id}`}
+                            className="text-xs text-primary-neon hover:underline"
+                          >
+                            Ver coleta
+                          </a>
+                        ) : null}
+                        {isVisita && p.visita_ponto_id ? (
+                          <a
+                            href={`/visitas-ponto/${p.visita_ponto_id}/resumo`}
+                            className="text-xs text-primary-neon hover:underline"
+                          >
+                            Ver resumo da visita
+                          </a>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {p.descricao ? (
+                      <details className="group rounded-lg border border-slate-800/80 bg-slate-900/30">
+                        <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-300 [&::-webkit-details-marker]:hidden">
+                          Histórico
+                          <span className="ml-1 text-slate-600 group-open:hidden">▾</span>
+                          <span className="ml-1 text-slate-600 hidden group-open:inline">▴</span>
+                        </summary>
+                        <p className="border-t border-slate-800/80 px-3 py-2 text-xs text-slate-500 whitespace-pre-line max-h-40 overflow-y-auto">
                           {p.descricao}
                         </p>
-                      </div>
-                    )}
+                      </details>
+                    ) : null}
 
                     {editando && (
                       <div className="rounded-lg border border-primary-neon/25 bg-primary-neon/5 p-4 space-y-3">
@@ -612,12 +696,14 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
 
                     {p.status === "aberta" && !editando && (
                       <>
-                        {isFura && (
-                          <p className="text-xs text-amber-400/90">
+                        {isFura ? (
+                          <p className="text-xs text-slate-500">
                             Pagamento sincroniza com a coleta fura-fura (FIFO).
                           </p>
-                        )}
-                        <div className="grid gap-3 sm:grid-cols-3">
+                        ) : null}
+                        <div className="rounded-lg border border-slate-800/80 bg-slate-900/20 p-3 space-y-3">
+                          <p className="text-xs font-medium text-slate-400">Registrar pagamento</p>
+                          <div className="grid gap-3 sm:grid-cols-3">
                           <div className="space-y-1.5">
                             <label className="block text-sm font-medium text-slate-300">
                               {valorLabelPix}
@@ -675,11 +761,11 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                               placeholder="Ex: pago em dinheiro"
                             />
                           </div>
-                        </div>
+                          </div>
 
                         {form.erro && <p className="text-xs text-red-400">{form.erro}</p>}
 
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-2 pt-1">
                           {cobrarUrl && (
                             <a
                               href={cobrarUrl}
@@ -718,6 +804,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                             <Trash2 className="h-3.5 w-3.5" />
                             Apagar
                           </button>
+                        </div>
                         </div>
                       </>
                     )}

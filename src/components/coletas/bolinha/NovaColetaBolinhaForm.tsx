@@ -25,7 +25,7 @@ import {
   type BrindeEntreguePonto,
   type EstoqueBrindePonto,
 } from "@/lib/estoque/brindes-ponto";
-import { agregarDividaCobravelPorPonto } from "@/lib/visitas-ponto/divida-ponto";
+import { agregarDividaCobravelPorPonto, fetchAgregadoDividaCobravelEmpresa } from "@/lib/visitas-ponto/divida-ponto";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { ColetaBolinhaResumo } from "@/components/coletas/bolinha/ColetaBolinhaResumo";
@@ -170,6 +170,19 @@ export function NovaColetaBolinhaForm() {
     }
     loadPontos();
   }, []);
+
+  useEffect(() => {
+    if (!empresaId) return;
+    let cancelled = false;
+    void (async () => {
+      const supabase = createClient();
+      const map = await fetchAgregadoDividaCobravelEmpresa(supabase, empresaId);
+      if (!cancelled) setPendenciasPorPonto(map);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [empresaId, pontoId]);
 
   useEffect(() => {
     if (!pontoId) {

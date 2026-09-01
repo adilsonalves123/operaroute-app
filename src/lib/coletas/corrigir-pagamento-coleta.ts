@@ -206,7 +206,9 @@ export async function corrigirPagamentoVisitaCassino(
 
   const { data: visita, error } = await supabase
     .from("visitas")
-    .select("id, ponto_id, valor_pago, restante, valor_pix, valor_dinheiro")
+    .select(
+      "id, ponto_id, valor_pago, restante, valor_pix, valor_dinheiro, valor_operacao_efetivo, valor_operacao, debito_abatido, saldo_negativo"
+    )
     .eq("id", opts.visitaId)
     .eq("empresa_id", opts.empresaId)
     .maybeSingle();
@@ -263,6 +265,76 @@ export async function corrigirPagamentoVisitaCassino(
       ponto_id: visita.ponto_id,
       visita_id: opts.visitaId,
       operador_id: opts.operadorId ?? null,
+    });
+  }
+
+  // Espelha na pendência da visita (senão dashboard/análise ficam com dívida fantasma).
+  const { data: pendencias } = await supabase
+    .from("pendencias")
+    .select("id, status, tipo")
+    .eq("empresa_id", opts.empresaId)
+    .eq("visita_id", opts.visitaId);
+
+  const abertas =
+    pendencias?.filter((p) => {
+      const st = String(p.status ?? "").toLowerCase();
+      const tipo = String(p.tipo ?? "").toLowerCase();
+      if (tipo === "haver" || tipo === "negativo") return false;
+      return st === "aberta" || st === "parcial";
+    }) ?? [];
+
+  const agora = new Date().toISOString();
+  if (restante > 0.009) {
+    const tipo = valorPago > 0.009 ? "parcial" : "pagamento_pendente";
+    if (abertas.length > 0) {
+      await supabase
+        .from("pendencias")
+        .update({
+          valor: restante,
+          tipo,
+          status: "aberta",
+          resolvido_em: null,
+        })
+        .eq("id", abertas[0].id);
+      for (const extra of abertas.slice(1)) {
+        await supabase
+          .from("pendencias")
+          .update({ status: "resolvida", valor: 0, resolvido_em: agora })
+          .eq("id", extra.id);
+      }
+    } else if (!visita.saldo_negativo) {
+      await supabase.from("pendencias").insert({
+        empresa_id: opts.empresaId,
+        ponto_id: visita.ponto_id,
+        visita_id: opts.visitaId,
+        tipo,
+        titulo: "Pagamento pendente da coleta",
+        descricao: `Saldo corrigido da visita — ${pontoNome}`,
+        valor: restante,
+        prioridade: "media",
+        status: "aberta",
+      });
+    }
+  } else if (abertas.length > 0) {
+    for (const p of abertas) {
+      await supabase
+        .from("pendencias")
+        .update({
+          valor: 0,
+          status: "resolvida",
+          resolvido_em: agora,
+        })
+        .eq("id", p.id);
+    }
+  }
+
+  if (visita.ponto_id) {
+    const { reconciliarPendenciasCobraveisPonto } = await import(
+      "@/lib/visitas-ponto/reconciliar-pendencias-ponto"
+    );
+    await reconciliarPendenciasCobraveisPonto(supabase, {
+      empresaId: opts.empresaId,
+      pontoId: visita.ponto_id,
     });
   }
 

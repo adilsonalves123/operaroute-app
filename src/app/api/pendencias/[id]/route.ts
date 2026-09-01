@@ -4,6 +4,7 @@ import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { extrairTotalAbatido } from "@/lib/nichos/cassino/pendencias";
 import { parseMoneyInput } from "@/lib/utils";
 import { baixarPendenciaVisitaPonto } from "@/lib/visitas-ponto/checkout";
+import { sincronizarOrigemAposEdicaoPendencia } from "@/lib/visitas-ponto/sync-pendencia-edit";
 import type { FormaPagamento } from "@/lib/types/database";
 
 function deriveFormaPagamento(pix: number, dinheiro: number): FormaPagamento {
@@ -27,7 +28,9 @@ export async function PATCH(
 
   const { data: pendencia, error: fetchError } = await supabase
     .from("pendencias")
-    .select("valor, descricao, tipo, titulo, ponto_id, status, visita_ponto_id")
+    .select(
+      "valor, descricao, tipo, titulo, ponto_id, status, visita_ponto_id, coleta_id, visita_id"
+    )
     .eq("id", id)
     .eq("empresa_id", profile.empresa_id)
     .maybeSingle();
@@ -49,6 +52,12 @@ export async function PATCH(
     pix: number;
     dinheiro: number;
     descricao: string;
+  } | null = null;
+  let syncAposEdicao: {
+    novoSaldo: number;
+    tipo: string;
+    coletaId: string | null;
+    visitaId: string | null;
   } | null = null;
 
   if (body.action === "baixa") {
@@ -180,6 +189,13 @@ export async function PATCH(
       updates.status = "aberta";
       updates.resolvido_em = null;
     }
+
+    syncAposEdicao = {
+      novoSaldo,
+      tipo: tipoPendencia,
+      coletaId: pendencia.coleta_id ?? null,
+      visitaId: pendencia.visita_id ?? null,
+    };
   }
 
   if (Object.keys(updates).length === 0) {
@@ -194,6 +210,28 @@ export async function PATCH(
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (syncAposEdicao) {
+    try {
+      await sincronizarOrigemAposEdicaoPendencia(supabase, {
+        empresaId: profile.empresa_id,
+        coletaId: syncAposEdicao.coletaId,
+        visitaId: syncAposEdicao.visitaId,
+        novoSaldoCobravel: syncAposEdicao.novoSaldo,
+        tipo: syncAposEdicao.tipo,
+      });
+    } catch (err) {
+      return NextResponse.json(
+        {
+          error:
+            err instanceof Error
+              ? err.message
+              : "Pendência salva, mas falhou ao alinhar coleta/visita de origem.",
+        },
+        { status: 500 }
+      );
+    }
   }
 
   if (baixaFinanceira && baixaFinanceira.valor > 0) {
