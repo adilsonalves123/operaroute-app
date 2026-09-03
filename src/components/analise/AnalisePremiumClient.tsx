@@ -696,32 +696,28 @@ export function AnalisePremiumClient({
                     label: "Entrada",
                     value: formatCurrency(entrada),
                     hint: "Máquinas faturaram",
-                    tone: "text-at-money-pos opacity-90",
                   },
                   {
                     label: "Saída",
                     value: formatCurrency(saida),
                     hint: "Saiu das máquinas",
-                    tone: "text-at-money-neg opacity-90",
                   },
                   {
                     label: "Comissão",
                     value: formatCurrency(comissao),
                     hint: "Parte do cliente",
-                    tone: "text-amber-300/90",
                   },
                   {
                     label: "Movimento",
                     value: formatCurrency(movimento),
                     hint: "Entrada − saída",
-                    tone: "text-at-primary",
                   },
                 ].map((cell) => (
                   <div key={cell.label} className="bg-at-card px-3 py-3.5 sm:px-4">
                     <p className="text-[11px] uppercase tracking-[0.16em] text-at-muted">
                       {cell.label}
                     </p>
-                    <p className={cn("mt-1.5 text-[16px] font-medium tabular-nums", cell.tone)}>
+                    <p className="mt-1.5 text-[16px] font-medium tabular-nums text-at-primary">
                       {cell.value}
                     </p>
                     <p className="mt-1 text-[11px] text-at-soft">{cell.hint}</p>
@@ -745,7 +741,7 @@ export function AnalisePremiumClient({
                 {comissaoStaff && comissaoStaff.linhas.length > 0 && (
                   <span>
                     Ajudante{" "}
-                    <span className="tabular-nums text-violet-200">
+                    <span className="tabular-nums text-at-primary">
                       {formatCurrency(
                         comissaoStaff.linhas.length === 1
                           ? comissaoStaff.linhas[0].valor
@@ -755,11 +751,11 @@ export function AnalisePremiumClient({
                     {(comissaoStaff.totalVales > 0.009 || comissaoStaff.totalAPagar > 0.009) && (
                       <>
                         <span className="text-at-soft"> · vales </span>
-                        <span className="tabular-nums text-amber-200/90">
+                        <span className="tabular-nums text-at-primary">
                           {formatCurrency(comissaoStaff.totalVales)}
                         </span>
                         <span className="text-at-soft"> · a pagar </span>
-                        <span className="tabular-nums text-violet-200">
+                        <span className="tabular-nums text-at-primary">
                           {formatCurrency(comissaoStaff.totalAPagar)}
                         </span>
                       </>
