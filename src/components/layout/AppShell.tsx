@@ -7,7 +7,7 @@ import { TrialAccessBody } from "./TrialAccessBody";
 import { SimulacaoTrialBar } from "./SimulacaoTrialBar";
 import { MobileMenuProvider } from "./MobileMenuContext";
 import { MobileAppMenu } from "./MobileAppMenu";
-import { MobileMenuButton } from "./MobileMenuButton";
+import { AppHeader } from "./AppHeader";
 import { getAcessoUsuario, type AcessoUsuario } from "@/lib/equipe/acesso";
 import { fetchChamadosAbertosResumo } from "@/lib/chamados/fetch-resumo";
 import { mesclarPermissoes } from "@/lib/equipe/permissions";
@@ -22,7 +22,6 @@ import {
   COOKIE_SIMULAR_TRIAL,
   parseModoSimularTrial,
 } from "@/lib/assinatura-simulacao";
-import { LogOut } from "lucide-react";
 import { AuditoriaSessaoBeacon } from "@/components/auditoria/AuditoriaSessaoBeacon";
 import { PushNativeInit } from "@/components/push/PushNativeInit";
 import { cookies } from "next/headers";
@@ -102,33 +101,8 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
               planoNome={trialResumo.planoNome}
               limitesLabel={`${trialResumo.labelPontos} · ${trialResumo.labelNichos}`}
             />
-            <header className="flex h-14 items-center justify-between border-b border-white/[0.06] bg-[#0a0e16]/70 px-4 backdrop-blur-md lg:px-6">
-              <div className="lg:hidden flex items-center gap-2">
-                <MobileMenuButton />
-                <span
-                  className="text-[16px] text-[#f4efe6]"
-                  style={{ fontFamily: "Georgia, serif" }}
-                >
-                  OperaRoute
-                </span>
-              </div>
-              <div className="hidden lg:block" />
-              <div className="flex items-center gap-3">
-                <span className="hidden text-[13px] text-slate-400 sm:block lg:hidden">
-                  {profile?.nome}
-                </span>
-                <form action="/auth/signout" method="post" className="lg:hidden">
-                  <button
-                    type="submit"
-                    className="rounded-lg p-2 text-slate-400 transition hover:bg-white/[0.05] hover:text-[#c4a574]"
-                    title="Sair"
-                  >
-                    <LogOut className="h-4 w-4" />
-                  </button>
-                </form>
-              </div>
-            </header>
-            <main className="flex-1 overflow-y-auto p-4 lg:p-6 pb-24 lg:pb-6">
+            <AppHeader nomeUsuario={profile?.nome ?? undefined} />
+            <main className="app-shell-main flex-1 overflow-y-auto p-4 lg:p-6 pb-24 lg:pb-6">
               <PushNativeInit />
               <TrialAccessBody bloqueado={bloqueado}>{children}</TrialAccessBody>
             </main>

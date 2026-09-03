@@ -49,7 +49,7 @@ export function MobileAppMenu({ nomeOperacao, chamadosAbertos = 0 }: Props) {
         className={cn(
           appNavDisplayFont.variable,
           appNavSansFont.variable,
-          "absolute inset-y-0 left-0 flex w-[min(100%,260px)] flex-col border-r border-white/[0.06] bg-[#0a0e16] shadow-2xl"
+          "absolute inset-y-0 left-0 flex w-[min(100%,260px)] flex-col border-r app-shell-sidebar shadow-2xl",
         )}
         style={{ fontFamily: "var(--font-app-nav-sans), system-ui, sans-serif" }}
       >
@@ -59,19 +59,19 @@ export function MobileAppMenu({ nomeOperacao, chamadosAbertos = 0 }: Props) {
             onClick={closeMenu}
             className="flex min-w-0 items-center gap-2.5"
           >
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#c4a574]/20 text-[#c4a574]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--shell-accent-soft)] text-[var(--shell-accent)]">
               <Layers className="h-4 w-4" />
             </div>
             <div className="min-w-0">
               <p
-                className="truncate text-[17px] leading-none text-[#f4efe6]"
+                className="truncate text-[17px] leading-none text-[var(--shell-text)]"
                 style={{
                   fontFamily: "var(--font-app-nav-display), Georgia, serif",
                 }}
               >
                 OperaRoute
               </p>
-              <p className="mt-1.5 truncate text-[11px] text-slate-500">
+              <p className="mt-1.5 truncate text-[11px] text-[var(--shell-text-muted)]">
                 {nomeOperacao?.trim() || "Sua operação"}
               </p>
             </div>

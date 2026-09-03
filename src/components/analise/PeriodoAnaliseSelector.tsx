@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,7 +30,6 @@ export function PeriodoAnaliseSelector({
   tema = "default",
 }: Props) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const opcoes = variante === "dashboard" ? periodoDashboardOpcoes : periodoAnaliseOpcoes;
   const [de, setDe] = useState(
     atual.preset === "personalizado" ? atual.inicio.toISOString().slice(0, 10) : ""
@@ -42,11 +41,7 @@ export function PeriodoAnaliseSelector({
 
   function navegar(preset: PeriodoAnalisePreset, customDe?: string, customAte?: string) {
     const qs = buildAnaliseSearchParams(preset, customDe, customAte);
-    const params = new URLSearchParams(qs);
-    const tema = searchParams.get("tema");
-    if (tema === "claro") params.set("tema", "claro");
-    const finalQs = params.toString();
-    router.push(finalQs ? `${basePath}?${finalQs}` : basePath);
+    router.push(`${basePath}?${qs}`);
   }
 
   function aplicarPersonalizado() {

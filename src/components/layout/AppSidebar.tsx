@@ -51,7 +51,7 @@ export function AppSidebar({
       className={cn(
         appNavDisplayFont.variable,
         appNavSansFont.variable,
-        "hidden lg:flex shrink-0 flex-col border-r border-white/[0.06] bg-[#0a0e16]/90 backdrop-blur-md transition-all duration-300",
+        "hidden lg:flex shrink-0 flex-col border-r app-shell-sidebar backdrop-blur-md transition-all duration-300",
         ready && collapsed ? "w-[68px]" : "w-[240px]"
       )}
       style={{ fontFamily: "var(--font-app-nav-sans), system-ui, sans-serif" }}
@@ -66,19 +66,19 @@ export function AppSidebar({
       >
         {!collapsed ? (
           <Link href="/dashboard" className="flex min-w-0 flex-1 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#c4a574]/20 text-[#c4a574]">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[var(--shell-accent-soft)] text-[var(--shell-accent)]">
               <Layers className="h-4 w-4" />
             </div>
             <div className="min-w-0">
               <p
-                className="truncate text-[17px] leading-none tracking-tight text-[#f4efe6]"
+                className="truncate text-[17px] leading-none tracking-tight text-[var(--shell-text)]"
                 style={{
                   fontFamily: "var(--font-app-nav-display), Georgia, serif",
                 }}
               >
                 OperaRoute
               </p>
-              <p className="mt-1.5 truncate text-[11px] text-slate-500">
+              <p className="mt-1.5 truncate text-[11px] text-[var(--shell-text-muted)]">
                 {nomeOperacao?.trim() || "Sua operação"}
               </p>
             </div>
@@ -86,7 +86,7 @@ export function AppSidebar({
         ) : (
           <Link
             href="/dashboard"
-            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#c4a574]/20 text-[#c4a574]"
+            className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--shell-accent-soft)] text-[var(--shell-accent)]"
             title={nomeOperacao ?? "OperaRoute"}
           >
             <Layers className="h-4 w-4" />
@@ -95,7 +95,7 @@ export function AppSidebar({
         <button
           type="button"
           onClick={toggleCollapsed}
-          className="rounded-lg p-1.5 text-slate-500 transition hover:bg-white/[0.05] hover:text-[#c4a574]"
+          className="rounded-lg p-1.5 text-[var(--shell-text-muted)] transition hover:bg-[var(--shell-hover)] hover:text-[var(--shell-accent)]"
           title={collapsed ? "Expandir menu" : "Minimizar menu"}
           aria-label={collapsed ? "Expandir menu" : "Minimizar menu"}
         >
@@ -112,14 +112,14 @@ export function AppSidebar({
       </nav>
 
       {!collapsed && (
-        <div className="border-t border-white/[0.06] px-4 py-4">
+        <div className="border-t border-[var(--shell-border)] px-4 py-4">
           {nomeUsuario && (
-            <p className="truncate text-[12px] text-slate-500">{nomeUsuario}</p>
+            <p className="truncate text-[12px] text-[var(--shell-text-muted)]">{nomeUsuario}</p>
           )}
           <form action="/auth/signout" method="post">
             <button
               type="submit"
-              className="mt-1.5 text-[12px] text-slate-500 transition hover:text-[#c4a574]"
+              className="mt-1.5 text-[12px] text-[var(--shell-text-muted)] transition hover:text-[var(--shell-accent)]"
             >
               Sair da conta
             </button>

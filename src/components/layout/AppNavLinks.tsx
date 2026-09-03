@@ -72,10 +72,10 @@ function NavLinkRow({
           "bg-orange-500/25 font-medium text-orange-200 ring-1 ring-orange-500/40",
         !temAlertas &&
           active &&
-          "bg-[#c4a574]/15 font-medium text-[#e8d5b0]",
+          "bg-[var(--shell-nav-active-bg)] font-medium text-[var(--shell-nav-active-text)]",
         !temAlertas &&
           !active &&
-          "text-slate-400 hover:bg-white/[0.04] hover:text-[#f4efe6]"
+          "text-[var(--shell-text-muted)] hover:bg-[var(--shell-hover)] hover:text-[var(--shell-text)]"
       )}
     >
       <span className="relative shrink-0">

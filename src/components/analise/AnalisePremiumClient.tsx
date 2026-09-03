@@ -14,11 +14,11 @@ import { CentroInteligencia } from "@/components/analise/CentroInteligencia";
 import { PeriodoAnaliseSelector } from "@/components/analise/PeriodoAnaliseSelector";
 import { SaudePontosPainel } from "@/components/analise/SaudePontosPainel";
 import { TermoHint } from "@/components/ui/TermoHint";
-import { AnaliseThemeToggle } from "@/components/analise/AnaliseThemeToggle";
+import { useAppTheme } from "@/components/layout/AppTheme";
 import {
   analisePageBackground,
+  appThemeToAnaliseVisual,
   periodoSelectorTema,
-  type AnaliseVisualTema,
 } from "@/lib/analise/analise-visual-theme";
 import type {
   InteligenciaOperacional,
@@ -77,7 +77,6 @@ type AnaliseTab = "resumo" | "pontos" | "cidades" | "maquinas" | "sinais" | "det
 type Props = {
   data: InteligenciaOperacional;
   periodo: PeriodoAnaliseRange;
-  visualTema?: AnaliseVisualTema;
   comissaoStaff?: {
     total: number;
     totalVales: number;
@@ -392,9 +391,10 @@ function MaquinaRankRow({
 export function AnalisePremiumClient({
   data,
   periodo,
-  visualTema = "escuro",
   comissaoStaff = null,
 }: Props) {
+  const { theme: appTheme } = useAppTheme();
+  const visualTema = appThemeToAnaliseVisual(appTheme);
   const [ativo, setAtivo] = useState(false);
   const [aba, setAba] = useState<AnaliseTab>("resumo");
   const modulosRef = useRef<HTMLElement | null>(null);
@@ -583,15 +583,12 @@ export function AnalisePremiumClient({
         >
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <p
-                  className="text-[12px] font-medium uppercase text-at-accent"
-                  style={{ letterSpacing: "0.38em" }}
-                >
-                  OperaRoute · Private desk
-                </p>
-                <AnaliseThemeToggle atual={visualTema} />
-              </div>
+              <p
+                className="text-[12px] font-medium uppercase text-at-accent"
+                style={{ letterSpacing: "0.38em" }}
+              >
+                OperaRoute · Private desk
+              </p>
               <h1
                 className="mt-3 text-[clamp(2.55rem,6.2vw,3.9rem)] leading-[0.95] tracking-tight text-at-primary"
                 style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
@@ -603,11 +600,6 @@ export function AnalisePremiumClient({
                 negativo pago com caixa) e o líquido do período, mesmo abaixo de
                 zero.
               </p>
-              {visualTema === "claro" && (
-                <p className="mt-2 text-[12px] text-at-soft">
-                  Protótipo de tema claro — compare e diga o que achou.
-                </p>
-              )}
             </div>
             <div className="lg:max-w-xl lg:flex-1">
               <PeriodoAnaliseSelector

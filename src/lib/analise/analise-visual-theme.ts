@@ -4,6 +4,10 @@ export function parseAnaliseVisualTema(raw?: string | null): AnaliseVisualTema {
   return raw === "claro" ? "claro" : "escuro";
 }
 
+export function appThemeToAnaliseVisual(theme: "dark" | "light"): AnaliseVisualTema {
+  return theme === "light" ? "claro" : "escuro";
+}
+
 export function analisePageBackground(tema: AnaliseVisualTema): string {
   if (tema === "claro") {
     return "linear-gradient(180deg, #faf8f4 0%, #f3efe6 48%, #ebe6dc 100%)";

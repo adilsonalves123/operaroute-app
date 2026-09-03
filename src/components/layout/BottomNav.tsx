@@ -16,7 +16,7 @@ export function BottomNav() {
   const visiveis = MOBILE_TAB_ITEMS.filter((item) => podeVer(item.modulo));
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/[0.06] bg-[#0a0e16]/95 backdrop-blur-xl pb-[env(safe-area-inset-bottom,0px)]">
+    <nav className="app-shell-bottom-nav lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex items-center justify-around px-1 py-2">
         {visiveis.map((item) => {
           const Icon = item.icon;
@@ -30,7 +30,7 @@ export function BottomNav() {
               onClick={() => closeMenu()}
               className={cn(
                 "flex min-w-[56px] flex-col items-center gap-1 rounded-lg px-2 py-1.5 transition",
-                active ? "text-[#c4a574]" : "text-slate-500"
+                active ? "text-[var(--shell-accent)]" : "text-[var(--shell-text-muted)]"
               )}
             >
               <Icon className="h-5 w-5" />
@@ -43,7 +43,7 @@ export function BottomNav() {
           onClick={() => (open ? closeMenu() : openMenu())}
           className={cn(
             "flex min-w-[56px] flex-col items-center gap-1 rounded-lg px-2 py-1.5 transition",
-            open ? "text-[#c4a574]" : "text-slate-500"
+            open ? "text-[var(--shell-accent)]" : "text-[var(--shell-text-muted)]"
           )}
           aria-expanded={open}
           aria-label="Abrir menu completo"
