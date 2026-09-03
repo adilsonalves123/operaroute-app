@@ -58,10 +58,10 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
 
   const chart = useMemo(() => {
     const w = 400;
-    const h = 168;
-    const padX = 20;
-    const padTop = 24;
-    const padBottom = 32;
+    const h = 112;
+    const padX = 14;
+    const padTop = 14;
+    const padBottom = 22;
     const plotH = h - padTop - padBottom;
 
     const max = Math.max(...values.map((v) => Math.abs(v)), 1);
@@ -106,28 +106,25 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
 
   return (
     <div className={cn("or7d-chart w-full select-none", className)}>
-      <div className="mb-3 flex items-end justify-between gap-3">
-        <div className="flex items-center gap-2">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
           <span
             className={cn(
-              "inline-flex h-2 w-2 rounded-full",
-              claro ? "bg-emerald-600 shadow-[0_0_8px_rgba(4,120,87,0.5)]" : "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.55)]"
+              "inline-flex h-1.5 w-1.5 rounded-full",
+              claro ? "bg-emerald-600 shadow-[0_0_6px_rgba(4,120,87,0.45)]" : "bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]"
             )}
             aria-hidden
           />
-          <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-at-muted">
+          <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-at-muted">
             Fluxo diário
           </span>
         </div>
-        <div className="text-right">
-          <p className="text-[10px] uppercase tracking-[0.12em] text-at-soft">Total 7d</p>
-          <p className="text-[14px] font-semibold tabular-nums text-at-link">{formatCurrency(total)}</p>
-        </div>
+        <p className="text-[12px] font-semibold tabular-nums text-at-link">{formatCurrency(total)}</p>
       </div>
 
       <div
         className={cn(
-          "relative overflow-hidden rounded-xl border",
+          "relative overflow-hidden rounded-lg border",
           claro
             ? "border-stone-200/90 bg-gradient-to-b from-white via-stone-50/80 to-stone-100/60"
             : "border-at-soft bg-gradient-to-b from-[rgba(8,12,20,0.6)] via-[rgba(6,10,18,0.85)] to-[rgba(4,8,14,0.95)]"
@@ -145,7 +142,7 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
 
         <svg
           viewBox={`0 0 ${chart.w} ${chart.h}`}
-          className="relative z-[1] block w-full"
+          className="relative z-[1] block h-[7rem] max-h-[7rem] w-full"
           role="img"
           aria-label="Gráfico dos últimos 7 dias"
           onMouseLeave={() => setHovered(null)}
@@ -207,7 +204,7 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
             d={chart.linePath}
             fill="none"
             stroke={`url(#${lineGrad})`}
-            strokeWidth={2.5}
+            strokeWidth={2}
             strokeLinecap="round"
             strokeLinejoin="round"
             filter={`url(#${glowFilter})`}
@@ -218,14 +215,14 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
             const isActive = p.i === active;
             const isPeak = p.i === chart.peakIndex;
             const isLast = p.i === chart.pts.length - 1;
-            const r = isActive ? 5 : isPeak ? 4 : isLast ? 3.5 : 2.5;
+            const r = isActive ? 4 : isPeak ? 3.2 : isLast ? 2.8 : 2;
 
             return (
               <g key={p.i}>
                 <circle
                   cx={p.x}
                   cy={p.y}
-                  r={isActive ? 12 : 0}
+                  r={isActive ? 9 : 0}
                   fill={claro ? "rgba(4,120,87,0.08)" : "rgba(52,211,153,0.1)"}
                   className="transition-all duration-200"
                 />
@@ -252,13 +249,13 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
           })}
 
           {activePt && (
-            <g className="or7d-tooltip" transform={`translate(${Math.min(Math.max(activePt.x, 56), chart.w - 56)}, ${Math.max(activePt.y - 14, 18)})`}>
+            <g className="or7d-tooltip" transform={`translate(${Math.min(Math.max(activePt.x, 48), chart.w - 48)}, ${Math.max(activePt.y - 10, 14)})`}>
               <rect
-                x={-52}
-                y={-22}
-                width={104}
-                height={36}
-                rx={8}
+                x={-44}
+                y={-18}
+                width={88}
+                height={30}
+                rx={6}
                 fill={claro ? "rgba(28,25,23,0.92)" : "rgba(10,14,22,0.92)"}
                 stroke={claro ? "rgba(146,102,42,0.45)" : "rgba(196,165,116,0.35)"}
                 strokeWidth={1}
@@ -268,16 +265,16 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
                 y={-8}
                 textAnchor="middle"
                 fill={claro ? "#faf8f4" : "#f4efe6"}
-                style={{ fontSize: 11, fontWeight: 600 }}
+                style={{ fontSize: 10, fontWeight: 600 }}
               >
                 {formatCurrency(activePt.v)}
               </text>
               <text
                 x={0}
-                y={6}
+                y={5}
                 textAnchor="middle"
                 fill={claro ? "#a8a29e" : "#94a3b8"}
-                style={{ fontSize: 9, textTransform: "capitalize" }}
+                style={{ fontSize: 8, textTransform: "capitalize" }}
               >
                 {labels[active]?.full ?? ""}
               </text>
@@ -288,11 +285,11 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
             <text
               key={`lbl-${i}`}
               x={p.x}
-              y={chart.h - 10}
+              y={chart.h - 8}
               textAnchor="middle"
               fill={i === active ? (claro ? "#78520a" : "#c4a574") : claro ? "#78716c" : "#64748b"}
               style={{
-                fontSize: 10,
+                fontSize: 9,
                 fontWeight: i === active ? 700 : 500,
                 letterSpacing: "0.06em",
               }}
@@ -350,7 +347,7 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
           0% { transform: translateY(0); opacity: 0; }
           8% { opacity: 0.7; }
           92% { opacity: 0.7; }
-          100% { transform: translateY(168px); opacity: 0; }
+          100% { transform: translateY(112px); opacity: 0; }
         }
       `}</style>
     </div>

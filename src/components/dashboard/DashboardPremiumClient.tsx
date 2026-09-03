@@ -434,11 +434,11 @@ export function DashboardPremiumClient({
           )}
 
           {data.sparkline.length > 1 && (
-            <div className="mt-8 rounded-2xl border border-at bg-at-card px-4 py-5 sm:px-5">
+            <div className="mt-6 rounded-2xl border border-at bg-at-card px-4 py-3.5 sm:px-4">
               <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-at-muted">
                 Últimos 7 dias
               </p>
-              <div className="mt-3">
+              <div className="mt-2">
                 <DashboardBarChart7d values={data.sparkline} tema={visualTema} />
               </div>
             </div>
