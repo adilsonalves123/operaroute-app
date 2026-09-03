@@ -27,7 +27,7 @@ export function ConfiguracoesContaCard({
         <ConfigDataRow label="E-mail" value={email || "—"} />
         {whatsapp ? <ConfigDataRow label="WhatsApp" value={whatsapp} /> : null}
       </ConfigDataGrid>
-      <p className="mt-4 text-[12px] text-slate-500 leading-relaxed border-t border-white/[0.06] pt-4">
+      <p className="mt-4 border-t border-at-soft pt-4 text-[12px] leading-relaxed text-at-muted">
         Alteração de e-mail ou senha via{" "}
         <Link href="/suporte" className={champagneLink}>
           suporte

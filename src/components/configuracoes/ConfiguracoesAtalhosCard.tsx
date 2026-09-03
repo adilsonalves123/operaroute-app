@@ -26,19 +26,19 @@ export function ConfiguracoesAtalhosCard({ embedded = false }: { embedded?: bool
           <Link
             key={item.href}
             href={item.href}
-            className="group flex items-start gap-3 bg-[#0a0e16]/80 p-5 transition hover:bg-[#c4a574]/[0.06]"
+            className="group flex items-start gap-3 bg-at-card-soft p-5 transition hover:bg-at-card-soft"
           >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#c4a574]/20 bg-[#c4a574]/8 text-[#c4a574] transition group-hover:border-[#c4a574]/40">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-at bg-at-card-soft text-at-link transition group-hover:border-[#c4a574]/40">
               <Icon className="h-5 w-5" />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1">
-                <p className="font-medium text-[#f4efe6] group-hover:text-[#e8d5b0] transition">
+                <p className="font-medium text-at-primary group-hover:text-at-link transition">
                   {item.title}
                 </p>
-                <ArrowUpRight className="h-3.5 w-3.5 text-slate-600 group-hover:text-[#c4a574] transition" />
+                <ArrowUpRight className="h-3.5 w-3.5 text-at-soft group-hover:text-[#c4a574] transition" />
               </div>
-              <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
+              <p className="mt-1 text-[12px] leading-relaxed text-at-muted">
                 {item.desc}
               </p>
             </div>

@@ -32,16 +32,16 @@ export function ConfiguracoesAssinaturaCard({
   const dias = diasRestantesTrial(trialFim);
 
   let statusLabel = "Sem período ativo";
-  let statusClass = "text-slate-400 border-white/10 bg-white/[0.03]";
+  let statusClass = "text-at-muted border-at bg-at-card-soft";
   if (pagamentoOk) {
     statusLabel = "Pagamento confirmado";
-    statusClass = "text-emerald-200 border-emerald-500/25 bg-emerald-500/10";
+    statusClass = "text-emerald-700 border-emerald-500/25 bg-emerald-500/10 dark:text-emerald-200";
   } else if (emTrial) {
     statusLabel = `${dias} dia${dias === 1 ? "" : "s"} de teste`;
-    statusClass = "text-[#e8d5b0] border-[#c4a574]/30 bg-[#c4a574]/10";
+    statusClass = "text-at-link border-[var(--at-tab-active-border)] bg-at-tab-active/15";
   } else if (expirado) {
     statusLabel = "Teste encerrado";
-    statusClass = "text-rose-200 border-rose-500/25 bg-rose-500/10";
+    statusClass = "text-rose-700 border-rose-500/25 bg-rose-500/10 dark:text-rose-200";
   }
 
   const inner = (
@@ -54,15 +54,15 @@ export function ConfiguracoesAssinaturaCard({
             {statusLabel}
           </span>
           {pagamentoOk && acesso.assinatura_vence_em ? (
-            <span className="text-[12px] text-slate-400">
+            <span className="text-[12px] text-at-muted">
               Vence em{" "}
               {new Date(acesso.assinatura_vence_em).toLocaleDateString("pt-BR")}
             </span>
           ) : null}
         </div>
         <div>
-          <p className="text-[15px] font-medium text-[#f4efe6]">{plano.nome}</p>
-          <p className="mt-1 text-[13px] text-slate-400">
+          <p className="text-[15px] font-medium text-at-primary">{plano.nome}</p>
+          <p className="mt-1 text-[13px] text-at-muted">
             {pagamentoOk
               ? "Sua operação está ativa com o plano contratado."
               : emTrial
@@ -73,7 +73,7 @@ export function ConfiguracoesAssinaturaCard({
       </div>
       <Link
         href="/planos"
-        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#c4a574]/25 bg-[#c4a574]/10 px-4 py-2.5 text-[13px] font-medium text-[#e8d5b0] transition hover:bg-[#c4a574]/15 ${champagneLink}`}
+        className={`inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-at bg-at-card-soft px-4 py-2.5 text-[13px] font-medium text-at-link transition hover:bg-at-tab-active/10 ${champagneLink}`}
       >
         <Sparkles className="h-4 w-4" />
         Ver planos

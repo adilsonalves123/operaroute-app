@@ -22,7 +22,6 @@ import {
 import { cn, formatCurrency } from "@/lib/utils";
 import { mensagemPulso } from "@/lib/dashboard-pulso";
 import { DashboardBarChart7d } from "@/components/dashboard/DashboardBarChart7d";
-import { DashboardMargemGauge } from "@/components/dashboard/DashboardMargemGauge";
 import { PesquisaUpgradeBanner } from "@/components/onboarding/PesquisaUpgradeBanner";
 import { TrialWelcomeGate } from "@/components/onboarding/TrialWelcomeGate";
 import { PushAtivarBanner } from "@/components/configuracoes/PushAtivarBanner";
@@ -89,37 +88,6 @@ function operacaoIniciais(nome: string): string {
   if (parts.length === 0) return "OR";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
-}
-
-function BankFlowCard({
-  label,
-  value,
-  hint,
-  icon: Icon,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-  icon: typeof ArrowDownRight;
-}) {
-  return (
-    <div className="rounded-2xl border border-at bg-at-card p-4">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-at bg-at-card-soft text-at-accent">
-          <Icon className="h-4 w-4" strokeWidth={2.25} />
-        </div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-at-muted">
-            {label}
-          </p>
-          <p className="mt-1 text-[1.35rem] font-medium tabular-nums leading-tight text-at-primary">
-            {value}
-          </p>
-          <p className="mt-1 text-[11px] leading-snug text-at-soft">{hint}</p>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 function RankCol({
@@ -387,30 +355,39 @@ export function DashboardPremiumClient({
             .
           </p>
 
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            <BankFlowCard
-              label="Entrada"
-              value={formatCurrency(data.entrada)}
-              hint="Máquinas faturaram"
-              icon={ArrowDownRight}
-            />
-            <BankFlowCard
-              label="Saída"
-              value={formatCurrency(data.saida)}
-              hint="Saiu das máquinas"
-              icon={ArrowUpRight}
-            />
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-end justify-between gap-6 border-t border-at-soft pt-5">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">Movimento</p>
-              <p className="mt-1 text-[1.35rem] font-medium tabular-nums text-at-primary">
-                {formatCurrency(data.liquidoMovimento)}
-              </p>
-              <p className="mt-0.5 text-[11px] text-at-soft">(entrada − saída)</p>
-            </div>
-            {data.margemPct != null && <DashboardMargemGauge pct={data.margemPct} />}
+          <div className="mt-6 grid max-w-2xl grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-at-grid sm:grid-cols-4">
+            {[
+              {
+                label: "Entrada",
+                value: formatCurrency(data.entrada),
+                hint: "Máquinas faturaram",
+              },
+              {
+                label: "Saída",
+                value: formatCurrency(data.saida),
+                hint: "Saiu das máquinas",
+              },
+              {
+                label: "Movimento",
+                value: formatCurrency(data.liquidoMovimento),
+                hint: "Entrada − saída",
+              },
+              {
+                label: "Margem",
+                value: data.margemPct != null ? `${data.margemPct.toFixed(1)}%` : "—",
+                hint: "Sobre a entrada",
+              },
+            ].map((cell) => (
+              <div key={cell.label} className="bg-at-card px-3 py-3.5 sm:px-4">
+                <p className="text-[11px] uppercase tracking-[0.16em] text-at-muted">
+                  {cell.label}
+                </p>
+                <p className="mt-1.5 text-[16px] font-medium tabular-nums text-at-primary">
+                  {cell.value}
+                </p>
+                <p className="mt-1 text-[11px] text-at-soft">{cell.hint}</p>
+              </div>
+            ))}
           </div>
 
           {data.comparativo && (

@@ -38,6 +38,7 @@ import {
   ConfigSectionNav,
   ConfigShell,
   ConfigStatsStrip,
+  champagneLink,
 } from "@/components/configuracoes/configuracoes-ui";
 
 type Props = {
@@ -234,13 +235,10 @@ export function ConfiguracoesClient(props: Props) {
           description="Comissão e abatimento são por ponto, não aqui."
           icon={ShieldAlert}
         >
-          <div className="p-5 sm:p-6 text-[13px] leading-relaxed text-slate-400">
+          <div className="p-5 sm:p-6 text-[13px] leading-relaxed text-at-muted">
             Abatimento de débito e comissão ficam no cadastro de cada cliente.
             Abra{" "}
-            <Link
-              href="/pontos"
-              className="text-[#c4a574] hover:text-[#e8d5b0] underline-offset-2 hover:underline"
-            >
+            <Link href="/pontos" className={champagneLink}>
               Pontos
             </Link>
             , escolha o estabelecimento e ajuste na aba do equipamento cassino.
@@ -257,7 +255,7 @@ export function ConfiguracoesClient(props: Props) {
           variant="danger"
         >
           <div className="p-5 sm:p-6 space-y-4">
-            <p className="text-[13px] text-slate-500 leading-relaxed">
+            <p className="text-[13px] leading-relaxed text-at-muted">
               Apaga coletas, visitas, pendências e movimentos do caixa. Pontos,
               máquinas, estoque e configurações permanecem intactos.
             </p>
