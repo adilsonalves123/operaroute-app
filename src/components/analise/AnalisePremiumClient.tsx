@@ -13,6 +13,7 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { CentroInteligencia } from "@/components/analise/CentroInteligencia";
 import { PeriodoAnaliseSelector } from "@/components/analise/PeriodoAnaliseSelector";
 import { SaudePontosPainel } from "@/components/analise/SaudePontosPainel";
+import { TermoHint } from "@/components/ui/TermoHint";
 import type {
   InteligenciaOperacional,
   RankingCidade,
@@ -64,6 +65,8 @@ const sans = Outfit({
 });
 
 const ACCENT = "#c4a574";
+
+type AnaliseTab = "resumo" | "pontos" | "cidades" | "maquinas" | "sinais" | "detalhe";
 
 type Props = {
   data: InteligenciaOperacional;
@@ -269,7 +272,11 @@ function RankCol({
           <Icon
             className={cn(
               "h-4 w-4",
-              variant === "best" ? "text-emerald-400/80" : "text-rose-400/80"
+              metric === "pago" && variant === "best"
+                ? "text-amber-400/85"
+                : variant === "best"
+                  ? "text-emerald-400/80"
+                  : "text-rose-400/80"
             )}
           />
           <h3 className="text-[14px] font-medium tracking-wide text-[#f4efe6]">{title}</h3>
@@ -377,6 +384,7 @@ function MaquinaRankRow({
 
 export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Props) {
   const [ativo, setAtivo] = useState(false);
+  const [aba, setAba] = useState<AnaliseTab>("resumo");
   const modulosRef = useRef<HTMLElement | null>(null);
   const v = data.visaoGeral;
   const liquido = v.liquidoOperacao ?? v.lucroLiquido;
@@ -513,6 +521,21 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
       data.nichos.consignado,
     ].filter(Boolean).length === 1;
 
+  const temMaquinas =
+    maquinas.maisMovimento.length > 0 || maquinas.maisPaga.length > 0;
+
+  const abas = useMemo(() => {
+    const list: { id: AnaliseTab; label: string }[] = [
+      { id: "resumo", label: "Resumo" },
+      { id: "pontos", label: "Pontos" },
+      { id: "cidades", label: "Cidades" },
+    ];
+    if (temMaquinas) list.push({ id: "maquinas", label: "Máquinas" });
+    if (data.insights.length > 0) list.push({ id: "sinais", label: "Sinais" });
+    list.push({ id: "detalhe", label: umNichoSo ? "Raio-X" : "Detalhe" });
+    return list;
+  }, [data.insights.length, temMaquinas, umNichoSo]);
+
   return (
     <div
       className={cn(
@@ -569,7 +592,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
               </p>
             </div>
             <div className="lg:max-w-xl lg:flex-1">
-              <PeriodoAnaliseSelector atual={periodo} />
+              <PeriodoAnaliseSelector atual={periodo} tema="premium" />
             </div>
           </div>
           <div
@@ -578,7 +601,31 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           />
         </header>
 
-        {/* Hero — funil */}
+        {/* Navegação por abas */}
+        <nav
+          className="sticky top-0 z-20 -mx-4 mt-6 border-b border-white/[0.06] bg-[#06080e]/92 px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6"
+          aria-label="Seções da análise"
+        >
+          <div className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {abas.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setAba(tab.id)}
+                className={cn(
+                  "shrink-0 rounded-full border px-4 py-1.5 text-[13px] font-medium transition",
+                  aba === tab.id
+                    ? "border-[#c4a574]/40 bg-[#c4a574]/15 text-[#c4a574]"
+                    : "border-white/[0.08] text-slate-400 hover:border-[#c4a574]/25 hover:text-[#f4efe6]"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {aba === "resumo" && (
         <section
           className="mt-10"
           style={{ animation: ativo ? "analiseRise 0.7s 0.12s ease-out both" : undefined }}
@@ -712,7 +759,11 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
             <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06]">
               {[
                 { label: "A receber", value: formatCurrency(v.aReceber) },
-                { label: "Haver", value: formatCurrency(v.haver) },
+                {
+                  label: "Haver",
+                  value: formatCurrency(v.haver),
+                  hint: true as const,
+                },
                 { label: "Capital estoque", value: formatCurrency(capitalTotal) },
                 {
                   label: "Pontos c/ movimento",
@@ -720,8 +771,11 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
                 },
               ].map((cell) => (
                 <div key={cell.label} className="bg-[#0a0e16]/95 px-4 py-3.5">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                  <p className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.16em] text-slate-500">
                     {cell.label}
+                    {"hint" in cell && cell.hint ? (
+                      <TermoHint texto="Crédito que você deve ao ponto — saldo positivo a favor do cliente." />
+                    ) : null}
                   </p>
                   <p className="mt-1.5 text-[16px] font-medium tabular-nums text-[#f4efe6]">
                     {cell.value}
@@ -731,10 +785,11 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
             </div>
           </div>
         </section>
+        )}
 
-        {/* Geografia */}
+        {aba === "cidades" && (
         <section
-          className="mt-14"
+          className="mt-10"
           style={{ animation: ativo ? "analiseRise 0.7s 0.2s ease-out both" : undefined }}
         >
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -775,10 +830,12 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
             </p>
           )}
         </section>
+        )}
 
-        {/* Ranking — movimento · % pago · bolso · máquinas */}
+        {aba === "pontos" && (
+        <>
         <section
-          className="mt-14"
+          className="mt-10"
           style={{ animation: ativo ? "analiseRise 0.7s 0.28s ease-out both" : undefined }}
         >
           <div className="mb-6">
@@ -894,10 +951,48 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           </div>
         </section>
 
-        {/* Máquinas — diagnóstico entrada × saída */}
-        {(maquinas.maisMovimento.length > 0 || maquinas.maisPaga.length > 0) && (
+        {/* Saúde — junto com pontos */}
+        <section
+          className="mt-14"
+          style={{ animation: ativo ? "analiseRise 0.7s 0.32s ease-out both" : undefined }}
+        >
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[12px] uppercase tracking-[0.22em] text-[#c4a574]/85">Base</p>
+              <h2
+                className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6] sm:text-[2rem]"
+                style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
+              >
+                Saúde dos pontos
+              </h2>
+              <p className="mt-1.5 text-[14px] text-slate-500">
+                Pelo lucro real no período — forte = top da frota, fraco = prejuízo ou cauda baixa.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4 text-[13px] tabular-nums text-slate-500">
+              <span>
+                Fortes <strong className="text-emerald-400/90">{fortes}</strong>
+              </span>
+              <span>
+                Razoáveis <strong className="text-amber-400/90">{razoaveis}</strong>
+              </span>
+              <span>
+                Fracos <strong className="text-rose-400/90">{fracos}</strong>
+              </span>
+            </div>
+          </div>
+          <SaudePontosPainel
+            itens={saude}
+            titulo="Classificação operacional"
+            subtitulo="Lucro real do período selecionado, comparado entre os pontos"
+          />
+        </section>
+        </>
+        )}
+
+        {aba === "maquinas" && temMaquinas && (
           <section
-            className="mt-14"
+            className="mt-10"
             style={{ animation: ativo ? "analiseRise 0.7s 0.3s ease-out both" : undefined }}
           >
             <div className="mb-6">
@@ -911,7 +1006,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
                 Quem puxa o ponto
               </h2>
               <p className="mt-1.5 text-[14px] text-slate-500">
-                Entrada × saída × % pago — para ver se alguma máquina paga acima do normal.
+                Entrada × saída × % pago — alerta quando alguma máquina paga acima do normal.
               </p>
             </div>
 
@@ -939,8 +1034,8 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
                   <h3 className="text-[14px] font-medium tracking-wide text-[#f4efe6]">
                     Mais paga
                   </h3>
-                  <p className="mt-1 text-[12px] text-slate-500">
-                    Maior % saída ÷ entrada (ex.: Papa-Léguas)
+                  <p className="mt-1 text-[12px] text-amber-400/80">
+                    Maior % saída ÷ entrada — atenção
                   </p>
                 </div>
                 {maquinas.maisPaga.length === 0 ? (
@@ -987,47 +1082,9 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           </section>
         )}
 
-        {/* Saúde */}
-        <section
-          className="mt-14"
-          style={{ animation: ativo ? "analiseRise 0.7s 0.32s ease-out both" : undefined }}
-        >
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-[12px] uppercase tracking-[0.22em] text-[#c4a574]/85">Base</p>
-              <h2
-                className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6] sm:text-[2rem]"
-                style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
-              >
-                Saúde dos pontos
-              </h2>
-              <p className="mt-1.5 text-[14px] text-slate-500">
-                Pelo lucro real no período — forte = top da frota, fraco = prejuízo ou cauda baixa.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-4 text-[13px] tabular-nums text-slate-500">
-              <span>
-                Fortes <strong className="text-emerald-400/90">{fortes}</strong>
-              </span>
-              <span>
-                Razoáveis <strong className="text-amber-400/90">{razoaveis}</strong>
-              </span>
-              <span>
-                Fracos <strong className="text-rose-400/90">{fracos}</strong>
-              </span>
-            </div>
-          </div>
-          <SaudePontosPainel
-            itens={saude}
-            titulo="Classificação operacional"
-            subtitulo="Lucro real do período selecionado, comparado entre os pontos"
-          />
-        </section>
-
-        {/* Sinais */}
-        {data.insights.length > 0 && (
+        {aba === "sinais" && data.insights.length > 0 && (
           <section
-            className="mt-14"
+            className="mt-10"
             style={{ animation: ativo ? "analiseRise 0.7s 0.34s ease-out both" : undefined }}
           >
             <p className="text-[12px] uppercase tracking-[0.22em] text-[#c4a574]/85">Sinais</p>
@@ -1061,11 +1118,11 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           </section>
         )}
 
-        {/* Deep-dive — conteúdo complementar (não repete ranking) */}
+        {aba === "detalhe" && (
         <section
           ref={modulosRef}
           id="detalhe-nicho"
-          className="mt-16 border-t border-white/[0.06] pt-10"
+          className="mt-10 border-t border-white/[0.06] pt-10"
         >
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -1087,6 +1144,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           </div>
           <CentroInteligencia data={data} mode="modulos" periodo={periodo} />
         </section>
+        )}
       </div>
     </div>
   );

@@ -17,12 +17,17 @@ type Props = {
   basePath?: string;
   /** Dashboard: Hoje / Semana / Mês. Análise: presets padrão. */
   variante?: "analise" | "dashboard";
+  /** Alinha pills com tema dourado das telas premium. */
+  tema?: "premium" | "default";
 };
+
+const ACCENT = "#c4a574";
 
 export function PeriodoAnaliseSelector({
   atual,
   basePath = "/analise",
   variante = "analise",
+  tema = "default",
 }: Props) {
   const router = useRouter();
   const opcoes = variante === "dashboard" ? periodoDashboardOpcoes : periodoAnaliseOpcoes;
@@ -60,8 +65,12 @@ export function PeriodoAnaliseSelector({
             className={cn(
               "rounded-full px-3.5 py-1.5 text-sm font-medium transition border",
               atual.preset === op.id
-                ? "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
-                : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
+                ? tema === "premium"
+                  ? "border-[#c4a574]/40 bg-[#c4a574]/15 text-[#c4a574]"
+                  : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
+                : tema === "premium"
+                  ? "border-white/[0.08] text-slate-400 hover:border-[#c4a574]/25 hover:text-[#f4efe6]"
+                  : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
             )}
           >
             {op.label}
@@ -73,8 +82,12 @@ export function PeriodoAnaliseSelector({
           className={cn(
             "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition border",
             atual.preset === "personalizado" || showCustom
-              ? "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
-              : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
+              ? tema === "premium"
+                ? "border-[#c4a574]/40 bg-[#c4a574]/15 text-[#c4a574]"
+                : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
+              : tema === "premium"
+                ? "border-white/[0.08] text-slate-400 hover:border-[#c4a574]/25 hover:text-[#f4efe6]"
+                : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
           )}
         >
           <Calendar className="h-3.5 w-3.5" />
@@ -113,7 +126,13 @@ export function PeriodoAnaliseSelector({
             type="button"
             onClick={aplicarPersonalizado}
             disabled={!de || (Boolean(ate) && de > ate)}
-            className="rounded-lg bg-primary-neon px-4 py-2 text-sm font-semibold text-slate-900 disabled:opacity-50"
+            className={cn(
+              "rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50",
+              tema === "premium"
+                ? "bg-[#c4a574] text-[#0a0e16]"
+                : "bg-primary-neon text-slate-900"
+            )}
+            style={tema === "premium" ? { backgroundColor: ACCENT } : undefined}
           >
             Aplicar
           </button>

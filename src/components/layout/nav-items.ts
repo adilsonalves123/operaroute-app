@@ -76,7 +76,7 @@ export const MOBILE_TAB_ITEMS: AppNavItem[] = [
   { href: "/dashboard", label: "Início", icon: Home, modulo: "dashboard" },
   { href: "/pontos", label: "Pontos", icon: MapPin, modulo: "pontos" },
   { href: "/coletas", label: "Coleta", icon: Package, modulo: "coletas" },
-  { href: "/financeiro", label: "Financeiro", icon: Wallet, modulo: "financeiro" },
+  { href: "/analise", label: "Análise", icon: LineChart, modulo: "analise" },
 ];
 
 export const SIDEBAR_COLLAPSED_KEY = "or_sidebar_collapsed";

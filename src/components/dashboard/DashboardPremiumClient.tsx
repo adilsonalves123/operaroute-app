@@ -26,6 +26,8 @@ import { PesquisaUpgradeBanner } from "@/components/onboarding/PesquisaUpgradeBa
 import { TrialWelcomeGate } from "@/components/onboarding/TrialWelcomeGate";
 import { PushAtivarBanner } from "@/components/configuracoes/PushAtivarBanner";
 import { PeriodoAnaliseSelector } from "@/components/analise/PeriodoAnaliseSelector";
+import { CollapsibleSection } from "@/components/ui/CollapsibleSection";
+import { TermoHint } from "@/components/ui/TermoHint";
 import type { PeriodoAnaliseRange } from "@/lib/analise/periodo-analise";
 import type { DashboardNichoId } from "@/lib/dashboard-nichos-ativos";
 import type {
@@ -157,6 +159,9 @@ export function DashboardPremiumClient({
   trialResumo?: TrialResumo | null;
 }) {
   const [ativo, setAtivo] = useState(false);
+  const [detalhesAberto, setDetalhesAberto] = useState(false);
+  const [performanceAberto, setPerformanceAberto] = useState(false);
+  const [ritmoAberto, setRitmoAberto] = useState(false);
   const [nichoAtivo, setNichoAtivo] = useState<DashboardNichoId | null>(
     data.nichos[0]?.id ?? null
   );
@@ -310,6 +315,7 @@ export function DashboardPremiumClient({
               atual={periodo}
               basePath="/dashboard"
               variante="dashboard"
+              tema="premium"
             />
           </div>
           <div
@@ -318,144 +324,35 @@ export function DashboardPremiumClient({
           />
         </header>
 
-        {/* Hero */}
+        {/* Hero — foco operacional */}
         <section
           className="mt-10"
           style={{ animation: ativo ? "dashRise 0.7s 0.1s ease-out both" : undefined }}
         >
-          <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
-                Lucro líquido · {data.periodLabel}
-              </p>
-              <p
-                className={cn(
-                  "mt-2 text-[clamp(2.6rem,6vw,3.8rem)] font-normal leading-none tracking-tight tabular-nums",
-                  moneyTone(data.liquidoOperacao)
-                )}
-                style={{ fontFamily: "var(--font-dash-display), Georgia, serif" }}
-              >
-                {formatCurrency(data.liquidoOperacao)}
-              </p>
-              <p className="mt-2 max-w-md text-[12px] leading-relaxed text-slate-500">
-                Resultado da operação no período (conta na coleta, mesmo sem pagamento).
-                O dinheiro que entrou de fato está em Análise.
-              </p>
-
-              <div className="mt-6 grid max-w-lg grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06]">
-                <div className="bg-[#0a0e16]/95 px-4 py-3.5">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
-                    Entrada
-                  </p>
-                  <p className="mt-1.5 text-[18px] font-medium tabular-nums text-emerald-400/90">
-                    {formatCurrency(data.entrada)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-slate-600">Máquinas faturaram</p>
-                </div>
-                <div className="bg-[#0a0e16]/95 px-4 py-3.5">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
-                    Saída
-                  </p>
-                  <p className="mt-1.5 text-[18px] font-medium tabular-nums text-rose-400/90">
-                    {formatCurrency(data.saida)}
-                  </p>
-                  <p className="mt-1 text-[11px] text-slate-600">Saiu das máquinas</p>
-                </div>
-              </div>
-
-              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-slate-400">
-                <span className="inline-flex items-center gap-1.5">
-                  {data.liquidoOperacao >= 0 ? (
-                    <ArrowUpRight className="h-3.5 w-3.5 text-emerald-400/80" />
-                  ) : (
-                    <ArrowDownRight className="h-3.5 w-3.5 text-rose-400/80" />
-                  )}
-                  Movimento{" "}
-                  <span className="tabular-nums text-[#f4efe6]">
-                    {formatCurrency(data.liquidoMovimento)}
-                  </span>
-                  <span className="text-slate-600">(entrada − saída)</span>
-                </span>
-                {data.margemPct != null && (
-                  <span>
-                    Margem{" "}
-                    <span className="tabular-nums text-[#f4efe6]">{data.margemPct.toFixed(1)}%</span>
-                  </span>
-                )}
-              </div>
-              {data.sparkline.length > 1 && (
-                <div className="mt-7 max-w-sm">
-                  <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[#c4a574]/70">
-                    Últimos 7 dias
-                  </p>
-                  <div className="rounded-sm border border-[#c4a574]/12 bg-gradient-to-b from-[#c4a574]/[0.06] to-transparent px-3 py-3">
-                    <DashboardSparkline values={data.sparkline} size="lg" />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06]">
-              <div className="bg-[#0a0e16]/95 px-4 py-3.5">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">A receber</p>
-                <p className="mt-1.5 text-[15px] font-medium tabular-nums text-[#f4efe6]">
-                  {formatCurrency(data.aReceber)}
-                </p>
-              </div>
-              <div className="bg-[#0a0e16]/95 px-4 py-3.5">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Haver</p>
-                <p className="mt-1.5 text-[15px] font-medium tabular-nums text-[#f4efe6]">
-                  {formatCurrency(data.haver)}
-                </p>
-              </div>
-              <div className="col-span-2 grid grid-cols-2 gap-px bg-white/[0.06] sm:grid-cols-4">
-                {data.kpis.slice(0, 4).map((kpi) => (
-                  <KpiCell key={kpi.label} kpi={kpi} />
-                ))}
-              </div>
-              {data.comissaoStaff && data.comissaoStaff.linhas.length > 0 && (
-                <div className="col-span-2 bg-violet-500/[0.08] px-4 py-3.5">
-                  <p className="text-[10px] uppercase tracking-[0.16em] text-violet-300/90">
-                    {data.comissaoStaff.propria && data.comissaoStaff.linhas.length === 1
-                      ? `Sua comissão (${data.comissaoStaff.linhas[0].percentual}%)`
-                      : data.comissaoStaff.linhas.length === 1
-                        ? `Comissão do ajudante (${data.comissaoStaff.linhas[0].percentual}%)`
-                        : "Comissão do ajudante"}
-                  </p>
-                  <p className="mt-1.5 text-[15px] font-medium tabular-nums text-violet-200">
-                    {formatCurrency(
-                      data.comissaoStaff.linhas.length === 1
-                        ? data.comissaoStaff.linhas[0].aPagar
-                        : data.comissaoStaff.totalAPagar
-                    )}
-                  </p>
-                  <p className="mt-1 text-[11px] text-slate-600">
-                    {(() => {
-                      const unica = data.comissaoStaff.linhas.length === 1
-                        ? data.comissaoStaff.linhas[0]
-                        : null;
-                      const ganho = unica ? unica.valor : data.comissaoStaff.total;
-                      const vales = unica ? unica.vales : data.comissaoStaff.totalVales;
-                      if (vales > 0.009) {
-                        return `Ganho ${formatCurrency(ganho)} · vales ${formatCurrency(vales)} · a pagar`;
-                      }
-                      return unica
-                        ? "A pagar · do que sobrou livre (coleta − ponto − brinde)"
-                        : data.comissaoStaff.linhas
-                            .map(
-                              (l) =>
-                                `${l.nome} a pagar ${formatCurrency(l.aPagar)}`
-                            )
-                            .join(" · ");
-                    })()}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
+            Seu lucro · {data.periodLabel}
+          </p>
+          <p
+            className={cn(
+              "mt-2 text-[clamp(2.8rem,7vw,4.2rem)] font-normal leading-none tracking-tight tabular-nums",
+              moneyTone(data.liquidoOperacao)
+            )}
+            style={{ fontFamily: "var(--font-dash-display), Georgia, serif" }}
+          >
+            {formatCurrency(data.liquidoOperacao)}
+          </p>
+          <p className="mt-2 max-w-lg text-[13px] leading-relaxed text-slate-400">
+            Resultado da operação no período — conta na coleta, mesmo sem pagamento.
+          </p>
+          <Link
+            href="/analise"
+            className="mt-2 inline-flex text-[13px] text-[#c4a574] transition hover:underline"
+          >
+            Dinheiro que entrou de fato → Análise
+          </Link>
 
           {data.comparativo && (
-            <p className="mt-5 text-[12px] text-slate-500">
+            <p className="mt-4 text-[13px] text-slate-500">
               vs mês anterior:{" "}
               <span
                 className={cn(
@@ -470,18 +367,75 @@ export function DashboardPremiumClient({
                   : formatCurrency(data.comparativo.lucroAtual - data.comparativo.lucroAnterior)}
               </span>
               {" · "}
-              {data.comparativo.coletasAtual} coletas este mês
-              {data.comparativo.coletasAnterior > 0
-                ? ` (${data.comparativo.coletasAnterior} no anterior)`
-                : ""}
+              {data.comparativo.coletasAtual} coletas
             </p>
           )}
+
+          {data.sparkline.length > 1 && (
+            <div className="mt-6 max-w-xs">
+              <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[#c4a574]/70">
+                Últimos 7 dias
+              </p>
+              <div className="rounded-sm border border-[#c4a574]/12 bg-gradient-to-b from-[#c4a574]/[0.06] to-transparent px-3 py-3">
+                <DashboardSparkline values={data.sparkline} size="lg" />
+              </div>
+            </div>
+          )}
+
+          {/* 3 alertas rápidos */}
+          <div className="mt-8 grid gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-3">
+            <Link
+              href="/coletas/pendentes"
+              className="bg-[#0a0e16]/95 px-4 py-4 transition hover:bg-white/[0.03]"
+            >
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">A receber</p>
+              <p
+                className={cn(
+                  "mt-1.5 text-[20px] font-medium tabular-nums",
+                  data.aReceber > 0.009 ? "text-amber-300/95" : "text-[#f4efe6]"
+                )}
+              >
+                {formatCurrency(data.aReceber)}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-600">Valores em aberto</p>
+            </Link>
+            <Link
+              href="/pontos"
+              className="bg-[#0a0e16]/95 px-4 py-4 transition hover:bg-white/[0.03]"
+            >
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Sem coleta</p>
+              <p
+                className={cn(
+                  "mt-1.5 text-[20px] font-medium tabular-nums",
+                  data.pontosSemColeta > 0 ? "text-amber-300/95" : "text-[#f4efe6]"
+                )}
+              >
+                {data.pontosSemColeta}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-600">Mais de 7 dias parados</p>
+            </Link>
+            <Link
+              href="/chamados"
+              className="bg-[#0a0e16]/95 px-4 py-4 transition hover:bg-white/[0.03]"
+            >
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Chamados</p>
+              <p
+                className={cn(
+                  "mt-1.5 text-[20px] font-medium tabular-nums",
+                  data.chamadosAbertos > 0 ? "text-rose-400/95" : "text-[#f4efe6]"
+                )}
+              >
+                {data.chamadosAbertos}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-600">Manutenção aberta</p>
+            </Link>
+          </div>
         </section>
 
-        {/* Briefing */}
+        {/* Briefing — prioridade máxima */}
         {briefing.length > 0 && (
           <section
-            className="mt-12"
+            className="mt-10"
             style={{ animation: ativo ? "dashRise 0.7s 0.18s ease-out both" : undefined }}
           >
             <p className="text-[11px] uppercase tracking-[0.22em] text-[#c4a574]/85">Agora</p>
@@ -489,7 +443,7 @@ export function DashboardPremiumClient({
               className="mt-1.5 text-2xl tracking-tight text-[#f4efe6]"
               style={{ fontFamily: "var(--font-dash-display), Georgia, serif" }}
             >
-              O que precisa de você
+              Precisa de você
             </h2>
             <div className="mt-5 grid gap-2 sm:grid-cols-2">
               {briefing.map((b) => (
@@ -519,6 +473,95 @@ export function DashboardPremiumClient({
             </div>
           </section>
         )}
+
+        {/* Detalhes financeiros — colapsável */}
+        <CollapsibleSection
+          label="Financeiro"
+          title="Detalhes do período"
+          subtitle="Entrada, saída, movimento e indicadores extras"
+          aberto={detalhesAberto}
+          onToggle={() => setDetalhesAberto((v) => !v)}
+        >
+          <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+            <div>
+              <div className="grid max-w-lg grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06]">
+                <div className="bg-[#0a0e16]/95 px-4 py-3.5">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Entrada</p>
+                  <p className="mt-1.5 text-[18px] font-medium tabular-nums text-emerald-400/90">
+                    {formatCurrency(data.entrada)}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-600">Máquinas faturaram</p>
+                </div>
+                <div className="bg-[#0a0e16]/95 px-4 py-3.5">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Saída</p>
+                  <p className="mt-1.5 text-[18px] font-medium tabular-nums text-rose-400/90">
+                    {formatCurrency(data.saida)}
+                  </p>
+                  <p className="mt-1 text-[11px] text-slate-600">Saiu das máquinas</p>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-slate-400">
+                <span className="inline-flex items-center gap-1.5">
+                  {data.liquidoOperacao >= 0 ? (
+                    <ArrowUpRight className="h-3.5 w-3.5 text-emerald-400/80" />
+                  ) : (
+                    <ArrowDownRight className="h-3.5 w-3.5 text-rose-400/80" />
+                  )}
+                  Movimento{" "}
+                  <span className="tabular-nums text-[#f4efe6]">
+                    {formatCurrency(data.liquidoMovimento)}
+                  </span>
+                </span>
+                {data.margemPct != null && (
+                  <span>
+                    Margem{" "}
+                    <span className="tabular-nums text-[#f4efe6]">{data.margemPct.toFixed(1)}%</span>
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06]">
+              <div className="bg-[#0a0e16]/95 px-4 py-3.5">
+                <p className="inline-flex items-center gap-1 text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                  Haver
+                  <TermoHint texto="Crédito que você deve ao ponto — saldo positivo a favor do cliente." />
+                </p>
+                <p className="mt-1.5 text-[15px] font-medium tabular-nums text-[#f4efe6]">
+                  {formatCurrency(data.haver)}
+                </p>
+              </div>
+              <div className="bg-[#0a0e16]/95 px-4 py-3.5">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">A receber</p>
+                <p className="mt-1.5 text-[15px] font-medium tabular-nums text-[#f4efe6]">
+                  {formatCurrency(data.aReceber)}
+                </p>
+              </div>
+              <div className="col-span-2 grid grid-cols-2 gap-px bg-white/[0.06] sm:grid-cols-4">
+                {data.kpis.slice(0, 4).map((kpi) => (
+                  <KpiCell key={kpi.label} kpi={kpi} />
+                ))}
+              </div>
+              {data.comissaoStaff && data.comissaoStaff.linhas.length > 0 && (
+                <div className="col-span-2 bg-violet-500/[0.08] px-4 py-3.5">
+                  <p className="text-[10px] uppercase tracking-[0.16em] text-violet-300/90">
+                    {data.comissaoStaff.propria && data.comissaoStaff.linhas.length === 1
+                      ? `Sua comissão (${data.comissaoStaff.linhas[0].percentual}%)`
+                      : data.comissaoStaff.linhas.length === 1
+                        ? `Comissão do ajudante (${data.comissaoStaff.linhas[0].percentual}%)`
+                        : "Comissão do ajudante"}
+                  </p>
+                  <p className="mt-1.5 text-[15px] font-medium tabular-nums text-violet-200">
+                    {formatCurrency(
+                      data.comissaoStaff.linhas.length === 1
+                        ? data.comissaoStaff.linhas[0].aPagar
+                        : data.comissaoStaff.totalAPagar
+                    )}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </CollapsibleSection>
 
         {/* Nichos (multi) */}
         {data.isMulti && data.nichos.length > 0 && (
@@ -634,22 +677,46 @@ export function DashboardPremiumClient({
           </section>
         )}
 
-        {/* Triage */}
-        <section
-          className="mt-14"
-          style={{ animation: ativo ? "dashRise 0.7s 0.3s ease-out both" : undefined }}
+        {/* Performance — colapsável */}
+        <CollapsibleSection
+          label="Performance"
+          title="Quem puxa · quem sangra"
+          subtitle={`Fortes ${data.saude.contagem.forte} · Fracos ${data.saude.contagem.fraco} · Melhor: ${data.melhores[0]?.nome ?? "—"}`}
+          aberto={performanceAberto}
+          onToggle={() => setPerformanceAberto((v) => !v)}
         >
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-[11px] uppercase tracking-[0.22em] text-[#c4a574]/85">
-                Performance
-              </p>
-              <h2
-                className="mt-1.5 text-2xl tracking-tight text-[#f4efe6]"
-                style={{ fontFamily: "var(--font-dash-display), Georgia, serif" }}
-              >
-                Quem puxa · quem sangra
-              </h2>
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap gap-3 text-[12px]">
+              <span className="border border-white/[0.06] px-3 py-1.5 text-slate-400">
+                Fortes{" "}
+                <strong className="tabular-nums text-emerald-400/90">
+                  {data.saude.contagem.forte}
+                </strong>
+                <TermoHint
+                  className="ml-1"
+                  texto="Pontos no top do lucro no período — acima da mediana da frota."
+                />
+              </span>
+              <span className="border border-white/[0.06] px-3 py-1.5 text-slate-400">
+                Razoáveis{" "}
+                <strong className="tabular-nums text-[#f4efe6]">
+                  {data.saude.contagem.razoavel}
+                </strong>
+              </span>
+              <span className="border border-white/[0.06] px-3 py-1.5 text-slate-400">
+                Fracos{" "}
+                <strong className="tabular-nums text-rose-400/90">
+                  {data.saude.contagem.fraco}
+                </strong>
+              </span>
+              {data.saude.contagem.semDados > 0 && (
+                <span className="border border-white/[0.06] px-3 py-1.5 text-slate-500">
+                  Sem leitura{" "}
+                  <strong className="tabular-nums text-slate-400">
+                    {data.saude.contagem.semDados}
+                  </strong>
+                </span>
+              )}
             </div>
             <Link
               href="/analise"
@@ -658,36 +725,6 @@ export function DashboardPremiumClient({
               Análise completa →
             </Link>
           </div>
-
-          <div className="mb-5 flex flex-wrap gap-3 text-[12px]">
-            <span className="border border-white/[0.06] px-3 py-1.5 text-slate-400">
-              Fortes{" "}
-              <strong className="tabular-nums text-emerald-400/90">
-                {data.saude.contagem.forte}
-              </strong>
-            </span>
-            <span className="border border-white/[0.06] px-3 py-1.5 text-slate-400">
-              Razoáveis{" "}
-              <strong className="tabular-nums text-[#f4efe6]">
-                {data.saude.contagem.razoavel}
-              </strong>
-            </span>
-            <span className="border border-white/[0.06] px-3 py-1.5 text-slate-400">
-              Fracos{" "}
-              <strong className="tabular-nums text-rose-400/90">
-                {data.saude.contagem.fraco}
-              </strong>
-            </span>
-            {data.saude.contagem.semDados > 0 && (
-              <span className="border border-white/[0.06] px-3 py-1.5 text-slate-500">
-                Sem leitura{" "}
-                <strong className="tabular-nums text-slate-400">
-                  {data.saude.contagem.semDados}
-                </strong>
-              </span>
-            )}
-          </div>
-
           <div className="grid gap-6 lg:grid-cols-2">
             <RankCol title="Melhores" icon={TrendingUp} items={data.melhores} variant="best" />
             <RankCol
@@ -697,69 +734,77 @@ export function DashboardPremiumClient({
               variant="worst"
             />
           </div>
-        </section>
+        </CollapsibleSection>
 
-        {/* Ritmo */}
-        <section
-          className="mt-14 grid gap-6 lg:grid-cols-2"
-          style={{ animation: ativo ? "dashRise 0.7s 0.36s ease-out both" : undefined }}
+        {/* Ritmo — colapsável */}
+        <CollapsibleSection
+          label="Ritmo"
+          title="Pulso e cartela"
+          subtitle="Impulsos vs pressões e movimento da base de pontos"
+          aberto={ritmoAberto}
+          onToggle={() => setRitmoAberto((v) => !v)}
         >
-          <div className="border border-white/[0.06] bg-white/[0.015] px-5 py-5">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Pulso</p>
-            <p className="mt-2 text-[13px] leading-relaxed text-slate-400">
-              {mensagemPulso(data.pulso)}
-            </p>
-            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-              {(
-                [
-                  ["Semana", data.pulso.semana],
-                  ["Mês", data.pulso.mes],
-                  ["Sem. ant.", data.pulso.semanaAnterior],
-                ] as const
-              ).map(([label, bloco]) => (
-                <div key={label}>
-                  <p className="text-[10px] uppercase tracking-wider text-slate-600">{label}</p>
-                  <p
-                    className={cn(
-                      "mt-1 text-lg font-medium tabular-nums",
-                      bloco.indice == null
-                        ? "text-slate-600"
-                        : bloco.indice >= 65
-                          ? "text-emerald-400/90"
-                          : bloco.indice >= 45
-                            ? "text-amber-300/90"
-                            : "text-rose-400/90"
-                    )}
-                  >
-                    {bloco.indice != null ? `${bloco.indice.toFixed(0)}%` : "—"}
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="border border-white/[0.06] bg-white/[0.015] px-5 py-5">
+              <p className="inline-flex items-center gap-1.5 text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                Pulso
+                <TermoHint texto="Índice de impulsos (coletas positivas) vs pressões (negativos) no período." />
+              </p>
+              <p className="mt-2 text-[13px] leading-relaxed text-slate-400">
+                {mensagemPulso(data.pulso)}
+              </p>
+              <div className="mt-4 grid grid-cols-3 gap-3 text-center">
+                {(
+                  [
+                    ["Semana", data.pulso.semana],
+                    ["Mês", data.pulso.mes],
+                    ["Sem. ant.", data.pulso.semanaAnterior],
+                  ] as const
+                ).map(([label, bloco]) => (
+                  <div key={label}>
+                    <p className="text-[10px] uppercase tracking-wider text-slate-600">{label}</p>
+                    <p
+                      className={cn(
+                        "mt-1 text-lg font-medium tabular-nums",
+                        bloco.indice == null
+                          ? "text-slate-600"
+                          : bloco.indice >= 65
+                            ? "text-emerald-400/90"
+                            : bloco.indice >= 45
+                              ? "text-amber-300/90"
+                              : "text-rose-400/90"
+                      )}
+                    >
+                      {bloco.indice != null ? `${bloco.indice.toFixed(0)}%` : "—"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border border-white/[0.06] bg-white/[0.015] px-5 py-5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Base</p>
+              <p className="mt-2 text-[13px] text-slate-400">Cartela de pontos no mês</p>
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-600">Captados</p>
+                  <p className="mt-1 text-2xl tabular-nums text-[#f4efe6]">
+                    {data.cartela.mes.captados.length}
                   </p>
                 </div>
-              ))}
+                <div>
+                  <p className="text-[10px] uppercase tracking-wider text-slate-600">Encerrados</p>
+                  <p className="mt-1 text-2xl tabular-nums text-[#f4efe6]">
+                    {data.cartela.mes.encerrados.length}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-3 text-[12px] tabular-nums text-slate-500">
+                Base ativa: {data.cartela.ativosAgora}
+              </p>
             </div>
           </div>
-
-          <div className="border border-white/[0.06] bg-white/[0.015] px-5 py-5">
-            <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Base</p>
-            <p className="mt-2 text-[13px] text-slate-400">Cartela de pontos no mês</p>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-slate-600">Captados</p>
-                <p className="mt-1 text-2xl tabular-nums text-[#f4efe6]">
-                  {data.cartela.mes.captados.length}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-wider text-slate-600">Encerrados</p>
-                <p className="mt-1 text-2xl tabular-nums text-[#f4efe6]">
-                  {data.cartela.mes.encerrados.length}
-                </p>
-              </div>
-            </div>
-            <p className="mt-3 text-[12px] tabular-nums text-slate-500">
-              Base ativa: {data.cartela.ativosAgora}
-            </p>
-          </div>
-        </section>
+        </CollapsibleSection>
 
         {/* Actions */}
         <section
