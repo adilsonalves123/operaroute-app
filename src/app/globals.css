@@ -1191,6 +1191,7 @@ html[data-app-theme="light"] .analise-premium-root {
 .analise-tab-idle:hover {
   border-color: var(--at-tab-active-border);
   color: var(--at-primary);
+  background-color: var(--at-card-soft);
 }
 
 /* Resumo — campo de data (display centralizado + input invisível por cima) */

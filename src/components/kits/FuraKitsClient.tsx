@@ -558,7 +558,7 @@ export function FuraKitsClient({
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href="/estoque"
-          className="inline-flex items-center gap-1 text-sm text-at-muted hover:text-primary-neon"
+          className="inline-flex items-center gap-1 text-sm text-at-muted transition hover:text-at-link"
         >
           <ArrowLeft className="h-4 w-4" />
           Estoque central
@@ -567,10 +567,13 @@ export function FuraKitsClient({
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300/70">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-at-link/90">
             Fura-fura
           </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h1
+            className="mt-1 text-3xl font-bold tracking-tight text-at-primary sm:text-4xl"
+            style={{ fontFamily: "Georgia, serif" }}
+          >
             Kits
           </h1>
           <p className="mt-2 text-sm leading-relaxed text-at-muted">
@@ -583,7 +586,7 @@ export function FuraKitsClient({
           <button
             type="button"
             onClick={() => openNovoForm()}
-            className="inline-flex items-center gap-2 rounded-full bg-primary-neon px-5 py-2.5 text-sm font-semibold text-slate-900 shadow-[0_0_28px_rgba(0,212,255,0.25)]"
+            className="inline-flex items-center gap-2 rounded-sm border border-at bg-at-tab-active px-5 py-2.5 text-sm font-semibold text-[var(--at-tab-active-text)] transition hover:brightness-110"
           >
             <Plus className="h-4 w-4" />
             Novo kit

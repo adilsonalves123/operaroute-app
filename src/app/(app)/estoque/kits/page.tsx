@@ -1,7 +1,7 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { FuraKitsClient } from "@/components/kits/FuraKitsClient";
+import { EstoqueNavTabs } from "@/components/estoque/EstoqueNavTabs";
 
 export default async function KitsEstoquePage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient()]);
@@ -51,20 +51,7 @@ export default async function KitsEstoquePage() {
 
   return (
     <div className="w-full space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <Link
-          href="/estoque"
-          className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-at-primary/85 hover:bg-slate-800"
-        >
-          Estoque central
-        </Link>
-        <Link
-          href="/estoque/alocados"
-          className="rounded-lg border border-cyan-500/30 px-3 py-2 text-xs font-medium text-cyan-300 hover:bg-cyan-500/10"
-        >
-          Nos clientes
-        </Link>
-      </div>
+      <EstoqueNavTabs active="kits" />
       <Suspense fallback={<p className="text-sm text-at-muted">Carregando kits...</p>}>
         <FuraKitsClient kits={enriched} estoque={estoque ?? []} />
       </Suspense>

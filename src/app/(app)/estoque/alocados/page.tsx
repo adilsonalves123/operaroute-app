@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { Boxes } from "lucide-react";
 import { createClient, getProfile } from "@/lib/supabase/server";
 import {
@@ -6,6 +5,7 @@ import {
   type MaquinaAlocada,
   type PontoFuraAlocado,
 } from "@/components/estoque/EstoqueAlocadosClient";
+import { EstoqueNavTabs } from "@/components/estoque/EstoqueNavTabs";
 import { normalizarEstoqueBrindesPonto } from "@/lib/estoque/brindes-ponto";
 
 function temBrindes(estoque: unknown): boolean {
@@ -19,7 +19,7 @@ export default async function EstoqueAlocadosPage() {
   if (!empresaId) {
     return (
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-white">Estoque nos clientes</h1>
+        <h1 className="text-2xl font-bold text-at-primary">Estoque nos clientes</h1>
         <p className="text-at-muted">Empresa não encontrada.</p>
       </div>
     );
@@ -121,32 +121,18 @@ export default async function EstoqueAlocadosPage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="flex items-start gap-3">
-          <div className="rounded-lg bg-cyan-500/15 p-2">
-            <Boxes className="h-5 w-5 text-cyan-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Estoque nos clientes</h1>
-            <p className="mt-1 text-sm text-at-muted">
-              O que ainda está alocado em cada ponto — por nicho. No Fura Fura, veja o % do kit
-              restante e quem tem potencial de troca.
-            </p>
-          </div>
+      <EstoqueNavTabs active="alocados" />
+
+      <div className="flex items-start gap-3">
+        <div className="rounded-lg border border-at bg-at-card-soft p-2">
+          <Boxes className="h-5 w-5 text-at-link" />
         </div>
-        <div className="flex flex-wrap gap-2 shrink-0">
-          <Link
-            href="/estoque"
-            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-at-primary/85 hover:bg-slate-800"
-          >
-            Estoque central
-          </Link>
-          <Link
-            href="/estoque/kits"
-            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-at-primary/85 hover:bg-slate-800"
-          >
-            Kits
-          </Link>
+        <div>
+          <h1 className="text-2xl font-bold text-at-primary">Estoque nos clientes</h1>
+          <p className="mt-1 text-sm text-at-muted">
+            O que ainda está alocado em cada ponto — por nicho. No Fura Fura, veja o % do kit
+            restante e quem tem potencial de troca.
+          </p>
         </div>
       </div>
 

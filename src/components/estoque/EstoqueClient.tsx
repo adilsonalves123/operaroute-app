@@ -1066,13 +1066,13 @@ export function EstoqueClient({
           <div className="mt-6 flex flex-wrap gap-2">
             <Link
               href="/estoque/alocados"
-              className="rounded-sm border border-cyan-500/25 px-3 py-1.5 text-[13px] text-cyan-300/90 transition hover:bg-cyan-500/10"
+              className="rounded-sm border px-3 py-1.5 text-[13px] transition analise-tab-idle"
             >
               Nos clientes
             </Link>
             <Link
               href="/estoque/kits"
-              className="rounded-sm border border-at-soft px-3 py-1.5 text-[13px] text-at-muted transition hover:border-at-soft hover:text-at-primary"
+              className="rounded-sm border px-3 py-1.5 text-[13px] transition analise-tab-idle"
             >
               Kits
             </Link>
