@@ -110,8 +110,8 @@ export function CancelarAssinaturaCard({
       </p>
 
       {emTrial && !pagamentoOk && (
-        <p className="mt-3 text-[13px] text-at-muted rounded-lg border border-at bg-black/20 px-3 py-2.5">
-          No teste grátis, basta <strong className="text-at-muted">não assinar</strong> —
+        <p className="mt-3 rounded-lg border border-at bg-at-card-soft px-3 py-2.5 text-[13px] text-at-muted">
+          No teste grátis, basta <strong className="text-at-primary">não assinar</strong> —
           nenhuma cobrança será feita.
         </p>
       )}

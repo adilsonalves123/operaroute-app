@@ -160,12 +160,12 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
           <form
             onSubmit={handleSubmit}
             onClick={(e) => e.stopPropagation()}
-            className="glass-card flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden rounded-none border-0 shadow-xl sm:h-auto sm:max-h-[90vh] sm:rounded-xl sm:border sm:border-cyan-500/20"
+            className="glass-card flex h-[100dvh] w-full max-w-2xl flex-col overflow-hidden rounded-none border-0 shadow-xl sm:h-auto sm:max-h-[90vh] sm:rounded-xl sm:border sm:border-at"
           >
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-4 pt-[max(1.25rem,env(safe-area-inset-top,0px))]">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-semibold text-white">Novo equipamento no estoque</h2>
+                  <h2 className="font-semibold text-at-primary">Novo equipamento no estoque</h2>
                   <p className="mt-0.5 text-xs text-at-muted">
                     Só máquinas e expositores. Produtos e itens ficam em Estoque / Produtos consignados.
                   </p>
@@ -174,7 +174,7 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
                   type="button"
                   onClick={fechar}
                   disabled={loading}
-                  className="rounded-lg p-1.5 text-at-muted hover:bg-slate-800"
+                  className="rounded-lg p-1.5 text-at-muted hover:bg-at-card-soft hover:text-at-primary"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -279,15 +279,15 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
                 />
               </div>
 
-              {error && <p className="mt-4 text-sm text-rose-400">{error}</p>}
+              {error && <p className="mt-4 text-sm text-at-money-neg">{error}</p>}
             </div>
 
-            <div className="sticky bottom-0 border-t border-slate-800 bg-slate-950/95 px-5 pb-[max(1rem,calc(env(safe-area-inset-bottom,0px)+0.9rem))] pt-4">
+            <div className="sticky bottom-0 border-t border-at bg-at-card px-5 pb-[max(1rem,calc(env(safe-area-inset-bottom,0px)+0.9rem))] pt-4">
               <div className="flex gap-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="rounded-lg bg-primary-neon px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-60"
+                className="rounded-lg border border-[#c4a574]/40 bg-[#c4a574] px-4 py-2 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584] disabled:opacity-60"
               >
                 {loading ? "Salvando..." : "Salvar no estoque"}
               </button>
@@ -295,7 +295,7 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
                 type="button"
                 onClick={fechar}
                 disabled={loading}
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800"
+                className="rounded-lg border border-at px-4 py-2 text-sm text-at-primary hover:bg-at-card-soft"
               >
                 Cancelar
               </button>

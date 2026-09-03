@@ -142,7 +142,7 @@ export function RelatoriosClient({
           <img
             src={r.foto_url}
             alt={`Relatório ${r.pontos?.nome ?? ""}`}
-            className="w-full h-40 object-cover bg-slate-900"
+            className="w-full h-40 object-cover bg-at-card-soft"
           />
           <div className="p-4 space-y-2">
             <p className="font-medium text-white text-sm">{r.pontos?.nome ?? "Ponto"}</p>
@@ -152,7 +152,7 @@ export function RelatoriosClient({
                 type="button"
                 disabled={compartilhandoId === r.id}
                 onClick={() => void compartilhar(r)}
-                className="inline-flex items-center gap-1.5 rounded-md border border-cyan-500/40 bg-cyan-500/15 px-2.5 py-1 text-xs font-medium text-cyan-200 hover:bg-cyan-500/25 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 rounded-md border border-at bg-at-card-soft px-2.5 py-1 text-xs font-medium text-at-link hover:bg-at-card disabled:opacity-50"
                 title="Compartilhar comprovante"
               >
                 {compartilhandoId === r.id ? (

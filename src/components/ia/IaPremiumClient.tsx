@@ -149,7 +149,7 @@ export function IaPremiumClient() {
           style={{ animation: ativo ? "iaRise 0.85s 0.15s ease-out both" : undefined }}
         >
           <div
-            className="rounded-2xl border border-at-soft bg-[#0c1018]/92 p-2 sm:p-2.5"
+            className="rounded-2xl border border-at-soft bg-at-card p-2 sm:p-2.5"
             style={{
               boxShadow:
                 "0 0 0 1px rgba(196,165,116,0.06), 0 24px 80px -32px rgba(0,0,0,0.85)",
@@ -201,14 +201,14 @@ export function IaPremiumClient() {
             <p className="mb-4 text-center text-[11px] uppercase tracking-[0.28em] text-at-muted">
               Comece por aqui
             </p>
-            <ul className="divide-y divide-white/[0.05] border-y border-white/[0.05]">
+            <ul className="divide-y divide-[var(--at-border-soft)] border-y border-at">
               {PROMPTS.map((p, i) => (
                 <li key={p.id}>
                   <button
                     type="button"
                     disabled={loading}
                     onClick={() => void perguntar(p.q)}
-                    className="group flex w-full items-baseline gap-4 py-3.5 text-left transition hover:bg-white/[0.02] disabled:opacity-50 sm:gap-6"
+                    className="group flex w-full items-baseline gap-4 px-4 py-3.5 text-left transition hover:bg-at-card-soft disabled:opacity-50 sm:gap-6 sm:px-6"
                     style={{
                       animation: ativo
                         ? `iaRise 0.6s ${0.32 + i * 0.04}s ease-out both`

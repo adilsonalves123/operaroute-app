@@ -1484,7 +1484,7 @@ export function NovaColetaCassinoForm() {
                 }
                 empty={
                   !calculo || !relatorioData ? (
-                    <p className="rounded-xl border border-dashed border-slate-700/80 bg-slate-950/40 px-3.5 py-5 text-center text-sm text-at-muted">
+                    <p className="rounded-xl border border-dashed border-at bg-at-card-soft px-3.5 py-5 text-center text-sm text-at-muted">
                       Preencha as leituras das máquinas para ver o resultado.
                     </p>
                   ) : undefined

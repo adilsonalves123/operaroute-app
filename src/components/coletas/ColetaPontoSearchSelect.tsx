@@ -83,7 +83,7 @@ export function ColetaPontoSearchSelect({
         </label>
       )}
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-at-muted" />
+        <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-at-muted" />
         <input
           ref={inputRef}
           id="coleta-ponto-busca"
@@ -102,18 +102,17 @@ export function ColetaPontoSearchSelect({
             if (value) onChange("");
           }}
           className={cn(
-            "w-full rounded-lg border border-slate-700 bg-slate-900 py-2.5 text-sm text-white placeholder:text-at-muted",
+            "w-full rounded-lg border border-at bg-at-card py-2.5 text-sm text-at-primary placeholder:text-at-muted",
             error && "border-red-500",
             inputClassName,
-            // pl/pr depois do inputClassName — evita px-3 sobrescrever e misturar ícone com o texto
-            "!pl-10 !pr-10"
+            "!pl-11 !pr-10"
           )}
         />
         {(query || value) && (
           <button
             type="button"
             onClick={limpar}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-at-muted hover:bg-slate-800 hover:text-white"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-at-muted hover:bg-at-card-soft hover:text-at-primary"
             aria-label="Limpar ponto"
           >
             <X className="h-4 w-4" />
@@ -123,7 +122,7 @@ export function ColetaPontoSearchSelect({
 
       {open && (
         <ul
-          className="absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-950 py-1 shadow-xl"
+          className="absolute z-40 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-at bg-at-card py-1 shadow-lg"
           role="listbox"
         >
           {filtrados.length === 0 ? (
@@ -138,8 +137,8 @@ export function ColetaPontoSearchSelect({
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => escolher(opt)}
                   className={cn(
-                    "flex w-full px-3 py-2.5 text-left text-sm text-at-primary/90 hover:bg-slate-800",
-                    opt.value === value && "bg-slate-800/80 text-white"
+                    "flex w-full px-4 py-2.5 text-left text-sm text-at-primary hover:bg-at-card-soft",
+                    opt.value === value && "bg-at-card-soft font-medium"
                   )}
                 >
                   {opt.label}

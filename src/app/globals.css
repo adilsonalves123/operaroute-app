@@ -139,6 +139,69 @@ html[data-app-theme="light"] .glass-card {
   box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
 }
 
+/* Badges — legíveis no tema claro (sem neon) */
+html[data-app-theme="light"] .alert-badge-success {
+  background: rgba(4, 120, 87, 0.08);
+  color: #047857;
+  border-color: rgba(4, 120, 87, 0.22);
+}
+
+html[data-app-theme="light"] .alert-badge-danger {
+  background: rgba(190, 18, 60, 0.08);
+  color: #be123c;
+  border-color: rgba(190, 18, 60, 0.2);
+}
+
+html[data-app-theme="light"] .alert-badge-warning {
+  background: rgba(146, 102, 42, 0.1);
+  color: #78520a;
+  border-color: rgba(146, 102, 42, 0.22);
+}
+
+html[data-app-theme="light"] .alert-badge-info,
+html[data-app-theme="light"] .alert-badge-purple {
+  background: rgba(28, 25, 23, 0.05);
+  color: #57534e;
+  border-color: rgba(28, 25, 23, 0.12);
+}
+
+/* Status de ponto — sem verde neon */
+.badge-ponto-ativo {
+  color: rgba(52, 211, 153, 0.9);
+  border-color: rgba(52, 211, 153, 0.25);
+  background: rgba(52, 211, 153, 0.06);
+}
+
+html[data-app-theme="light"] .badge-ponto-ativo {
+  color: #047857;
+  border-color: rgba(4, 120, 87, 0.22);
+  background: rgba(4, 120, 87, 0.08);
+}
+
+.badge-ponto-pausado {
+  color: rgba(251, 191, 36, 0.9);
+  border-color: rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.06);
+}
+
+html[data-app-theme="light"] .badge-ponto-pausado {
+  color: #78520a;
+  border-color: rgba(146, 102, 42, 0.22);
+  background: rgba(146, 102, 42, 0.08);
+}
+
+.badge-ponto-inadimplente {
+  color: rgba(251, 113, 133, 0.9);
+  border-color: rgba(251, 113, 133, 0.25);
+  background: rgba(251, 113, 133, 0.06);
+}
+
+html[data-app-theme="light"] .badge-ponto-inadimplente {
+  color: #be123c;
+  border-color: rgba(190, 18, 60, 0.2);
+  background: rgba(190, 18, 60, 0.08);
+}
+
 .bank-card {
   background: rgba(12, 16, 24, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.07);

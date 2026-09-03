@@ -11,6 +11,8 @@ import {
   Play,
   Filter,
 } from "lucide-react";
+import { useAppTheme } from "@/components/layout/AppTheme";
+import { analisePageBackground } from "@/lib/analise/analise-visual-theme";
 import type { OperadorRotaOpcao, RotaSalva } from "@/lib/rotas/rotas-salvas";
 import { progressoRota, statusRotaLabel } from "@/lib/rotas/rotas-salvas";
 import { cn, formatDate } from "@/lib/utils";
@@ -37,6 +39,8 @@ export function RotasBoard({
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>("todas");
   const [filtroOperador, setFiltroOperador] = useState("");
   const [excluindoId, setExcluindoId] = useState<string | null>(null);
+  const { theme } = useAppTheme();
+  const isLight = theme === "light";
 
   const filtradas = useMemo(() => {
     return rotas.filter((r) => {
@@ -67,37 +71,43 @@ export function RotasBoard({
 
   return (
     <div className="space-y-6">
-      <header className="relative overflow-hidden rounded-2xl border border-at-soft px-5 py-8 sm:px-8">
+      <header className="relative overflow-hidden rounded-2xl border border-[#c4a574]/25 bg-at-card px-5 py-8 sm:px-8">
         <div
-          className="pointer-events-none absolute inset-0"
+          className="pointer-events-none absolute inset-0 opacity-90"
           style={{
-            background:
-              "radial-gradient(ellipse 90% 80% at 10% 20%, rgba(0,212,255,0.14), transparent 50%), radial-gradient(ellipse 70% 60% at 90% 80%, rgba(34,197,94,0.08), transparent 45%), linear-gradient(160deg, #0a1220 0%, #0c1528 55%, #0a0e1a 100%)",
+            background: isLight
+              ? "radial-gradient(ellipse 85% 65% at 8% 0%, rgba(196,165,116,0.12), transparent 55%), linear-gradient(165deg, #faf8f4 0%, #f5f0e6 100%)"
+              : analisePageBackground("escuro"),
           }}
         />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30h60M30 0v60' stroke='%2300d4ff' stroke-width='0.5' fill='none'/%3E%3C/svg%3E\")",
-          }}
-        />
+        {!isLight && (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30h60M30 0v60' stroke='%2300d4ff' stroke-width='0.5' fill='none'/%3E%3C/svg%3E\")",
+            }}
+          />
+        )}
         <div className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-lg">
-            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-cyan-400/90">
+            <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-at-link/90">
               Campo · OperaRoute
             </p>
-            <h1 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-white">
+            <h1
+              className="mt-2 text-3xl font-semibold tracking-tight text-at-primary sm:text-4xl"
+              style={{ fontFamily: "Georgia, serif" }}
+            >
               Rotas
             </h1>
-            <p className="mt-2 text-sm text-at-muted leading-relaxed">
+            <p className="mt-2 text-sm leading-relaxed text-at-muted">
               Monte por cidade, atribua ao ajudante e acompanhe o que falta no campo.
             </p>
           </div>
           <button
             type="button"
             onClick={onNovaRota}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary-neon px-5 py-3 text-sm font-semibold text-slate-900 shadow-[0_0_40px_-8px_rgba(0,212,255,0.55)] hover:bg-cyan-300"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] transition hover:bg-[#d4b584]"
           >
             <Plus className="h-4 w-4" />
             Nova rota do dia
@@ -122,8 +132,8 @@ export function RotasBoard({
               className={cn(
                 "rounded-lg px-3 py-1.5 text-xs font-medium border transition",
                 filtroStatus === f.id
-                  ? "border-primary-neon/50 bg-primary-neon/10 text-primary-neon"
-                  : "border-slate-700/80 text-at-muted hover:border-slate-600"
+                  ? "analise-tab-active"
+                  : "analise-tab-idle border"
               )}
             >
               {f.label}
@@ -137,7 +147,7 @@ export function RotasBoard({
           <select
             value={filtroOperador}
             onChange={(e) => setFiltroOperador(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs text-at-primary/85"
+            className="rounded-lg border border-at bg-at-card px-3 py-1.5 text-xs text-at-primary"
           >
             <option value="">Todos os responsáveis</option>
             {operadores.map((o) => (
@@ -150,7 +160,7 @@ export function RotasBoard({
       </div>
 
       {filtradas.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-slate-700/80 bg-slate-900/20 px-6 py-14 text-center">
+        <div className="rounded-2xl border border-dashed border-at bg-at-card-soft px-6 py-14 text-center">
           <MapPin className="mx-auto h-10 w-10 text-at-soft mb-3" />
           <p className="text-base font-medium text-at-primary/85">
             {rotas.length === 0 ? "Nenhuma rota ainda" : "Nada neste filtro"}
@@ -164,7 +174,7 @@ export function RotasBoard({
             <button
               type="button"
               onClick={onNovaRota}
-              className="mt-5 inline-flex items-center gap-2 rounded-xl bg-primary-neon px-5 py-2.5 text-sm font-semibold text-slate-900"
+              className="mt-5 inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574] px-5 py-2.5 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
             >
               <Plus className="h-4 w-4" />
               Criar primeira rota
@@ -178,27 +188,27 @@ export function RotasBoard({
             return (
               <li
                 key={rota.id}
-                className="group rounded-xl border border-at bg-slate-900/35 px-4 py-4 sm:px-5 transition hover:border-cyan-500/25 hover:bg-slate-900/55"
+                className="group rounded-xl border border-at bg-at-card px-4 py-4 transition hover:border-[#c4a574]/30 sm:px-5"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 flex-1 space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
-                      <h3 className="font-semibold text-white tracking-tight truncate">
+                      <h3 className="truncate font-semibold tracking-tight text-at-primary">
                         {rota.nome}
                       </h3>
                       {rota.status !== "concluida" && prog.pendentes > 0 && (
-                        <span className="rounded-md bg-amber-600 px-2 py-0.5 text-[11px] font-bold tabular-nums text-white">
+                        <span className="rounded-md border border-[#c4a574]/30 bg-[#c4a574]/10 px-2 py-0.5 text-[11px] font-bold tabular-nums text-at-link">
                           Faltam {prog.pendentes}
                         </span>
                       )}
                       <span
                         className={cn(
-                          "rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+                          "rounded-md border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
                           rota.status === "concluida"
-                            ? "bg-green-500/15 text-green-400"
+                            ? "badge-ponto-ativo"
                             : rota.status === "em_andamento"
-                              ? "bg-cyan-500/15 text-cyan-300"
-                              : "bg-slate-500/15 text-at-muted"
+                              ? "badge-ponto-pausado"
+                              : "border border-at bg-at-card-soft text-at-muted"
                         )}
                       >
                         {statusRotaLabel(rota.status)}
@@ -206,8 +216,8 @@ export function RotasBoard({
                     </div>
                     <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-at-muted">
                       {rota.cidade && (
-                        <span className="inline-flex items-center gap-1 text-cyan-400/80">
-                          <MapPin className="h-3 w-3" />
+                        <span className="inline-flex items-center gap-1.5 text-at-muted">
+                          <MapPin className="h-3 w-3 shrink-0 text-at-link" />
                           {rota.cidade}
                         </span>
                       )}
@@ -220,11 +230,11 @@ export function RotasBoard({
                         {rota.operador_nome ?? "Sem responsável"}
                       </span>
                     </div>
-                    <div className="h-1.5 max-w-xs rounded-full bg-slate-800 overflow-hidden">
+                    <div className="h-1.5 max-w-xs overflow-hidden rounded-full bg-at-track">
                       <div
                         className={cn(
                           "h-full rounded-full transition-all",
-                          rota.status === "concluida" ? "bg-green-500" : "bg-primary-neon"
+                          rota.status === "concluida" ? "bg-[#047857]" : "bg-[#c4a574]"
                         )}
                         style={{ width: `${prog.percentual}%` }}
                       />
@@ -235,7 +245,7 @@ export function RotasBoard({
                     <button
                       type="button"
                       onClick={() => onAbrir(rota)}
-                      className="inline-flex items-center gap-1.5 rounded-lg bg-primary-neon/90 px-3 py-2 text-xs font-semibold text-slate-900 hover:bg-cyan-300"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-[#c4a574]/40 bg-[#c4a574] px-3 py-2 text-xs font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
                     >
                       <Play className="h-3.5 w-3.5" />
                       {rota.status === "em_andamento"
@@ -247,7 +257,7 @@ export function RotasBoard({
                     <button
                       type="button"
                       onClick={() => onEnviar(rota)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-2 text-xs font-medium text-at-primary/85 hover:bg-slate-800"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-at px-3 py-2 text-xs font-medium text-at-primary hover:bg-at-card-soft"
                     >
                       <Send className="h-3.5 w-3.5" />
                       Atribuir

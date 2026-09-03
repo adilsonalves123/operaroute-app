@@ -17,16 +17,21 @@ export function EmptyState({
   icon,
 }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800/50 text-at-muted">
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-at bg-at-card-soft text-at-muted">
         {icon ?? <Inbox className="h-8 w-8" />}
       </div>
-      <h3 className="text-lg font-semibold text-white">{title}</h3>
+      <h3
+        className="text-lg font-medium text-at-primary"
+        style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+      >
+        {title}
+      </h3>
       <p className="mt-2 max-w-sm text-sm text-at-muted">{description}</p>
       {actionLabel && actionHref && (
         <Link
           href={actionHref}
-          className="mt-6 rounded-lg bg-primary-neon px-6 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-cyan-300"
+          className="mt-6 inline-flex items-center rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/10 px-6 py-2.5 text-sm font-medium text-at-link transition hover:bg-[#c4a574]/20"
         >
           {actionLabel}
         </Link>

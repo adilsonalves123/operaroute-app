@@ -9,19 +9,23 @@ interface AlertBadgeProps {
 }
 
 const variants: Record<BadgeVariant, string> = {
-  success: "bg-green-500/15 text-green-400 border-green-500/30",
-  danger: "bg-red-500/15 text-red-400 border-red-500/30",
-  warning: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  info: "bg-blue-500/15 text-blue-400 border-blue-500/30",
-  purple: "bg-purple-500/15 text-purple-400 border-purple-500/30",
-  default: "bg-slate-500/15 text-at-muted border-slate-500/30",
+  success:
+    "alert-badge-success border bg-emerald-950/20 text-emerald-300/95 border-emerald-500/25",
+  danger:
+    "alert-badge-danger border bg-rose-950/20 text-rose-300/95 border-rose-500/25",
+  warning:
+    "alert-badge-warning border bg-amber-950/15 text-amber-200/95 border-amber-500/25",
+  info: "alert-badge-info border bg-stone-900/20 text-stone-300/95 border-stone-500/25",
+  purple:
+    "alert-badge-purple border bg-stone-900/20 text-stone-300/95 border-stone-500/25",
+  default: "border border-at bg-at-card-soft text-at-muted",
 };
 
 export function AlertBadge({ children, variant = "default", className }: AlertBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center rounded-sm px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.08em]",
         variants[variant],
         className
       )}

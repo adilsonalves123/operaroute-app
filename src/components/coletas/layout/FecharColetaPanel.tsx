@@ -66,12 +66,12 @@ export function FecharColetaPanel({
     <aside className={cn("xl:sticky xl:top-20", className)}>
       <div
         className={cn(
-          "flex flex-col gap-0 overflow-hidden rounded-2xl border bg-[#0c1018]/95 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm",
+          "flex flex-col gap-0 overflow-hidden rounded-2xl border bg-at-card shadow-sm",
           borderAccent
         )}
       >
         <div className="border-b border-at px-4 py-3.5 sm:px-5">
-          <h2 className="text-base font-semibold tracking-tight text-white">{title}</h2>
+          <h2 className="text-base font-semibold tracking-tight text-at-primary">{title}</h2>
           <p className="mt-0.5 text-xs leading-snug text-at-muted">{subtitle}</p>
         </div>
 
@@ -82,7 +82,7 @@ export function FecharColetaPanel({
           {previa && <div className="space-y-2">{previa}</div>}
 
           {observacao && (
-            <details className="group rounded-xl border border-at bg-white/[0.02]">
+            <details className="group rounded-xl border border-at bg-at-card-soft">
               <summary className="cursor-pointer list-none px-3.5 py-3 text-sm text-at-muted marker:content-none [&::-webkit-details-marker]:hidden">
                 <span className="flex items-center justify-between gap-2">
                   <span>Observação (opcional)</span>
@@ -102,13 +102,13 @@ export function FecharColetaPanel({
           )}
 
           {error && (
-            <p className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">
+            <p className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-at-money-neg">
               {error}
             </p>
           )}
         </div>
 
-        <div className="space-y-3 border-t border-at bg-black/20 px-4 py-3.5 sm:px-5">
+        <div className="space-y-3 border-t border-at bg-at-card-soft px-4 py-3.5 sm:px-5">
           {depoisDaColeta}
           <button
             type="button"

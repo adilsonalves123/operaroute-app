@@ -66,13 +66,13 @@ const emptyForm = (): FormState => ({
 function roleBadgeClass(role: UserRole) {
   switch (role) {
     case "admin":
-      return "bg-purple-500/20 text-purple-300 border-purple-500/30";
+      return "border border-at bg-at-card-soft text-at-primary";
     case "gerente":
-      return "bg-cyan-500/20 text-cyan-300 border-cyan-500/30";
+      return "border border-[#c4a574]/30 bg-[#c4a574]/08 text-at-link";
     case "operador":
-      return "bg-amber-500/20 text-amber-300 border-amber-500/30";
+      return "border border-at bg-at-card-soft text-at-muted";
     default:
-      return "bg-slate-500/20 text-at-primary/85 border-slate-500/30";
+      return "border border-at bg-at-card-soft text-at-muted";
   }
 }
 
@@ -466,7 +466,7 @@ export function EquipeClient({
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-at-muted">
-          <Users className="h-4 w-4 text-primary-neon shrink-0" />
+          <Users className="h-4 w-4 shrink-0 text-at-link" />
           <span>
             {colaboradoresAtivos} de {limiteColaboradores} colaboradores
           </span>
@@ -819,7 +819,7 @@ export function EquipeClient({
               <div className="space-y-1.5 text-sm text-at-muted">
                 {membro.whatsapp && (
                   <p className="flex items-center gap-2 truncate">
-                    <MessageCircle className="h-3.5 w-3.5 shrink-0 text-green-400" />
+                    <MessageCircle className="h-3.5 w-3.5 shrink-0 text-at-muted" />
                     {membro.whatsapp}
                   </p>
                 )}
@@ -838,7 +838,7 @@ export function EquipeClient({
                   <p className="text-xs text-at-muted">Inativo</p>
                 )}
                 {membro.user_id ? (
-                  <p className="text-xs text-green-400/90 flex items-center gap-1">
+                  <p className="text-xs text-at-money-pos flex items-center gap-1">
                     <LogIn className="h-3 w-3" />
                     Login ativo
                   </p>

@@ -2,16 +2,16 @@ import { cn } from "@/lib/utils";
 
 export function coletaInputClass(hasError = false) {
   return cn(
-    "w-full rounded-lg border bg-slate-950/70 px-3 py-2.5 text-sm text-white outline-none transition",
+    "w-full rounded-lg border bg-at-card px-3 py-2.5 text-sm text-at-primary outline-none transition placeholder:text-at-muted",
     hasError
       ? "border-red-500 focus:border-red-500"
-      : "border-slate-700 focus:border-[#c4a574]/70"
+      : "border-at focus:border-[#c4a574]/50"
   );
 }
 
 export function coletaFieldClass() {
   return cn(
-    "w-full rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2 text-sm text-white outline-none transition",
-    "focus:border-[#c4a574]/60"
+    "w-full rounded-lg border border-at bg-at-card px-3 py-2 text-sm text-at-primary outline-none transition placeholder:text-at-muted",
+    "focus:border-[#c4a574]/50"
   );
 }

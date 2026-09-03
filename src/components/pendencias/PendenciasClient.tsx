@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AlertBadge } from "@/components/ui/AlertBadge";
-import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
+import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput, cn } from "@/lib/utils";
 import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
 import { whatsAppUrl } from "@/lib/nichos/cassino/relatorio";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
@@ -409,7 +409,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
               <>
                 {" "}
                 · total{" "}
-                <span className="font-medium text-amber-300">{formatCurrency(totalAberto)}</span>
+                <span className="font-medium text-at-link">{formatCurrency(totalAberto)}</span>
               </>
             ) : null}
           </p>
@@ -431,11 +431,10 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                 setFiltroTipo(f.id);
                 setExpandedId(null);
               }}
-              className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                filtroTipo === f.id
-                  ? "bg-primary-neon text-slate-900"
-                  : "border border-at bg-at-card-soft text-at-muted hover:border-[var(--at-tab-active-border)] hover:text-at-primary"
-              }`}
+              className={cn(
+                "rounded-sm px-3 py-1 text-xs font-medium transition",
+                filtroTipo === f.id ? "analise-tab-active" : "analise-tab-idle border"
+              )}
             >
               {f.label}
               {f.id !== "todos" ? (
@@ -447,11 +446,12 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
             <button
               type="button"
               onClick={() => setMostrarFiltrosExtras((v) => !v)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+              className={cn(
+                "rounded-sm border px-3 py-1 text-xs font-medium transition",
                 mostrarFiltrosExtras || filtroAtivoEhExtra
-                  ? "border-slate-600 bg-slate-800 text-at-primary/90"
-                  : "border-slate-700/80 text-at-muted hover:border-slate-600 hover:text-at-primary/85"
-              }`}
+                  ? "analise-tab-active"
+                  : "analise-tab-idle"
+              )}
             >
               Outros tipos
               {!mostrarFiltrosExtras && !filtroAtivoEhExtra ? (
@@ -462,7 +462,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
         </div>
 
         {(mostrarFiltrosExtras || filtroAtivoEhExtra) && filtrosExtras.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 border-t border-white/[0.05] pt-3">
+          <div className="flex flex-wrap gap-1.5 border-t border-at pt-3">
             {filtrosExtras.map((f) => (
               <button
                 key={f.id}
@@ -471,11 +471,10 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                   setFiltroTipo(f.id);
                   setExpandedId(null);
                 }}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                  filtroTipo === f.id
-                    ? "bg-primary-neon text-slate-900"
-                    : "bg-slate-900 text-at-muted hover:bg-slate-800 hover:text-at-primary/85"
-                }`}
+                className={cn(
+                  "rounded-sm px-3 py-1 text-xs font-medium transition",
+                  filtroTipo === f.id ? "analise-tab-active" : "analise-tab-idle border"
+                )}
               >
                 {f.label}
                 <span className="ml-1 opacity-60">(0)</span>
@@ -555,13 +554,14 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <p
-                      className={`text-base font-semibold tabular-nums ${
+                      className={cn(
+                        "text-base font-semibold tabular-nums",
                         p.tipo === "haver"
                           ? /pagou ganhadores/i.test(`${p.titulo ?? ""} ${p.descricao ?? ""}`)
-                            ? "text-violet-400"
-                            : "text-cyan-400"
-                          : "text-amber-300"
-                      }`}
+                            ? "text-at-muted"
+                            : "text-at-money-pos"
+                          : "text-at-primary"
+                      )}
                     >
                       {p.tipo === "haver" ? "+" : ""}
                       {formatCurrency(valorAtual)}
@@ -575,7 +575,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-slate-800 px-4 pb-4 pt-3 space-y-4">
+                  <div className="border-t border-at px-4 pb-4 pt-3 space-y-4">
                     {(isFura && p.coleta_id) || (isVisita && p.visita_ponto_id) ? (
                       <div className="flex flex-wrap gap-2">
                         {isFura && p.coleta_id ? (
