@@ -6,40 +6,37 @@ import { cn } from "@/lib/utils";
 const display = Instrument_Serif({
   weight: "400",
   subsets: ["latin"],
-  variable: "--font-coleta-display",
+  variable: "--font-ponto-display",
 });
 
 const sans = Outfit({
   subsets: ["latin"],
-  variable: "--font-coleta-sans",
+  variable: "--font-ponto-sans",
 });
 
-export function ColetaNovaPageShell({
+export function PontoFormPageShell({
   title,
   subtitle,
+  backHref = "/pontos",
   children,
   className,
-  backHref = "/coletas",
-  topSlot,
 }: {
   title: string;
   subtitle: string;
+  backHref?: string;
   children: React.ReactNode;
   className?: string;
-  backHref?: string;
-  topSlot?: React.ReactNode;
 }) {
   return (
     <div
       className={cn(
         display.variable,
         sans.variable,
-        "mx-auto max-w-6xl space-y-5 pb-8",
+        "mx-auto max-w-2xl space-y-6 pb-8",
         className
       )}
-      style={{ fontFamily: "var(--font-coleta-sans), system-ui, sans-serif" }}
+      style={{ fontFamily: "var(--font-ponto-sans), system-ui, sans-serif" }}
     >
-      {topSlot}
       <div className="flex items-start gap-3 sm:items-center sm:gap-4">
         <Link
           href={backHref}
@@ -49,12 +46,12 @@ export function ColetaNovaPageShell({
         </Link>
         <div className="min-w-0">
           <h1
-            className="text-2xl tracking-tight text-[#f4efe6] sm:text-[1.75rem]"
-            style={{ fontFamily: "var(--font-coleta-display), Georgia, serif" }}
+            className="text-2xl tracking-tight text-[#f4efe6]"
+            style={{ fontFamily: "var(--font-ponto-display), Georgia, serif" }}
           >
             {title}
           </h1>
-          <p className="mt-0.5 text-sm leading-snug text-slate-500">{subtitle}</p>
+          <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>
         </div>
       </div>
       {children}

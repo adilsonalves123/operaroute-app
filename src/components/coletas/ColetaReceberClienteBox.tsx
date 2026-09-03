@@ -32,15 +32,15 @@ export function ColetaReceberClienteBox({
   return (
     <div
       className={cn(
-        "rounded-lg border border-primary-neon/35 bg-primary-neon/8 px-4 py-4 space-y-3",
+        "rounded-2xl border border-[#c4a574]/30 bg-[#0c1018]/90 px-4 py-4 space-y-3",
         className
       )}
     >
       <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-primary-neon/90">
+        <p className="text-xs font-medium uppercase tracking-wide text-[#c4a574]/90">
           Receber do cliente
         </p>
-        <p className="text-3xl font-bold tabular-nums text-primary-neon mt-1">
+        <p className="text-3xl font-bold tabular-nums text-emerald-400/95 mt-1">
           {formatCurrency(totalACobrar)}
         </p>
         <p className="text-xs text-slate-400 mt-1">
@@ -53,7 +53,7 @@ export function ColetaReceberClienteBox({
       </div>
 
       {temItens && (
-        <div className="border-t border-primary-neon/20 pt-3 space-y-1.5 text-sm">
+        <div className="border-t border-white/[0.06] pt-3 space-y-1.5 text-sm">
           <div className="flex justify-between gap-4">
             <span className="text-slate-400">Valor da operação</span>
             <span className="font-medium tabular-nums text-slate-200">

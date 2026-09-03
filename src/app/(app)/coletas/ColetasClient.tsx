@@ -26,7 +26,7 @@ function accentForColeta(coleta: ColetaWithPonto, pendente: boolean): string {
   if (pendente) return "bg-amber-400";
   if (coleta.nicho_modulo === NICHO_MODULO_URSINHO) return "bg-pink-400";
   if (coleta.nicho_modulo === NICHO_MODULO_BOLINHA) return "bg-orange-400";
-  return "bg-cyan-400";
+  return "bg-emerald-400/80";
 }
 
 export function ColetasClient({
@@ -49,7 +49,7 @@ export function ColetasClient({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-b from-white/[0.035] to-white/[0.01]">
+    <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0c1018]/90">
       <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-3 sm:px-5">
         <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
           Histórico
@@ -118,7 +118,7 @@ export function ColetasClient({
                   </p>
                 </div>
                 {href ? (
-                  <ChevronRight className="h-4 w-4 text-slate-700 transition duration-200 group-hover:translate-x-0.5 group-hover:text-cyan-400/80" />
+                  <ChevronRight className="h-4 w-4 text-slate-700 transition duration-200 group-hover:translate-x-0.5 group-hover:text-[#c4a574]/90" />
                 ) : (
                   <span className="h-4 w-4" />
                 )}
@@ -129,7 +129,7 @@ export function ColetasClient({
           const rowClass = cn(
             "group relative flex items-center gap-3 px-4 py-3.5 transition duration-200 sm:gap-4 sm:px-5 sm:py-4",
             "hover:bg-white/[0.03]",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/40 focus-visible:ring-inset"
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4a574]/35 focus-visible:ring-inset"
           );
 
           return (

@@ -1,20 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0a0e1a;
-  --background-secondary: #0f1629;
-  --foreground: #ffffff;
+  --background: #040508;
+  --background-secondary: #080b12;
+  --foreground: #f4efe6;
   --foreground-muted: #94a3b8;
-  --card: #111827;
-  --card-border: rgba(59, 130, 246, 0.15);
-  --primary: #3b82f6;
-  --primary-neon: #00d4ff;
-  --success: #22c55e;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-  --purple: #a855f7;
-  --gradient-start: #0a0e1a;
-  --gradient-end: #0f172a;
+  --card: #0c1018;
+  --card-border: rgba(255, 255, 255, 0.07);
+  --primary: #c4a574;
+  --primary-neon: #c4a574;
+  --success: #34d399;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --purple: #a78bfa;
+  --gradient-start: #040508;
+  --gradient-end: #080b12;
+  --accent-gold: #c4a574;
 }
 
 @theme inline {
@@ -43,15 +44,15 @@ body {
 }
 
 .glass-card {
-  background: rgba(17, 24, 39, 0.92);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
+  background: rgba(12, 16, 24, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
 }
 
 .bank-card {
-  background: rgba(17, 24, 39, 0.92);
-  border: 1px solid var(--card-border);
-  border-radius: 14px;
+  background: rgba(12, 16, 24, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
 }
 
 .dashboard-hero {
@@ -59,7 +60,7 @@ body {
 }
 
 .neon-glow {
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.15);
+  box-shadow: 0 0 20px rgba(196, 165, 116, 0.14);
 }
 
 .neon-text {
@@ -67,10 +68,10 @@ body {
 }
 
 input, select, textarea {
-  background: rgba(15, 23, 42, 0.8);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  color: white;
-  border-radius: 8px;
+  background: rgba(8, 11, 18, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f4efe6;
+  border-radius: 12px;
   padding: 0.75rem 1rem;
   width: 100%;
   outline: none;
@@ -89,8 +90,8 @@ input[type="radio"] {
 }
 
 input:focus, select:focus, textarea:focus {
-  border-color: var(--primary-neon);
-  box-shadow: 0 0 0 2px rgba(0, 212, 255, 0.1);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 2px rgba(196, 165, 116, 0.12);
 }
 
 input::placeholder, textarea::placeholder {
@@ -107,7 +108,7 @@ input::placeholder, textarea::placeholder {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(59, 130, 246, 0.3);
+  background: rgba(196, 165, 116, 0.28);
   border-radius: 3px;
 }
 

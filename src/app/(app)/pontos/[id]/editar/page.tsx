@@ -1,8 +1,7 @@
 import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { EditarPontoForm } from "@/components/pontos/EditarPontoForm";
+import { PontoFormPageShell } from "@/components/pontos/PontoFormPageShell";
 import { resolveNichosAtivos } from "@/lib/assinatura";
 
 export default async function EditarPontoPage({
@@ -26,17 +25,11 @@ export default async function EditarPontoPage({
   if (!ponto) notFound();
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Link href={`/pontos/${id}`} className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
-          <ArrowLeft className="h-5 w-5" />
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Editar ponto</h1>
-          <p className="text-slate-400 text-sm">{ponto.nome}</p>
-        </div>
-      </div>
-
+    <PontoFormPageShell
+      title="Editar ponto"
+      subtitle={ponto.nome}
+      backHref={`/pontos/${id}`}
+    >
       <EditarPontoForm
         pontoId={id}
         nichosAtivos={nichosAtivos}
@@ -57,6 +50,6 @@ export default async function EditarPontoPage({
           foto_url: ponto.foto_url,
         }}
       />
-    </div>
+    </PontoFormPageShell>
   );
 }

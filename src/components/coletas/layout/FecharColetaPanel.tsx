@@ -17,7 +17,7 @@ export function FecharColetaPanel({
   submitLabel,
   submitDisabled,
   loading,
-  accent = "cyan",
+  accent = "gold",
   title = "Fechar coleta",
   subtitle = "Resultado e próximo passo",
   className,
@@ -34,7 +34,7 @@ export function FecharColetaPanel({
   submitLabel: string;
   submitDisabled?: boolean;
   loading?: boolean;
-  accent?: "pink" | "cyan" | "amber" | "emerald" | "red";
+  accent?: "pink" | "cyan" | "amber" | "emerald" | "red" | "gold";
   title?: string;
   subtitle?: string;
   className?: string;
@@ -53,18 +53,20 @@ export function FecharColetaPanel({
           ? "border-emerald-500/20"
           : accent === "red"
             ? "border-red-500/25"
+            : accent === "gold"
+            ? "border-[#c4a574]/25"
             : "border-primary-neon/20";
 
   const btnAccent =
     accent === "red"
       ? "bg-red-400 text-slate-950 hover:bg-red-300"
-      : "bg-primary-neon text-slate-900 hover:bg-cyan-300";
+      : "bg-[#c4a574] text-[#0a0e16] hover:bg-[#d4b584]";
 
   return (
     <aside className={cn("xl:sticky xl:top-20", className)}>
       <div
         className={cn(
-          "flex flex-col gap-0 overflow-hidden rounded-2xl border bg-slate-950/80 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm",
+          "flex flex-col gap-0 overflow-hidden rounded-2xl border bg-[#0c1018]/95 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm",
           borderAccent
         )}
       >

@@ -152,21 +152,21 @@ export default async function ColetasPage() {
       <div className="relative space-y-7">
         <div
           aria-hidden
-          className="pointer-events-none absolute -left-8 -top-10 h-48 w-48 rounded-full bg-cyan-500/[0.07] blur-3xl"
+          className="pointer-events-none absolute -left-8 -top-10 h-48 w-48 rounded-full bg-[#c4a574]/[0.06] blur-3xl"
         />
         <header className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-cyan-400/80">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#c4a574]/80">
               Operação
             </p>
-            <h1 className="mt-1.5 text-3xl font-semibold tracking-tight text-white sm:text-[2rem]">
+            <h1 className="mt-1.5 text-3xl font-semibold tracking-tight text-[#f4efe6] sm:text-[2rem]">
               Coletas
             </h1>
             <p className="mt-1.5 text-sm text-slate-500">Histórico de leituras cassino por visita</p>
           </div>
           <Link
             href="/coletas/nova/cassino"
-            className="group relative inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden rounded-xl bg-gradient-to-b from-cyan-300 to-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 shadow-[0_10px_30px_-12px_rgba(34,211,238,0.65)] transition duration-200 hover:from-cyan-200 hover:to-cyan-300"
+            className="group relative inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] shadow-[0_10px_30px_-12px_rgba(196,165,116,0.55)] transition duration-200 hover:bg-[#d4b584]"
           >
             <Plus className="h-4 w-4 transition group-hover:rotate-90" />
             Nova leitura
@@ -195,7 +195,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/fura-fura"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -224,7 +224,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/ursinho"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -253,7 +253,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/diversao"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -285,7 +285,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/bolinha"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -317,7 +317,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/consignado"
-            className="inline-flex items-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
           >
             <Plus className="h-4 w-4" />
             Novo recolhe

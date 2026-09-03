@@ -71,23 +71,23 @@ export function ColetasMultiNichoTabs({
     <div className={cn(outfit.className, "relative space-y-8")}>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-16 h-56 bg-[radial-gradient(ellipse_at_top,_rgba(34,211,238,0.14),_transparent_60%)]"
+        className="pointer-events-none absolute inset-x-0 -top-16 h-56 bg-[radial-gradient(ellipse_at_top,_rgba(196,165,116,0.1),_transparent_60%)]"
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-10 top-24 h-52 w-52 rounded-full bg-teal-400/[0.06] blur-3xl"
+        className="pointer-events-none absolute -right-10 top-24 h-52 w-52 rounded-full bg-[#c4a574]/[0.05] blur-3xl"
       />
 
       <header className="relative space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-300/70">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#c4a574]/80">
               Operação diária
             </p>
             <h1
               className={cn(
                 display.className,
-                "mt-2 text-[2.65rem] leading-none tracking-tight text-white sm:text-5xl"
+                "mt-2 text-[2.65rem] leading-none tracking-tight text-[#f4efe6] sm:text-5xl"
               )}
             >
               Coletas
@@ -96,7 +96,7 @@ export function ColetasMultiNichoTabs({
 
           <Link
             href={nova.href}
-            className="group inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-2xl bg-cyan-300 px-5 py-3 text-sm font-semibold text-slate-950 transition duration-200 hover:bg-cyan-200 hover:shadow-[0_12px_40px_-16px_rgba(34,211,238,0.9)] active:scale-[0.98]"
+            className="group inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] transition duration-200 hover:bg-[#d4b584] hover:shadow-[0_12px_40px_-16px_rgba(196,165,116,0.65)] active:scale-[0.98]"
           >
             <Plus className="h-4 w-4 transition duration-300 group-hover:rotate-90" />
             {nova.label}
@@ -117,8 +117,8 @@ export function ColetasMultiNichoTabs({
                 className={cn(
                   "shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-cyan-300 text-slate-950 shadow-sm"
-                    : "text-slate-400 hover:bg-white/[0.04] hover:text-slate-200"
+                    ? "bg-[#c4a574] text-[#0a0e16] shadow-sm"
+                    : "text-slate-400 hover:bg-white/[0.04] hover:text-[#f4efe6]"
                 )}
               >
                 {TAB_LABELS[id]}

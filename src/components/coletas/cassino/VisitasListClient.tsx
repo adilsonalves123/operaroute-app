@@ -77,9 +77,9 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
                 href={`/coletas/visita/${visita.id}`}
                 className={cn(
                   "group relative flex items-stretch overflow-hidden rounded-2xl border border-white/[0.07]",
-                  "bg-gradient-to-br from-slate-900/90 via-slate-950/80 to-slate-950/60",
-                  "transition duration-200 hover:-translate-y-0.5 hover:border-cyan-400/25 hover:shadow-[0_18px_40px_-28px_rgba(34,211,238,0.55)]",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+                  "bg-[#0c1018]/90",
+                  "transition duration-200 hover:-translate-y-0.5 hover:border-[#c4a574]/25 hover:shadow-[0_18px_40px_-28px_rgba(196,165,116,0.45)]",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4a574]/40"
                 )}
               >
                 <span

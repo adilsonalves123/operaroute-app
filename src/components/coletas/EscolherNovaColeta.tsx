@@ -2,8 +2,20 @@
 
 import Link from "next/link";
 import { Building2, CircleDot, Gamepad2, ToyBrick, Circle, Package } from "lucide-react";
+import { Instrument_Serif, Outfit } from "next/font/google";
 import { cn } from "@/lib/utils";
 import type { Nicho } from "@/lib/types/database";
+
+const display = Instrument_Serif({
+  weight: "400",
+  subsets: ["latin"],
+  variable: "--font-escolher-display",
+});
+
+const sans = Outfit({
+  subsets: ["latin"],
+  variable: "--font-escolher-sans",
+});
 
 type Props = {
   pontoId?: string;
@@ -77,11 +89,22 @@ export function EscolherNovaColeta({ pontoId, nichosAtivos }: Props) {
   });
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div
+      className={cn(sans.variable, display.variable, "mx-auto max-w-2xl space-y-6 pb-8")}
+      style={{ fontFamily: "var(--font-escolher-sans), system-ui, sans-serif" }}
+    >
       <div>
-        <h1 className="text-2xl font-bold text-white">Nova coleta</h1>
-        <p className="text-slate-400 mt-1 text-sm">
-          Escolha o módulo da coleta para usar o formulário certo.
+        <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#c4a574]/80">
+          Nova coleta
+        </p>
+        <h1
+          className="mt-1.5 text-2xl tracking-tight text-[#f4efe6]"
+          style={{ fontFamily: "var(--font-escolher-display), Georgia, serif" }}
+        >
+          Escolha o módulo
+        </h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Selecione o tipo de coleta para abrir o formulário certo.
         </p>
       </div>
 
@@ -93,7 +116,7 @@ export function EscolherNovaColeta({ pontoId, nichosAtivos }: Props) {
               key={opcao.href}
               href={`${opcao.href}${query}`}
               className={cn(
-                "glass-card block p-5 transition-all border border-slate-800",
+                "bank-card block p-5 transition-all hover:border-[#c4a574]/20",
                 opcao.accent
               )}
             >
@@ -102,8 +125,8 @@ export function EscolherNovaColeta({ pontoId, nichosAtivos }: Props) {
                   <Icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="font-semibold text-white">{opcao.label}</p>
-                  <p className="mt-1 text-sm text-slate-400">{opcao.description}</p>
+                  <p className="font-semibold text-[#f4efe6]">{opcao.label}</p>
+                  <p className="mt-1 text-sm text-slate-500">{opcao.description}</p>
                 </div>
               </div>
             </Link>
