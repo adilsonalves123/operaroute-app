@@ -438,8 +438,8 @@ export function DashboardPremiumClient({
               <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-at-muted">
                 Últimos 7 dias
               </p>
-              <div className="mt-4">
-                <DashboardBarChart7d values={data.sparkline} />
+              <div className="mt-3">
+                <DashboardBarChart7d values={data.sparkline} tema={visualTema} />
               </div>
             </div>
           )}
