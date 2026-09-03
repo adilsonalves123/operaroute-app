@@ -26,9 +26,6 @@ export function DashboardMargemGauge({
     return `M ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1}`;
   };
 
-  const tone =
-    clamped >= 25 ? "text-emerald-400" : clamped >= 12 ? "text-amber-300" : "text-rose-400";
-
   return (
     <div className={cn("flex items-center gap-3", className)}>
       <div className="relative">
@@ -36,28 +33,22 @@ export function DashboardMargemGauge({
           <path
             d={arc(startAngle, endAngle)}
             fill="none"
-            stroke="rgba(255,255,255,0.06)"
+            stroke="var(--at-track)"
             strokeWidth="6"
             strokeLinecap="round"
           />
           <path
             d={arc(startAngle, fillAngle)}
             fill="none"
-            stroke="url(#margemGaugeGrad)"
+            stroke="var(--at-accent)"
             strokeWidth="6"
             strokeLinecap="round"
           />
-          <defs>
-            <linearGradient id="margemGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="#34d399" stopOpacity="0.7" />
-              <stop offset="100%" stopColor="#10b981" />
-            </linearGradient>
-          </defs>
         </svg>
       </div>
       <div>
-        <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Margem</p>
-        <p className={cn("text-[22px] font-medium tabular-nums leading-none", tone)}>
+        <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">Margem</p>
+        <p className="text-[22px] font-medium tabular-nums leading-none text-at-primary">
           {clamped.toFixed(1)}%
         </p>
       </div>

@@ -45,7 +45,7 @@ export function DashboardBarChart7d({ values, className }: Props) {
                 <p
                   className={cn(
                     "mb-1.5 max-w-full truncate text-[9px] tabular-nums sm:text-[10px]",
-                    positive ? "text-emerald-400/85" : "text-rose-400/85"
+                    positive ? "text-at-money-pos" : "text-at-money-neg"
                   )}
                 >
                   {formatCurrency(v)}
@@ -57,17 +57,15 @@ export function DashboardBarChart7d({ values, className }: Props) {
                   style={{
                     height: `${height}%`,
                     background: positive
-                      ? `linear-gradient(180deg, rgba(52,211,153,0.95) 0%, rgba(16,185,129,0.35) 55%, rgba(16,185,129,0.08) 100%)`
-                      : `linear-gradient(180deg, rgba(251,113,133,0.9) 0%, rgba(251,113,133,0.25) 100%)`,
+                      ? "linear-gradient(180deg, var(--at-money-pos) 0%, color-mix(in srgb, var(--at-money-pos) 35%, transparent) 55%, color-mix(in srgb, var(--at-money-pos) 8%, transparent) 100%)"
+                      : "linear-gradient(180deg, var(--at-money-neg) 0%, color-mix(in srgb, var(--at-money-neg) 25%, transparent) 100%)",
                     boxShadow: positive
-                      ? "0 -4px 20px rgba(16,185,129,0.15)"
-                      : "0 -4px 16px rgba(251,113,133,0.12)",
+                      ? "0 -4px 20px color-mix(in srgb, var(--at-money-pos) 15%, transparent)"
+                      : "0 -4px 16px color-mix(in srgb, var(--at-money-neg) 12%, transparent)",
                   }}
                 />
               </div>
-              <p className="mt-2 text-[10px] uppercase tracking-wide text-slate-600">
-                {labels[i]}
-              </p>
+              <p className="mt-2 text-[10px] uppercase tracking-wide text-at-soft">{labels[i]}</p>
             </div>
           );
         })}
@@ -75,8 +73,8 @@ export function DashboardBarChart7d({ values, className }: Props) {
       <svg width="0" height="0" aria-hidden>
         <defs>
           <linearGradient id={`barGrad-${uid}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#34d399" />
-            <stop offset="100%" stopColor="#059669" stopOpacity="0.2" />
+            <stop offset="0%" stopColor="var(--at-money-pos)" />
+            <stop offset="100%" stopColor="var(--at-money-pos)" stopOpacity="0.2" />
           </linearGradient>
         </defs>
       </svg>

@@ -965,7 +965,8 @@ input::placeholder, textarea::placeholder {
   contain-intrinsic-size: auto 88px;
 }
 
-/* Análise — tokens escuro/claro (protótipo) */
+/* Premium desk — tokens escuro/claro (Análise, Dashboard, etc.) */
+.premium-desk-root,
 .analise-premium-root {
   --at-primary: #f4efe6;
   --at-muted: #94a3b8;
@@ -987,7 +988,9 @@ input::placeholder, textarea::placeholder {
   --at-grid: rgba(255, 255, 255, 0.06);
 }
 
+.premium-desk-root[data-analise-visual="claro"],
 .analise-premium-root[data-analise-visual="claro"],
+html[data-app-theme="light"] .premium-desk-root,
 html[data-app-theme="light"] .analise-premium-root {
   --at-primary: #1c1917;
   --at-muted: #78716c;
