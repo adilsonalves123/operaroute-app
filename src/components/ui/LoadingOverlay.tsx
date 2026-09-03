@@ -14,7 +14,8 @@ export function LoadingOverlay({ show, message, messages }: LoadingOverlayProps)
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-[#0a0e1a]/92 backdrop-blur-lg"
+      className="fixed inset-0 z-[200] flex items-center justify-center backdrop-blur-lg"
+      style={{ background: "color-mix(in srgb, var(--background) 94%, transparent)" }}
       aria-modal="true"
       aria-label="Processando"
       role="alertdialog"

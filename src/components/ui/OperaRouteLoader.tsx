@@ -2,6 +2,12 @@
 
 import { Instrument_Serif, Outfit } from "next/font/google";
 import { useEffect, useState } from "react";
+import { useAppTheme } from "@/components/layout/AppTheme";
+import {
+  analisePageBackground,
+  appThemeToAnaliseVisual,
+} from "@/lib/analise/analise-visual-theme";
+import { cn } from "@/lib/utils";
 
 const display = Instrument_Serif({
   weight: "400",
@@ -32,6 +38,8 @@ export function OperaRouteLoader({
   messages = DEFAULT_MESSAGES,
   variant = "inline",
 }: OperaRouteLoaderProps) {
+  const { theme: appTheme } = useAppTheme();
+  const visualTema = appThemeToAnaliseVisual(appTheme);
   const [msgIndex, setMsgIndex] = useState(0);
   const displayMessage = message ?? messages[msgIndex];
 
@@ -45,27 +53,29 @@ export function OperaRouteLoader({
 
   return (
     <div
-      className={`${display.variable} ${sans.variable} relative flex w-full flex-col items-center justify-center overflow-hidden ${
+      data-analise-visual={visualTema}
+      className={cn(
+        display.variable,
+        sans.variable,
+        "premium-desk-root relative flex w-full flex-col items-center justify-center overflow-hidden",
         variant === "fullscreen"
           ? "min-h-[min(100%,86vh)] px-6 py-14 sm:px-12"
           : "min-h-[min(100%,82vh)] px-6 py-16"
-      }`}
+      )}
       style={{ fontFamily: "var(--font-loader-sans), system-ui, sans-serif" }}
       role="status"
       aria-live="polite"
       aria-busy="true"
     >
-      <div
-        className="pointer-events-none absolute inset-0"
-        aria-hidden
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 55% at 50% 30%, rgba(196,165,116,0.16), transparent 60%), radial-gradient(ellipse 50% 40% at 85% 75%, rgba(0,212,255,0.06), transparent 55%)",
-        }}
-      />
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
+        <div
+          className="absolute inset-0"
+          style={{ background: analisePageBackground(visualTema) }}
+        />
+      </div>
 
       <div className="relative z-10 flex w-full max-w-2xl flex-col items-center text-center">
-        <p className="text-[11px] font-medium uppercase tracking-[0.36em] text-[#c4a574]/90 sm:text-xs">
+        <p className="text-[11px] font-medium uppercase tracking-[0.36em] text-at-accent sm:text-xs">
           OperaRoute
         </p>
 
@@ -76,7 +86,7 @@ export function OperaRouteLoader({
 
           <svg
             viewBox="0 0 100 100"
-            className="absolute inset-[36px] text-[#c4a574] sm:inset-[44px]"
+            className="absolute inset-[36px] text-at-link sm:inset-[44px]"
           >
             <path
               d="M22 68 C 38 34, 52 78, 78 42"
@@ -86,19 +96,19 @@ export function OperaRouteLoader({
               strokeLinecap="round"
               className="or-premium-route"
             />
-            <circle cx="22" cy="68" r="3.4" fill="#e8d5b0" className="or-premium-node" />
+            <circle cx="22" cy="68" r="3.4" fill="var(--at-accent)" className="or-premium-node" />
             <circle
               cx="78"
               cy="42"
               r="3.4"
-              fill="#00d4ff"
+              fill="var(--at-link)"
               className="or-premium-node or-premium-node-delay"
             />
           </svg>
 
           <div className="absolute inset-0 flex items-center justify-center">
             <span
-              className="text-[42px] leading-none tracking-tight text-[#f4efe6] sm:text-[52px]"
+              className="text-[42px] leading-none tracking-tight text-at-primary sm:text-[52px]"
               style={{ fontFamily: "var(--font-loader-display), Georgia, serif" }}
             >
               OR
@@ -107,23 +117,23 @@ export function OperaRouteLoader({
         </div>
 
         <h1
-          className="text-[clamp(2.75rem,7vw,4rem)] leading-none tracking-tight text-[#f4efe6]"
+          className="text-[clamp(2.75rem,7vw,4rem)] leading-none tracking-tight text-at-primary"
           style={{ fontFamily: "var(--font-loader-display), Georgia, serif" }}
         >
           OperaRoute
         </h1>
 
-        <p className="mt-4 max-w-md text-[15px] leading-relaxed text-slate-400 sm:mt-5 sm:max-w-lg sm:text-[17px]">
+        <p className="mt-4 max-w-md text-[15px] leading-relaxed text-at-muted sm:mt-5 sm:max-w-lg sm:text-[17px]">
           Gestão profissional da sua operação em campo.
         </p>
 
-        <div className="or-premium-progress mt-10 h-[3px] w-full max-w-[320px] overflow-hidden rounded-full bg-white/[0.08] sm:mt-12 sm:max-w-[380px]">
-          <span className="or-premium-progress-bar block h-full w-1/2 rounded-full bg-gradient-to-r from-[#c4a574]/40 via-[#e8d5b0] to-[#c4a574]/40" />
+        <div className="or-premium-progress mt-10 h-[3px] w-full max-w-[320px] overflow-hidden rounded-full bg-at-track sm:mt-12 sm:max-w-[380px]">
+          <span className="or-premium-progress-bar block h-full w-1/2 rounded-full bg-gradient-to-r from-[var(--at-accent)]/40 via-[var(--at-accent)] to-[var(--at-accent)]/40" />
         </div>
 
         <p
           key={displayMessage}
-          className="or-loader-message mt-7 text-[14px] text-slate-500 sm:mt-8 sm:text-[15px]"
+          className="or-loader-message mt-7 text-[14px] text-at-muted sm:mt-8 sm:text-[15px]"
         >
           {displayMessage}
         </p>

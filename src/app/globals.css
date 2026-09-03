@@ -315,15 +315,11 @@ input::placeholder, textarea::placeholder {
 
 .or-premium-ring {
   border-radius: 9999px;
-  border: 1px solid rgba(196, 165, 116, 0.22);
-}
-
-.or-premium-ring-outer {
-  animation: or-premium-pulse 3.2s ease-in-out infinite;
+  border: 1px solid color-mix(in srgb, var(--at-accent, #c4a574) 25%, transparent);
 }
 
 .or-premium-ring-mid {
-  border-color: rgba(196, 165, 116, 0.14);
+  border-color: color-mix(in srgb, var(--at-accent, #c4a574) 14%, transparent);
   border-style: dashed;
   animation: or-premium-spin 18s linear infinite;
 }
@@ -331,8 +327,8 @@ input::placeholder, textarea::placeholder {
 .or-premium-arc {
   border-radius: 9999px;
   border: 1.5px solid transparent;
-  border-top-color: rgba(232, 213, 176, 0.9);
-  border-right-color: rgba(196, 165, 116, 0.35);
+  border-top-color: color-mix(in srgb, var(--at-accent, #c4a574) 90%, transparent);
+  border-right-color: color-mix(in srgb, var(--at-accent, #c4a574) 35%, transparent);
   animation: or-premium-spin 1.8s linear infinite;
 }
 
@@ -368,17 +364,25 @@ input::placeholder, textarea::placeholder {
   animation: or-glow-drift 6s ease-in-out infinite;
 }
 
+.or-premium-ring-outer {
+  animation: or-premium-pulse 3.2s ease-in-out infinite;
+}
+
 .or-loader-glow-1 {
   top: 10%;
   left: 15%;
-  background: rgba(196, 165, 116, 0.28);
+  background: color-mix(in srgb, var(--accent-gold, #c4a574) 28%, transparent);
 }
 
 .or-loader-glow-2 {
   bottom: 15%;
   right: 10%;
-  background: rgba(0, 212, 255, 0.16);
+  background: color-mix(in srgb, var(--at-accent, #c4a574) 16%, transparent);
   animation-delay: 1.5s;
+}
+
+html[data-app-theme="light"] .or-loader-glow-2 {
+  background: color-mix(in srgb, var(--at-accent, #92662a) 12%, transparent);
 }
 
 /* Leaflet — altura explícita evita mapa cinza sem tiles */
