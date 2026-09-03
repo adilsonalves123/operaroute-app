@@ -458,7 +458,9 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
       ev.stopPropagation();
       const g = distanciaDedos(ev.touches);
       if (!g) return;
-      entrarPinch(g.meioX, g.meioY, g.dist, scrollRef.current ?? root);
+      const pinchTarget = scrollRef.current ?? root;
+      if (!pinchTarget) return;
+      entrarPinch(g.meioX, g.meioY, g.dist, pinchTarget);
     }
 
     function onTouchMove(ev: TouchEvent) {
