@@ -80,34 +80,37 @@ export function OperaRouteLoader({
           OperaRoute
         </p>
 
-        <div className="relative mt-10 mb-12 h-52 w-52 sm:mt-12 sm:mb-14 sm:h-64 sm:w-64" aria-hidden>
+        <div
+          className="relative mt-10 mb-12 h-[17rem] w-[17rem] sm:mt-12 sm:mb-14 sm:h-[22rem] sm:w-[22rem]"
+          aria-hidden
+        >
           <div className="or-premium-ring or-premium-ring-outer absolute inset-0" />
-          <div className="or-premium-ring or-premium-ring-mid absolute inset-[18px] sm:inset-[22px]" />
-          <div className="or-premium-arc absolute inset-[8px] sm:inset-[10px]" />
+          <div className="or-premium-ring or-premium-ring-mid absolute inset-[22px] sm:inset-[28px]" />
+          <div className="or-premium-arc absolute inset-[10px] sm:inset-[12px]" />
 
           <svg
             viewBox="0 0 100 100"
-            className="absolute inset-[36px] sm:inset-[44px]"
+            className="absolute inset-[44px] sm:inset-[56px]"
           >
             <path
               d="M22 68 C 38 34, 52 78, 78 42"
               fill="none"
               stroke="var(--loader-route)"
-              strokeWidth="2.2"
+              strokeWidth="2.4"
               strokeLinecap="round"
               className="or-premium-route"
             />
             <circle
               cx="22"
               cy="68"
-              r="3.4"
+              r="4"
               fill="var(--loader-node-start)"
               className="or-premium-node"
             />
             <circle
               cx="78"
               cy="42"
-              r="3.4"
+              r="4"
               fill="var(--loader-node-end)"
               className="or-premium-node or-premium-node-delay"
             />
@@ -115,7 +118,7 @@ export function OperaRouteLoader({
 
           <div className="absolute inset-0 flex items-center justify-center">
             <span
-              className="text-[42px] leading-none tracking-tight text-at-primary sm:text-[52px]"
+              className="text-[3.25rem] leading-none tracking-tight text-at-primary sm:text-[4.25rem]"
               style={{ fontFamily: "var(--font-loader-display), Georgia, serif" }}
             >
               OR
