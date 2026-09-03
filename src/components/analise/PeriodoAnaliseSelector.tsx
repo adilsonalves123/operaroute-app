@@ -21,7 +21,19 @@ type Props = {
   tema?: "premium" | "claro" | "default";
 };
 
-const ACCENT = "#c4a574";
+function pillActive(tema: Props["tema"]) {
+  if (tema === "premium" || tema === "claro") {
+    return "analise-tab-active border";
+  }
+  return "bg-primary-neon/20 text-primary-neon border-primary-neon/40";
+}
+
+function pillIdle(tema: Props["tema"]) {
+  if (tema === "premium" || tema === "claro") {
+    return "analise-tab-idle border";
+  }
+  return "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200";
+}
 
 export function PeriodoAnaliseSelector({
   atual,
@@ -51,6 +63,8 @@ export function PeriodoAnaliseSelector({
     navegar("personalizado", de, ateFinal);
   }
 
+  const usaPremiumDesk = tema === "premium" || tema === "claro";
+
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
@@ -63,18 +77,8 @@ export function PeriodoAnaliseSelector({
               navegar(op.id);
             }}
             className={cn(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium transition border",
-              atual.preset === op.id
-                ? tema === "premium"
-                  ? "border-white/[0.12] bg-white/[0.06] text-[#f4efe6]"
-                  : tema === "claro"
-                    ? "border-stone-800 bg-stone-900 text-white"
-                    : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
-                : tema === "premium"
-                  ? "border-transparent bg-transparent text-slate-500 hover:text-slate-300"
-                  : tema === "claro"
-                    ? "border-transparent bg-transparent text-stone-500 hover:text-stone-800"
-                    : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
+              "rounded-full px-3.5 py-1.5 text-sm font-medium transition",
+              atual.preset === op.id ? pillActive(tema) : pillIdle(tema)
             )}
           >
             {op.label}
@@ -84,18 +88,8 @@ export function PeriodoAnaliseSelector({
           type="button"
           onClick={() => setShowCustom((v) => !v)}
           className={cn(
-            "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition border",
-            atual.preset === "personalizado" || showCustom
-              ? tema === "premium"
-                ? "border-white/[0.12] bg-white/[0.06] text-[#f4efe6]"
-                : tema === "claro"
-                  ? "border-stone-800 bg-stone-900 text-white"
-                  : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
-              : tema === "premium"
-                ? "border-white/[0.08] text-slate-500 hover:border-white/[0.12] hover:text-slate-300"
-                : tema === "claro"
-                  ? "border-stone-200 text-stone-500 hover:border-stone-400 hover:text-stone-800"
-                  : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
+            "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition",
+            atual.preset === "personalizado" || showCustom ? pillActive(tema) : pillIdle(tema)
           )}
         >
           <Calendar className="h-3.5 w-3.5" />
@@ -104,9 +98,14 @@ export function PeriodoAnaliseSelector({
       </div>
 
       {(showCustom || atual.preset === "personalizado") && (
-        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-white/[0.06] bg-white/[0.02] p-3">
+        <div
+          className={cn(
+            "flex flex-wrap items-end gap-3 rounded-xl border p-3",
+            usaPremiumDesk ? "border-at bg-at-card-soft" : "border-white/[0.06] bg-white/[0.02]"
+          )}
+        >
           <div>
-            <label className="text-xs text-slate-500">
+            <label className={cn("text-xs", usaPremiumDesk ? "text-at-muted" : "text-slate-500")}>
               {variante === "dashboard" ? "Dia" : "De"}
             </label>
             <input
@@ -116,18 +115,28 @@ export function PeriodoAnaliseSelector({
                 setDe(e.target.value);
                 if (variante === "dashboard" && !ate) setAte(e.target.value);
               }}
-              className="mt-1 block rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+              className={cn(
+                "mt-1 block rounded-lg border px-3 py-2 text-sm",
+                usaPremiumDesk
+                  ? "border-at bg-at-card text-at-primary"
+                  : "border-slate-700 bg-slate-900 text-white"
+              )}
             />
           </div>
           <div>
-            <label className="text-xs text-slate-500">
+            <label className={cn("text-xs", usaPremiumDesk ? "text-at-muted" : "text-slate-500")}>
               {variante === "dashboard" ? "Até (opcional)" : "Até"}
             </label>
             <input
               type="date"
               value={ate}
               onChange={(e) => setAte(e.target.value)}
-              className="mt-1 block rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+              className={cn(
+                "mt-1 block rounded-lg border px-3 py-2 text-sm",
+                usaPremiumDesk
+                  ? "border-at bg-at-card text-at-primary"
+                  : "border-slate-700 bg-slate-900 text-white"
+              )}
             />
           </div>
           <button
@@ -136,13 +145,10 @@ export function PeriodoAnaliseSelector({
             disabled={!de || (Boolean(ate) && de > ate)}
             className={cn(
               "rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50",
-              tema === "premium"
-                ? "bg-[#c4a574] text-[#0a0e16]"
-                : tema === "claro"
-                  ? "bg-stone-900 text-white"
-                  : "bg-primary-neon text-slate-900"
+              usaPremiumDesk
+                ? "bg-[var(--at-tab-active-bg)] text-[var(--at-tab-active-text)]"
+                : "bg-primary-neon text-slate-900"
             )}
-            style={tema === "premium" ? { backgroundColor: ACCENT } : undefined}
           >
             Aplicar
           </button>
