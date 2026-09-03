@@ -21,7 +21,8 @@ import {
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 import { mensagemPulso } from "@/lib/dashboard-pulso";
-import { DashboardSparkline } from "@/components/dashboard/DashboardSparkline";
+import { DashboardBarChart7d } from "@/components/dashboard/DashboardBarChart7d";
+import { DashboardMargemGauge } from "@/components/dashboard/DashboardMargemGauge";
 import { PesquisaUpgradeBanner } from "@/components/onboarding/PesquisaUpgradeBanner";
 import { TrialWelcomeGate } from "@/components/onboarding/TrialWelcomeGate";
 import { PushAtivarBanner } from "@/components/configuracoes/PushAtivarBanner";
@@ -75,6 +76,53 @@ function moneyTone(n: number) {
   if (n > 0.009) return "text-emerald-400/95";
   if (n < -0.009) return "text-rose-400/95";
   return "text-[#f4efe6]/85";
+}
+
+function operacaoIniciais(nome: string): string {
+  const parts = nome.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "OR";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase();
+}
+
+function BankFlowCard({
+  label,
+  value,
+  hint,
+  toneClass,
+  icon: Icon,
+  iconWrapClass,
+}: {
+  label: string;
+  value: string;
+  hint: string;
+  toneClass: string;
+  icon: typeof ArrowDownRight;
+  iconWrapClass: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/[0.07] bg-[#0c1018]/90 p-4">
+      <div className="flex items-start gap-3">
+        <div
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border",
+            iconWrapClass
+          )}
+        >
+          <Icon className="h-4 w-4" strokeWidth={2.25} />
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-500">
+            {label}
+          </p>
+          <p className={cn("mt-1 text-[1.35rem] font-medium tabular-nums leading-tight", toneClass)}>
+            {value}
+          </p>
+          <p className="mt-1 text-[11px] leading-snug text-slate-600">{hint}</p>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function RankCol({
@@ -249,7 +297,7 @@ export function DashboardPremiumClient({
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 85% 50% at 50% -8%, rgba(196,165,116,0.14), transparent 55%), radial-gradient(ellipse 45% 35% at 95% 20%, rgba(16,185,129,0.04), transparent 50%), radial-gradient(ellipse 40% 30% at 5% 75%, rgba(120,90,50,0.1), transparent 45%), linear-gradient(180deg, #06080e 0%, #0a0e16 50%, #07090f 100%)",
+              "radial-gradient(ellipse 70% 45% at 50% -5%, rgba(16,185,129,0.06), transparent 55%), radial-gradient(ellipse 40% 30% at 95% 15%, rgba(196,165,116,0.08), transparent 50%), linear-gradient(180deg, #040508 0%, #080b12 45%, #06080e 100%)",
           }}
         />
       </div>
@@ -282,33 +330,29 @@ export function DashboardPremiumClient({
           </div>
         )}
 
-        {/* Header */}
+        {/* Header — estilo private banking */}
         <header
           className={cn("transition-opacity duration-700", ativo ? "opacity-100" : "opacity-0")}
           style={{ animation: ativo ? "dashRise 0.85s ease-out both" : undefined }}
         >
-          <p
-            className="text-[11px] font-medium uppercase text-[#c4a574]/90"
-            style={{ letterSpacing: "0.38em" }}
-          >
-            {data.greeting}
-          </p>
-          <h1
-            className="mt-3 text-[clamp(2.2rem,5.5vw,3.5rem)] leading-[0.95] tracking-tight text-[#f4efe6]"
-            style={{ fontFamily: "var(--font-dash-display), Georgia, serif" }}
-          >
+          <div className="flex items-start justify-between gap-4">
+            <h1
+              className="text-[clamp(1.85rem,5vw,2.75rem)] leading-[1.05] tracking-tight text-[#f4efe6]"
+              style={{ fontFamily: "var(--font-dash-display), Georgia, serif" }}
+            >
+              {data.greeting}
+            </h1>
+            <div
+              className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] text-[13px] tracking-[0.12em] text-slate-400"
+              style={{ fontFamily: "var(--font-dash-display), Georgia, serif" }}
+              aria-hidden
+            >
+              {operacaoIniciais(data.operacaoNome)}
+            </div>
+          </div>
+          <p className="mt-2 text-[12px] text-slate-500">
             {data.operacaoNome}
-          </h1>
-          <p className="mt-3 text-[13px] text-slate-400">
-            {data.nichoLabel}
-            {data.movimentosLabel ? (
-              <>
-                {" "}
-                · <span className="text-slate-500">{data.movimentosLabel}</span>
-              </>
-            ) : null}
-            <span className="text-slate-600"> · </span>
-            <span className="uppercase tracking-[0.12em] text-slate-500">{data.periodLabel}</span>
+            {data.nichoLabel ? ` · ${data.nichoLabel}` : ""}
           </p>
           <div className="mt-5">
             <PeriodoAnaliseSelector
@@ -318,41 +362,66 @@ export function DashboardPremiumClient({
               tema="premium"
             />
           </div>
-          <div
-            className="mt-8 h-px w-full origin-left bg-gradient-to-r from-[#c4a574]/60 via-white/10 to-transparent"
-            style={{ animation: ativo ? "dashLine 1s 0.2s ease-out both" : undefined }}
-          />
         </header>
 
-        {/* Hero — foco operacional */}
+        {/* Hero — painel financeiro */}
         <section
-          className="mt-10"
+          className="mt-8"
           style={{ animation: ativo ? "dashRise 0.7s 0.1s ease-out both" : undefined }}
         >
-          <p className="text-[11px] uppercase tracking-[0.22em] text-slate-500">
-            Seu lucro · {data.periodLabel}
+          <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
+            Lucro líquido · {data.periodLabel.toUpperCase()}
           </p>
           <p
             className={cn(
-              "mt-2 text-[clamp(2.8rem,7vw,4.2rem)] font-normal leading-none tracking-tight tabular-nums",
+              "mt-2 text-[clamp(2.5rem,8vw,3.75rem)] font-normal leading-none tracking-tight tabular-nums",
               moneyTone(data.liquidoOperacao)
             )}
             style={{ fontFamily: "var(--font-dash-display), Georgia, serif" }}
           >
             {formatCurrency(data.liquidoOperacao)}
           </p>
-          <p className="mt-2 max-w-lg text-[13px] leading-relaxed text-slate-400">
-            Resultado da operação no período — conta na coleta, mesmo sem pagamento.
+          <p className="mt-3 max-w-md text-[12px] leading-relaxed text-slate-500">
+            Resultado da operação no período (conta na coleta, mesmo sem pagamento). O dinheiro
+            que entrou de fato está em{" "}
+            <Link href="/analise" className="text-[#c4a574] hover:underline">
+              Análise
+            </Link>
+            .
           </p>
-          <Link
-            href="/analise"
-            className="mt-2 inline-flex text-[13px] text-[#c4a574] transition hover:underline"
-          >
-            Dinheiro que entrou de fato → Análise
-          </Link>
+
+          <div className="mt-6 grid gap-3 sm:grid-cols-2">
+            <BankFlowCard
+              label="Entrada"
+              value={formatCurrency(data.entrada)}
+              hint="Máquinas faturaram"
+              toneClass="text-emerald-400/95"
+              icon={ArrowDownRight}
+              iconWrapClass="border-emerald-500/20 bg-emerald-500/10 text-emerald-400"
+            />
+            <BankFlowCard
+              label="Saída"
+              value={formatCurrency(data.saida)}
+              hint="Saiu das máquinas"
+              toneClass="text-rose-400/95"
+              icon={ArrowUpRight}
+              iconWrapClass="border-rose-500/20 bg-rose-500/10 text-rose-400"
+            />
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-end justify-between gap-6 border-t border-white/[0.05] pt-5">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Movimento</p>
+              <p className="mt-1 text-[1.35rem] font-medium tabular-nums text-[#f4efe6]">
+                {formatCurrency(data.liquidoMovimento)}
+              </p>
+              <p className="mt-0.5 text-[11px] text-slate-600">(entrada − saída)</p>
+            </div>
+            {data.margemPct != null && <DashboardMargemGauge pct={data.margemPct} />}
+          </div>
 
           {data.comparativo && (
-            <p className="mt-4 text-[13px] text-slate-500">
+            <p className="mt-4 text-[12px] text-slate-500">
               vs mês anterior:{" "}
               <span
                 className={cn(
@@ -372,21 +441,21 @@ export function DashboardPremiumClient({
           )}
 
           {data.sparkline.length > 1 && (
-            <div className="mt-6 max-w-xs">
-              <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[#c4a574]/70">
+            <div className="mt-8 rounded-2xl border border-white/[0.06] bg-[#0a0e14]/80 px-4 py-5 sm:px-5">
+              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-slate-500">
                 Últimos 7 dias
               </p>
-              <div className="rounded-sm border border-[#c4a574]/12 bg-gradient-to-b from-[#c4a574]/[0.06] to-transparent px-3 py-3">
-                <DashboardSparkline values={data.sparkline} size="lg" />
+              <div className="mt-4">
+                <DashboardBarChart7d values={data.sparkline} />
               </div>
             </div>
           )}
 
-          {/* 3 alertas rápidos */}
-          <div className="mt-8 grid gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-3">
+          {/* Alertas operacionais */}
+          <div className="mt-6 grid gap-3 sm:grid-cols-3">
             <Link
               href="/coletas/pendentes"
-              className="bg-[#0a0e16]/95 px-4 py-4 transition hover:bg-white/[0.03]"
+              className="rounded-2xl border border-white/[0.07] bg-[#0c1018]/90 px-4 py-4 transition hover:border-white/[0.12]"
             >
               <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">A receber</p>
               <p
@@ -401,7 +470,7 @@ export function DashboardPremiumClient({
             </Link>
             <Link
               href="/pontos"
-              className="bg-[#0a0e16]/95 px-4 py-4 transition hover:bg-white/[0.03]"
+              className="rounded-2xl border border-white/[0.07] bg-[#0c1018]/90 px-4 py-4 transition hover:border-white/[0.12]"
             >
               <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Sem coleta</p>
               <p
@@ -416,7 +485,7 @@ export function DashboardPremiumClient({
             </Link>
             <Link
               href="/chamados"
-              className="bg-[#0a0e16]/95 px-4 py-4 transition hover:bg-white/[0.03]"
+              className="rounded-2xl border border-white/[0.07] bg-[#0c1018]/90 px-4 py-4 transition hover:border-white/[0.12]"
             >
               <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Chamados</p>
               <p

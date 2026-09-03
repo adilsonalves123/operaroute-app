@@ -66,10 +66,10 @@ export function PeriodoAnaliseSelector({
               "rounded-full px-3.5 py-1.5 text-sm font-medium transition border",
               atual.preset === op.id
                 ? tema === "premium"
-                  ? "border-[#c4a574]/40 bg-[#c4a574]/15 text-[#c4a574]"
+                  ? "border-white/[0.12] bg-white/[0.06] text-[#f4efe6]"
                   : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
                 : tema === "premium"
-                  ? "border-white/[0.08] text-slate-400 hover:border-[#c4a574]/25 hover:text-[#f4efe6]"
+                  ? "border-transparent bg-transparent text-slate-500 hover:text-slate-300"
                   : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
             )}
           >
@@ -83,10 +83,10 @@ export function PeriodoAnaliseSelector({
             "inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition border",
             atual.preset === "personalizado" || showCustom
               ? tema === "premium"
-                ? "border-[#c4a574]/40 bg-[#c4a574]/15 text-[#c4a574]"
+                ? "border-white/[0.12] bg-white/[0.06] text-[#f4efe6]"
                 : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
               : tema === "premium"
-                ? "border-white/[0.08] text-slate-400 hover:border-[#c4a574]/25 hover:text-[#f4efe6]"
+                ? "border-white/[0.08] text-slate-500 hover:border-white/[0.12] hover:text-slate-300"
                 : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
           )}
         >
