@@ -22,6 +22,7 @@ import {
   reconciliarComposicaoExibida,
   type ComposicaoCaixa,
 } from "@/lib/financeiro/saldo-caixa";
+import { useAppTheme } from "@/components/layout/AppTheme";
 import { Wallet } from "lucide-react";
 
 const display = Instrument_Serif({
@@ -63,6 +64,8 @@ export function FinanceiroDashboard({
   composicao: ComposicaoCaixa;
 }) {
   const [periodo, setPeriodo] = useState<PeriodoFiltro>("hoje");
+  const { theme } = useAppTheme();
+  const isLight = theme === "light";
 
   const caixa = useMemo(
     () => reconciliarComposicaoExibida(composicao),
@@ -119,22 +122,25 @@ export function FinanceiroDashboard({
 
   return (
     <div className={cn(display.variable, sans.variable, "space-y-10")}>
-      {/* HERO — uma composição */}
+      {/* HERO — caixa */}
       <section className="relative overflow-hidden rounded-[1.75rem] border border-[#c4a574]/25 bg-at-card">
         <div
           className="pointer-events-none absolute inset-0 opacity-90"
           style={{
-            background:
-              "radial-gradient(ellipse 80% 60% at 10% 0%, rgba(196,165,116,0.18), transparent 55%), radial-gradient(ellipse 70% 50% at 100% 100%, rgba(34,211,238,0.08), transparent 50%), linear-gradient(165deg, #121820 0%, #0b1018 45%, #0a0e14 100%)",
+            background: isLight
+              ? "radial-gradient(ellipse 85% 65% at 8% 0%, rgba(196,165,116,0.14), transparent 55%), radial-gradient(ellipse 60% 45% at 100% 100%, rgba(14,116,144,0.06), transparent 50%), linear-gradient(165deg, #faf8f4 0%, #f5f0e6 45%, #ebe6dc 100%)"
+              : "radial-gradient(ellipse 80% 60% at 10% 0%, rgba(196,165,116,0.18), transparent 55%), radial-gradient(ellipse 70% 50% at 100% 100%, rgba(34,211,238,0.08), transparent 50%), linear-gradient(165deg, #121820 0%, #0b1018 45%, #0a0e14 100%)",
           }}
         />
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.035]"
-          style={{
-            backgroundImage:
-              "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-          }}
-        />
+        {!isLight && (
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.035]"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+            }}
+          />
+        )}
 
         <div className="relative px-6 pb-8 pt-8 sm:px-10 sm:pb-10 sm:pt-10">
           <p
@@ -159,38 +165,60 @@ export function FinanceiroDashboard({
           <div className="mt-8 grid gap-6 sm:grid-cols-2">
             <div>
               <div className="flex items-baseline justify-between gap-3">
-                <span className="text-[11px] uppercase tracking-[0.2em] text-cyan-300/80">
+                <span
+                  className={cn(
+                    "text-[11px] uppercase tracking-[0.2em]",
+                    isLight ? "text-cyan-800/80" : "text-cyan-300/80"
+                  )}
+                >
                   Pix
                 </span>
                 <span
-                  className="text-2xl tabular-nums text-cyan-200"
+                  className={cn(
+                    "text-2xl tabular-nums",
+                    isLight ? "text-cyan-900" : "text-cyan-200"
+                  )}
                   style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
                 >
                   {formatCurrency(caixa.pix)}
                 </span>
               </div>
-              <div className="mt-3 h-[3px] overflow-hidden rounded-full bg-at-card-soft">
+              <div className="mt-3 h-[3px] overflow-hidden rounded-full bg-at-track">
                 <div
-                  className="h-full rounded-full bg-cyan-400/80 transition-all duration-700"
+                  className={cn(
+                    "h-full rounded-full transition-all duration-700",
+                    isLight ? "bg-cyan-700/75" : "bg-cyan-400/80"
+                  )}
                   style={{ width: `${pctPix}%` }}
                 />
               </div>
             </div>
             <div>
               <div className="flex items-baseline justify-between gap-3">
-                <span className="text-[11px] uppercase tracking-[0.2em] text-amber-200/80">
+                <span
+                  className={cn(
+                    "text-[11px] uppercase tracking-[0.2em]",
+                    isLight ? "text-amber-900/75" : "text-amber-200/80"
+                  )}
+                >
                   Dinheiro
                 </span>
                 <span
-                  className="text-2xl tabular-nums text-amber-100"
+                  className={cn(
+                    "text-2xl tabular-nums",
+                    isLight ? "text-[#78520a]" : "text-amber-100"
+                  )}
                   style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
                 >
                   {formatCurrency(caixa.dinheiro)}
                 </span>
               </div>
-              <div className="mt-3 h-[3px] overflow-hidden rounded-full bg-at-card-soft">
+              <div className="mt-3 h-[3px] overflow-hidden rounded-full bg-at-track">
                 <div
-                  className="h-full rounded-full bg-amber-300/75 transition-all duration-700"
+                  className={cn(
+                    "h-full rounded-full transition-all duration-700",
+                    isLight ? "bg-[#c4a574]/85" : "bg-amber-300/75"
+                  )}
                   style={{ width: `${pctDinheiro}%` }}
                 />
               </div>
@@ -221,22 +249,18 @@ export function FinanceiroDashboard({
 
         <div className="grid gap-8 sm:grid-cols-2">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-400/70">
-              Entrou
-            </p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-at-muted">Entrou</p>
             <p
-              className="mt-2 text-4xl tabular-nums tracking-tight text-emerald-300"
+              className="mt-2 text-4xl tabular-nums tracking-tight text-at-money-pos"
               style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
             >
               {formatCurrency(hoje.entradas)}
             </p>
           </div>
           <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-rose-400/70">
-              Saiu
-            </p>
+            <p className="text-[11px] uppercase tracking-[0.18em] text-at-muted">Saiu</p>
             <p
-              className="mt-2 text-4xl tabular-nums tracking-tight text-rose-300"
+              className="mt-2 text-4xl tabular-nums tracking-tight text-at-money-neg"
               style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
             >
               {formatCurrency(hoje.saidas)}
@@ -246,11 +270,11 @@ export function FinanceiroDashboard({
 
         <div className="grid gap-6 border-t border-at pt-5 sm:grid-cols-2">
           <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-rose-300/70">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-at-muted">
               Descontos dados
             </p>
             <p
-              className="mt-1.5 text-xl tabular-nums text-rose-200/90"
+              className="mt-1.5 text-xl tabular-nums text-at-money-neg"
               style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
             >
               {formatCurrency(hoje.descontoRecebimento)}
@@ -258,11 +282,11 @@ export function FinanceiroDashboard({
             <p className="mt-1 text-xs text-at-muted">No recebimento das coletas de hoje</p>
           </div>
           <div>
-            <p className="text-[11px] uppercase tracking-[0.18em] text-orange-300/70">
+            <p className="text-[11px] uppercase tracking-[0.18em] text-at-muted">
               Deixado no ponto
             </p>
             <p
-              className="mt-1.5 text-xl tabular-nums text-orange-200/90"
+              className="mt-1.5 text-xl tabular-nums text-at-link"
               style={{ fontFamily: "var(--font-fin-display), Georgia, serif" }}
             >
               {formatCurrency(hoje.deixadoNoPonto)}
@@ -300,8 +324,8 @@ export function FinanceiroDashboard({
                 className={cn(
                   "rounded-sm px-3 py-1.5 text-[12px] tracking-wide transition",
                   periodo === p
-                    ? "bg-[#c4a574]/15 text-at-link ring-1 ring-[#c4a574]/35"
-                    : "text-at-muted hover:text-at-primary/85"
+                    ? "analise-tab-active"
+                    : "analise-tab-idle"
                 )}
               >
                 {periodoLabels[p]}
@@ -339,7 +363,7 @@ export function FinanceiroDashboard({
             icon={<Wallet className="h-8 w-8" />}
           />
         ) : (
-          <ul className="divide-y divide-white/[0.05] border-t border-at">
+          <ul className="divide-y divide-[var(--at-border-soft)] border-t border-at">
             {movimento.rows.map((l) => {
               const b = breakdownLancamento(l);
               const temPixDinheiro = b.pix > 0.009 || b.dinheiro > 0.009;
@@ -361,13 +385,13 @@ export function FinanceiroDashboard({
                         <>
                           {" · "}
                           {b.pix > 0.009 && (
-                            <span className="text-cyan-400/90">
+                            <span className={isLight ? "text-cyan-800" : "text-cyan-400/90"}>
                               Pix {formatCurrency(b.pix)}
                             </span>
                           )}
                           {b.pix > 0.009 && b.dinheiro > 0.009 && " · "}
                           {b.dinheiro > 0.009 && (
-                            <span className="text-amber-400/90">
+                            <span className="text-at-link">
                               Dinheiro {formatCurrency(b.dinheiro)}
                             </span>
                           )}
@@ -387,7 +411,7 @@ export function FinanceiroDashboard({
                   <p
                     className={cn(
                       "shrink-0 text-[15px] tabular-nums",
-                      entrada ? "text-emerald-400" : "text-rose-400"
+                      entrada ? "text-at-money-pos" : "text-at-money-neg"
                     )}
                   >
                     {entrada ? "+" : "−"}
@@ -414,10 +438,10 @@ function Metric({
 }) {
   const color =
     tone === "emerald"
-      ? "text-emerald-300"
+      ? "text-at-money-pos"
       : tone === "orange"
-        ? "text-orange-200"
-        : "text-rose-300";
+        ? "text-at-link"
+        : "text-at-money-neg";
   return (
     <div>
       <p className="text-[11px] uppercase tracking-[0.16em] text-at-muted">{label}</p>
