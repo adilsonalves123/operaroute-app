@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -18,7 +18,7 @@ type Props = {
   /** Dashboard: Hoje / Semana / Mês. Análise: presets padrão. */
   variante?: "analise" | "dashboard";
   /** Alinha pills com tema dourado das telas premium. */
-  tema?: "premium" | "default";
+  tema?: "premium" | "claro" | "default";
 };
 
 const ACCENT = "#c4a574";
@@ -30,6 +30,7 @@ export function PeriodoAnaliseSelector({
   tema = "default",
 }: Props) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const opcoes = variante === "dashboard" ? periodoDashboardOpcoes : periodoAnaliseOpcoes;
   const [de, setDe] = useState(
     atual.preset === "personalizado" ? atual.inicio.toISOString().slice(0, 10) : ""
@@ -41,7 +42,11 @@ export function PeriodoAnaliseSelector({
 
   function navegar(preset: PeriodoAnalisePreset, customDe?: string, customAte?: string) {
     const qs = buildAnaliseSearchParams(preset, customDe, customAte);
-    router.push(`${basePath}?${qs}`);
+    const params = new URLSearchParams(qs);
+    const tema = searchParams.get("tema");
+    if (tema === "claro") params.set("tema", "claro");
+    const finalQs = params.toString();
+    router.push(finalQs ? `${basePath}?${finalQs}` : basePath);
   }
 
   function aplicarPersonalizado() {
@@ -67,10 +72,14 @@ export function PeriodoAnaliseSelector({
               atual.preset === op.id
                 ? tema === "premium"
                   ? "border-white/[0.12] bg-white/[0.06] text-[#f4efe6]"
-                  : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
+                  : tema === "claro"
+                    ? "border-stone-800 bg-stone-900 text-white"
+                    : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
                 : tema === "premium"
                   ? "border-transparent bg-transparent text-slate-500 hover:text-slate-300"
-                  : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
+                  : tema === "claro"
+                    ? "border-transparent bg-transparent text-stone-500 hover:text-stone-800"
+                    : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
             )}
           >
             {op.label}
@@ -84,10 +93,14 @@ export function PeriodoAnaliseSelector({
             atual.preset === "personalizado" || showCustom
               ? tema === "premium"
                 ? "border-white/[0.12] bg-white/[0.06] text-[#f4efe6]"
-                : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
+                : tema === "claro"
+                  ? "border-stone-800 bg-stone-900 text-white"
+                  : "bg-primary-neon/20 text-primary-neon border-primary-neon/40"
               : tema === "premium"
                 ? "border-white/[0.08] text-slate-500 hover:border-white/[0.12] hover:text-slate-300"
-                : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
+                : tema === "claro"
+                  ? "border-stone-200 text-stone-500 hover:border-stone-400 hover:text-stone-800"
+                  : "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200"
           )}
         >
           <Calendar className="h-3.5 w-3.5" />
@@ -130,7 +143,9 @@ export function PeriodoAnaliseSelector({
               "rounded-lg px-4 py-2 text-sm font-semibold disabled:opacity-50",
               tema === "premium"
                 ? "bg-[#c4a574] text-[#0a0e16]"
-                : "bg-primary-neon text-slate-900"
+                : tema === "claro"
+                  ? "bg-stone-900 text-white"
+                  : "bg-primary-neon text-slate-900"
             )}
             style={tema === "premium" ? { backgroundColor: ACCENT } : undefined}
           >

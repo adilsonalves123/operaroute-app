@@ -2,6 +2,7 @@ import { getProfile, getEmpresa, createClient } from "@/lib/supabase/server";
 import { resolveNichosAtivos } from "@/lib/assinatura";
 import { fetchInteligenciaOperacional } from "@/lib/analise/inteligencia-operacional";
 import { resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
+import { parseAnaliseVisualTema } from "@/lib/analise/analise-visual-theme";
 import { AnalisePremiumClient } from "@/components/analise/AnalisePremiumClient";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import {
@@ -12,9 +13,10 @@ import {
 export default async function AnalisePage({
   searchParams,
 }: {
-  searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
+  searchParams: Promise<{ periodo?: string; de?: string; ate?: string; tema?: string }>;
 }) {
-  const { periodo: periodoRaw, de, ate } = await searchParams;
+  const { periodo: periodoRaw, de, ate, tema: temaRaw } = await searchParams;
+  const visualTema = parseAnaliseVisualTema(temaRaw);
   const periodo = resolverPeriodoAnalise({ periodo: periodoRaw, de, ate });
   const profile = await getProfile();
   const empresa = profile?.empresa_id ? await getEmpresa(profile.empresa_id) : null;
@@ -92,5 +94,12 @@ export default async function AnalisePage({
     );
   }
 
-  return <AnalisePremiumClient data={data} periodo={periodo} comissaoStaff={comissaoStaff} />;
+  return (
+    <AnalisePremiumClient
+      data={data}
+      periodo={periodo}
+      visualTema={visualTema}
+      comissaoStaff={comissaoStaff}
+    />
+  );
 }
