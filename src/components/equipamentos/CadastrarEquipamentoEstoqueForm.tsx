@@ -146,7 +146,7 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
       <button
         type="button"
         onClick={abrir}
-        className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-4 py-2.5 text-[13px] font-medium text-[#c4a574] transition hover:bg-[#c4a574]/22"
+        className="inline-flex items-center gap-2 rounded-lg border border-at bg-at-tab-active px-4 py-2.5 text-[13px] font-semibold text-[var(--at-tab-active-text)] transition hover:brightness-110"
       >
         <Plus className="h-4 w-4" />
         Cadastrar no estoque

@@ -41,7 +41,7 @@ export default async function EquipamentosPage() {
   return (
     <div className="w-full">
       {error && (
-        <p className="mb-6 rounded-sm border border-rose-500/25 bg-rose-500/[0.06] p-3 text-sm text-rose-300">
+        <p className="mb-6 rounded-lg border border-rose-500/25 bg-rose-500/[0.06] p-3 text-sm text-rose-600 dark:text-rose-300">
           Não foi possível carregar os equipamentos.
         </p>
       )}

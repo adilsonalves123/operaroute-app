@@ -119,7 +119,7 @@ function EquipamentoCard({
     <>
       <div
         className={cn(
-          "group grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3.5 transition hover:bg-white/[0.015]",
+          "group grid cursor-pointer grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 py-3.5 transition hover:bg-at-card-soft",
           seriePendente && "border-l-2 border-l-rose-400/45 pl-3 -ml-0.5"
         )}
         onClick={() => setOpen(true)}
@@ -138,7 +138,7 @@ function EquipamentoCard({
 
         <div className="min-w-0">
           <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-            <p className="truncate text-[14px] font-medium tracking-tight text-[#f0ebe3] group-hover:text-white">
+            <p className="truncate text-[14px] font-medium tracking-tight text-at-primary group-hover:text-at-link">
               {displayNome}
             </p>
             {seriePendente && (
@@ -153,11 +153,11 @@ function EquipamentoCard({
             )}
           </div>
 
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-slate-500">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[12px] text-at-muted">
             {showPonto && eq.ponto_id && pontoNome && (
               <Link
                 href={`/pontos/${pontoId}`}
-                className="inline-flex max-w-[12rem] items-center gap-1 truncate text-slate-400 transition hover:text-[#c4a574]"
+                className="inline-flex max-w-[12rem] items-center gap-1 truncate text-at-soft transition hover:text-at-link"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MapPin className="h-3 w-3 shrink-0 opacity-60" />
@@ -171,7 +171,7 @@ function EquipamentoCard({
               </span>
             )}
             {showPonto && !eq.ponto_id && (
-              <span className="inline-flex items-center gap-1 text-slate-500">
+              <span className="inline-flex items-center gap-1 text-at-muted">
                 <Package className="h-3 w-3 shrink-0 opacity-60" />
                 Estoque
               </span>
@@ -179,7 +179,7 @@ function EquipamentoCard({
             {chamadoAberto && (
               <a
                 href="/chamados"
-                className="truncate text-slate-500 hover:text-amber-200/90"
+                className="truncate text-at-muted hover:text-amber-600 dark:hover:text-amber-200/90"
                 onClick={(e) => e.stopPropagation()}
                 title={chamadoAberto.titulo}
               >
@@ -189,13 +189,13 @@ function EquipamentoCard({
           </div>
 
           {metaBits.length > 0 && (
-            <p className="mt-1.5 truncate font-mono text-[11px] tabular-nums tracking-wide text-slate-500">
+            <p className="mt-1.5 truncate font-mono text-[11px] tabular-nums tracking-wide text-at-soft">
               {metaBits.join("  ·  ")}
             </p>
           )}
 
           {eq.observacao && (
-            <p className="mt-1 truncate text-[11px] text-slate-600">{eq.observacao}</p>
+            <p className="mt-1 truncate text-[11px] text-at-soft">{eq.observacao}</p>
           )}
         </div>
 
@@ -211,7 +211,7 @@ function EquipamentoCard({
               equipamentoId={eq.id}
               equipamentoNome={displayNome}
               variant="icon"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-500 transition hover:bg-white/[0.04] hover:text-[#c4a574]"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-at-muted transition hover:bg-at-card-soft hover:text-at-link"
             />
           )}
           {eq.ponto_id && (
@@ -222,7 +222,7 @@ function EquipamentoCard({
             />
           )}
           <EquipamentoExcluirButton equipamento={eq} />
-          <ExternalLink className="ml-1 hidden h-3.5 w-3.5 text-slate-600 sm:block" />
+          <ExternalLink className="ml-1 hidden h-3.5 w-3.5 text-at-soft sm:block" />
         </div>
       </div>
 
@@ -272,7 +272,7 @@ export function EquipamentosList({
 
   if (!equipamentos.length) {
     return (
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-at-muted">
         {emptyMessage ?? "Nenhum equipamento cadastrado neste ponto."}
       </p>
     );
@@ -284,8 +284,8 @@ export function EquipamentosList({
   return (
     <div className={cn("space-y-6", multiModulo && "space-y-10")}>
       {!hideSearch && (
-        <div className="flex items-center gap-2.5 border-b border-white/[0.08] pb-3 focus-within:border-[#c4a574]/35">
-          <Search className="h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden />
+        <div className="flex items-center gap-2.5 border-b border-at pb-3 focus-within:border-[var(--at-tab-active-border)]">
+          <Search className="h-3.5 w-3.5 shrink-0 text-at-muted" aria-hidden />
           <input
             type="text"
             inputMode="search"
@@ -293,14 +293,14 @@ export function EquipamentosList({
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Série, número ou nome…"
-            className="min-w-0 flex-1 !border-0 !bg-transparent !p-0 !shadow-none text-[13px] tracking-wide text-[#f0ebe3] placeholder:text-slate-600 focus:!border-transparent focus:!shadow-none focus:!ring-0"
+            className="min-w-0 flex-1 !border-0 !bg-transparent !p-0 !shadow-none text-[13px] tracking-wide text-at-primary placeholder:text-at-soft focus:!border-transparent focus:!shadow-none focus:!ring-0"
             aria-label="Buscar máquinas"
           />
         </div>
       )}
 
       {filtrados.length === 0 ? (
-        <p className="py-8 text-center text-[13px] text-slate-500">
+        <p className="py-8 text-center text-[13px] text-at-muted">
           Nenhuma máquina neste filtro.
         </p>
       ) : (
@@ -310,10 +310,10 @@ export function EquipamentosList({
 
             return (
               <section key={grupo.id}>
-                <header className="mb-1 flex items-end justify-between gap-4 border-b border-white/[0.07] pb-3">
+                <header className="mb-1 flex items-end justify-between gap-4 border-b border-at pb-3">
                   <div className="min-w-0">
                     <h3
-                      className="text-[1.35rem] font-normal leading-none tracking-tight text-[#f4efe6]"
+                      className="text-[1.35rem] font-normal leading-none tracking-tight text-at-primary"
                       style={{
                         fontFamily:
                           "var(--font-eq-display), var(--font-pontos-display), Georgia, serif",
@@ -321,19 +321,19 @@ export function EquipamentosList({
                     >
                       {grupo.label}
                     </h3>
-                    <p className="mt-1.5 text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                    <p className="mt-1.5 text-[11px] uppercase tracking-[0.16em] text-at-muted">
                       {grupo.subtitle}
                     </p>
                   </div>
-                  <p className="shrink-0 pb-0.5 font-mono text-[11px] tabular-nums text-slate-500">
+                  <p className="shrink-0 pb-0.5 font-mono text-[11px] tabular-nums text-at-muted">
                     {items.length}
-                    <span className="ml-1.5 font-sans normal-case tracking-normal text-slate-600">
+                    <span className="ml-1.5 font-sans normal-case tracking-normal text-at-soft">
                       {items.length === 1 ? "máquina" : "máquinas"}
                     </span>
                   </p>
                 </header>
 
-                <div className="divide-y divide-white/[0.04]">
+                <div className="divide-y divide-[var(--at-border-soft)]">
                   {items.map((eq) => {
                     const eqPontoId = pontoId ?? eq.ponto_id ?? "";
                     const pontoInfo = eq.ponto_id
