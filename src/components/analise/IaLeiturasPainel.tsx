@@ -23,16 +23,16 @@ function Kpi({
   accent?: "default" | "green" | "amber" | "cyan";
 }) {
   const styles = {
-    default: "border-white/[0.06] bg-white/[0.02]",
+    default: "border-at bg-white/[0.02]",
     green: "border-emerald-500/20 bg-emerald-500/[0.05]",
     amber: "border-amber-500/20 bg-amber-500/[0.05]",
     cyan: "border-cyan-500/20 bg-cyan-500/[0.05]",
   };
   return (
     <div className={cn("rounded-2xl border p-4", styles[accent])}>
-      <p className="text-[11px] font-medium uppercase tracking-wide text-slate-500">{label}</p>
+      <p className="text-[11px] font-medium uppercase tracking-wide text-at-muted">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums text-white">{value}</p>
-      {sub ? <p className="mt-1 text-xs text-slate-500">{sub}</p> : null}
+      {sub ? <p className="mt-1 text-xs text-at-muted">{sub}</p> : null}
     </div>
   );
 }
@@ -97,14 +97,14 @@ export function IaLeiturasPainel({
           <Sparkles className="h-4 w-4 shrink-0 text-violet-300" />
           <div className="min-w-0">
             <p className="text-sm font-medium text-white">Leitura IA</p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-at-muted">
               {resumo.total} leitura{resumo.total === 1 ? "" : "s"} · {resumo.pendentes} pendente
               {resumo.pendentes === 1 ? "" : "s"} · {resumo.rejeitadas} rejeitada
               {resumo.rejeitadas === 1 ? "" : "s"}
             </p>
           </div>
         </div>
-        <p className="text-xs text-slate-500">Finalize coletas com foto pra medir acerto.</p>
+        <p className="text-xs text-at-muted">Finalize coletas com foto pra medir acerto.</p>
       </div>
     );
   }
@@ -117,14 +117,14 @@ export function IaLeiturasPainel({
         </div>
         <div>
           <h3 className="text-lg font-semibold text-white">Precisão da leitura IA</h3>
-          <p className="mt-0.5 text-sm text-slate-400">
+          <p className="mt-0.5 text-sm text-at-muted">
             Acurácia das leituras de contadores no período {periodo.label.toLowerCase()}.
           </p>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center gap-2 py-8 text-sm text-slate-400">
+        <div className="flex items-center gap-2 py-8 text-sm text-at-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Calculando precisão…
         </div>
@@ -165,16 +165,16 @@ export function IaLeiturasPainel({
           </div>
 
           <div className="grid gap-3 sm:grid-cols-3">
-            <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5 text-sm">
-              <span className="text-slate-500">Exceções de contador</span>
+            <div className="rounded-xl border border-at bg-black/20 px-3 py-2.5 text-sm">
+              <span className="text-at-muted">Exceções de contador</span>
               <p className="mt-0.5 font-semibold text-white">{resumo.comExcecaoContador}</p>
             </div>
-            <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5 text-sm">
-              <span className="text-slate-500">Manutenção detectada</span>
+            <div className="rounded-xl border border-at bg-black/20 px-3 py-2.5 text-sm">
+              <span className="text-at-muted">Manutenção detectada</span>
               <p className="mt-0.5 font-semibold text-white">{resumo.comManutencaoDetectada}</p>
             </div>
-            <div className="rounded-xl border border-white/[0.06] bg-black/20 px-3 py-2.5 text-sm">
-              <span className="text-slate-500">Pendentes / rejeitadas</span>
+            <div className="rounded-xl border border-at bg-black/20 px-3 py-2.5 text-sm">
+              <span className="text-at-muted">Pendentes / rejeitadas</span>
               <p className="mt-0.5 font-semibold text-white">
                 {resumo.pendentes} / {resumo.rejeitadas}
               </p>
@@ -183,14 +183,14 @@ export function IaLeiturasPainel({
 
           {resumo.flagsFrequentes.length > 0 ? (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-at-muted">
                 Flags mais frequentes
               </p>
               <div className="flex flex-wrap gap-2">
                 {resumo.flagsFrequentes.map((item) => (
                   <span
                     key={item.flag}
-                    className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 text-[11px] text-slate-300"
+                    className="rounded-full border border-at-soft bg-black/20 px-2.5 py-1 text-[11px] text-at-primary/85"
                   >
                     {item.flag} · {item.count}
                   </span>
@@ -201,13 +201,13 @@ export function IaLeiturasPainel({
 
           {resumo.porDia.length > 0 ? (
             <div>
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-at-muted">
                 Evolução diária
               </p>
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-xs">
                   <thead>
-                    <tr className="text-slate-500">
+                    <tr className="text-at-muted">
                       <th className="px-2 py-1.5 font-medium">Dia</th>
                       <th className="px-2 py-1.5 font-medium">Total</th>
                       <th className="px-2 py-1.5 font-medium">IA ok</th>
@@ -216,7 +216,7 @@ export function IaLeiturasPainel({
                   </thead>
                   <tbody>
                     {resumo.porDia.map((dia) => (
-                      <tr key={dia.dia} className="border-t border-white/[0.04] text-slate-300">
+                      <tr key={dia.dia} className="border-t border-white/[0.04] text-at-primary/85">
                         <td className="px-2 py-1.5 tabular-nums">
                           {dia.dia.split("-").reverse().join("/")}
                         </td>
@@ -232,7 +232,7 @@ export function IaLeiturasPainel({
           ) : null}
 
           {resumo.finalizadas === 0 ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-at-muted">
               Ainda não há leituras IA finalizadas neste período. Faça coletas com foto e leitura
               automática para começar a medir a precisão.
             </p>

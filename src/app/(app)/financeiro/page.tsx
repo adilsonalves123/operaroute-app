@@ -1,5 +1,6 @@
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { FinanceiroDashboard } from "./FinanceiroDashboard";
+import { PremiumPageHeader } from "@/components/layout/PremiumPageHeader";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { fetchComposicaoCaixa } from "@/lib/financeiro/saldo-caixa";
@@ -49,30 +50,21 @@ export default async function FinanceiroPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[11px] uppercase tracking-[0.28em] text-[#c4a574]/80">
-            OperaRoute
-          </p>
-          <h1
-            className="mt-2 text-4xl tracking-tight text-[#f4efe6] sm:text-5xl"
-            style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+    <div className="mx-auto max-w-6xl space-y-10 pt-6 sm:pt-10">
+      <PremiumPageHeader
+        eyebrow="Caixa · OperaRoute"
+        title="Financeiro"
+        subtitle="Caixa, descontos e o que moveu na operação"
+        action={
+          <Link
+            href="/financeiro/novo"
+            className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/10 px-4 py-2.5 text-sm font-medium text-at-link transition hover:bg-[#c4a574]/20"
           >
-            Financeiro
-          </h1>
-          <p className="mt-2 text-sm text-slate-400">
-            Caixa, descontos e o que moveu na operação
-          </p>
-        </div>
-        <Link
-          href="/financeiro/novo"
-          className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/10 px-4 py-2.5 text-sm font-medium text-[#c4a574] transition hover:bg-[#c4a574]/20"
-        >
-          <Plus className="h-4 w-4" />
-          Novo lançamento
-        </Link>
-      </div>
+            <Plus className="h-4 w-4" />
+            Novo lançamento
+          </Link>
+        }
+      />
 
       <FinanceiroDashboard
         lancamentos={

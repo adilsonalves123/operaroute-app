@@ -153,62 +153,62 @@ export default async function ColetaConsignadoDetalhePage({
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/coletas" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
+        <Link href="/coletas" className="rounded-lg p-2 text-at-muted hover:bg-slate-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-white">Recolhe Consignado</h1>
-          <p className="text-sm text-slate-400">{formatDateTime(coleta.created_at)}</p>
+          <p className="text-sm text-at-muted">{formatDateTime(coleta.created_at)}</p>
         </div>
       </div>
 
       <div className="glass-card p-6 space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-xs text-slate-500">Comércio</p>
+            <p className="text-xs text-at-muted">Comércio</p>
             <p className="font-medium text-white">{coleta.pontos?.nome ?? "Comércio"}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Expositor</p>
+            <p className="text-xs text-at-muted">Expositor</p>
             <p className="font-medium text-white">
               {coleta.equipamentos?.nome ?? coleta.equipamento_id ?? "Expositor"}
             </p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Itens vendidos</p>
+            <p className="text-xs text-at-muted">Itens vendidos</p>
             <p className="font-semibold text-emerald-300">{totalVendido}</p>
           </div>
           <div>
-            <p className="text-xs text-slate-500">Vendido (bruto)</p>
+            <p className="text-xs text-at-muted">Vendido (bruto)</p>
             <p className="font-semibold text-white">{formatCurrency(Number(coleta.valor_bruto ?? 0))}</p>
           </div>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded-lg bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-500">Comissão do cliente</p>
+            <p className="text-xs text-at-muted">Comissão do cliente</p>
             <p className="font-semibold text-amber-300">
               {formatCurrency(Number(coleta.valor_comissao ?? 0))}
             </p>
           </div>
           <div className="rounded-lg bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-500">Desconto</p>
+            <p className="text-xs text-at-muted">Desconto</p>
             <p className="font-semibold text-rose-300">
               {formatCurrency(Number(coleta.desconto ?? 0))}
             </p>
           </div>
           <div className="rounded-lg bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-500">A receber</p>
+            <p className="text-xs text-at-muted">A receber</p>
             <p className="font-semibold text-pink-300">{formatCurrency(valorAReceber)}</p>
           </div>
           <div className="rounded-lg bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-500">Separar p/ custo</p>
+            <p className="text-xs text-at-muted">Separar p/ custo</p>
             <p className="font-semibold text-rose-300">
               {formatCurrency(Number(coleta.custo_brindes ?? 0))}
             </p>
           </div>
           <div className="rounded-lg bg-slate-950/50 p-3">
-            <p className="text-xs text-slate-500">Livre (lucro)</p>
+            <p className="text-xs text-at-muted">Livre (lucro)</p>
             <p className="font-semibold text-primary-neon">
               {formatCurrency(Number(coleta.lucro_real ?? coleta.valor_liquido ?? 0))}
             </p>
@@ -224,7 +224,7 @@ export default async function ColetaConsignadoDetalhePage({
         <div className="space-y-3">
           <h2 className="font-semibold text-white">Comprovante — produtos vendidos</h2>
           {vendidos.length === 0 ? (
-            <p className="text-sm text-slate-400">Nenhum produto vendido neste recolhe.</p>
+            <p className="text-sm text-at-muted">Nenhum produto vendido neste recolhe.</p>
           ) : (
             <div className="space-y-2">
               {vendidos.map((item, index) => (
@@ -233,17 +233,17 @@ export default async function ColetaConsignadoDetalhePage({
                   className="flex justify-between gap-4 rounded-lg border border-slate-800 bg-slate-950/40 px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <p className="text-slate-200">
+                    <p className="text-at-primary/90">
                       <span className="font-semibold tabular-nums text-white">
                         {item.quantidade}
                       </span>
                       {" × "}
                       {item.nome}
                       {item.codigo ? (
-                        <span className="text-slate-500"> ({item.codigo})</span>
+                        <span className="text-at-muted"> ({item.codigo})</span>
                       ) : null}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-at-muted">
                       {item.preco_venda != null
                         ? `${formatCurrency(Number(item.preco_venda))} un`
                         : "—"}
@@ -252,7 +252,7 @@ export default async function ColetaConsignadoDetalhePage({
                         : ""}
                     </p>
                   </div>
-                  <span className="shrink-0 tabular-nums font-medium text-slate-200">
+                  <span className="shrink-0 tabular-nums font-medium text-at-primary/90">
                     {item.receita != null
                       ? formatCurrency(Number(item.receita))
                       : formatCurrency(
@@ -279,7 +279,7 @@ export default async function ColetaConsignadoDetalhePage({
         {coleta.observacao && (
           <div>
             <h2 className="font-semibold text-white">Observação</h2>
-            <p className="mt-2 text-sm text-slate-400">{coleta.observacao}</p>
+            <p className="mt-2 text-sm text-at-muted">{coleta.observacao}</p>
           </div>
         )}
       </div>

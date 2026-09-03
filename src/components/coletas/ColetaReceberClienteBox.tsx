@@ -37,13 +37,13 @@ export function ColetaReceberClienteBox({
       )}
     >
       <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-[#c4a574]/90">
+        <p className="text-xs font-medium uppercase tracking-wide text-at-link/90">
           Receber do cliente
         </p>
         <p className="text-3xl font-bold tabular-nums text-emerald-400/95 mt-1">
           {formatCurrency(totalACobrar)}
         </p>
-        <p className="text-xs text-slate-400 mt-1">
+        <p className="text-xs text-at-muted mt-1">
           {haverDescontado > 0.009
             ? "Já descontando haver do ponto"
             : pendenciaIncluida > 0.009
@@ -53,16 +53,16 @@ export function ColetaReceberClienteBox({
       </div>
 
       {temItens && (
-        <div className="border-t border-white/[0.06] pt-3 space-y-1.5 text-sm">
+        <div className="border-t border-at pt-3 space-y-1.5 text-sm">
           <div className="flex justify-between gap-4">
-            <span className="text-slate-400">Valor da operação</span>
-            <span className="font-medium tabular-nums text-slate-200">
+            <span className="text-at-muted">Valor da operação</span>
+            <span className="font-medium tabular-nums text-at-primary/90">
               {formatCurrency(valorOperacao)}
             </span>
           </div>
           {pendenciaIncluida > 0.009 && (
             <div className="flex justify-between gap-4">
-              <span className="text-slate-400">Pendência incluída</span>
+              <span className="text-at-muted">Pendência incluída</span>
               <span className="font-medium tabular-nums text-amber-300">
                 + {formatCurrency(pendenciaIncluida)}
               </span>
@@ -70,7 +70,7 @@ export function ColetaReceberClienteBox({
           )}
           {haverDescontado > 0.009 && (
             <div className="flex justify-between gap-4">
-              <span className="text-slate-400">Haver descontado</span>
+              <span className="text-at-muted">Haver descontado</span>
               <span className="font-medium tabular-nums text-cyan-300">
                 − {formatCurrency(haverDescontado)}
               </span>

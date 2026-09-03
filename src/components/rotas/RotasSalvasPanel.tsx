@@ -112,7 +112,7 @@ export function RotasSalvasPanel({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wide">
+        <h2 className="text-sm font-semibold text-at-primary/85 uppercase tracking-wide">
           Rotas salvas ({rotas.length})
         </h2>
         {podeGerenciar && paradasAtuais && paradasAtuais.length > 0 && (
@@ -135,7 +135,7 @@ export function RotasSalvasPanel({
 
       {showSalvar && podeGerenciar && (
         <div className="glass-card p-4 space-y-3 border border-primary-neon/20">
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-at-muted">
             Salvar {paradasAtuais?.length ?? 0} paradas em{" "}
             <strong className="text-white">{cidadeSelecionada || "—"}</strong>
           </p>
@@ -153,7 +153,7 @@ export function RotasSalvasPanel({
               options={operadorOptions}
             />
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-at-muted">
             A rota aparecerá em «Minha rota» no painel do operador escolhido.
           </p>
           {msg && <p className="text-sm text-red-400">{msg}</p>}
@@ -170,7 +170,7 @@ export function RotasSalvasPanel({
             <button
               type="button"
               onClick={() => setShowSalvar(false)}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-400"
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-muted"
             >
               Cancelar
             </button>
@@ -179,7 +179,7 @@ export function RotasSalvasPanel({
       )}
 
       {rotas.length === 0 ? (
-        <div className="glass-card p-6 text-center text-sm text-slate-500">
+        <div className="glass-card p-6 text-center text-sm text-at-muted">
           {podeGerenciar
             ? "Monte e otimize uma rota abaixo, depois clique em «Salvar rota atual»."
             : "Nenhuma rota atribuída a você ainda."}
@@ -191,7 +191,7 @@ export function RotasSalvasPanel({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="font-semibold text-white truncate">{rota.nome}</p>
-                  <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                  <p className="text-xs text-at-muted mt-0.5 flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     {formatDate(rota.created_at)}
                   </p>
@@ -203,14 +203,14 @@ export function RotasSalvasPanel({
                       ? "bg-green-500/20 text-green-400"
                       : rota.status === "em_andamento"
                         ? "bg-cyan-500/20 text-cyan-400"
-                        : "bg-slate-500/20 text-slate-400"
+                        : "bg-slate-500/20 text-at-muted"
                   )}
                 >
                   {statusRotaLabel(rota.status)}
                 </span>
               </div>
 
-              <div className="flex flex-wrap gap-2 text-xs text-slate-400">
+              <div className="flex flex-wrap gap-2 text-xs text-at-muted">
                 <span className="inline-flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
                   {rota.total_paradas} paradas
@@ -246,7 +246,7 @@ export function RotasSalvasPanel({
                   <button
                     type="button"
                     onClick={() => void excluir(rota.id)}
-                    className="rounded-lg p-2 text-slate-500 hover:bg-red-500/10 hover:text-red-400"
+                    className="rounded-lg p-2 text-at-muted hover:bg-red-500/10 hover:text-red-400"
                     title="Excluir"
                   >
                     <Trash2 className="h-4 w-4" />

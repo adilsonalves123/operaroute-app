@@ -74,7 +74,7 @@ export function AnaliseMultiNichoTabs({
               "pb-2.5 text-sm font-medium border-b-2 -mb-px transition",
               tab === t.id
                 ? "border-primary-neon text-white"
-                : "border-transparent text-slate-500 hover:text-slate-300"
+                : "border-transparent text-at-muted hover:text-at-primary/85"
             )}
           >
             {t.label}

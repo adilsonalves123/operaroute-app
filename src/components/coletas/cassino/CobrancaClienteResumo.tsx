@@ -49,7 +49,7 @@ export function CobrancaClienteResumo({
               <p className="text-xs font-medium uppercase tracking-wide text-cyan-400/90">
                 Nada a receber nesta coleta
               </p>
-              <p className="text-sm leading-relaxed text-slate-200">
+              <p className="text-sm leading-relaxed text-at-primary/90">
                 A operação ({formatCurrency(operacaoCobranca)}) foi coberta pelo haver do ponto —
                 o cliente não pagou nesta visita.
               </p>
@@ -60,8 +60,8 @@ export function CobrancaClienteResumo({
             <div className="border-t border-cyan-500/20 pt-3 space-y-1.5 text-sm">
               {cobranca.itens.map((item) => (
                 <div key={item.label} className="flex justify-between gap-4">
-                  <span className="text-slate-400">{item.label}</span>
-                  <span className="font-medium tabular-nums text-slate-200">
+                  <span className="text-at-muted">{item.label}</span>
+                  <span className="font-medium tabular-nums text-at-primary/90">
                     {formatCurrency(item.valorReais)}
                   </span>
                 </div>
@@ -98,7 +98,7 @@ export function CobrancaClienteResumo({
             <p className="text-3xl font-bold tabular-nums text-primary-neon mt-1">
               {formatCurrency(cobranca.totalACobrarReais)}
             </p>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-at-muted mt-1">
               {cobranca.negativoParaProximaReais > 0.009
                 ? "Valor desta visita — o restante do negativo fica para a próxima coleta"
                 : calculo.haverCompensadoReais > 0.009
@@ -111,8 +111,8 @@ export function CobrancaClienteResumo({
             <div className="border-t border-primary-neon/20 pt-3 space-y-1.5 text-sm">
               {cobranca.itens.map((item) => (
                 <div key={item.label} className="flex justify-between gap-4">
-                  <span className="text-slate-400">{item.label}</span>
-                  <span className="font-medium tabular-nums text-slate-200">
+                  <span className="text-at-muted">{item.label}</span>
+                  <span className="font-medium tabular-nums text-at-primary/90">
                     {formatCurrency(item.valorReais)}
                   </span>
                 </div>
@@ -141,7 +141,7 @@ export function CobrancaClienteResumo({
           )}
         >
           <div className="flex justify-between gap-4">
-            <span className="text-slate-400">Recebido agora</span>
+            <span className="text-at-muted">Recebido agora</span>
             <span className="font-semibold tabular-nums text-green-400">
               {formatCurrency(cobranca.valorRecebidoReais)}
             </span>
@@ -170,7 +170,7 @@ export function CobrancaClienteResumo({
           ) : null}
 
           {hintFalta() && cobranca.faltaReceberReais > 0.009 && (
-            <p className="text-[11px] text-slate-500 text-right">
+            <p className="text-[11px] text-at-muted text-right">
               {cobranca.faltaOperacaoReais > 0.009
                 ? `dívida da operação ${formatCurrency(cobranca.faltaOperacaoReais)}`
                 : hintFalta()}

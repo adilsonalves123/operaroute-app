@@ -189,39 +189,25 @@ export function ChamadosClient({
 
   return (
     <div
-      className={cn(
-        display.variable,
-        sans.variable,
-        "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-16 text-[15px] sm:-mx-6 sm:px-6"
-      )}
+      className={cn(display.variable, sans.variable, "text-[15px]")}
       style={{ fontFamily: "var(--font-chamados-sans), system-ui, sans-serif" }}
     >
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 80% 45% at 50% -8%, rgba(196,165,116,0.12), transparent 55%), radial-gradient(ellipse 35% 30% at 90% 20%, rgba(245,158,11,0.06), transparent 50%), linear-gradient(180deg, #06080e 0%, #0a0e16 55%, #07090f 100%)",
-          }}
-        />
-      </div>
-
       <div className="mx-auto max-w-6xl pt-6 sm:pt-10">
         <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p
-              className="text-[12px] font-medium uppercase text-[#c4a574]/90"
+              className="text-[12px] font-medium uppercase text-at-link/90"
               style={{ letterSpacing: "0.38em" }}
             >
               Operação · Manutenção
             </p>
             <h1
-              className="mt-3 text-[clamp(2.2rem,5vw,3.4rem)] leading-[0.95] tracking-tight text-[#f4efe6]"
+              className="mt-3 text-[clamp(2.2rem,5vw,3.4rem)] leading-[0.95] tracking-tight text-at-primary"
               style={{ fontFamily: "var(--font-chamados-display), Georgia, serif" }}
             >
               Chamados
             </h1>
-            <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-slate-400">
+            <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-at-muted">
               Máquinas com problema — abra, acompanhe e registre a resolução.
               {abertosCount > 0 ? (
                 <>
@@ -255,8 +241,8 @@ export function ChamadosClient({
               className={cn(
                 "shrink-0 rounded-sm border px-3.5 py-1.5 text-[13px] transition",
                 filtro === f.id
-                  ? "border-[#c4a574]/40 bg-[#c4a574]/12 text-[#c4a574]"
-                  : "border-white/[0.06] text-slate-500 hover:border-white/12 hover:text-slate-300"
+                  ? "border-[#c4a574]/40 bg-[#c4a574]/12 text-at-link"
+                  : "border-at text-at-muted hover:border-white/12 hover:text-at-primary/85"
               )}
             >
               {f.label}
@@ -268,17 +254,17 @@ export function ChamadosClient({
 
         {!lista.length ? (
           <div className="mt-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
-            <div className="flex flex-col justify-center border border-white/[0.06] bg-white/[0.02] px-6 py-14 sm:px-10">
+            <div className="flex flex-col justify-center border border-at bg-white/[0.02] px-6 py-14 sm:px-10">
               <div className="flex h-14 w-14 items-center justify-center rounded-sm border border-[#c4a574]/25 bg-[#c4a574]/10">
-                <Wrench className="h-6 w-6 text-[#c4a574]" />
+                <Wrench className="h-6 w-6 text-at-link" />
               </div>
               <h2
-                className="mt-6 text-[1.75rem] tracking-tight text-[#f4efe6]"
+                className="mt-6 text-[1.75rem] tracking-tight text-at-primary"
                 style={{ fontFamily: "var(--font-chamados-display), Georgia, serif" }}
               >
                 Nenhum chamado
               </h2>
-              <p className="mt-3 max-w-md text-[15px] leading-relaxed text-slate-400">
+              <p className="mt-3 max-w-md text-[15px] leading-relaxed text-at-muted">
                 Quando uma máquina precisar de manutenção, abra o chamado aqui ou direto no
                 equipamento do ponto.
               </p>
@@ -286,13 +272,13 @@ export function ChamadosClient({
                 <NovoChamadoButton />
                 <Link
                   href="/pontos"
-                  className="inline-flex items-center rounded-sm border border-white/[0.1] px-4 py-2.5 text-[14px] text-slate-400 transition hover:border-white/20 hover:text-[#f4efe6]"
+                  className="inline-flex items-center rounded-sm border border-white/[0.1] px-4 py-2.5 text-[14px] text-at-muted transition hover:border-at hover:text-at-primary"
                 >
                   Ir aos pontos
                 </Link>
               </div>
             </div>
-            <div className="grid gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-3 lg:grid-cols-1 lg:grid-rows-3">
+            <div className="grid gap-px overflow-hidden rounded-sm border border-at bg-at-card-soft sm:grid-cols-3 lg:grid-cols-1 lg:grid-rows-3">
               {[
                 {
                   t: "Abrir",
@@ -307,11 +293,11 @@ export function ChamadosClient({
                   d: "Baixe peças do estoque e feche o chamado com a resolução.",
                 },
               ].map((step) => (
-                <div key={step.t} className="bg-[#0a0e16]/95 px-5 py-5">
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-[#c4a574]/80">
+                <div key={step.t} className="bg-at-card/95 px-5 py-5">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-at-link/80">
                     {step.t}
                   </p>
-                  <p className="mt-2 text-[14px] leading-relaxed text-slate-400">{step.d}</p>
+                  <p className="mt-2 text-[14px] leading-relaxed text-at-muted">{step.d}</p>
                 </div>
               ))}
             </div>
@@ -329,8 +315,8 @@ export function ChamadosClient({
                 <div
                   key={c.id}
                   className={cn(
-                    "overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.02] transition",
-                    aberto && "border-[#c4a574]/25 bg-white/[0.03] lg:col-span-2"
+                    "overflow-hidden rounded-sm border border-at bg-white/[0.02] transition",
+                    aberto && "border-[#c4a574]/25 bg-at-card-soft lg:col-span-2"
                   )}
                 >
                   <button
@@ -343,7 +329,7 @@ export function ChamadosClient({
                     </div>
                     <div className="min-w-0 flex-1 space-y-1.5">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-[15px] font-medium text-[#f4efe6]">{c.titulo}</span>
+                        <span className="text-[15px] font-medium text-at-primary">{c.titulo}</span>
                         <AlertBadge variant={CHAMADO_STATUS_VARIANT[c.status as ChamadoStatus]}>
                           {CHAMADO_STATUS_LABEL[c.status as ChamadoStatus]}
                         </AlertBadge>
@@ -351,7 +337,7 @@ export function ChamadosClient({
                           {CHAMADO_PRIORIDADE_LABEL[c.prioridade as ChamadoPrioridade]}
                         </AlertBadge>
                       </div>
-                      <p className="flex items-center gap-1.5 text-[13px] text-slate-500">
+                      <p className="flex items-center gap-1.5 text-[13px] text-at-muted">
                         <MapPin className="h-3.5 w-3.5 shrink-0" />
                         <span className="truncate">
                           {c.pontos?.nome ?? "Ponto"}
@@ -360,7 +346,7 @@ export function ChamadosClient({
                               {" · "}
                               {eqLabel}
                               {c.equipamentos?.tipo && (
-                                <span className="text-slate-600">
+                                <span className="text-at-soft">
                                   {" "}
                                   ({getEquipamentoTipoLabel(c.equipamentos.tipo as "cassino")})
                                 </span>
@@ -370,45 +356,45 @@ export function ChamadosClient({
                         </span>
                       </p>
                       {c.descricao && (
-                        <p className="line-clamp-2 text-[14px] text-slate-400">{c.descricao}</p>
+                        <p className="line-clamp-2 text-[14px] text-at-muted">{c.descricao}</p>
                       )}
-                      <p className="text-[12px] tabular-nums text-slate-600">
+                      <p className="text-[12px] tabular-nums text-at-soft">
                         {formatDateTime(c.created_at)}
                       </p>
                     </div>
                     <ChevronDown
                       className={cn(
-                        "mt-1 h-4 w-4 shrink-0 text-slate-500 transition",
-                        aberto && "rotate-180 text-[#c4a574]/80"
+                        "mt-1 h-4 w-4 shrink-0 text-at-muted transition",
+                        aberto && "rotate-180 text-at-link/80"
                       )}
                     />
                   </button>
 
                   {aberto && (
-                    <div className="border-t border-white/[0.06] px-4 pb-5 pt-4 sm:px-5">
+                    <div className="border-t border-at px-4 pb-5 pt-4 sm:px-5">
                       <div className="grid gap-6 lg:grid-cols-2">
                         <div className="space-y-2">
-                          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-slate-500">
+                          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-at-muted">
                             Histórico
                           </p>
                           {loadingEventos ? (
-                            <p className="text-[13px] text-slate-600">Carregando histórico...</p>
+                            <p className="text-[13px] text-at-soft">Carregando histórico...</p>
                           ) : eventos.length === 0 ? (
-                            <p className="text-[13px] text-slate-600">Sem eventos ainda.</p>
+                            <p className="text-[13px] text-at-soft">Sem eventos ainda.</p>
                           ) : (
                             <div className="space-y-2">
                               {eventos.map((ev) => (
                                 <div
                                   key={ev.id}
-                                  className="rounded-sm border border-white/[0.06] bg-[#0a0e16]/80 px-3.5 py-2.5"
+                                  className="rounded-sm border border-at bg-at-card/80 px-3.5 py-2.5"
                                 >
-                                  <p className="text-[12px] text-slate-500">
+                                  <p className="text-[12px] text-at-muted">
                                     {formatDateTime(ev.created_at)}
                                     {ev.autor_nome && (
-                                      <span className="text-slate-400"> · {ev.autor_nome}</span>
+                                      <span className="text-at-muted"> · {ev.autor_nome}</span>
                                     )}
                                   </p>
-                                  <p className="mt-1 whitespace-pre-wrap text-[14px] text-slate-300">
+                                  <p className="mt-1 whitespace-pre-wrap text-[14px] text-at-primary/85">
                                     {ev.texto}
                                   </p>
                                 </div>
@@ -431,7 +417,7 @@ export function ChamadosClient({
                                     ? "Ex.: Fui ao ponto, máquina com problema na fonte..."
                                     : "Descreva o que foi feito (ex.: troquei a fonte, máquina ok)..."
                                 }
-                                className="w-full rounded-sm border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-[14px] text-[#f4efe6] placeholder:text-slate-600 outline-none focus:border-[#c4a574]/35"
+                                className="w-full rounded-sm border border-at-soft bg-at-card-soft px-3.5 py-2.5 text-[14px] text-at-primary placeholder:text-at-soft outline-none focus:border-[#c4a574]/35"
                               />
 
                               {c.status === "em_andamento" && (
@@ -449,7 +435,7 @@ export function ChamadosClient({
                                     </Link>
                                   </div>
                                   {pecasEstoque.length === 0 ? (
-                                    <p className="text-[13px] text-slate-500">
+                                    <p className="text-[13px] text-at-muted">
                                       Nenhuma peça de reparo cadastrada. Vá em{" "}
                                       <Link
                                         href="/estoque?categoria=pecas"
@@ -467,13 +453,13 @@ export function ChamadosClient({
                                         return (
                                           <div
                                             key={p.id}
-                                            className="flex items-center justify-between gap-2 rounded-sm border border-white/[0.06] bg-[#0a0e16]/70 px-2.5 py-2"
+                                            className="flex items-center justify-between gap-2 rounded-sm border border-at bg-at-card/70 px-2.5 py-2"
                                           >
                                             <div className="min-w-0">
-                                              <p className="truncate text-[14px] text-slate-200">
+                                              <p className="truncate text-[14px] text-at-primary/90">
                                                 {p.nome_item}
                                               </p>
-                                              <p className="text-[12px] text-slate-500">
+                                              <p className="text-[12px] text-at-muted">
                                                 Disp. {max}
                                                 {max <= 0 ? " — sem saldo" : ""}
                                               </p>
@@ -483,7 +469,7 @@ export function ChamadosClient({
                                                 type="button"
                                                 disabled={q <= 0 || loading}
                                                 onClick={() => setQty(c.id, p.id, q - 1, max)}
-                                                className="flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.08] text-slate-300 hover:bg-white/[0.04] disabled:opacity-40"
+                                                className="flex h-8 w-8 items-center justify-center rounded-sm border border-at-soft text-at-primary/85 hover:bg-at-card-soft disabled:opacity-40"
                                                 aria-label="Diminuir"
                                               >
                                                 <Minus className="h-3.5 w-3.5" />
@@ -495,7 +481,7 @@ export function ChamadosClient({
                                                 type="button"
                                                 disabled={q >= max || max <= 0 || loading}
                                                 onClick={() => setQty(c.id, p.id, q + 1, max)}
-                                                className="flex h-8 w-8 items-center justify-center rounded-sm border border-white/[0.08] text-slate-300 hover:bg-white/[0.04] disabled:opacity-40"
+                                                className="flex h-8 w-8 items-center justify-center rounded-sm border border-at-soft text-at-primary/85 hover:bg-at-card-soft disabled:opacity-40"
                                                 aria-label="Aumentar"
                                               >
                                                 <Plus className="h-3.5 w-3.5" />
@@ -547,7 +533,7 @@ export function ChamadosClient({
                                       onClick={() =>
                                         acao(c.id, "comentario", textos[c.id]?.trim())
                                       }
-                                      className="inline-flex items-center gap-1.5 rounded-sm border border-white/[0.1] px-3.5 py-2 text-[13px] font-medium text-slate-300 disabled:opacity-50"
+                                      className="inline-flex items-center gap-1.5 rounded-sm border border-white/[0.1] px-3.5 py-2 text-[13px] font-medium text-at-primary/85 disabled:opacity-50"
                                     >
                                       <MessageSquare className="h-3.5 w-3.5" />
                                       Só comentar
@@ -570,7 +556,7 @@ export function ChamadosClient({
                           {c.status === "concluida" && c.observacao_resolucao && (
                             <div className="rounded-sm border border-emerald-500/20 bg-emerald-500/5 px-3.5 py-2.5">
                               <p className="mb-1 text-[12px] text-emerald-400/80">Resolução</p>
-                              <p className="whitespace-pre-wrap text-[14px] text-slate-300">
+                              <p className="whitespace-pre-wrap text-[14px] text-at-primary/85">
                                 {c.observacao_resolucao}
                               </p>
                             </div>
@@ -578,7 +564,7 @@ export function ChamadosClient({
 
                           <Link
                             href={`/pontos/${c.ponto_id}`}
-                            className="inline-block text-[13px] text-[#c4a574] hover:underline"
+                            className="inline-block text-[13px] text-at-link hover:underline"
                           >
                             Ver ponto →
                           </Link>

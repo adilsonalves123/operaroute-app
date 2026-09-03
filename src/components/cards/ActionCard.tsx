@@ -43,7 +43,7 @@ export function ActionCard({ label, href, icon = "Package" }: ActionCardProps) {
       <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 text-primary-neon">
         <Icon className="h-5 w-5" />
       </div>
-      <span className="text-xs font-medium text-slate-300 text-center">{label}</span>
+      <span className="text-xs font-medium text-at-primary/85 text-center">{label}</span>
     </Link>
   );
 }

@@ -74,7 +74,7 @@ function KpiCard({
   icon?: typeof Coins;
 }) {
   const accents = {
-    default: "border-white/[0.06] bg-white/[0.02]",
+    default: "border-at bg-white/[0.02]",
     green: "border-green-500/20 bg-green-500/[0.04]",
     red: "border-red-500/20 bg-red-500/[0.04]",
     cyan: "border-cyan-500/20 bg-cyan-500/[0.04]",
@@ -83,11 +83,11 @@ function KpiCard({
   return (
     <div className={cn("rounded-xl border p-4", accents[accent])}>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] uppercase tracking-wider text-slate-500">{label}</p>
-        {Icon && <Icon className="h-4 w-4 shrink-0 text-slate-600" />}
+        <p className="text-[11px] uppercase tracking-wider text-at-muted">{label}</p>
+        {Icon && <Icon className="h-4 w-4 shrink-0 text-at-soft" />}
       </div>
       <p className="mt-2 text-xl font-semibold tabular-nums text-white">{value}</p>
-      {sub && <p className="mt-1 text-xs text-slate-500">{sub}</p>}
+      {sub && <p className="mt-1 text-xs text-at-muted">{sub}</p>}
     </div>
   );
 }
@@ -108,13 +108,13 @@ function RankingRow({
   href?: string;
 }) {
   const inner = (
-    <div className="flex items-center gap-3 rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2.5 transition hover:border-primary-neon/20 hover:bg-white/[0.04]">
-      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-white/[0.04] text-xs font-medium text-slate-400">
+    <div className="flex items-center gap-3 rounded-lg border border-white/[0.04] bg-white/[0.02] px-3 py-2.5 transition hover:border-primary-neon/20 hover:bg-at-card-soft">
+      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-at-card-soft text-xs font-medium text-at-muted">
         {pos}
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-white">{titulo}</p>
-        {subtitulo && <p className="truncate text-xs text-slate-500">{subtitulo}</p>}
+        {subtitulo && <p className="truncate text-xs text-at-muted">{subtitulo}</p>}
       </div>
       <span
         className={cn(
@@ -149,10 +149,10 @@ function InsightCard({ insight }: { insight: InsightOperacional }) {
   return (
     <div className={cn("rounded-xl border p-4", styles[insight.severidade])}>
       <div className="flex gap-3">
-        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-slate-400" />
+        <Icon className="mt-0.5 h-4 w-4 shrink-0 text-at-muted" />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium text-white">{insight.titulo}</p>
-          <p className="mt-1 text-xs leading-relaxed text-slate-400">{insight.descricao}</p>
+          <p className="mt-1 text-xs leading-relaxed text-at-muted">{insight.descricao}</p>
           {insight.href && insight.hrefLabel && (
             <Link
               href={insight.href}
@@ -171,7 +171,7 @@ function SecaoTitulo({ titulo, descricao }: { titulo: string; descricao?: string
   return (
     <div>
       <h2 className="text-lg font-semibold text-white">{titulo}</h2>
-      {descricao && <p className="mt-0.5 text-sm text-slate-500">{descricao}</p>}
+      {descricao && <p className="mt-0.5 text-sm text-at-muted">{descricao}</p>}
     </div>
   );
 }
@@ -286,7 +286,7 @@ function NichoColetaPainel({
                 />
               ))}
               {bloco.rankingPontos.length === 0 && (
-                <p className="text-sm text-slate-500">Nenhuma coleta no período.</p>
+                <p className="text-sm text-at-muted">Nenhuma coleta no período.</p>
               )}
             </div>
           </div>
@@ -337,10 +337,10 @@ function NichoColetaPainel({
       {showBrindes && (
         <div className="space-y-3">
           <SecaoTitulo titulo={labelItens} descricao="O que mais saiu no período" />
-          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+          <div className="overflow-x-auto rounded-xl border border-at">
             <table className="w-full min-w-[480px] text-left text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-at text-xs uppercase tracking-wider text-at-muted">
                   <th className="px-4 py-3 font-medium">Item</th>
                   <th className="px-4 py-3 font-medium">Entregues</th>
                   <th className="px-4 py-3 font-medium">Custo</th>
@@ -351,11 +351,11 @@ function NichoColetaPainel({
                 {bloco.rankingBrindes.map((b) => (
                   <tr key={b.nome} className="border-b border-white/[0.04] last:border-0">
                     <td className="px-4 py-3 font-medium text-white">{b.nome}</td>
-                    <td className="px-4 py-3 tabular-nums text-slate-300">{b.entregues}</td>
+                    <td className="px-4 py-3 tabular-nums text-at-primary/85">{b.entregues}</td>
                     <td className="px-4 py-3 tabular-nums text-amber-400">
                       {formatCurrency(b.custoTotal)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-slate-300">
+                    <td className="px-4 py-3 tabular-nums text-at-primary/85">
                       {b.coletasComEntrega}
                     </td>
                   </tr>
@@ -363,7 +363,7 @@ function NichoColetaPainel({
               </tbody>
             </table>
             {bloco.rankingBrindes.length === 0 && (
-              <p className="p-4 text-sm text-slate-500">Sem dados no período.</p>
+              <p className="p-4 text-sm text-at-muted">Sem dados no período.</p>
             )}
           </div>
         </div>
@@ -446,7 +446,7 @@ function CassinoRaioX({
           />
           <div className="space-y-2">
             {top3.length === 0 ? (
-              <p className="text-sm text-slate-500">Sem visitas no período.</p>
+              <p className="text-sm text-at-muted">Sem visitas no período.</p>
             ) : (
               top3.map((p, i) => {
                 const share =
@@ -454,18 +454,18 @@ function CassinoRaioX({
                 return (
                   <div
                     key={p.pontoId}
-                    className="rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5"
+                    className="rounded-lg border border-at bg-white/[0.02] px-3 py-2.5"
                   >
                     <div className="flex items-center justify-between gap-2 text-sm">
                       <Link
                         href={`/pontos/${p.pontoId}`}
-                        className="truncate font-medium text-white hover:text-[#c4a574]"
+                        className="truncate font-medium text-white hover:text-at-link"
                       >
                         {i + 1}. {p.nome}
                       </Link>
-                      <span className="shrink-0 tabular-nums text-slate-400">{share}%</span>
+                      <span className="shrink-0 tabular-nums text-at-muted">{share}%</span>
                     </div>
-                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-at-card-soft">
                       <div
                         className="h-full rounded-full bg-[#c4a574]/80"
                         style={{ width: `${Math.min(100, share)}%` }}
@@ -490,7 +490,7 @@ function CassinoRaioX({
           />
           <div className="space-y-2">
             {maquinasPagamAlto.length === 0 ? (
-              <p className="text-sm text-slate-500">
+              <p className="text-sm text-at-muted">
                 Nenhuma máquina acima de 55% pago no período.
               </p>
             ) : (
@@ -521,13 +521,13 @@ function CassinoRaioX({
               <Link
                 key={p.pontoId}
                 href={`/pontos/${p.pontoId}`}
-                className="rounded-md border border-white/[0.08] bg-white/[0.03] px-2.5 py-1.5 text-xs text-slate-300 transition hover:border-[#c4a574]/40 hover:text-[#f4efe6]"
+                className="rounded-md border border-at-soft bg-at-card-soft px-2.5 py-1.5 text-xs text-at-primary/85 transition hover:border-[#c4a574]/40 hover:text-at-primary"
               >
                 {p.nome}
                 <span
                   className={cn(
                     "ml-1.5 tabular-nums",
-                    p.lucro < 0 ? "text-red-400" : "text-slate-500"
+                    p.lucro < 0 ? "text-red-400" : "text-at-muted"
                   )}
                 >
                   {formatCurrency(p.lucro)}
@@ -544,10 +544,10 @@ function CassinoRaioX({
             titulo="Tipos de jogo"
             descricao="Agrupado pelo nome da máquina — o que mais joga e o que mais paga"
           />
-          <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+          <div className="overflow-x-auto rounded-xl border border-at">
             <table className="w-full min-w-[480px] text-left text-sm">
               <thead>
-                <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-at text-xs uppercase tracking-wider text-at-muted">
                   <th className="px-4 py-3 font-medium">Jogo / modelo</th>
                   <th className="px-4 py-3 font-medium">Máquinas</th>
                   <th className="px-4 py-3 font-medium">Entrada</th>
@@ -559,11 +559,11 @@ function CassinoRaioX({
                 {cassino.rankingJogos.map((j) => (
                   <tr key={j.nome} className="border-b border-white/[0.04] last:border-0">
                     <td className="px-4 py-3 font-medium text-white">{j.nome}</td>
-                    <td className="px-4 py-3 text-slate-300">{j.maquinas}</td>
-                    <td className="px-4 py-3 tabular-nums text-slate-300">
+                    <td className="px-4 py-3 text-at-primary/85">{j.maquinas}</td>
+                    <td className="px-4 py-3 tabular-nums text-at-primary/85">
                       {formatCurrency(j.entrada / 100)}
                     </td>
-                    <td className="px-4 py-3 tabular-nums text-slate-300">
+                    <td className="px-4 py-3 tabular-nums text-at-primary/85">
                       {j.pctPago != null ? `${j.pctPago.toFixed(1)}%` : "—"}
                     </td>
                     <td
@@ -700,12 +700,12 @@ export function CentroInteligencia({
       <div className="relative overflow-hidden rounded-2xl border border-primary-neon/15 bg-gradient-to-br from-primary-neon/[0.08] via-transparent to-transparent p-6">
         <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-primary-neon/10 blur-3xl" />
         <div className="relative">
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">
+          <p className="text-xs uppercase tracking-[0.14em] text-at-muted">
             Centro de inteligência · {data.periodoLabel}
           </p>
           <div className="mt-3 flex flex-wrap items-end gap-4">
             <div>
-              <p className="text-sm text-slate-400">Lucro líquido · {data.periodoLabel}</p>
+              <p className="text-sm text-at-muted">Lucro líquido · {data.periodoLabel}</p>
               <p
                 className={cn(
                   "text-4xl font-bold tabular-nums tracking-tight",
@@ -715,7 +715,7 @@ export function CentroInteligencia({
                 {formatCurrency(v.liquidoOperacao ?? v.lucroLiquido)}
               </p>
             </div>
-            <div className="flex flex-wrap gap-4 text-sm text-slate-400">
+            <div className="flex flex-wrap gap-4 text-sm text-at-muted">
               <span>
                 Entrada{" "}
                 <strong className="text-white">
@@ -754,7 +754,7 @@ export function CentroInteligencia({
                   : "border-primary-neon/40 bg-primary-neon/10 text-primary-neon"
                 : id === "ia"
                   ? "border-purple-500/20 bg-purple-500/[0.04] text-purple-400/80 hover:text-purple-300"
-                  : "border-white/[0.06] bg-white/[0.02] text-slate-400 hover:text-white"
+                  : "border-at bg-white/[0.02] text-at-muted hover:text-white"
             )}
           >
             {id === "ia" ? (
@@ -851,25 +851,25 @@ export function CentroInteligencia({
                 />
               )}
               {data.cassino && (
-                <div className="rounded-2xl border border-white/[0.08] bg-white/[0.02] p-5">
-                  <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+                <div className="rounded-2xl border border-at-soft bg-white/[0.02] p-5">
+                  <p className="text-xs uppercase tracking-[0.12em] text-at-muted">
                     Cassino · mês
                   </p>
-                  <p className="mt-1 text-sm text-slate-400">Entrada e saída dos contadores</p>
+                  <p className="mt-1 text-sm text-at-muted">Entrada e saída dos contadores</p>
                   <div className="mt-4 space-y-3">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Entrada</span>
+                      <span className="text-at-muted">Entrada</span>
                       <span className="font-semibold tabular-nums text-white">
                         {formatCurrency(data.cassino.entrada / 100)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Saída (pago)</span>
+                      <span className="text-at-muted">Saída (pago)</span>
                       <span className="font-semibold tabular-nums text-white">
                         {formatCurrency(data.cassino.saida / 100)}
                       </span>
                     </div>
-                    <div className="border-t border-white/[0.06] pt-3 flex justify-between">
+                    <div className="border-t border-at pt-3 flex justify-between">
                       <span className="text-sm text-green-400/90">Lucro</span>
                       <span
                         className={cn(
@@ -937,14 +937,14 @@ export function CentroInteligencia({
                     key={a.pontoId}
                     href={`/pontos/${a.pontoId}`}
                     className={cn(
-                      "rounded-lg border px-3 py-2 text-sm transition hover:bg-white/[0.04]",
+                      "rounded-lg border px-3 py-2 text-sm transition hover:bg-at-card-soft",
                       a.severidade === "danger"
                         ? "border-red-500/25 text-red-300"
                         : "border-amber-500/20 text-amber-200/90"
                     )}
                   >
                     <span className="font-medium text-white">{a.pontoNome}</span>
-                    <span className="mx-1.5 text-slate-600">·</span>
+                    <span className="mx-1.5 text-at-soft">·</span>
                     <span className="tabular-nums">{a.resumo}</span>
                   </Link>
                 ))}
@@ -1052,7 +1052,7 @@ export function CentroInteligencia({
                   />
                 ))}
                 {data.furaFura.rankingPontos.length === 0 && (
-                  <p className="text-sm text-slate-500">Nenhuma coleta no período.</p>
+                  <p className="text-sm text-at-muted">Nenhuma coleta no período.</p>
                 )}
               </div>
             </div>
@@ -1086,10 +1086,10 @@ export function CentroInteligencia({
               titulo="Kits por furos (métrica principal)"
               descricao="Qual kit atrai mais jogadas — Faca vs Relógio vs Eletrônico"
             />
-            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <div className="overflow-x-auto rounded-xl border border-at">
               <table className="w-full min-w-[480px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-at text-xs uppercase tracking-wider text-at-muted">
                     <th className="px-4 py-3 font-medium">Kit</th>
                     <th className="px-4 py-3 font-medium">Furos</th>
                     <th className="px-4 py-3 font-medium">Coletas</th>
@@ -1106,11 +1106,11 @@ export function CentroInteligencia({
                       <td className="px-4 py-3 tabular-nums text-cyan-300 font-medium">
                         {k.totalFuros}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-300">{k.totalColetas}</td>
-                      <td className="px-4 py-3 tabular-nums text-slate-300">
+                      <td className="px-4 py-3 tabular-nums text-at-primary/85">{k.totalColetas}</td>
+                      <td className="px-4 py-3 tabular-nums text-at-primary/85">
                         {k.mediaFurosPorColeta.toFixed(1)}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-400">
+                      <td className="px-4 py-3 tabular-nums text-at-muted">
                         {k.ratioBrindesPorFuro != null ? k.ratioBrindesPorFuro.toFixed(2) : "—"}
                       </td>
                     </tr>
@@ -1118,7 +1118,7 @@ export function CentroInteligencia({
                 </tbody>
               </table>
               {data.furaFura.rankingKits.length === 0 && (
-                <p className="p-4 text-sm text-slate-500">
+                <p className="p-4 text-sm text-at-muted">
                   Instale kits nos pontos e registre coletas para comparar performance.
                 </p>
               )}
@@ -1151,10 +1151,10 @@ export function CentroInteligencia({
               titulo="Performance por brinde"
               descricao={`Entregas · estoque alocado · ${data.periodoLabel}`}
             />
-            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <div className="overflow-x-auto rounded-xl border border-at">
               <table className="w-full min-w-[520px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-at text-xs uppercase tracking-wider text-at-muted">
                     <th className="px-4 py-3 font-medium">Brinde</th>
                     <th className="px-4 py-3 font-medium">Entregues</th>
                     <th className="px-4 py-3 font-medium">Custo</th>
@@ -1165,7 +1165,7 @@ export function CentroInteligencia({
                 <tbody>
                   {data.furaFura.rankingBrindes.map((b) => {
                     let sinal = "OK";
-                    let sinalCor = "text-slate-400";
+                    let sinalCor = "text-at-muted";
                     if (b.estoquePontos >= 3 && b.entregues === 0) {
                       sinal = "Trocar / retirar";
                       sinalCor = "text-amber-400";
@@ -1179,11 +1179,11 @@ export function CentroInteligencia({
                     return (
                       <tr key={b.nome} className="border-b border-white/[0.04] last:border-0">
                         <td className="px-4 py-3 font-medium text-white">{b.nome}</td>
-                        <td className="px-4 py-3 tabular-nums text-slate-300">{b.entregues}</td>
-                        <td className="px-4 py-3 tabular-nums text-slate-300">
+                        <td className="px-4 py-3 tabular-nums text-at-primary/85">{b.entregues}</td>
+                        <td className="px-4 py-3 tabular-nums text-at-primary/85">
                           {formatCurrency(b.custoTotal)}
                         </td>
-                        <td className="px-4 py-3 tabular-nums text-slate-300">
+                        <td className="px-4 py-3 tabular-nums text-at-primary/85">
                           {b.estoquePontos} un. ({formatCurrency(b.valorEstoquePontos)})
                         </td>
                         <td className={cn("px-4 py-3 text-xs font-medium", sinalCor)}>{sinal}</td>
@@ -1193,7 +1193,7 @@ export function CentroInteligencia({
                 </tbody>
               </table>
               {data.furaFura.rankingBrindes.length === 0 && (
-                <p className="p-4 text-sm text-slate-500">Sem dados de brindes no período.</p>
+                <p className="p-4 text-sm text-at-muted">Sem dados de brindes no período.</p>
               )}
             </div>
           </div>
@@ -1265,7 +1265,7 @@ export function CentroInteligencia({
                   />
                 ))}
                 {data.ursinho.rankingPontos.length === 0 && (
-                  <p className="text-sm text-slate-500">Nenhuma coleta no período.</p>
+                  <p className="text-sm text-at-muted">Nenhuma coleta no período.</p>
                 )}
               </div>
             </div>
@@ -1308,17 +1308,17 @@ export function CentroInteligencia({
                 />
               ))}
               {data.ursinho.rankingMaquinas.length === 0 && (
-                <p className="text-sm text-slate-500">Nenhuma coleta no período.</p>
+                <p className="text-sm text-at-muted">Nenhuma coleta no período.</p>
               )}
             </div>
           </div>
 
           <div className="space-y-3">
             <SecaoTitulo titulo="Brindes entregues" descricao="O que mais saiu das máquinas no período" />
-            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <div className="overflow-x-auto rounded-xl border border-at">
               <table className="w-full min-w-[480px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-at text-xs uppercase tracking-wider text-at-muted">
                     <th className="px-4 py-3 font-medium">Brinde</th>
                     <th className="px-4 py-3 font-medium">Entregues</th>
                     <th className="px-4 py-3 font-medium">Custo</th>
@@ -1329,17 +1329,17 @@ export function CentroInteligencia({
                   {data.ursinho.rankingBrindes.map((b) => (
                     <tr key={b.nome} className="border-b border-white/[0.04] last:border-0">
                       <td className="px-4 py-3 font-medium text-white">{b.nome}</td>
-                      <td className="px-4 py-3 tabular-nums text-slate-300">{b.entregues}</td>
+                      <td className="px-4 py-3 tabular-nums text-at-primary/85">{b.entregues}</td>
                       <td className="px-4 py-3 tabular-nums text-amber-400">
                         {formatCurrency(b.custoTotal)}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-300">{b.coletasComEntrega}</td>
+                      <td className="px-4 py-3 tabular-nums text-at-primary/85">{b.coletasComEntrega}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
               {data.ursinho.rankingBrindes.length === 0 && (
-                <p className="p-4 text-sm text-slate-500">Sem dados de brindes no período.</p>
+                <p className="p-4 text-sm text-at-muted">Sem dados de brindes no período.</p>
               )}
             </div>
           </div>
@@ -1444,7 +1444,7 @@ export function CentroInteligencia({
                 />
               ))}
               {data.cassino.rankingMaquinas.length === 0 && (
-                <p className="text-sm text-slate-500">Nenhuma leitura no período.</p>
+                <p className="text-sm text-at-muted">Nenhuma leitura no período.</p>
               )}
             </div>
           </div>
@@ -1454,10 +1454,10 @@ export function CentroInteligencia({
               titulo="Tipos de jogo"
               descricao="Agrupado pelo nome da máquina — o que mais joga e o que mais paga"
             />
-            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <div className="overflow-x-auto rounded-xl border border-at">
               <table className="w-full min-w-[480px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-at text-xs uppercase tracking-wider text-at-muted">
                     <th className="px-4 py-3 font-medium">Jogo / modelo</th>
                     <th className="px-4 py-3 font-medium">Máquinas</th>
                     <th className="px-4 py-3 font-medium">Entrada</th>
@@ -1469,11 +1469,11 @@ export function CentroInteligencia({
                   {data.cassino.rankingJogos.map((j) => (
                     <tr key={j.nome} className="border-b border-white/[0.04] last:border-0">
                       <td className="px-4 py-3 font-medium text-white">{j.nome}</td>
-                      <td className="px-4 py-3 text-slate-300">{j.maquinas}</td>
-                      <td className="px-4 py-3 tabular-nums text-slate-300">
+                      <td className="px-4 py-3 text-at-primary/85">{j.maquinas}</td>
+                      <td className="px-4 py-3 tabular-nums text-at-primary/85">
                         {formatCurrency(j.entrada / 100)}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-300">
+                      <td className="px-4 py-3 tabular-nums text-at-primary/85">
                         {j.pctPago != null ? `${j.pctPago.toFixed(1)}%` : "—"}
                       </td>
                       <td
@@ -1579,12 +1579,12 @@ export function CentroInteligencia({
                   Ver alocados →
                 </Link>
               </div>
-              <div className="divide-y divide-white/[0.04] overflow-hidden rounded-xl border border-white/[0.06]">
+              <div className="divide-y divide-[var(--at-border-soft)] overflow-hidden rounded-xl border border-at">
                 {data.estoque.alertasPontos.map((a) => (
                   <Link
                     key={a.pontoId}
                     href={`/pontos/${a.pontoId}`}
-                    className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-white/[0.03]"
+                    className="flex items-center justify-between gap-3 px-4 py-3 transition hover:bg-at-card-soft"
                   >
                     <div className="min-w-0">
                       <p className="truncate font-medium text-white">{a.pontoNome}</p>
@@ -1611,10 +1611,10 @@ export function CentroInteligencia({
 
           <div className="space-y-3">
             <SecaoTitulo titulo="Inventário central" descricao="Quantidade · custo · valor imobilizado" />
-            <div className="overflow-x-auto rounded-xl border border-white/[0.06]">
+            <div className="overflow-x-auto rounded-xl border border-at">
               <table className="w-full min-w-[480px] text-left text-sm">
                 <thead>
-                  <tr className="border-b border-white/[0.06] text-xs uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-at text-xs uppercase tracking-wider text-at-muted">
                     <th className="px-4 py-3 font-medium">Item</th>
                     <th className="px-4 py-3 font-medium">Qtd</th>
                     <th className="px-4 py-3 font-medium">Custo un.</th>
@@ -1626,18 +1626,18 @@ export function CentroInteligencia({
                   {data.estoque.itens.map((item) => (
                     <tr key={item.id} className="border-b border-white/[0.04] last:border-0">
                       <td className="px-4 py-3 font-medium text-white">{item.nome}</td>
-                      <td className="px-4 py-3 tabular-nums text-slate-300">{item.quantidade}</td>
-                      <td className="px-4 py-3 tabular-nums text-slate-300">
+                      <td className="px-4 py-3 tabular-nums text-at-primary/85">{item.quantidade}</td>
+                      <td className="px-4 py-3 tabular-nums text-at-primary/85">
                         {formatCurrency(item.custoUnitario)}
                       </td>
-                      <td className="px-4 py-3 tabular-nums text-slate-300">
+                      <td className="px-4 py-3 tabular-nums text-at-primary/85">
                         {formatCurrency(item.valorTotal)}
                       </td>
                       <td className="px-4 py-3">
                         {item.abaixoMinimo ? (
                           <span className="text-xs font-medium text-amber-400">Abaixo do mín.</span>
                         ) : (
-                          <span className="text-xs text-slate-500">OK</span>
+                          <span className="text-xs text-at-muted">OK</span>
                         )}
                       </td>
                     </tr>
@@ -1645,7 +1645,7 @@ export function CentroInteligencia({
                 </tbody>
               </table>
               {data.estoque.itens.length === 0 && (
-                <p className="p-4 text-sm text-slate-500">
+                <p className="p-4 text-sm text-at-muted">
                   Estoque vazio.{" "}
                   <Link href="/estoque" className="text-primary-neon hover:underline">
                     Cadastrar itens
@@ -1689,7 +1689,7 @@ export function CentroInteligencia({
                     key={a.pontoId}
                     href={`/pontos/${a.pontoId}`}
                     className={cn(
-                      "rounded-xl border px-4 py-3 transition hover:bg-white/[0.03]",
+                      "rounded-xl border px-4 py-3 transition hover:bg-at-card-soft",
                       a.severidade === "danger"
                         ? "border-red-500/25 bg-red-500/[0.04]"
                         : "border-amber-500/20 bg-amber-500/[0.04]"
@@ -1721,7 +1721,7 @@ export function CentroInteligencia({
               ))}
             </div>
           ) : (
-            <p className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-6 text-sm text-slate-500">
+            <p className="rounded-xl border border-at bg-white/[0.02] p-6 text-sm text-at-muted">
               Sem alertas no momento. Continue registrando coletas e visitas para insights
               automáticos.
             </p>

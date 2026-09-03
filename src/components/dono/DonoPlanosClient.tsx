@@ -105,10 +105,10 @@ export function DonoPlanosClient({ email }: { email: string }) {
 
   const card = light
     ? "rounded-2xl border border-stone-200 bg-white p-5"
-    : "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5";
+    : "rounded-2xl border border-at bg-white/[0.02] p-5";
   const inputCls = light
     ? "w-full rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 text-[13px] outline-none focus:border-stone-400"
-    : "w-full rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] outline-none focus:border-[#c4a574]/40";
+    : "w-full rounded-lg border border-at-soft bg-at-card-soft px-3 py-2 text-[13px] outline-none focus:border-[#c4a574]/40";
 
   return (
     <DonoShell
@@ -117,7 +117,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
       subtitle="4 planos fixos: pontos + limite de nichos + preço. Anual = mensal × multiplicador."
     >
       {loading && (
-        <div className="flex items-center gap-2 text-slate-500">
+        <div className="flex items-center gap-2 text-at-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando…
         </div>
@@ -144,7 +144,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
                 "inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-[13px] disabled:opacity-50",
                 light
                   ? "bg-stone-900 text-white"
-                  : "border border-[#c4a574]/40 bg-[#c4a574]/15 text-[#e8d5b0]"
+                  : "border border-[#c4a574]/40 bg-[#c4a574]/15 text-at-link"
               )}
             >
               {saving ? (
@@ -164,13 +164,13 @@ export function DonoPlanosClient({ email }: { email: string }) {
               }}
               className={cn(
                 "inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-[13px]",
-                light ? "border-stone-200" : "border-white/10"
+                light ? "border-stone-200" : "border-at-soft"
               )}
             >
               <RotateCcw className="h-4 w-4" />
               Restaurar padrão
             </button>
-            <label className="ml-auto text-[12px] text-slate-500">
+            <label className="ml-auto text-[12px] text-at-muted">
               Anual = mensal ×
               <input
                 type="number"
@@ -181,7 +181,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
                 className={cn(inputCls, "ml-2 inline-block w-16")}
               />
             </label>
-            <span className="text-[12px] text-slate-500">
+            <span className="text-[12px] text-at-muted">
               Fonte: {fonte === "banco" ? "banco" : "padrão"} — rode
               plataforma-precos.sql se ainda não rodou
             </span>
@@ -192,7 +192,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
               <div key={p.slug} className={card}>
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="text-[11px] uppercase tracking-wider text-slate-500">
+                    <p className="text-[11px] uppercase tracking-wider text-at-muted">
                       {p.id}
                     </p>
                     <input
@@ -209,7 +209,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
                       className={cn(inputCls, "mt-1 text-[16px] font-medium")}
                     />
                   </div>
-                  <label className="flex items-center gap-1.5 text-[11px] text-slate-500">
+                  <label className="flex items-center gap-1.5 text-[11px] text-at-muted">
                     <input
                       type="checkbox"
                       checked={Boolean(p.destaque)}
@@ -243,7 +243,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
                 />
 
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  <label className="text-[11px] text-slate-500">
+                  <label className="text-[11px] text-at-muted">
                     Preço mensal
                     <input
                       inputMode="decimal"
@@ -259,7 +259,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
                       className={cn(inputCls, "mt-1 tabular-nums")}
                     />
                   </label>
-                  <label className="text-[11px] text-slate-500">
+                  <label className="text-[11px] text-at-muted">
                     Limite pontos
                     <input
                       type="number"
@@ -280,7 +280,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
                       className={cn(inputCls, "mt-1")}
                     />
                   </label>
-                  <label className="text-[11px] text-slate-500">
+                  <label className="text-[11px] text-at-muted">
                     Máx. nichos
                     <input
                       type="number"
@@ -306,7 +306,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
                     />
                   </label>
                 </div>
-                <p className="mt-2 text-[11px] text-slate-500">
+                <p className="mt-2 text-[11px] text-at-muted">
                   Anual:{" "}
                   {(p.precoMensal * multAnual).toLocaleString("pt-BR", {
                     style: "currency",

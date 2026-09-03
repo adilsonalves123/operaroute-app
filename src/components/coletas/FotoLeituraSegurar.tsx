@@ -509,17 +509,17 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
       onContextMenu={(e) => e.preventDefault()}
       style={{ touchAction: "none" }}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+      <div className="flex items-center justify-between gap-3 border-b border-at-soft px-4 py-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white">Marque o grupo de números</p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-at-muted">
             Arraste nos dígitos e solte — copia automaticamente. Dois dedos ou botões +/− dão zoom.
           </p>
         </div>
         <button
           type="button"
           onClick={onFechar}
-          className="shrink-0 rounded-full p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+          className="shrink-0 rounded-full p-2 text-at-muted hover:bg-white/10 hover:text-white"
           aria-label="Fechar"
         >
           <X className="h-5 w-5" />
@@ -568,7 +568,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
           <button
             type="button"
             onClick={() => ajustarZoom(ZOOM_STEP)}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/80 text-white"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-at-soft bg-black/80 text-white"
             aria-label="Aumentar zoom"
           >
             <Plus className="h-5 w-5" />
@@ -577,7 +577,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
             type="button"
             onClick={() => ajustarZoom(-ZOOM_STEP)}
             disabled={zoom <= 1.01}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-black/80 text-white disabled:opacity-40"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-at-soft bg-black/80 text-white disabled:opacity-40"
             aria-label="Diminuir zoom"
           >
             <Minus className="h-5 w-5" />
@@ -586,7 +586,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
             <button
               type="button"
               onClick={resetarZoom}
-              className="inline-flex items-center justify-center gap-1 rounded-full border border-white/15 bg-black/80 px-3 py-2 text-xs font-medium text-yellow-100"
+              className="inline-flex items-center justify-center gap-1 rounded-full border border-at-soft bg-black/80 px-3 py-2 text-xs font-medium text-yellow-100"
             >
               <ZoomOut className="h-3.5 w-3.5" />
               {zoom.toFixed(1)}×
@@ -601,7 +601,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
         ) : null}
       </div>
 
-      <div className="space-y-2 border-t border-white/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="space-y-2 border-t border-at-soft px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {textoLido ? (
           <p className="text-center text-xl font-semibold tabular-nums text-yellow-100">{textoLido}</p>
         ) : null}
@@ -617,7 +617,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
             onClick={() => void copiarSelecao()}
             className={cn(
               "inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50",
-              pixelRect ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-slate-500"
+              pixelRect ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-at-muted"
             )}
           >
             {copiado ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
@@ -627,7 +627,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
             type="button"
             disabled={lendo || !selecao}
             onClick={limparSelecao}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-4 py-3 text-sm text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-4 py-3 text-sm text-at-primary/90 hover:bg-slate-800 disabled:opacity-50"
           >
             Limpar
           </button>
@@ -669,7 +669,7 @@ export function FotoLeituraSegurar({ file, previewUrl, className }: Props) {
         />
       </button>
 
-      <p className="text-center text-[11px] text-slate-500">
+      <p className="text-center text-[11px] text-at-muted">
         Toque na foto → marque o grupo → solte (copia sozinho) → cole no campo. Pinça com dois dedos
         ou use +/− para zoom.
       </p>

@@ -124,7 +124,7 @@ export function RotaMapa({
   return (
     <div
       ref={containerRef}
-      className={className ?? "h-[420px] w-full rounded-xl overflow-hidden border border-white/[0.08] z-0"}
+      className={className ?? "h-[420px] w-full rounded-xl overflow-hidden border border-at-soft z-0"}
     />
   );
 }

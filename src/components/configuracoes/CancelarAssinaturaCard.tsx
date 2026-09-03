@@ -104,14 +104,14 @@ export function CancelarAssinaturaCard({
   const inner = (
   <>
       <LoadingOverlay show={loading !== null} message="Processando…" />
-      <p className="text-[13px] text-slate-500 leading-relaxed">
+      <p className="text-[13px] text-at-muted leading-relaxed">
         Não há débito automático no cartão. Para parar, cancele a renovação ou
         simplesmente não pague o próximo período.
       </p>
 
       {emTrial && !pagamentoOk && (
-        <p className="mt-3 text-[13px] text-slate-500 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2.5">
-          No teste grátis, basta <strong className="text-slate-400">não assinar</strong> —
+        <p className="mt-3 text-[13px] text-at-muted rounded-lg border border-at bg-black/20 px-3 py-2.5">
+          No teste grátis, basta <strong className="text-at-muted">não assinar</strong> —
           nenhuma cobrança será feita.
         </p>
       )}
@@ -119,9 +119,9 @@ export function CancelarAssinaturaCard({
       {mostrarCancelamento && (
         <div className="mt-4 space-y-3">
           {venceFuturo && venceLabel && (
-            <p className="text-[12px] text-slate-500">
+            <p className="text-[12px] text-at-muted">
               Período vigente até{" "}
-              <span className="text-[#e8d5b0]">{venceLabel}</span>
+              <span className="text-at-link">{venceLabel}</span>
             </p>
           )}
           <div className="flex flex-wrap gap-2">
@@ -130,7 +130,7 @@ export function CancelarAssinaturaCard({
                 type="button"
                 disabled={loading !== null}
                 onClick={() => void cancelar("fim_periodo")}
-                className="rounded-lg border border-white/12 px-4 py-2.5 text-[12px] font-medium text-slate-300 transition hover:border-[#c4a574]/30 hover:text-[#e8d5b0] disabled:opacity-50"
+                className="rounded-lg border border-white/12 px-4 py-2.5 text-[12px] font-medium text-at-primary/85 transition hover:border-[#c4a574]/30 hover:text-at-link disabled:opacity-50"
               >
                 {loading === "fim" ? "Processando…" : "Cancelar renovação"}
               </button>
@@ -148,7 +148,7 @@ export function CancelarAssinaturaCard({
       )}
 
       {!podeCancelar && (pagamentoOk || venceFuturo) && (
-        <p className="mt-3 text-[12px] text-slate-500">
+        <p className="mt-3 text-[12px] text-at-muted">
           Solicite ao responsável da operação ou{" "}
           <Link href="/suporte" className={champagneLink}>fale com o suporte</Link>.
         </p>

@@ -259,7 +259,7 @@ export function WhatsappVisitaPontoPanel({
                   ? "Comprovante da visita"
                   : "Enviar comprovante ao cliente"}
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-at-muted">
               {previa
                 ? "Cobrar e enviar abrem o WhatsApp com um link do comprovante (o cliente vê no celular)."
                 : visitaQuitada
@@ -316,8 +316,8 @@ export function WhatsappVisitaPontoPanel({
             onClick={handleDownloadPng}
             className={
               ceremony
-                ? "inline-flex items-center justify-center gap-2 px-3 py-3 text-[13px] text-slate-400 underline-offset-4 transition hover:text-[#e8dcc8] hover:underline disabled:opacity-50"
-                : "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                ? "inline-flex items-center justify-center gap-2 px-3 py-3 text-[13px] text-at-muted underline-offset-4 transition hover:text-[#e8dcc8] hover:underline disabled:opacity-50"
+                : "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
             }
           >
             <Download className="h-4 w-4" />

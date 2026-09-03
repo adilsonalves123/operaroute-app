@@ -53,7 +53,7 @@ export function PontoCassinoSettings({
           onChange={(e) => setAbater(e.target.checked)}
           className="rounded border-slate-600"
         />
-        <span className="text-sm text-slate-300">
+        <span className="text-sm text-at-primary/85">
           Abater débito negativo automaticamente na próxima coleta
         </span>
       </label>
@@ -65,7 +65,7 @@ export function PontoCassinoSettings({
       >
         {loading ? "Salvando..." : "Salvar configurações"}
       </button>
-      {msg && <p className="text-xs text-slate-400">{msg}</p>}
+      {msg && <p className="text-xs text-at-muted">{msg}</p>}
     </div>
 
     <LoadingOverlay show={loading} message="Salvando configurações..." />

@@ -64,7 +64,7 @@ export function UniversidadeClient() {
         >
           Como usar o OperaRoute
         </h1>
-        <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-slate-400">
+        <p className="mt-3 max-w-lg text-[14px] leading-relaxed text-at-muted">
           Vídeos curtos por módulo — do primeiro acesso à coleta e ao financeiro.
           {comVideo === 0
             ? " Em breve os vídeos entram aqui; a lista já mostra o que vamos gravar."
@@ -84,7 +84,7 @@ export function UniversidadeClient() {
                 "shrink-0 rounded-xl px-3.5 py-2 text-[12px] font-medium transition",
                 selected
                   ? "bg-[#c9a87c]/15 text-[#c9a87c] ring-1 ring-[#c9a87c]/35"
-                  : "text-slate-500 hover:bg-white/[0.04] hover:text-slate-300"
+                  : "text-at-muted hover:bg-at-card-soft hover:text-at-primary/85"
               )}
             >
               {m.label}
@@ -95,7 +95,7 @@ export function UniversidadeClient() {
 
       <div className="relative z-[1] mt-8 grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] lg:items-start">
         <div className="space-y-4">
-          <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-black/40">
+          <div className="overflow-hidden rounded-2xl border border-at-soft bg-black/40">
             {ativa?.youtubeId ? (
               <div className="aspect-video w-full">
                 <iframe
@@ -108,7 +108,7 @@ export function UniversidadeClient() {
               </div>
             ) : (
               <div className="flex aspect-video flex-col items-center justify-center gap-3 bg-gradient-to-br from-slate-900/80 to-slate-950 px-6 text-center">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-white/[0.03]">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-at-soft bg-at-card-soft">
                   <Film className="h-6 w-6 text-[#c9a87c]/80" />
                 </div>
                 <p
@@ -119,7 +119,7 @@ export function UniversidadeClient() {
                 >
                   {ativa?.titulo ?? "Selecione uma aula"}
                 </p>
-                <p className="max-w-sm text-[13px] text-slate-500">
+                <p className="max-w-sm text-[13px] text-at-muted">
                   Vídeo ainda não publicado. Quando estiver pronto, aparece aqui
                   automaticamente.
                 </p>
@@ -128,7 +128,7 @@ export function UniversidadeClient() {
           </div>
 
           {ativa && (
-            <div className="uni-fade-in border-t border-white/[0.06] pt-4">
+            <div className="uni-fade-in border-t border-at pt-4">
               <p className="text-[11px] uppercase tracking-[0.18em] text-[#c9a87c]/90">
                 {labelModuloUniversidade(ativa.modulo)} · {ativa.duracao}
               </p>
@@ -140,7 +140,7 @@ export function UniversidadeClient() {
               >
                 {ativa.titulo}
               </h2>
-              <p className="mt-2 text-[14px] leading-relaxed text-slate-400">
+              <p className="mt-2 text-[14px] leading-relaxed text-at-muted">
                 {ativa.descricao}
               </p>
             </div>
@@ -148,7 +148,7 @@ export function UniversidadeClient() {
         </div>
 
         <div className="space-y-2">
-          <p className="px-1 text-[12px] text-slate-500">
+          <p className="px-1 text-[12px] text-at-muted">
             {filtradas.length} aula{filtradas.length === 1 ? "" : "s"}
             {filtro !== "todos"
               ? ` em ${UNIVERSIDADE_MODULOS.find((m) => m.id === filtro)?.label}`
@@ -167,7 +167,7 @@ export function UniversidadeClient() {
                       "uni-fade-in flex w-full items-start gap-3 rounded-xl px-3 py-3 text-left transition",
                       selected
                         ? "bg-white/[0.05] ring-1 ring-[#c9a87c]/30"
-                        : "hover:bg-white/[0.03]"
+                        : "hover:bg-at-card-soft"
                     )}
                     style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
                   >
@@ -176,7 +176,7 @@ export function UniversidadeClient() {
                         "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border",
                         selected
                           ? "border-[#c9a87c]/40 bg-[#c9a87c]/10 text-[#c9a87c]"
-                          : "border-white/10 text-slate-500"
+                          : "border-at-soft text-at-muted"
                       )}
                     >
                       <Play className="h-3.5 w-3.5" />
@@ -186,18 +186,18 @@ export function UniversidadeClient() {
                         <span
                           className={cn(
                             "text-[14px] font-medium leading-snug",
-                            selected ? "text-[#f4f7fb]" : "text-slate-200"
+                            selected ? "text-[#f4f7fb]" : "text-at-primary/90"
                           )}
                         >
                           {aula.titulo}
                         </span>
                         {!pronta && (
-                          <span className="shrink-0 text-[10px] uppercase tracking-wider text-slate-600">
+                          <span className="shrink-0 text-[10px] uppercase tracking-wider text-at-soft">
                             Em breve
                           </span>
                         )}
                       </span>
-                      <span className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
+                      <span className="mt-1 flex items-center gap-2 text-[11px] text-at-muted">
                         <span>{labelModuloUniversidade(aula.modulo)}</span>
                         <span aria-hidden>·</span>
                         <span className="inline-flex items-center gap-1">

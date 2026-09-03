@@ -132,7 +132,7 @@ export function PontoUrsoSettings({
       <div className="glass-card space-y-5 border border-pink-500/10 p-6">
         <div>
           <h2 className="font-semibold text-white">{titulo}</h2>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-at-muted">
             {descricao}{" "}
             <a href="/estoque" className="text-primary-neon hover:underline">
               Estoque central
@@ -148,9 +148,9 @@ export function PontoUrsoSettings({
             aria-expanded={brindesAberto}
           >
             <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-300">{labelEstoque}</p>
+              <p className="text-sm font-medium text-at-primary/85">{labelEstoque}</p>
               {!brindesAberto && (
-                <p className="mt-0.5 truncate text-xs text-slate-500">
+                <p className="mt-0.5 truncate text-xs text-at-muted">
                   {brindes.length === 0
                     ? "Nenhum brinde alocado"
                     : `${brindes.length} ${brindes.length === 1 ? "item" : "itens"} · ${brindesComEstoque} com estoque`}
@@ -158,16 +158,16 @@ export function PontoUrsoSettings({
               )}
             </div>
             {brindesAberto ? (
-              <ChevronUp className="h-4 w-4 shrink-0 text-slate-500" />
+              <ChevronUp className="h-4 w-4 shrink-0 text-at-muted" />
             ) : (
-              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+              <ChevronDown className="h-4 w-4 shrink-0 text-at-muted" />
             )}
           </button>
 
           {brindesAberto && (
             <div className="mt-3 space-y-3">
               {catalogoDisponivel.length === 0 ? (
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-at-muted">
                   Cadastre itens no{" "}
                   <a href="/estoque" className="text-primary-neon hover:underline">
                     estoque central
@@ -176,10 +176,10 @@ export function PontoUrsoSettings({
                 </p>
               ) : (
                 <div className="space-y-3 rounded-lg border border-slate-800 bg-slate-900/40 p-3">
-                  <p className="text-xs text-slate-500">Alocar do estoque central</p>
+                  <p className="text-xs text-at-muted">Alocar do estoque central</p>
                   <div className="grid items-end gap-2 sm:grid-cols-[1fr_100px_auto]">
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-slate-300">Item</label>
+                      <label className="block text-sm font-medium text-at-primary/85">Item</label>
                       <select
                         value={selectedItemId}
                         onChange={(e) => setSelectedItemId(e.target.value)}
@@ -215,7 +215,7 @@ export function PontoUrsoSettings({
               )}
 
               {brindes.length === 0 ? (
-                <p className="text-xs text-slate-600">Nenhum brinde neste ponto ainda.</p>
+                <p className="text-xs text-at-soft">Nenhum brinde neste ponto ainda.</p>
               ) : (
                 <div className="space-y-2">
                   {brindes.map((b, i) => (
@@ -224,9 +224,9 @@ export function PontoUrsoSettings({
                       className="grid items-end gap-2 rounded-lg border border-slate-800/80 px-3 py-2 sm:grid-cols-[1fr_90px_auto]"
                     >
                       <div>
-                        <p className="mb-0.5 text-xs text-slate-500">Item</p>
+                        <p className="mb-0.5 text-xs text-at-muted">Item</p>
                         <p className="text-sm font-medium text-white">{b.nome}</p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-at-muted">
                           {formatCurrency(Number(b.custo_unitario ?? 0))}/un
                         </p>
                       </div>
@@ -247,7 +247,7 @@ export function PontoUrsoSettings({
                       </button>
                     </div>
                   ))}
-                  <p className="text-xs text-slate-600">
+                  <p className="text-xs text-at-soft">
                     Ajuste a quantidade e clique em Salvar. Para repor do central, use Alocar acima.
                   </p>
                 </div>

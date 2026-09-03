@@ -23,10 +23,10 @@ export function ColetaOperacaoSection({
       <div className="flex items-end justify-between gap-3 px-0.5">
         <div>
           <h2 className="text-sm font-semibold tracking-tight text-white">{title}</h2>
-          {subtitle ? <p className="mt-0.5 text-xs text-slate-500">{subtitle}</p> : null}
+          {subtitle ? <p className="mt-0.5 text-xs text-at-muted">{subtitle}</p> : null}
         </div>
         {loading ? (
-          <span className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+          <span className="inline-flex items-center gap-1.5 text-xs text-at-muted">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             {loadingLabel}
           </span>

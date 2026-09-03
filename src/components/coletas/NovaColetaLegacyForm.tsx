@@ -151,12 +151,12 @@ export function NovaColetaLegacyForm() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/coletas" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
+        <Link href="/coletas" className="rounded-lg p-2 text-at-muted hover:bg-slate-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-white">{config.labels.coletaNova}</h1>
-          <p className="text-slate-400 text-sm">Registro rápido de coleta</p>
+          <p className="text-at-muted text-sm">Registro rápido de coleta</p>
         </div>
       </div>
 
@@ -174,7 +174,7 @@ export function NovaColetaLegacyForm() {
         {pontoSelecionado && (
           <div className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-900/40 px-3 py-2">
             <div className="min-w-0">
-              <p className="text-xs text-slate-500">Ponto selecionado</p>
+              <p className="text-xs text-at-muted">Ponto selecionado</p>
               <p className="truncate text-sm font-medium text-white">{pontoSelecionado.nome}</p>
             </div>
             <AbrirChamadoButton
@@ -203,11 +203,11 @@ export function NovaColetaLegacyForm() {
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="glass-card p-3">
-            <p className="text-xs text-slate-400">Comissão</p>
+            <p className="text-xs text-at-muted">Comissão</p>
             <p className="font-semibold text-amber-400">R$ {valorComissao.toFixed(2)}</p>
           </div>
           <div className="glass-card p-3">
-            <p className="text-xs text-slate-400">Valor líquido</p>
+            <p className="text-xs text-at-muted">Valor líquido</p>
             <p className="font-semibold text-green-400">R$ {valorLiquido.toFixed(2)}</p>
           </div>
         </div>

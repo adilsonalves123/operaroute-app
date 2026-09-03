@@ -46,7 +46,7 @@ export function CancelarVisitaPontoButton({ visitaPontoId, pontoId }: Props) {
       type="button"
       onClick={handleCancelar}
       disabled={loading}
-      className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2.5 text-sm text-slate-400 hover:border-red-500/30 hover:text-red-400 disabled:opacity-50"
+      className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2.5 text-sm text-at-muted hover:border-red-500/30 hover:text-red-400 disabled:opacity-50"
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
       Cancelar visita

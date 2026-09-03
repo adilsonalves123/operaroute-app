@@ -57,14 +57,14 @@ export default function PesquisaPage() {
             Passo 1 de 2
           </p>
           <h1 className="mt-2 text-3xl font-bold text-white">Pesquisa rápida</h1>
-          <p className="text-slate-400 mt-2">
+          <p className="text-at-muted mt-2">
             Só para entender sua operação — leva menos de 1 minuto.
           </p>
         </div>
 
         <div className="space-y-6">
           <div className="glass-card p-6 lg:p-8 space-y-3">
-            <p className="text-sm font-medium text-slate-300">
+            <p className="text-sm font-medium text-at-primary/85">
               Quantos pontos aproximadamente você tem? *
             </p>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -95,7 +95,7 @@ export default function PesquisaPage() {
               subtitle="Selecione os nichos que você opera *"
             />
             {nichos.length > 0 && (
-              <p className="mt-3 text-xs text-slate-500">
+              <p className="mt-3 text-xs text-at-muted">
                 {nichos.length} nicho{nichos.length === 1 ? "" : "s"} selecionado
                 {nichos.length === 1 ? "" : "s"}
               </p>
@@ -104,7 +104,7 @@ export default function PesquisaPage() {
 
           <div className="glass-card p-6 lg:p-8 space-y-6">
             <div className="space-y-3">
-              <p className="text-sm font-medium text-slate-300">
+              <p className="text-sm font-medium text-at-primary/85">
                 Possui funcionários? *
               </p>
               <div className="grid gap-3 sm:grid-cols-2">

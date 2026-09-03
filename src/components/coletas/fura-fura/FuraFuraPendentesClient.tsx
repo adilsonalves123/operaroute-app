@@ -123,19 +123,19 @@ export function FuraFuraPendentesClient() {
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/coletas" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
+        <Link href="/coletas" className="rounded-lg p-2 text-at-muted hover:bg-slate-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-white">Pendências fura-fura</h1>
-          <p className="text-sm text-slate-400">
+          <p className="text-sm text-at-muted">
             Pagamento consolidado por ponto — FIFO (mais antiga primeiro)
           </p>
         </div>
       </div>
 
       {pontos.length === 0 ? (
-        <div className="glass-card p-6 text-sm text-slate-500">
+        <div className="glass-card p-6 text-sm text-at-muted">
           Nenhuma coleta pendente no momento.
         </div>
       ) : (
@@ -157,7 +157,7 @@ export function FuraFuraPendentesClient() {
                 <div className="flex justify-between gap-4">
                   <div>
                     <p className="font-medium text-white">{ponto.nome}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-at-muted">
                       {coletasAbertas} coleta{coletasAbertas === 1 ? "" : "s"} em aberto
                     </p>
                   </div>
@@ -170,7 +170,7 @@ export function FuraFuraPendentesClient() {
           </div>
 
           <form onSubmit={registrarPagamento} className="glass-card space-y-4 p-6">
-            <h3 className="text-sm font-medium text-slate-300">Registrar recebimento</h3>
+            <h3 className="text-sm font-medium text-at-primary/85">Registrar recebimento</h3>
             <FormSelect
               label="Ponto"
               value={selectedPonto}

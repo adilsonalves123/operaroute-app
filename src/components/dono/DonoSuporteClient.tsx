@@ -187,8 +187,8 @@ export function DonoSuporteClient({ email }: { email: string }) {
             className={cn(
               "rounded-sm border px-2.5 py-1.5 text-[11px] uppercase tracking-wider transition",
               modo === f.id
-                ? "border-[#c4a574]/40 bg-[#c4a574]/12 text-[#e8d5b0]"
-                : "border-white/10 text-slate-500 hover:text-slate-300"
+                ? "border-[#c4a574]/40 bg-[#c4a574]/12 text-at-link"
+                : "border-at-soft text-at-muted hover:text-at-primary/85"
             )}
           >
             {f.label}
@@ -196,17 +196,17 @@ export function DonoSuporteClient({ email }: { email: string }) {
         ))}
       </div>
 
-      <div className="grid min-h-[62vh] overflow-hidden rounded-sm border border-white/[0.08] lg:grid-cols-[320px_1fr]">
-        <div className="border-b border-white/[0.06] lg:border-b-0 lg:border-r">
+      <div className="grid min-h-[62vh] overflow-hidden rounded-sm border border-at-soft lg:grid-cols-[320px_1fr]">
+        <div className="border-b border-at lg:border-b-0 lg:border-r">
           {boot && (
-            <div className="flex items-center gap-2 px-4 py-8 text-slate-500">
+            <div className="flex items-center gap-2 px-4 py-8 text-at-muted">
               <Loader2 className="h-4 w-4 animate-spin" />
               Carregando…
             </div>
           )}
           <ul className="max-h-[40vh] divide-y divide-white/[0.05] overflow-y-auto lg:max-h-[70vh]">
             {!boot && conversas.length === 0 && (
-              <li className="px-4 py-10 text-center text-[12px] text-slate-500">
+              <li className="px-4 py-10 text-center text-[12px] text-at-muted">
                 Nenhuma conversa neste filtro.
               </li>
             )}
@@ -223,24 +223,24 @@ export function DonoSuporteClient({ email }: { email: string }) {
                   )}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <p className="truncate text-[13px] text-[#f4efe6]">
+                    <p className="truncate text-[13px] text-at-primary">
                       {c.assunto || "Sem assunto"}
                     </p>
                     <span
                       className={cn(
                         "shrink-0 text-[9px] uppercase tracking-wider",
                         c.modo === "humano" && "text-rose-300",
-                        c.modo === "ia" && "text-slate-400",
+                        c.modo === "ia" && "text-at-muted",
                         c.modo === "resolvido" && "text-emerald-400/80"
                       )}
                     >
                       {c.modo}
                     </span>
                   </div>
-                  <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                  <p className="mt-0.5 truncate text-[11px] text-at-muted">
                     {c.empresa_nome ?? "Empresa"} · {c.user_nome ?? "Cliente"}
                   </p>
-                  <p className="text-[10px] text-slate-600">
+                  <p className="text-[10px] text-at-soft">
                     {when(c.last_message_at)}
                   </p>
                 </button>
@@ -251,10 +251,10 @@ export function DonoSuporteClient({ email }: { email: string }) {
 
         <div className="flex min-h-[50vh] flex-col bg-black/20">
           {!selecionada && (
-            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-slate-500">
-              <LifeBuoy className="h-8 w-8 text-slate-700" />
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center text-at-muted">
+              <LifeBuoy className="h-8 w-8 text-at-soft" />
               <p className="text-[13px]">Selecione uma conversa à esquerda.</p>
-              <p className="max-w-sm text-[12px] text-slate-600">
+              <p className="max-w-sm text-[12px] text-at-soft">
                 O cliente fala no app em /suporte. Se pedir humano (ou a IA
                 escalar), aparece aqui para você responder.
               </p>
@@ -263,12 +263,12 @@ export function DonoSuporteClient({ email }: { email: string }) {
 
           {selecionada && conversa && (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] px-4 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-at px-4 py-3">
                 <div>
-                  <p className="text-[14px] text-[#f4efe6]">
+                  <p className="text-[14px] text-at-primary">
                     {conversa.assunto || "Atendimento"}
                   </p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-at-muted">
                     {conversa.empresa_nome ?? "—"} · {conversa.user_nome} ·{" "}
                     {conversa.user_email}
                   </p>
@@ -277,7 +277,7 @@ export function DonoSuporteClient({ email }: { email: string }) {
                   {conversa.empresa_id && (
                     <Link
                       href={`/dono/empresas/${conversa.empresa_id}`}
-                      className="rounded-sm border border-white/10 px-2.5 py-1.5 text-[11px] text-slate-400 hover:text-[#e8d5b0]"
+                      className="rounded-sm border border-at-soft px-2.5 py-1.5 text-[11px] text-at-muted hover:text-at-link"
                     >
                       Ver cliente
                     </Link>
@@ -302,17 +302,17 @@ export function DonoSuporteClient({ email }: { email: string }) {
                     className={cn(
                       "max-w-[85%] rounded-sm border px-3 py-2 text-[13px]",
                       m.autor === "cliente" &&
-                        "ml-0 border-white/10 bg-white/[0.03] text-slate-200",
+                        "ml-0 border-at-soft bg-at-card-soft text-at-primary/90",
                       m.autor === "staff" &&
-                        "ml-auto border-[#c4a574]/25 bg-[#c4a574]/10 text-[#f4efe6]",
+                        "ml-auto border-[#c4a574]/25 bg-[#c4a574]/10 text-at-primary",
                       m.autor === "ia" &&
-                        "border-white/10 bg-slate-900/40 text-slate-300",
+                        "border-at-soft bg-slate-900/40 text-at-primary/85",
                       m.autor === "sistema" &&
-                        "mx-auto border-transparent bg-transparent text-center text-[11px] text-slate-500"
+                        "mx-auto border-transparent bg-transparent text-center text-[11px] text-at-muted"
                     )}
                   >
                     {m.autor !== "sistema" && (
-                      <p className="mb-1 text-[10px] uppercase tracking-wider text-slate-500">
+                      <p className="mb-1 text-[10px] uppercase tracking-wider text-at-muted">
                         {m.autor_nome || m.autor}
                       </p>
                     )}
@@ -332,25 +332,25 @@ export function DonoSuporteClient({ email }: { email: string }) {
               </div>
 
               {conversa.modo !== "resolvido" && (
-                <div className="border-t border-white/[0.06] p-3">
+                <div className="border-t border-at p-3">
                   <div className="mb-2 flex flex-wrap gap-2">
                     <button
                       type="button"
                       disabled={loading || !iaOk}
                       onClick={() => void sugerirIa()}
-                      className="inline-flex items-center gap-1.5 rounded-sm border border-[#c4a574]/30 px-2.5 py-1.5 text-[11px] text-[#e8d5b0] disabled:opacity-40"
+                      className="inline-flex items-center gap-1.5 rounded-sm border border-[#c4a574]/30 px-2.5 py-1.5 text-[11px] text-at-link disabled:opacity-40"
                     >
                       <Sparkles className="h-3 w-3" />
                       IA sugere resposta
                     </button>
                     {!iaOk && (
-                      <span className="text-[11px] text-slate-600">
+                      <span className="text-[11px] text-at-soft">
                         Configure OPENAI_API_KEY para sugestões.
                       </span>
                     )}
                   </div>
                   {arquivo && (
-                    <div className="mb-2 flex items-center gap-2 text-[12px] text-slate-400">
+                    <div className="mb-2 flex items-center gap-2 text-[12px] text-at-muted">
                       <Paperclip className="h-3.5 w-3.5" />
                       {arquivo.name}
                       <button type="button" onClick={() => setArquivo(null)}>
@@ -377,7 +377,7 @@ export function DonoSuporteClient({ email }: { email: string }) {
                     <button
                       type="button"
                       onClick={() => fileRef.current?.click()}
-                      className="rounded-sm border border-white/10 p-2.5 text-slate-400 hover:text-[#e8d5b0]"
+                      className="rounded-sm border border-at-soft p-2.5 text-at-muted hover:text-at-link"
                     >
                       <Paperclip className="h-4 w-4" />
                     </button>
@@ -386,7 +386,7 @@ export function DonoSuporteClient({ email }: { email: string }) {
                       onChange={(e) => setTexto(e.target.value)}
                       rows={2}
                       placeholder="Responder ao cliente…"
-                      className="min-h-[44px] flex-1 resize-none rounded-sm border border-white/[0.1] bg-white/[0.03] px-3 py-2 text-[13px] text-[#f4efe6] outline-none focus:border-[#c4a574]/35"
+                      className="min-h-[44px] flex-1 resize-none rounded-sm border border-white/[0.1] bg-at-card-soft px-3 py-2 text-[13px] text-at-primary outline-none focus:border-[#c4a574]/35"
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && !e.shiftKey) {
                           e.preventDefault();
@@ -398,7 +398,7 @@ export function DonoSuporteClient({ email }: { email: string }) {
                       type="button"
                       disabled={loading}
                       onClick={() => void responder()}
-                      className="rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-3 text-[#e8d5b0] disabled:opacity-40"
+                      className="rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-3 text-at-link disabled:opacity-40"
                     >
                       {loading ? (
                         <Loader2 className="h-4 w-4 animate-spin" />

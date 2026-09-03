@@ -183,7 +183,7 @@ export default function NovoFinanceiroPage() {
   return (
     <div className="max-w-xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/financeiro" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
+        <Link href="/financeiro" className="rounded-lg p-2 text-at-muted hover:bg-slate-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold text-white">Novo lançamento</h1>
@@ -257,7 +257,7 @@ export default function NovoFinanceiroPage() {
                 onBlur={(e) => setForm((f) => ({ ...f, valor_dinheiro: formatMoneyInputOnBlur(e.target.value) }))}
               />
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-at-muted">
               Assim o Financeiro mostra quanto saiu (ou entrou) em cada um.
             </p>
           </div>

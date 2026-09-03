@@ -32,7 +32,7 @@ function pillIdle(tema: Props["tema"]) {
   if (tema === "premium" || tema === "claro") {
     return "analise-tab-idle border";
   }
-  return "text-slate-400 border-slate-700 hover:border-slate-500 hover:text-slate-200";
+  return "text-at-muted border-slate-700 hover:border-slate-500 hover:text-at-primary/90";
 }
 
 export function PeriodoAnaliseSelector({
@@ -101,11 +101,11 @@ export function PeriodoAnaliseSelector({
         <div
           className={cn(
             "flex flex-wrap items-end gap-3 rounded-xl border p-3",
-            usaPremiumDesk ? "border-at bg-at-card-soft" : "border-white/[0.06] bg-white/[0.02]"
+            usaPremiumDesk ? "border-at bg-at-card-soft" : "border-at bg-white/[0.02]"
           )}
         >
           <div>
-            <label className={cn("text-xs", usaPremiumDesk ? "text-at-muted" : "text-slate-500")}>
+            <label className={cn("text-xs", usaPremiumDesk ? "text-at-muted" : "text-at-muted")}>
               {variante === "dashboard" ? "Dia" : "De"}
             </label>
             <input
@@ -124,7 +124,7 @@ export function PeriodoAnaliseSelector({
             />
           </div>
           <div>
-            <label className={cn("text-xs", usaPremiumDesk ? "text-at-muted" : "text-slate-500")}>
+            <label className={cn("text-xs", usaPremiumDesk ? "text-at-muted" : "text-at-muted")}>
               {variante === "dashboard" ? "Até (opcional)" : "Até"}
             </label>
             <input

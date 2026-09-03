@@ -90,7 +90,7 @@ export function DonoAfiliadoDetailClient({
   if (loading && !data) {
     return (
       <DonoShell email={email} title="Afiliado">
-        <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+        <Loader2 className="h-5 w-5 animate-spin text-at-muted" />
       </DonoShell>
     );
   }
@@ -110,7 +110,7 @@ export function DonoAfiliadoDetailClient({
       <div className="space-y-6">
         <Link
           href="/dono/afiliados"
-          className="inline-flex items-center gap-2 text-[13px] text-slate-400 hover:text-white"
+          className="inline-flex items-center gap-2 text-[13px] text-at-muted hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
           Afiliados
@@ -127,10 +127,10 @@ export function DonoAfiliadoDetailClient({
           </p>
         )}
 
-        <div className="rounded-2xl border border-white/[0.07] p-5 space-y-3">
-          <p className="text-[11px] uppercase tracking-wider text-slate-500">Link</p>
+        <div className="rounded-2xl border border-at p-5 space-y-3">
+          <p className="text-[11px] uppercase tracking-wider text-at-muted">Link</p>
           <div className="flex flex-wrap items-center gap-2">
-            <code className="rounded-lg bg-white/[0.04] px-3 py-2 text-[12px] text-slate-300">
+            <code className="rounded-lg bg-at-card-soft px-3 py-2 text-[12px] text-at-primary/85">
               {a.link}
             </code>
             <button
@@ -139,7 +139,7 @@ export function DonoAfiliadoDetailClient({
                 void navigator.clipboard.writeText(a.link);
                 setOk("Link copiado.");
               }}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 px-3 py-2 text-[12px]"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-at-soft px-3 py-2 text-[12px]"
             >
               <Copy className="h-3.5 w-3.5" />
               Copiar
@@ -148,15 +148,15 @@ export function DonoAfiliadoDetailClient({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-white/[0.07] p-5 space-y-3">
-            <p className="text-[11px] uppercase tracking-wider text-slate-500">
+          <div className="rounded-2xl border border-at p-5 space-y-3">
+            <p className="text-[11px] uppercase tracking-wider text-at-muted">
               Comissão
             </p>
             <div className="flex gap-2">
               <select
                 value={comissaoTipo}
                 onChange={(e) => setComissaoTipo(e.target.value)}
-                className="rounded-lg border border-white/10 bg-transparent px-3 py-2 text-[13px]"
+                className="rounded-lg border border-at-soft bg-transparent px-3 py-2 text-[13px]"
               >
                 <option value="percentual">%</option>
                 <option value="fixo">R$ fixo</option>
@@ -165,7 +165,7 @@ export function DonoAfiliadoDetailClient({
                 type="number"
                 value={comissaoValor}
                 onChange={(e) => setComissaoValor(e.target.value)}
-                className="w-28 rounded-lg border border-white/10 bg-transparent px-3 py-2 text-[13px]"
+                className="w-28 rounded-lg border border-at-soft bg-transparent px-3 py-2 text-[13px]"
               />
               <button
                 type="button"
@@ -175,7 +175,7 @@ export function DonoAfiliadoDetailClient({
                     comissao_valor: Number(comissaoValor),
                   })
                 }
-                className="rounded-lg border border-[#c4a574]/35 px-3 py-2 text-[12px] text-[#e8d5b0]"
+                className="rounded-lg border border-[#c4a574]/35 px-3 py-2 text-[12px] text-at-link"
               >
                 Salvar
               </button>
@@ -183,7 +183,7 @@ export function DonoAfiliadoDetailClient({
             <button
               type="button"
               onClick={() => void patch({ ativo: !a.ativo })}
-              className="rounded-lg border border-white/10 px-3 py-2 text-[12px]"
+              className="rounded-lg border border-at-soft px-3 py-2 text-[12px]"
             >
               {a.ativo ? "Pausar afiliado" : "Reativar afiliado"}
             </button>
@@ -193,7 +193,7 @@ export function DonoAfiliadoDetailClient({
                 placeholder="Nova senha do parceiro"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
-                className="flex-1 rounded-lg border border-white/10 bg-transparent px-3 py-2 text-[13px]"
+                className="flex-1 rounded-lg border border-at-soft bg-transparent px-3 py-2 text-[13px]"
               />
               <button
                 type="button"
@@ -201,43 +201,43 @@ export function DonoAfiliadoDetailClient({
                   if (senha.length >= 6) void patch({ senha });
                   else setErro("Senha mínima 6 caracteres.");
                 }}
-                className="rounded-lg border border-white/10 px-3 py-2 text-[12px]"
+                className="rounded-lg border border-at-soft px-3 py-2 text-[12px]"
               >
                 Trocar senha
               </button>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-white/[0.07] p-5">
-            <p className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">
+          <div className="rounded-2xl border border-at p-5">
+            <p className="mb-3 text-[11px] uppercase tracking-wider text-at-muted">
               Clientes indicados
             </p>
             <ul className="space-y-2 text-[13px]">
               {data.empresas.length === 0 && (
-                <li className="text-slate-500">Nenhum ainda.</li>
+                <li className="text-at-muted">Nenhum ainda.</li>
               )}
               {data.empresas.map((e) => (
                 <li key={e.id} className="flex justify-between gap-2">
                   <Link
                     href={`/dono/empresas/${e.id}`}
-                    className="text-[#f4efe6] hover:underline"
+                    className="text-at-primary hover:underline"
                   >
                     {e.nome_operacao}
                   </Link>
-                  <span className="text-slate-600">{formatWhen(e.created_at)}</span>
+                  <span className="text-at-soft">{formatWhen(e.created_at)}</span>
                 </li>
               ))}
             </ul>
           </div>
         </div>
 
-        <div className="rounded-2xl border border-white/[0.07] p-5">
-          <p className="mb-3 text-[11px] uppercase tracking-wider text-slate-500">
+        <div className="rounded-2xl border border-at p-5">
+          <p className="mb-3 text-[11px] uppercase tracking-wider text-at-muted">
             Comissões
           </p>
           <ul className="divide-y divide-white/[0.05]">
             {data.comissoes.length === 0 && (
-              <li className="py-4 text-[13px] text-slate-500">
+              <li className="py-4 text-[13px] text-at-muted">
                 Nenhuma comissão. Elas nascem quando você registra pagamento no
                 Financeiro de um cliente indicado.
               </li>
@@ -248,13 +248,13 @@ export function DonoAfiliadoDetailClient({
                 className="flex flex-wrap items-center justify-between gap-2 py-3 text-[13px]"
               >
                 <div>
-                  <p className="text-[#f4efe6]">{c.empresa_nome ?? "Cliente"}</p>
-                  <p className="text-[11px] text-slate-600">
+                  <p className="text-at-primary">{c.empresa_nome ?? "Cliente"}</p>
+                  <p className="text-[11px] text-at-soft">
                     {formatWhen(c.created_at)} · {c.status}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="tabular-nums text-[#e8d5b0]">
+                  <span className="tabular-nums text-at-link">
                     {moneyC(c.valor_centavos)}
                   </span>
                   {c.status === "pendente" && (

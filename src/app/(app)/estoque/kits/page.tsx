@@ -7,7 +7,7 @@ export default async function KitsEstoquePage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient()]);
 
   if (!profile?.empresa_id) {
-    return <p className="text-slate-400">Empresa não encontrada.</p>;
+    return <p className="text-at-muted">Empresa não encontrada.</p>;
   }
 
   const { data: kits } = await supabase
@@ -54,7 +54,7 @@ export default async function KitsEstoquePage() {
       <div className="flex flex-wrap gap-2">
         <Link
           href="/estoque"
-          className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800"
+          className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-at-primary/85 hover:bg-slate-800"
         >
           Estoque central
         </Link>
@@ -65,7 +65,7 @@ export default async function KitsEstoquePage() {
           Nos clientes
         </Link>
       </div>
-      <Suspense fallback={<p className="text-sm text-slate-500">Carregando kits...</p>}>
+      <Suspense fallback={<p className="text-sm text-at-muted">Carregando kits...</p>}>
         <FuraKitsClient kits={enriched} estoque={estoque ?? []} />
       </Suspense>
     </div>

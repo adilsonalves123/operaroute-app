@@ -6,7 +6,7 @@ function IndiceRing({ valor }: { valor: number | null }) {
   if (valor === null) {
     return (
       <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-full border border-blue-500/20 bg-slate-900/50">
-        <span className="text-lg text-slate-600">—</span>
+        <span className="text-lg text-at-soft">—</span>
       </div>
     );
   }
@@ -64,7 +64,7 @@ function ColunaPeriodo({
   return (
     <div className="min-w-0 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-slate-500">
+        <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-at-muted">
           {titulo}
         </p>
         {indice !== null && (
@@ -82,7 +82,7 @@ function ColunaPeriodo({
       <div className="grid gap-3 min-[480px]:grid-cols-2">
         <div className="space-y-2 rounded-lg border border-green-500/15 bg-green-500/[0.04] p-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-1.5 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5 text-xs text-at-muted">
               <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-green-400" />
               Impulsos
             </span>
@@ -92,7 +92,7 @@ function ColunaPeriodo({
 
         <div className="space-y-2 rounded-lg border border-red-500/15 bg-red-500/[0.04] p-3">
           <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-1.5 text-xs text-slate-400">
+            <span className="flex items-center gap-1.5 text-xs text-at-muted">
               <ArrowDownRight className="h-3.5 w-3.5 shrink-0 text-red-400" />
               Pressões
             </span>
@@ -124,10 +124,10 @@ export function DashboardPulso({ pulso }: { pulso: PulsoOperacao }) {
               <Zap className="h-4 w-4 shrink-0 text-primary-neon" />
               <h3 className="text-sm font-semibold text-white">Pulso da operação</h3>
             </div>
-            <p className="text-xs leading-relaxed text-slate-500">
+            <p className="text-xs leading-relaxed text-at-muted">
               Impulsos = visitas com lucro · Pressões = prejuízo no ponto
             </p>
-            <p className="text-sm text-slate-400">{hint}</p>
+            <p className="text-sm text-at-muted">{hint}</p>
             {pulso.deltaSemanaPontos !== null && (
               <div
                 className={cn(
@@ -136,7 +136,7 @@ export function DashboardPulso({ pulso }: { pulso: PulsoOperacao }) {
                     ? "bg-green-500/10 text-green-400"
                     : pulso.deltaSemanaPontos < -0.009
                       ? "bg-red-500/10 text-red-400"
-                      : "bg-slate-800 text-slate-400"
+                      : "bg-slate-800 text-at-muted"
                 )}
               >
                 {pulso.deltaSemanaPontos > 0.009 ? (
@@ -170,13 +170,13 @@ export function DashboardPulso({ pulso }: { pulso: PulsoOperacao }) {
       </div>
 
       {indiceExibido !== null && (
-        <p className="mt-4 border-t border-blue-500/10 pt-3 text-[11px] text-slate-600">
+        <p className="mt-4 border-t border-blue-500/10 pt-3 text-[11px] text-at-soft">
           Índice de tração:{" "}
-          <span className="text-slate-400">
+          <span className="text-at-muted">
             {indiceExibido.toFixed(0)}% das visitas com resultado favorável
           </span>
           {pulso.mes.neutros + pulso.semana.neutros > 0 && (
-            <span className="text-slate-600"> · visitas zeradas não entram na conta</span>
+            <span className="text-at-soft"> · visitas zeradas não entram na conta</span>
           )}
         </p>
       )}

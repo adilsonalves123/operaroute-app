@@ -67,7 +67,7 @@ export function RotasBoard({
 
   return (
     <div className="space-y-6">
-      <header className="relative overflow-hidden rounded-2xl border border-white/[0.08] px-5 py-8 sm:px-8">
+      <header className="relative overflow-hidden rounded-2xl border border-at-soft px-5 py-8 sm:px-8">
         <div
           className="pointer-events-none absolute inset-0"
           style={{
@@ -90,7 +90,7 @@ export function RotasBoard({
             <h1 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight text-white">
               Rotas
             </h1>
-            <p className="mt-2 text-sm text-slate-400 leading-relaxed">
+            <p className="mt-2 text-sm text-at-muted leading-relaxed">
               Monte por cidade, atribua ao ajudante e acompanhe o que falta no campo.
             </p>
           </div>
@@ -123,7 +123,7 @@ export function RotasBoard({
                 "rounded-lg px-3 py-1.5 text-xs font-medium border transition",
                 filtroStatus === f.id
                   ? "border-primary-neon/50 bg-primary-neon/10 text-primary-neon"
-                  : "border-slate-700/80 text-slate-400 hover:border-slate-600"
+                  : "border-slate-700/80 text-at-muted hover:border-slate-600"
               )}
             >
               {f.label}
@@ -133,11 +133,11 @@ export function RotasBoard({
         </div>
 
         <div className="flex items-center gap-2">
-          <Filter className="h-3.5 w-3.5 text-slate-500 shrink-0" />
+          <Filter className="h-3.5 w-3.5 text-at-muted shrink-0" />
           <select
             value={filtroOperador}
             onChange={(e) => setFiltroOperador(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs text-slate-300"
+            className="rounded-lg border border-slate-700 bg-slate-900/80 px-3 py-1.5 text-xs text-at-primary/85"
           >
             <option value="">Todos os responsáveis</option>
             {operadores.map((o) => (
@@ -151,11 +151,11 @@ export function RotasBoard({
 
       {filtradas.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-slate-700/80 bg-slate-900/20 px-6 py-14 text-center">
-          <MapPin className="mx-auto h-10 w-10 text-slate-600 mb-3" />
-          <p className="text-base font-medium text-slate-300">
+          <MapPin className="mx-auto h-10 w-10 text-at-soft mb-3" />
+          <p className="text-base font-medium text-at-primary/85">
             {rotas.length === 0 ? "Nenhuma rota ainda" : "Nada neste filtro"}
           </p>
-          <p className="mt-1 text-sm text-slate-500 max-w-sm mx-auto">
+          <p className="mt-1 text-sm text-at-muted max-w-sm mx-auto">
             {rotas.length === 0
               ? "Crie a primeira rota do dia: escolha a cidade, marque os pontos e atribua ao ajudante."
               : "Tente outro status ou responsável."}
@@ -178,7 +178,7 @@ export function RotasBoard({
             return (
               <li
                 key={rota.id}
-                className="group rounded-xl border border-white/[0.07] bg-slate-900/35 px-4 py-4 sm:px-5 transition hover:border-cyan-500/25 hover:bg-slate-900/55"
+                className="group rounded-xl border border-at bg-slate-900/35 px-4 py-4 sm:px-5 transition hover:border-cyan-500/25 hover:bg-slate-900/55"
               >
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0 flex-1 space-y-2">
@@ -198,13 +198,13 @@ export function RotasBoard({
                             ? "bg-green-500/15 text-green-400"
                             : rota.status === "em_andamento"
                               ? "bg-cyan-500/15 text-cyan-300"
-                              : "bg-slate-500/15 text-slate-400"
+                              : "bg-slate-500/15 text-at-muted"
                         )}
                       >
                         {statusRotaLabel(rota.status)}
                       </span>
                     </div>
-                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-500">
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-at-muted">
                       {rota.cidade && (
                         <span className="inline-flex items-center gap-1 text-cyan-400/80">
                           <MapPin className="h-3 w-3" />
@@ -247,7 +247,7 @@ export function RotasBoard({
                     <button
                       type="button"
                       onClick={() => onEnviar(rota)}
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-2 text-xs font-medium text-at-primary/85 hover:bg-slate-800"
                     >
                       <Send className="h-3.5 w-3.5" />
                       Atribuir
@@ -256,7 +256,7 @@ export function RotasBoard({
                       type="button"
                       disabled={excluindoId === rota.id}
                       onClick={() => void excluir(rota.id)}
-                      className="rounded-lg p-2 text-slate-500 hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+                      className="rounded-lg p-2 text-at-muted hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
                       title="Excluir"
                     >
                       {excluindoId === rota.id ? (

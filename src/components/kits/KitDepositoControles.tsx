@@ -35,7 +35,7 @@ function ItemFoto({ item }: { item: KitComposicaoVisual }) {
           size={160}
         />
       ) : (
-        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-white/10 text-slate-600">
+        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-white/10 text-at-soft">
           <Package className="h-5 w-5" />
         </div>
       )}
@@ -44,11 +44,11 @@ function ItemFoto({ item }: { item: KitComposicaoVisual }) {
           ×{item.quantidade}
         </span>
       )}
-      <p className="line-clamp-2 text-center text-[11px] leading-tight text-slate-300">
+      <p className="line-clamp-2 text-center text-[11px] leading-tight text-at-primary/85">
         {item.nome}
       </p>
       {item.custo_unitario != null && item.custo_unitario > 0 && (
-        <p className="text-center text-[10px] text-slate-600">
+        <p className="text-center text-[10px] text-at-soft">
           {formatCurrency(item.custo_unitario)}
         </p>
       )}
@@ -71,7 +71,7 @@ export function KitDepositoControles({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-white/[0.07]",
+        "relative overflow-hidden rounded-2xl border border-at",
         "bg-[radial-gradient(ellipse_at_top_left,_rgba(0,212,255,0.10),_transparent_55%),linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.55))]",
         className
       )}
@@ -87,7 +87,7 @@ export function KitDepositoControles({
                 size={160}
               />
             ) : actions ? (
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-white/10 text-slate-600 sm:h-20 sm:w-20">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-white/10 text-at-soft sm:h-20 sm:w-20">
                 <Package className="h-7 w-7" />
               </div>
             ) : null}
@@ -96,7 +96,7 @@ export function KitDepositoControles({
                 <div className="min-w-0">
                   <h3 className="text-lg font-semibold text-white sm:text-xl">{nomeKit}</h3>
                   {descricao ? (
-                    <p className="mt-0.5 text-sm text-slate-500">{descricao}</p>
+                    <p className="mt-0.5 text-sm text-at-muted">{descricao}</p>
                   ) : null}
                 </div>
                 {actions ? <div className="flex flex-wrap gap-1">{actions}</div> : null}
@@ -111,12 +111,12 @@ export function KitDepositoControles({
           </p>
           <p className="mt-1 text-4xl font-bold tabular-nums tracking-tight text-white">
             {noDeposito}
-            <span className="ml-2 text-base font-medium text-slate-400">
+            <span className="ml-2 text-base font-medium text-at-muted">
               kit{noDeposito === 1 ? "" : "s"}
             </span>
           </p>
-          <p className="mt-1 text-sm text-slate-400">
-            {!showCapa && <span className="text-slate-200">{nomeKit}</span>}
+          <p className="mt-1 text-sm text-at-muted">
+            {!showCapa && <span className="text-at-primary/90">{nomeKit}</span>}
             {!showCapa && " · "}
             {noDeposito > 0
               ? "Já pode alocar no ponto"
@@ -126,7 +126,7 @@ export function KitDepositoControles({
 
         {itens.length > 0 && (
           <div>
-            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+            <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-at-muted">
               Itens neste kit
             </p>
             <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -137,7 +137,7 @@ export function KitDepositoControles({
           </div>
         )}
 
-        <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+        <p className="flex items-center gap-1.5 text-[11px] text-at-muted">
           <PackageOpen className="h-3.5 w-3.5 shrink-0" />
           Ao salvar o kit, as unidades saem do estoque. Errar item? Tire com a lixeira e salve de
           novo — volta ao central.

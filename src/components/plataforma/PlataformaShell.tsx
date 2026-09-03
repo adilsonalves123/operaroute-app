@@ -62,14 +62,14 @@ export function PlataformaShell({
         <div className="flex flex-wrap items-center gap-3 text-[12px]">
           <Link
             href="/dashboard"
-            className="inline-flex items-center gap-1.5 text-slate-500 transition hover:text-[#c4a574]"
+            className="inline-flex items-center gap-1.5 text-at-muted transition hover:text-at-link"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             Voltar ao app
           </Link>
-          <span className="text-slate-700">·</span>
+          <span className="text-at-soft">·</span>
           <p
-            className="text-[11px] font-medium uppercase text-[#c4a574]/90"
+            className="text-[11px] font-medium uppercase text-at-link/90"
             style={{ letterSpacing: "0.28em" }}
           >
             OperaRoute · Plataforma
@@ -79,13 +79,13 @@ export function PlataformaShell({
         <header className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <h1
-              className="text-[clamp(2rem,4.5vw,3.1rem)] leading-[0.95] tracking-tight text-[#f4efe6]"
+              className="text-[clamp(2rem,4.5vw,3.1rem)] leading-[0.95] tracking-tight text-at-primary"
               style={{ fontFamily: "var(--font-plat-display), Georgia, serif" }}
             >
               {title}
             </h1>
             {subtitle && (
-              <p className="mt-3 max-w-xl text-[13px] text-slate-400">{subtitle}</p>
+              <p className="mt-3 max-w-xl text-[13px] text-at-muted">{subtitle}</p>
             )}
           </div>
           <nav className="flex flex-wrap gap-1.5">
@@ -101,8 +101,8 @@ export function PlataformaShell({
                   className={cn(
                     "inline-flex items-center gap-2 rounded-sm border px-3.5 py-2 text-[12px] transition",
                     active
-                      ? "border-[#c4a574]/40 bg-[#c4a574]/12 text-[#e8d5b0]"
-                      : "border-white/[0.08] text-slate-400 hover:border-white/20 hover:text-[#f4efe6]"
+                      ? "border-[#c4a574]/40 bg-[#c4a574]/12 text-at-link"
+                      : "border-at-soft text-at-muted hover:border-at hover:text-at-primary"
                   )}
                 >
                   <Icon className="h-3.5 w-3.5 opacity-80" />

@@ -83,7 +83,7 @@ export function RotaDoDiaExecute({
       <button
         type="button"
         onClick={onVoltar}
-        className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white"
+        className="inline-flex items-center gap-1.5 text-sm text-at-muted hover:text-white"
       >
         <ArrowLeft className="h-4 w-4" />
         Voltar
@@ -91,7 +91,7 @@ export function RotaDoDiaExecute({
 
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-at-muted">
             Rota do dia
             {rota.cidade ? ` · ${rota.cidade}` : ""}
           </p>
@@ -120,7 +120,7 @@ export function RotaDoDiaExecute({
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-10 text-center">
           <CheckCircle2 className="mx-auto h-10 w-10 text-emerald-400" />
           <p className="mt-3 text-lg font-semibold text-white">Rota concluída</p>
-          <p className="mt-1 text-sm text-slate-400">Todos os pontos desta rota foram atendidos.</p>
+          <p className="mt-1 text-sm text-at-muted">Todos os pontos desta rota foram atendidos.</p>
         </div>
       ) : (
         <article className="overflow-hidden rounded-2xl border border-white/[0.1] bg-gradient-to-b from-slate-900/90 to-slate-950">
@@ -139,11 +139,11 @@ export function RotaDoDiaExecute({
           )}
           <div className="space-y-4 p-5">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Próximo</p>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">Próximo</p>
               <h2 className="mt-1 text-xl font-semibold tracking-tight text-white">
                 {proximo.nome}
               </h2>
-              <p className="mt-1 flex items-start gap-1.5 text-sm text-slate-400">
+              <p className="mt-1 flex items-start gap-1.5 text-sm text-at-muted">
                 <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                 <span>
                   {[proximo.endereco, proximo.cidade].filter(Boolean).join(" · ") ||
@@ -188,7 +188,7 @@ export function RotaDoDiaExecute({
                 type="button"
                 disabled={busy}
                 onClick={() => void marcar(true)}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-slate-300 hover:bg-white/5 disabled:opacity-50"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-at-soft py-2.5 text-sm font-medium text-at-primary/85 hover:bg-white/5 disabled:opacity-50"
               >
                 <SkipForward className="h-4 w-4" />
                 Pular
@@ -201,7 +201,7 @@ export function RotaDoDiaExecute({
                   href={nav.waze}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-700 py-2 text-xs text-slate-400 hover:border-slate-500"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-700 py-2 text-xs text-at-muted hover:border-slate-500"
                 >
                   <Navigation className="h-3.5 w-3.5" />
                   Waze
@@ -210,7 +210,7 @@ export function RotaDoDiaExecute({
                   href={nav.google}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-700 py-2 text-xs text-slate-400 hover:border-slate-500"
+                  className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-slate-700 py-2 text-xs text-at-muted hover:border-slate-500"
                 >
                   <Navigation className="h-3.5 w-3.5" />
                   Maps
@@ -223,7 +223,7 @@ export function RotaDoDiaExecute({
 
       {pendentes.length > 1 && (
         <section className="space-y-2">
-          <h3 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          <h3 className="text-xs font-medium uppercase tracking-wider text-at-muted">
             Ainda faltam ({pendentes.length})
           </h3>
           <ul className="space-y-1.5">
@@ -238,15 +238,15 @@ export function RotaDoDiaExecute({
                       "flex w-full items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition",
                       ativo
                         ? "border-[#c4a574]/40 bg-[#c4a574]/10"
-                        : "border-white/[0.06] bg-slate-900/40 hover:border-white/12"
+                        : "border-at bg-slate-900/40 hover:border-white/12"
                     )}
                   >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold tabular-nums text-slate-300">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold tabular-nums text-at-primary/85">
                       {i + 1}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-white">{p.nome}</span>
-                      <span className="block truncate text-[11px] text-slate-500">
+                      <span className="block truncate text-[11px] text-at-muted">
                         {[p.endereco, p.cidade].filter(Boolean).join(" · ") || "Sem endereço"}
                       </span>
                     </span>
@@ -262,7 +262,7 @@ export function RotaDoDiaExecute({
         <button
           type="button"
           onClick={onVerMapa}
-          className="w-full rounded-xl border border-white/10 py-2.5 text-sm text-slate-400 hover:bg-white/[0.03] hover:text-slate-200"
+          className="w-full rounded-xl border border-at-soft py-2.5 text-sm text-at-muted hover:bg-at-card-soft hover:text-at-primary/90"
         >
           Ver mapa / navegação GPS
         </button>

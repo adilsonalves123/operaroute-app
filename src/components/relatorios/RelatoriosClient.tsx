@@ -146,7 +146,7 @@ export function RelatoriosClient({
           />
           <div className="p-4 space-y-2">
             <p className="font-medium text-white text-sm">{r.pontos?.nome ?? "Ponto"}</p>
-            <p className="text-xs text-slate-400">{formatDateTime(r.created_at)}</p>
+            <p className="text-xs text-at-muted">{formatDateTime(r.created_at)}</p>
             <div className="flex flex-wrap gap-2 pt-1 items-center">
               <button
                 type="button"
@@ -174,7 +174,7 @@ export function RelatoriosClient({
               <a
                 href={r.foto_url}
                 download
-                className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                className="inline-flex items-center gap-1 text-xs text-at-muted hover:text-white"
               >
                 <Download className="h-3 w-3" />
                 Baixar
@@ -182,7 +182,7 @@ export function RelatoriosClient({
               {r.visita_id && (
                 <a
                   href={`/coletas/visita/${r.visita_id}`}
-                  className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                  className="inline-flex items-center gap-1 text-xs text-at-muted hover:text-white"
                 >
                   Ver visita
                 </a>

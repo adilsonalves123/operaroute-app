@@ -552,7 +552,7 @@ export function NovaColetaDiversaoForm() {
   if (editarColetaId && !editandoCarregado) {
     return (
       <ColetaNovaPageShell title="Editar coleta diversão" subtitle="Carregando coleta…" backHref="/coletas">
-        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
+        <p className="text-sm text-at-muted">Carregando dados da coleta…</p>
       </ColetaNovaPageShell>
     );
   }
@@ -574,7 +574,7 @@ export function NovaColetaDiversaoForm() {
         emVisitaPonto ? (
           <VisitaPontoNav visitaPontoId={visitaPontoId} pontoId={pontoId || undefined} active="diversao" />
         ) : ensuringVisita ? (
-          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs text-slate-400">
+          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs text-at-muted">
             Preparando visita multi-nicho…
           </div>
         ) : undefined
@@ -599,7 +599,7 @@ export function NovaColetaDiversaoForm() {
           }
           comissaoField={
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-300">Comissão (%)</label>
+              <label className="block text-sm font-medium text-at-primary/85">Comissão (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -639,7 +639,7 @@ export function NovaColetaDiversaoForm() {
               loading={loadingPonto}
               empty={
                 !loadingPonto && maquinas.length === 0 && pontoId ? (
-                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
+                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-at-muted">
                     Nenhuma máquina de diversão ativa neste ponto.
                   </div>
                 ) : undefined
@@ -678,7 +678,7 @@ export function NovaColetaDiversaoForm() {
                           variant="icon"
                         />
                       </div>
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-at-muted">
                         Anterior {formatContador(maquina.entradaAnterior)}
                         {pronta && <span className="ml-2 text-green-400">· Pronta</span>}
                       </p>
@@ -687,7 +687,7 @@ export function NovaColetaDiversaoForm() {
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-slate-300">
+                      <label className="block text-sm font-medium text-at-primary/85">
                         Entrada atual (visor) *
                       </label>
                       <input
@@ -704,7 +704,7 @@ export function NovaColetaDiversaoForm() {
                       />
                     </div>
                     <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2.5">
-                      <p className="text-xs text-slate-500">Arrecadação da máquina</p>
+                      <p className="text-xs text-at-muted">Arrecadação da máquina</p>
                       <p className="mt-1 text-lg font-semibold text-emerald-300">
                         {valorBruto ?? "Preencha a leitura"}
                       </p>
@@ -733,7 +733,7 @@ export function NovaColetaDiversaoForm() {
               accent="cyan"
               empty={
                 !calculo || calculo.maquinas.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
+                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-at-muted">
                     Preencha a entrada de pelo menos uma máquina para ver o resumo e registrar o
                     pagamento.
                   </p>

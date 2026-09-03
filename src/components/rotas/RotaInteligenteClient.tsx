@@ -59,7 +59,7 @@ const RotaMapaAvancado = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[420px] items-center justify-center rounded-xl border border-white/[0.08] bg-slate-900/50 text-sm text-slate-500">
+      <div className="flex h-[420px] items-center justify-center rounded-xl border border-at-soft bg-slate-900/50 text-sm text-at-muted">
         Carregando mapa…
       </div>
     ),
@@ -560,7 +560,7 @@ export function RotaInteligenteClient({
 
   if (pontos.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-700 px-6 py-14 text-center text-sm text-slate-500">
+      <div className="rounded-2xl border border-dashed border-slate-700 px-6 py-14 text-center text-sm text-at-muted">
         Nenhum ponto ativo. Cadastre pontos com endereço e GPS para montar a rota.
       </div>
     );
@@ -570,9 +570,9 @@ export function RotaInteligenteClient({
     if (!paradas?.length || !mapaProps) return null;
     return (
       <>
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/[0.07] bg-slate-900/40 p-4">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-at bg-slate-900/40 p-4">
           {distanciaKm != null && (
-            <span className="text-sm text-slate-400">
+            <span className="text-sm text-at-muted">
               <Route className="mr-1 inline h-4 w-4 text-primary-neon" />
               ~{distanciaKm.toFixed(1)} km entre paradas
             </span>
@@ -592,7 +592,7 @@ export function RotaInteligenteClient({
               href={googleLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-primary-neon"
+              className="inline-flex items-center gap-1.5 text-sm text-at-muted hover:text-primary-neon"
             >
               Google Maps
               <ExternalLink className="h-3.5 w-3.5" />
@@ -663,12 +663,12 @@ export function RotaInteligenteClient({
                 <RotaMapaAvancado
                   {...mapaProps}
                   mapKey="inline"
-                  className="h-[min(420px,50vh)] w-full rounded-xl overflow-hidden border border-white/[0.08]"
+                  className="h-[min(420px,50vh)] w-full rounded-xl overflow-hidden border border-at-soft"
                 />
                 <button
                   type="button"
                   onClick={() => setMapaExpandido(true)}
-                  className="absolute right-3 top-3 z-[1000] rounded-lg bg-slate-900/90 p-2 text-white border border-white/10 backdrop-blur hover:bg-slate-800"
+                  className="absolute right-3 top-3 z-[1000] rounded-lg bg-slate-900/90 p-2 text-white border border-at-soft backdrop-blur hover:bg-slate-800"
                   title="Expandir mapa"
                 >
                   <Maximize2 className="h-4 w-4" />
@@ -746,7 +746,7 @@ export function RotaInteligenteClient({
           )}
           {rotasDoOperador(rotasSalvas, userId).length > 0 && (
             <div className="pt-4 border-t border-white/[0.05]">
-              <p className="text-xs font-medium uppercase tracking-wider text-slate-500 mb-3">
+              <p className="text-xs font-medium uppercase tracking-wider text-at-muted mb-3">
                 Atribuídas a mim
               </p>
               <MinhaRotaPainel
@@ -777,7 +777,7 @@ export function RotaInteligenteClient({
             <button
               type="button"
               onClick={voltarBoard}
-              className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white"
+              className="inline-flex items-center gap-1.5 text-sm text-at-muted hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" />
               Quadro de rotas
@@ -792,7 +792,7 @@ export function RotaInteligenteClient({
                       ? "border-primary-neon/50 bg-primary-neon/10 text-primary-neon"
                       : wizardStep > s
                         ? "border-green-500/30 text-green-400/90"
-                        : "border-slate-700 text-slate-500"
+                        : "border-slate-700 text-at-muted"
                   )}
                 >
                   {s === 1 ? "1 · Cidade e pontos" : "2 · Iniciar"}
@@ -803,7 +803,7 @@ export function RotaInteligenteClient({
 
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-white">Rota do dia</h1>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-sm text-at-muted mt-1">
               {wizardStep === 1
                 ? "Escolha a cidade e marque os pontos — mesmo sem endereço cadastrado."
                 : "Nomeie, atribua o operador e salve no app."}
@@ -818,7 +818,7 @@ export function RotaInteligenteClient({
             <>
               {wizardStep === 1 && (
                 <div className="space-y-4">
-                  <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/[0.07] bg-slate-900/40 p-4">
+                  <div className="flex flex-wrap items-center gap-3 rounded-xl border border-at bg-slate-900/40 p-4">
                     <div className="flex items-center gap-2 w-full sm:w-auto">
                       <MapPin className="h-4 w-4 text-primary-neon shrink-0" />
                       <select
@@ -840,7 +840,7 @@ export function RotaInteligenteClient({
                         "inline-flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition",
                         gpsStatus === "ok"
                           ? "border-green-500/30 text-green-400"
-                          : "border-slate-700 text-slate-400 hover:text-white"
+                          : "border-slate-700 text-at-muted hover:text-white"
                       )}
                     >
                       <LocateFixed className="h-4 w-4" />
@@ -875,9 +875,9 @@ export function RotaInteligenteClient({
                       value={buscaPontos}
                       onChange={(e) => setBuscaPontos(e.target.value)}
                       placeholder="Buscar ponto…"
-                      className="min-w-[12rem] flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-slate-600"
+                      className="min-w-[12rem] flex-1 rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white placeholder:text-at-soft"
                     />
-                    <h2 className="text-sm font-medium text-slate-400">
+                    <h2 className="text-sm font-medium text-at-muted">
                       Pontos em {filtroCidade}
                     </h2>
                     <button
@@ -908,14 +908,14 @@ export function RotaInteligenteClient({
                             "rounded-xl border p-3 text-left transition flex gap-3",
                             marcado
                               ? "border-primary-neon/40 bg-primary-neon/5"
-                              : "border-white/[0.06] bg-slate-900/30 opacity-75",
+                              : "border-at bg-slate-900/30 opacity-75",
                             temAlerta && "border-amber-500/25"
                           )}
                         >
                           {marcado ? (
                             <CheckSquare className="h-5 w-5 shrink-0 text-primary-neon" />
                           ) : (
-                            <Square className="h-5 w-5 shrink-0 text-slate-600" />
+                            <Square className="h-5 w-5 shrink-0 text-at-soft" />
                           )}
                           {ponto.fotoExibir ? (
                             // eslint-disable-next-line @next/next/no-img-element
@@ -926,16 +926,16 @@ export function RotaInteligenteClient({
                             />
                           ) : (
                             <div className="h-12 w-12 shrink-0 rounded-lg bg-slate-800 flex items-center justify-center">
-                              <MapPin className="h-4 w-4 text-slate-600" />
+                              <MapPin className="h-4 w-4 text-at-soft" />
                             </div>
                           )}
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-white truncate">{ponto.nome}</p>
-                            <p className="text-xs text-slate-500 truncate">
+                            <p className="text-xs text-at-muted truncate">
                               {ponto.cidade ?? "—"}
                               {!temGps && " · sem GPS"}
                             </p>
-                            <p className="text-[11px] text-slate-600">
+                            <p className="text-[11px] text-at-soft">
                               {ponto.ultima_coleta
                                 ? `Coleta ${formatDate(ponto.ultima_coleta)}`
                                 : "Nunca coletou"}
@@ -951,7 +951,7 @@ export function RotaInteligenteClient({
 
               {wizardStep === 2 && paradas && (
                 <div className="space-y-5">
-                  <div className="space-y-5 rounded-2xl border border-white/[0.08] bg-slate-900/40 p-5">
+                  <div className="space-y-5 rounded-2xl border border-at-soft bg-slate-900/40 p-5">
                     <EnviarRotaWizardFields
                       nome={nomeNova}
                       onNomeChange={setNomeNova}
@@ -970,7 +970,7 @@ export function RotaInteligenteClient({
                             setWizardStep(1);
                             setShowAjusteOrdem(false);
                           }}
-                          className="rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-400"
+                          className="rounded-xl border border-slate-700 px-4 py-3 text-sm text-at-muted"
                         >
                           Voltar
                         </button>
@@ -992,7 +992,7 @@ export function RotaInteligenteClient({
                         type="button"
                         disabled={salvando}
                         onClick={() => void salvarNovaRota(true)}
-                        className="inline-flex items-center justify-center gap-1.5 py-2 text-sm text-slate-500 hover:text-emerald-300 disabled:opacity-50"
+                        className="inline-flex items-center justify-center gap-1.5 py-2 text-sm text-at-muted hover:text-emerald-300 disabled:opacity-50"
                       >
                         <MessageCircle className="h-3.5 w-3.5" />
                         Salvar e avisar no WhatsApp
@@ -1000,7 +1000,7 @@ export function RotaInteligenteClient({
                       <button
                         type="button"
                         onClick={() => setShowAjusteOrdem((v) => !v)}
-                        className="text-sm text-slate-500 hover:text-primary-neon"
+                        className="text-sm text-at-muted hover:text-primary-neon"
                       >
                         {showAjusteOrdem ? "Ocultar ajuste de ordem" : "Ajustar ordem (opcional)"}
                       </button>
@@ -1022,7 +1022,7 @@ export function RotaInteligenteClient({
                 <button
                   type="button"
                   onClick={() => setShowAjusteOrdem(false)}
-                  className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-white"
+                  className="inline-flex items-center gap-1.5 text-sm text-at-muted hover:text-white"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Voltar à execução
@@ -1030,7 +1030,7 @@ export function RotaInteligenteClient({
                 <button
                   type="button"
                   onClick={() => setEnviarRota(rotaAtiva)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-4 py-2 text-sm font-medium text-slate-300"
+                  className="inline-flex items-center gap-2 rounded-xl border border-at-soft px-4 py-2 text-sm font-medium text-at-primary/85"
                 >
                   <Send className="h-4 w-4" />
                   Enviar / reatribuir
@@ -1044,7 +1044,7 @@ export function RotaInteligenteClient({
                 <button
                   type="button"
                   onClick={() => setEnviarRota(rotaAtiva)}
-                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-1.5 text-xs font-medium text-slate-400 hover:text-white"
+                  className="inline-flex items-center gap-2 rounded-xl border border-at-soft px-3 py-1.5 text-xs font-medium text-at-muted hover:text-white"
                 >
                   <Send className="h-3.5 w-3.5" />
                   Enviar / reatribuir
@@ -1061,7 +1061,7 @@ export function RotaInteligenteClient({
               <button
                 type="button"
                 onClick={() => setShowAjusteOrdem(true)}
-                className="w-full rounded-xl border border-white/10 py-2.5 text-sm text-slate-500 hover:bg-white/[0.03] hover:text-slate-300"
+                className="w-full rounded-xl border border-at-soft py-2.5 text-sm text-at-muted hover:bg-at-card-soft hover:text-at-primary/85"
               >
                 Ajustar ordem no mapa
               </button>

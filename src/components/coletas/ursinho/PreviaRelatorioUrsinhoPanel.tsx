@@ -120,7 +120,7 @@ export function PreviaRelatorioUrsinhoPanel({
           type="button"
           disabled={disabled}
           onClick={handlePrint}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
         >
           <Printer className="h-4 w-4" />
           Imprimir

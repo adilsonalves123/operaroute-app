@@ -16,7 +16,6 @@ import { SaudePontosPainel } from "@/components/analise/SaudePontosPainel";
 import { TermoHint } from "@/components/ui/TermoHint";
 import { useAppTheme } from "@/components/layout/AppTheme";
 import {
-  analisePageBackground,
   appThemeToAnaliseVisual,
   periodoSelectorTema,
 } from "@/lib/analise/analise-visual-theme";
@@ -550,21 +549,9 @@ export function AnalisePremiumClient({
 
   return (
     <div
-      data-analise-visual={visualTema}
-      className={cn(
-        display.variable,
-        sans.variable,
-        "analise-premium-root relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-16 text-[15px] sm:-mx-6 sm:px-6 lg:min-h-[calc(100dvh-4rem)]"
-      )}
+      className={cn(display.variable, sans.variable, "text-[15px]")}
       style={{ fontFamily: "var(--font-analise-sans), system-ui, sans-serif" }}
     >
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{ background: analisePageBackground(visualTema) }}
-        />
-      </div>
-
       <style>{`
         @keyframes analiseRise {
           from { opacity: 0; transform: translateY(14px); }

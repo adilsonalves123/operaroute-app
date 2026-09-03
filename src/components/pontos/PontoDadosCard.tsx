@@ -51,7 +51,7 @@ function DadoItem({
 }) {
   return (
     <div className={cn("min-w-0", className)}>
-      <p className="text-xs text-slate-500 mb-0.5">{label}</p>
+      <p className="text-xs text-at-muted mb-0.5">{label}</p>
       <div className="text-sm text-white break-words">{children}</div>
     </div>
   );
@@ -181,15 +181,15 @@ export function PontoDadosCard({
 
         {observacoes?.trim() && (
           <div className="border-t border-slate-800 pt-4">
-            <p className="text-xs text-slate-500 mb-1">Observações</p>
-            <p className="text-sm text-slate-300 whitespace-pre-wrap">{observacoes}</p>
+            <p className="text-xs text-at-muted mb-1">Observações</p>
+            <p className="text-sm text-at-primary/85 whitespace-pre-wrap">{observacoes}</p>
           </div>
         )}
 
         <div className="border-t border-slate-800 pt-4 space-y-3">
           <div>
             <p className="text-sm font-medium text-white">Comissão por nicho (%)</p>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-0.5 text-xs text-at-muted">
               Configure o percentual de cada nicho neste ponto.
             </p>
           </div>
@@ -212,7 +212,7 @@ export function PontoDadosCard({
             ))}
           </div>
           {nichos.includes("consignado") && (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] px-3 py-2.5 text-xs text-slate-400 max-w-xl">
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] px-3 py-2.5 text-xs text-at-muted max-w-xl">
               <p className="font-medium text-amber-200/90">Consignado</p>
               <p className="mt-0.5">
                 Usa tabela do produto (custo, valor final, repasse ao cliente) — não percentual.
@@ -227,7 +227,7 @@ export function PontoDadosCard({
           >
             {loading ? "Salvando..." : "Salvar comissões"}
           </button>
-          {msg && <p className="text-xs text-slate-400">{msg}</p>}
+          {msg && <p className="text-xs text-at-muted">{msg}</p>}
         </div>
       </div>
 

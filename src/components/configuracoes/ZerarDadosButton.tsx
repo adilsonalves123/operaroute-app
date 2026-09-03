@@ -68,8 +68,8 @@ export function ZerarDadosButton({ embedded = false }: { embedded?: boolean }) {
         }
       >
         <div className="space-y-1.5">
-          <label htmlFor="confirmacao-zerar" className="block text-xs text-slate-500">
-            Digite <strong className="text-slate-400">ZERAR</strong> para confirmar
+          <label htmlFor="confirmacao-zerar" className="block text-xs text-at-muted">
+            Digite <strong className="text-at-muted">ZERAR</strong> para confirmar
           </label>
           <input
             id="confirmacao-zerar"
@@ -78,7 +78,7 @@ export function ZerarDadosButton({ embedded = false }: { embedded?: boolean }) {
             onChange={(e) => setConfirmacao(e.target.value)}
             placeholder="ZERAR"
             autoComplete="off"
-            className="w-full max-w-xs rounded-lg border border-red-500/30 bg-slate-900/80 px-3 py-2 text-sm text-white placeholder:text-slate-600"
+            className="w-full max-w-xs rounded-lg border border-red-500/30 bg-slate-900/80 px-3 py-2 text-sm text-white placeholder:text-at-soft"
           />
         </div>
 

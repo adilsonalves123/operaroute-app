@@ -20,7 +20,7 @@ export default async function EstoqueAlocadosPage() {
     return (
       <div className="space-y-2">
         <h1 className="text-2xl font-bold text-white">Estoque nos clientes</h1>
-        <p className="text-slate-400">Empresa não encontrada.</p>
+        <p className="text-at-muted">Empresa não encontrada.</p>
       </div>
     );
   }
@@ -128,7 +128,7 @@ export default async function EstoqueAlocadosPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Estoque nos clientes</h1>
-            <p className="mt-1 text-sm text-slate-400">
+            <p className="mt-1 text-sm text-at-muted">
               O que ainda está alocado em cada ponto — por nicho. No Fura Fura, veja o % do kit
               restante e quem tem potencial de troca.
             </p>
@@ -137,13 +137,13 @@ export default async function EstoqueAlocadosPage() {
         <div className="flex flex-wrap gap-2 shrink-0">
           <Link
             href="/estoque"
-            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800"
+            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-at-primary/85 hover:bg-slate-800"
           >
             Estoque central
           </Link>
           <Link
             href="/estoque/kits"
-            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-slate-300 hover:bg-slate-800"
+            className="rounded-lg border border-slate-700 px-3 py-2 text-xs font-medium text-at-primary/85 hover:bg-slate-800"
           >
             Kits
           </Link>

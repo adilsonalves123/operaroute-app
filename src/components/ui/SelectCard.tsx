@@ -26,7 +26,7 @@ export function SelectCard({ label, description, selected, onClick, icon }: Sele
           {icon && <div className="mt-0.5 text-primary-neon">{icon}</div>}
           <div>
             <p className="font-medium text-white">{label}</p>
-            {description && <p className="mt-1 text-sm text-slate-400">{description}</p>}
+            {description && <p className="mt-1 text-sm text-at-muted">{description}</p>}
           </div>
         </div>
         {selected && (

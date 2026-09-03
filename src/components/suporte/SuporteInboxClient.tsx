@@ -130,35 +130,25 @@ export function SuporteInboxClient() {
 
   return (
     <div
-      className={cn(display.variable, sans.variable, "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] px-4 pb-10 sm:-mx-6 sm:px-6")}
+      className={cn(display.variable, sans.variable)}
       style={{ fontFamily: "var(--font-inbox-sans), system-ui, sans-serif" }}
     >
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 60% 35% at 20% 0%, rgba(196,165,116,0.1), transparent 50%), linear-gradient(180deg, #06080e, #0a0e16)",
-          }}
-        />
-      </div>
-
       <div className="mx-auto max-w-6xl pt-6 sm:pt-10">
         <Link
           href="/suporte"
-          className="inline-flex items-center gap-1.5 text-[12px] text-slate-500 transition hover:text-[#c4a574]"
+          className="inline-flex items-center gap-1.5 text-[12px] text-at-muted transition hover:text-at-link"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar ao suporte
         </Link>
 
         <h1
-          className="mt-4 text-[clamp(1.8rem,4vw,2.6rem)] tracking-tight text-[#f4efe6]"
+          className="mt-4 text-[clamp(1.8rem,4vw,2.6rem)] tracking-tight text-at-primary"
           style={{ fontFamily: "var(--font-inbox-display), Georgia, serif" }}
         >
           Inbox suporte
         </h1>
-        <p className="mt-2 text-[13px] text-slate-400">
+        <p className="mt-2 text-[13px] text-at-muted">
           Conversas escaladas da IA — responda aqui.
         </p>
 
@@ -169,30 +159,30 @@ export function SuporteInboxClient() {
         )}
 
         <div className="mt-8 grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <aside className="rounded-sm border border-white/[0.07] bg-white/[0.02]">
-            <p className="border-b border-white/[0.06] px-3 py-2.5 text-[10px] uppercase tracking-[0.16em] text-slate-500">
+          <aside className="rounded-sm border border-at bg-white/[0.02]">
+            <p className="border-b border-at px-3 py-2.5 text-[10px] uppercase tracking-[0.16em] text-at-muted">
               Aguardando · {conversas.length}
             </p>
             {boot ? (
-              <p className="p-4 text-[13px] text-slate-500">Carregando…</p>
+              <p className="p-4 text-[13px] text-at-muted">Carregando…</p>
             ) : conversas.length === 0 ? (
-              <p className="p-4 text-[13px] text-slate-500">Nenhuma fila humana no momento.</p>
+              <p className="p-4 text-[13px] text-at-muted">Nenhuma fila humana no momento.</p>
             ) : (
-              <ul className="max-h-[60vh] divide-y divide-white/[0.04] overflow-y-auto">
+              <ul className="max-h-[60vh] divide-y divide-[var(--at-border-soft)] overflow-y-auto">
                 {conversas.map((c) => (
                   <li key={c.id}>
                     <button
                       type="button"
                       onClick={() => void abrir(c.id)}
                       className={cn(
-                        "w-full px-3 py-3 text-left transition hover:bg-white/[0.03]",
+                        "w-full px-3 py-3 text-left transition hover:bg-at-card-soft",
                         selecionada === c.id && "bg-[#c4a574]/10"
                       )}
                     >
-                      <p className="truncate text-[13px] text-[#f4efe6]">
+                      <p className="truncate text-[13px] text-at-primary">
                         {c.empresa_nome ?? "Empresa"}
                       </p>
-                      <p className="mt-0.5 truncate text-[11px] text-slate-500">
+                      <p className="mt-0.5 truncate text-[11px] text-at-muted">
                         {c.user_nome ?? c.user_email ?? "Cliente"} · {c.assunto ?? "—"}
                       </p>
                     </button>
@@ -202,15 +192,15 @@ export function SuporteInboxClient() {
             )}
           </aside>
 
-          <section className="flex min-h-[55vh] flex-col rounded-sm border border-white/[0.07] bg-white/[0.02]">
+          <section className="flex min-h-[55vh] flex-col rounded-sm border border-at bg-white/[0.02]">
             {!selecionada ? (
-              <p className="m-auto text-[13px] text-slate-500">Selecione uma conversa.</p>
+              <p className="m-auto text-[13px] text-at-muted">Selecione uma conversa.</p>
             ) : (
               <>
-                <div className="flex items-start justify-between gap-3 border-b border-white/[0.06] px-4 py-3">
+                <div className="flex items-start justify-between gap-3 border-b border-at px-4 py-3">
                   <div>
-                    <p className="text-[14px] text-[#f4efe6]">{conversa?.empresa_nome}</p>
-                    <p className="text-[12px] text-slate-500">
+                    <p className="text-[14px] text-at-primary">{conversa?.empresa_nome}</p>
+                    <p className="text-[12px] text-at-muted">
                       {conversa?.user_nome} · {conversa?.user_email}
                     </p>
                   </div>
@@ -218,7 +208,7 @@ export function SuporteInboxClient() {
                     type="button"
                     onClick={() => void resolver()}
                     disabled={loading}
-                    className="rounded-sm border border-white/10 px-3 py-1.5 text-[12px] text-slate-400 hover:text-[#f4efe6] disabled:opacity-50"
+                    className="rounded-sm border border-at-soft px-3 py-1.5 text-[12px] text-at-muted hover:text-at-primary disabled:opacity-50"
                   >
                     Encerrar
                   </button>
@@ -230,14 +220,14 @@ export function SuporteInboxClient() {
                       key={m.id}
                       className={cn(
                         "max-w-[90%] rounded-sm px-3 py-2 text-[13px]",
-                        m.autor === "cliente" && "ml-auto bg-[#c4a574]/15 text-[#f4efe6]",
-                        m.autor === "staff" && "border border-[#c4a574]/25 bg-white/[0.04] text-[#f0ebe3]",
-                        m.autor === "ia" && "bg-white/[0.03] text-slate-300",
-                        m.autor === "sistema" && "mx-auto max-w-full bg-transparent text-center text-[11px] text-slate-500"
+                        m.autor === "cliente" && "ml-auto bg-[#c4a574]/15 text-at-primary",
+                        m.autor === "staff" && "border border-[#c4a574]/25 bg-at-card-soft text-at-primary",
+                        m.autor === "ia" && "bg-at-card-soft text-at-primary/85",
+                        m.autor === "sistema" && "mx-auto max-w-full bg-transparent text-center text-[11px] text-at-muted"
                       )}
                     >
                       {m.autor !== "sistema" && (
-                        <p className="mb-0.5 text-[10px] uppercase tracking-wider text-slate-500">
+                        <p className="mb-0.5 text-[10px] uppercase tracking-wider text-at-muted">
                           {m.autor === "cliente"
                             ? "Cliente"
                             : m.autor === "ia"
@@ -258,15 +248,15 @@ export function SuporteInboxClient() {
                   ))}
                 </div>
 
-                <div className="border-t border-white/[0.06] p-3">
+                <div className="border-t border-at p-3">
                   {arquivo && (
-                    <div className="mb-2 flex items-center gap-2 rounded-sm border border-white/[0.08] px-2.5 py-1.5 text-[12px] text-slate-300">
+                    <div className="mb-2 flex items-center gap-2 rounded-sm border border-at-soft px-2.5 py-1.5 text-[12px] text-at-primary/85">
                       <Paperclip className="h-3.5 w-3.5 shrink-0" />
                       <span className="min-w-0 flex-1 truncate">{arquivo.name}</span>
                       <button
                         type="button"
                         onClick={() => setArquivo(null)}
-                        className="p-1 text-slate-500 hover:text-[#f4efe6]"
+                        className="p-1 text-at-muted hover:text-at-primary"
                         aria-label="Remover"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -296,7 +286,7 @@ export function SuporteInboxClient() {
                       type="button"
                       onClick={() => fileRef.current?.click()}
                       disabled={loading}
-                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-white/10 text-slate-400 hover:text-[#c4a574] disabled:opacity-40"
+                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-sm border border-at-soft text-at-muted hover:text-at-link disabled:opacity-40"
                       aria-label="Anexar"
                     >
                       <Paperclip className="h-4 w-4" />
@@ -311,7 +301,7 @@ export function SuporteInboxClient() {
                         }
                       }}
                       placeholder="Responder ao cliente…"
-                      className="flex-1 rounded-sm border border-white/[0.08] bg-transparent px-3 py-2.5 text-[13px] text-[#f4efe6] outline-none focus:border-[#c4a574]/35"
+                      className="flex-1 rounded-sm border border-at-soft bg-transparent px-3 py-2.5 text-[13px] text-at-primary outline-none focus:border-[#c4a574]/35"
                     />
                     <button
                       type="button"

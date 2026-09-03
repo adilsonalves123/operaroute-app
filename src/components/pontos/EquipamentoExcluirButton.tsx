@@ -74,7 +74,7 @@ export function EquipamentoExcluirButton({ equipamento }: { equipamento: Equipam
           setError("");
           setOpen(true);
         }}
-        className="rounded-md p-2 text-slate-500 transition hover:bg-white/[0.04] hover:text-rose-300/90 disabled:opacity-50"
+        className="rounded-md p-2 text-at-muted transition hover:bg-at-card-soft hover:text-rose-300/90 disabled:opacity-50"
         title="Remover equipamento"
       >
         <Trash2 className="h-4 w-4" />
@@ -92,19 +92,19 @@ export function EquipamentoExcluirButton({ equipamento }: { equipamento: Equipam
             <div className="flex items-start justify-between gap-3">
               <div>
                 <h3 className="font-semibold text-white">Remover equipamento</h3>
-                <p className="mt-1 text-sm text-slate-400">{nome}</p>
+                <p className="mt-1 text-sm text-at-muted">{nome}</p>
               </div>
               <button
                 type="button"
                 disabled={loading}
                 onClick={() => setOpen(false)}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800"
+                className="rounded-lg p-1.5 text-at-muted hover:bg-slate-800"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <p className="mt-3 text-sm text-slate-300">
+            <p className="mt-3 text-sm text-at-primary/85">
               {noEstoque
                 ? "Este equipamento já está no estoque. Deseja apagá-lo de vez?"
                 : "O que deseja fazer?"}
@@ -123,7 +123,7 @@ export function EquipamentoExcluirButton({ equipamento }: { equipamento: Equipam
                     <span className="block text-sm font-medium text-white">
                       Devolver ao estoque
                     </span>
-                    <span className="block text-xs text-slate-400">
+                    <span className="block text-xs text-at-muted">
                       Sai deste ponto e fica disponível para alocar em outro. Brindes voltam ao
                       ponto.
                     </span>
@@ -140,7 +140,7 @@ export function EquipamentoExcluirButton({ equipamento }: { equipamento: Equipam
                 <Trash2 className="h-5 w-5 shrink-0 text-red-400" />
                 <span>
                   <span className="block text-sm font-medium text-white">Apagar de vez</span>
-                  <span className="block text-xs text-slate-400">
+                  <span className="block text-xs text-at-muted">
                     Remove do sistema. Não volta ao estoque.
                   </span>
                 </span>
@@ -153,7 +153,7 @@ export function EquipamentoExcluirButton({ equipamento }: { equipamento: Equipam
               type="button"
               disabled={loading}
               onClick={() => setOpen(false)}
-              className="mt-4 w-full rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              className="mt-4 w-full rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800"
             >
               Cancelar
             </button>

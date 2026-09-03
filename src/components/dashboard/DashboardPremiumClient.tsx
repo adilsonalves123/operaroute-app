@@ -28,7 +28,6 @@ import { PushAtivarBanner } from "@/components/configuracoes/PushAtivarBanner";
 import { PeriodoAnaliseSelector } from "@/components/analise/PeriodoAnaliseSelector";
 import { useAppTheme } from "@/components/layout/AppTheme";
 import {
-  analisePageBackground,
   appThemeToAnaliseVisual,
   periodoSelectorTema,
 } from "@/lib/analise/analise-visual-theme";
@@ -252,21 +251,9 @@ export function DashboardPremiumClient({
 
   return (
     <div
-      data-analise-visual={visualTema}
-      className={cn(
-        display.variable,
-        sans.variable,
-        "premium-desk-root relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-16 sm:-mx-6 sm:px-6 lg:min-h-[calc(100dvh-4rem)]"
-      )}
+      className={cn(display.variable, sans.variable)}
       style={{ fontFamily: "var(--font-dash-sans), system-ui, sans-serif" }}
     >
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{ background: analisePageBackground(visualTema) }}
-        />
-      </div>
-
       <style>{`
         @keyframes dashRise {
           from { opacity: 0; transform: translateY(14px); }

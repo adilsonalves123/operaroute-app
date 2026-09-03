@@ -43,26 +43,26 @@ export function ColetaHistoricoRecebimentoCards({
     <>
       {divida > 0.009 ? (
         <div className="rounded-lg bg-slate-950/50 p-3">
-          <p className="text-xs text-slate-500">Dívida anterior quitada</p>
+          <p className="text-xs text-at-muted">Dívida anterior quitada</p>
           <p className="font-semibold text-amber-400 tabular-nums">{formatCurrency(divida)}</p>
         </div>
       ) : null}
       <div className="rounded-lg bg-slate-950/50 p-3">
-        <p className="text-xs text-slate-500">Recebido desta coleta</p>
+        <p className="text-xs text-at-muted">Recebido desta coleta</p>
         <p className="font-semibold text-green-400 tabular-nums">{formatCurrency(valorPago)}</p>
-        <p className="mt-1 text-xs text-slate-500">{formaPagamentoColeta}</p>
+        <p className="mt-1 text-xs text-at-muted">{formaPagamentoColeta}</p>
       </div>
       {formaPagamentoVisita ? (
         <div className="rounded-lg bg-slate-950/50 p-3">
-          <p className="text-xs text-slate-500">Total pago na visita</p>
-          <p className="font-semibold text-slate-200 tabular-nums">
+          <p className="text-xs text-at-muted">Total pago na visita</p>
+          <p className="font-semibold text-at-primary/90 tabular-nums">
             {formatCurrency(totalPagoVisita)}
           </p>
-          <p className="mt-1 text-xs text-slate-500">{formaPagamentoVisita}</p>
+          <p className="mt-1 text-xs text-at-muted">{formaPagamentoVisita}</p>
         </div>
       ) : null}
       <div className="rounded-lg bg-slate-950/50 p-3">
-        <p className="text-xs text-slate-500">Saldo pendente</p>
+        <p className="text-xs text-at-muted">Saldo pendente</p>
         <p
           className={`font-semibold tabular-nums ${saldoPendente > 0.009 ? "text-amber-400" : "text-green-400"}`}
         >

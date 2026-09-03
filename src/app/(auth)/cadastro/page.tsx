@@ -273,7 +273,7 @@ export default function CadastroPage() {
                   className={`rounded-xl border px-2 py-2.5 text-center transition ${
                     ativo
                       ? "border-[#7dd3e8]/45 bg-[#7dd3e8]/12 text-[#e8e2d6]"
-                      : "border-white/[0.08] bg-white/[0.02] text-[#8b93a3] hover:border-white/15"
+                      : "border-at-soft bg-white/[0.02] text-[#8b93a3] hover:border-at-soft"
                   }`}
                 >
                   <span className="block text-[13px] font-medium">{c.titulo}</span>

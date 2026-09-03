@@ -33,7 +33,7 @@ export default async function ResumoPublicPage({ params }: Props) {
     loaded = await loadSnapshot(token);
   } catch (e) {
     return (
-      <main className="min-h-screen bg-[#0a0e16] px-4 py-16 text-center text-slate-300">
+      <main className="min-h-screen bg-at-card px-4 py-16 text-center text-at-primary/85">
         <p className="text-[15px]">
           {e instanceof Error ? e.message : "Link indisponível no momento."}
         </p>

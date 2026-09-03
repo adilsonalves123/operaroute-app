@@ -136,7 +136,7 @@ export default function ConfiguracaoPage() {
 
   if (!ready || !pesquisa) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-400 text-sm">
+      <div className="min-h-screen flex items-center justify-center text-at-muted text-sm">
         Carregando…
       </div>
     );
@@ -152,7 +152,7 @@ export default function ConfiguracaoPage() {
           <h1 className="mt-2 text-3xl font-bold text-white">
             Configure sua operação
           </h1>
-          <p className="text-slate-400 mt-2">
+          <p className="text-at-muted mt-2">
             Pode marcar mais de um nicho e mais de um objetivo.
           </p>
         </div>
@@ -161,15 +161,15 @@ export default function ConfiguracaoPage() {
           resumo={resumoTrialPorFaixa(pesquisa.quantidade_pontos, nichos)}
         />
 
-        <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
+        <div className="rounded-xl border border-at-soft bg-at-card-soft px-4 py-3 text-sm text-at-muted">
           <p>
             Pontos:{" "}
-            <span className="text-slate-200">
+            <span className="text-at-primary/90">
               {PONTOS_LABEL[pesquisa.quantidade_pontos]}
             </span>
             {" · "}
             Funcionários:{" "}
-            <span className="text-slate-200">
+            <span className="text-at-primary/90">
               {pesquisa.possui_funcionarios ? "Sim" : "Não"}
             </span>
           </p>
@@ -201,7 +201,7 @@ export default function ConfiguracaoPage() {
               subtitle="Quais nichos essa operação vai usar? (pode marcar vários) *"
             />
             {nichos.length > 0 && (
-              <p className="mt-3 text-xs text-slate-500">
+              <p className="mt-3 text-xs text-at-muted">
                 {nichos.length} nicho{nichos.length === 1 ? "" : "s"} selecionado
                 {nichos.length === 1 ? "" : "s"}
               </p>
@@ -210,9 +210,9 @@ export default function ConfiguracaoPage() {
 
           <div className="glass-card p-6 lg:p-8 space-y-6">
             <div className="space-y-3">
-              <p className="text-sm font-medium text-slate-300">
+              <p className="text-sm font-medium text-at-primary/85">
                 Objetivos *{" "}
-                <span className="font-normal text-slate-500">
+                <span className="font-normal text-at-muted">
                   (pode marcar mais de um)
                 </span>
               </p>

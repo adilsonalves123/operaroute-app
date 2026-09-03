@@ -339,7 +339,7 @@ export const NICHO_CARD_VISUAL: Record<Nicho, NichoCardVisual> = {
       border: "border-slate-400",
       ring: "ring-slate-400/30",
       iconBg: "bg-slate-500/15",
-      iconText: "text-slate-300",
+      iconText: "text-at-primary/85",
       checkBg: "bg-slate-400",
     },
   },

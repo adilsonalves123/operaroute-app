@@ -34,7 +34,7 @@ export function QuantidadeStepper({
 
   return (
     <div className={cn("space-y-1.5", className)}>
-      {label && <p className="text-xs text-slate-500 leading-4">{label}</p>}
+      {label && <p className="text-xs text-at-muted leading-4">{label}</p>}
       <div className="inline-flex h-10 items-center gap-1 rounded-lg border border-slate-700 bg-slate-900/50 px-1">
         <button
           type="button"
@@ -42,7 +42,7 @@ export function QuantidadeStepper({
           onClick={() => setNext(safe - 1)}
           aria-label="Diminuir quantidade"
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-md text-slate-300",
+            "flex h-8 w-8 items-center justify-center rounded-md text-at-primary/85",
             "hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none"
           )}
         >
@@ -57,7 +57,7 @@ export function QuantidadeStepper({
           onClick={() => setNext(safe + 1)}
           aria-label="Aumentar quantidade"
           className={cn(
-            "flex h-8 w-8 items-center justify-center rounded-md text-slate-300",
+            "flex h-8 w-8 items-center justify-center rounded-md text-at-primary/85",
             "hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none"
           )}
         >
@@ -65,7 +65,7 @@ export function QuantidadeStepper({
         </button>
       </div>
       {!hideMaxHint && clampedMax > 0 && (
-        <p className="text-[10px] leading-4 text-slate-600">Máximo: {clampedMax}</p>
+        <p className="text-[10px] leading-4 text-at-soft">Máximo: {clampedMax}</p>
       )}
     </div>
   );

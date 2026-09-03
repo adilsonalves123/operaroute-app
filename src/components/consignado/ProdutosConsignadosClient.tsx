@@ -37,7 +37,7 @@ function toNum(v: string): number {
 }
 
 const inputClass =
-  "w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-amber-500/50 focus:outline-none";
+  "w-full rounded-lg border border-slate-700 bg-slate-950/50 px-3 py-2 text-sm text-white placeholder:text-at-soft focus:border-amber-500/50 focus:outline-none";
 
 export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[] }) {
   const router = useRouter();
@@ -239,14 +239,14 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
                 setShowForm(false);
                 resetFotoLocal();
               }}
-              className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800"
+              className="rounded-lg p-1.5 text-at-muted hover:bg-slate-800"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
 
           <div className="space-y-2">
-            <label className="mb-1 block text-xs text-slate-400">Foto do produto</label>
+            <label className="mb-1 block text-xs text-at-muted">Foto do produto</label>
             {/* Galeria sem capture — no tablet o capture sozinho quebra a escolha da galeria */}
             <input
               ref={galeriaInputRef}
@@ -289,7 +289,7 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
                 <button
                   type="button"
                   onClick={() => cameraInputRef.current?.click()}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed border-slate-600 py-5 text-sm text-slate-400 hover:border-amber-500/40 hover:text-amber-300"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed border-slate-600 py-5 text-sm text-at-muted hover:border-amber-500/40 hover:text-amber-300"
                 >
                   <Camera className="h-5 w-5" />
                   Câmera
@@ -297,7 +297,7 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
                 <button
                   type="button"
                   onClick={() => galeriaInputRef.current?.click()}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed border-slate-600 py-5 text-sm text-slate-400 hover:border-amber-500/40 hover:text-amber-300"
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl border border-dashed border-slate-600 py-5 text-sm text-at-muted hover:border-amber-500/40 hover:text-amber-300"
                 >
                   <ImagePlus className="h-5 w-5" />
                   Galeria
@@ -326,19 +326,19 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs text-slate-400">Código do produto *</label>
+              <label className="mb-1 block text-xs text-at-muted">Código do produto *</label>
               <input
                 className={inputClass}
                 value={form.codigo}
                 onChange={(e) => setForm({ ...form, codigo: e.target.value })}
                 placeholder="Único — ex.: 001 ou SKU"
               />
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] text-at-muted">
                 Como número de série: não pode repetir. Na coleta dá para achar o item por este código.
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-400">Nome *</label>
+              <label className="mb-1 block text-xs text-at-muted">Nome *</label>
               <input
                 className={inputClass}
                 value={form.nome}
@@ -347,7 +347,7 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs text-slate-400">Descrição</label>
+              <label className="mb-1 block text-xs text-at-muted">Descrição</label>
               <input
                 className={inputClass}
                 value={form.descricao}
@@ -356,7 +356,7 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-400">Preço de custo (R$)</label>
+              <label className="mb-1 block text-xs text-at-muted">Preço de custo (R$)</label>
               <input
                 className={inputClass}
                 inputMode="decimal"
@@ -366,7 +366,7 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-400">Valor final (R$)</label>
+              <label className="mb-1 block text-xs text-at-muted">Valor final (R$)</label>
               <input
                 className={inputClass}
                 inputMode="decimal"
@@ -376,7 +376,7 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-400">
+              <label className="mb-1 block text-xs text-at-muted">
                 Quanto o comércio ganha (R$ por unidade)
               </label>
               <input
@@ -386,13 +386,13 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
                 onChange={(e) => setForm({ ...form, comissao_fixa: e.target.value })}
                 placeholder="Ex.: 4,00"
               />
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[11px] text-at-muted">
                 Modo tabela: a cada unidade vendida, o dono fica com este valor. Você recebe
                 valor final − comissão.
               </p>
             </div>
             <div>
-              <label className="mb-1 block text-xs text-slate-400">Estoque central</label>
+              <label className="mb-1 block text-xs text-at-muted">Estoque central</label>
               <input
                 className={inputClass}
                 inputMode="numeric"
@@ -402,7 +402,7 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-xs text-slate-400">Fornecedor</label>
+              <label className="mb-1 block text-xs text-at-muted">Fornecedor</label>
               <input
                 className={inputClass}
                 value={form.fornecedor}
@@ -428,7 +428,7 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
                 setShowForm(false);
                 resetFotoLocal();
               }}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800"
             >
               Cancelar
             </button>
@@ -437,7 +437,7 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
       )}
 
       {items.length === 0 ? (
-        <div className="glass-card border border-dashed border-slate-700 p-8 text-center text-sm text-slate-500">
+        <div className="glass-card border border-dashed border-slate-700 p-8 text-center text-sm text-at-muted">
           Nenhum produto cadastrado ainda. Adicione o primeiro para começar a consignar.
         </div>
       ) : (
@@ -461,13 +461,13 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
               )}
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium text-white">
-                  {p.codigo ? <span className="text-slate-500">[{p.codigo}] </span> : null}
+                  {p.codigo ? <span className="text-at-muted">[{p.codigo}] </span> : null}
                   {p.nome}
                 </p>
                 {p.descricao?.trim() && (
-                  <p className="truncate text-sm text-slate-300 mt-0.5">{p.descricao}</p>
+                  <p className="truncate text-sm text-at-primary/85 mt-0.5">{p.descricao}</p>
                 )}
-                <p className="text-xs text-slate-500 mt-0.5">
+                <p className="text-xs text-at-muted mt-0.5">
                   Custo {formatCurrency(Number(p.custo_unitario ?? 0))} · Valor final{" "}
                   {formatCurrency(Number(p.preco_venda ?? 0))}
                   {p.comissao_fixa != null
@@ -480,14 +480,14 @@ export function ProdutosConsignadosClient({ items }: { items: ProdutoConsignado[
               <button
                 type="button"
                 onClick={() => openEdit(p)}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+                className="rounded-lg p-2 text-at-muted hover:bg-slate-800 hover:text-white"
               >
                 <Pencil className="h-4 w-4" />
               </button>
               <button
                 type="button"
                 onClick={() => handleDelete(p.id)}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-rose-400"
+                className="rounded-lg p-2 text-at-muted hover:bg-slate-800 hover:text-rose-400"
               >
                 <Trash2 className="h-4 w-4" />
               </button>

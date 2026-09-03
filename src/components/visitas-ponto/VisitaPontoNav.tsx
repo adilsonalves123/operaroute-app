@@ -100,7 +100,7 @@ export function VisitaPontoNav({
     return (
       <div
         className={cn(
-          "rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-xs text-slate-500",
+          "rounded-xl border border-at-soft bg-white/[0.02] px-3 py-2 text-xs text-at-muted",
           className
         )}
       >
@@ -114,7 +114,7 @@ export function VisitaPontoNav({
     return (
       <div
         className={cn(
-          "rounded-xl border border-white/[0.08] bg-white/[0.02] px-3 py-2 text-xs text-slate-500",
+          "rounded-xl border border-at-soft bg-white/[0.02] px-3 py-2 text-xs text-at-muted",
           className
         )}
       >
@@ -145,7 +145,7 @@ export function VisitaPontoNav({
   return (
     <div className={cn("space-y-2", className)}>
       {(pontoNome || subtotal > 0.009) && (
-        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-at-muted">
           {pontoNome && (
             <Link href={hubHref} className="hover:text-primary-neon">
               Visita · {pontoNome}
@@ -180,7 +180,7 @@ export function VisitaPontoNav({
                 "inline-flex items-center gap-1.5 rounded-xl border px-3 py-2 text-sm font-medium transition",
                 isActive
                   ? "border-primary-neon/50 bg-primary-neon/10 text-primary-neon"
-                  : "border-white/[0.08] bg-white/[0.02] text-slate-300 hover:border-white/20",
+                  : "border-at-soft bg-white/[0.02] text-at-primary/85 hover:border-at",
                 feito && !isActive && "border-green-500/25",
                 !pontoId && "pointer-events-none opacity-50"
               )}
@@ -200,7 +200,7 @@ export function VisitaPontoNav({
               ? "border-primary-neon bg-primary-neon text-black"
               : itensFeitos > 0
                 ? "border-primary-neon/40 bg-primary-neon/10 text-primary-neon hover:bg-primary-neon/20"
-                : "pointer-events-none border-slate-800 bg-slate-900/40 text-slate-600"
+                : "pointer-events-none border-slate-800 bg-slate-900/40 text-at-soft"
           )}
         >
           <Wallet className="h-3.5 w-3.5" />

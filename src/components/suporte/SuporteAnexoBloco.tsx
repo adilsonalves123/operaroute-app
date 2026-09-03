@@ -31,7 +31,7 @@ export function SuporteAnexoBloco({
         href={url}
         target="_blank"
         rel="noreferrer"
-        className={cn("mt-2 block overflow-hidden rounded-sm border border-white/10", className)}
+        className={cn("mt-2 block overflow-hidden rounded-sm border border-at-soft", className)}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={url} alt={label} className="max-h-56 w-full object-contain bg-black/30" />
@@ -45,13 +45,13 @@ export function SuporteAnexoBloco({
       target="_blank"
       rel="noreferrer"
       className={cn(
-        "mt-2 flex items-center gap-2.5 rounded-sm border border-white/10 bg-black/20 px-3 py-2 text-[12px] text-[#e8d5b0] transition hover:border-[#c4a574]/35",
+        "mt-2 flex items-center gap-2.5 rounded-sm border border-at-soft bg-black/20 px-3 py-2 text-[12px] text-at-link transition hover:border-[#c4a574]/35",
         className
       )}
     >
       <FileText className="h-4 w-4 shrink-0 opacity-80" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      {sizeLabel && <span className="shrink-0 text-slate-500">{sizeLabel}</span>}
+      {sizeLabel && <span className="shrink-0 text-at-muted">{sizeLabel}</span>}
       <Download className="h-3.5 w-3.5 shrink-0 opacity-60" />
     </a>
   );

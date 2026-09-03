@@ -24,7 +24,7 @@ export function DonoRelatoriosClient({ email }: { email: string }) {
 
   const card = light
     ? "rounded-2xl border border-stone-200 bg-white p-5"
-    : "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5";
+    : "rounded-2xl border border-at bg-white/[0.02] p-5";
 
   return (
     <DonoShell
@@ -33,7 +33,7 @@ export function DonoRelatoriosClient({ email }: { email: string }) {
       title="Relatórios"
       subtitle="Funil, crescimento, nichos e atalhos de análise."
     >
-      {loading && <Loader2 className="h-4 w-4 animate-spin text-slate-500" />}
+      {loading && <Loader2 className="h-4 w-4 animate-spin text-at-muted" />}
       {data && (
         <div className="space-y-6">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -47,7 +47,7 @@ export function DonoRelatoriosClient({ email }: { email: string }) {
               { l: "Churn", v: `${data.crm.churn_rate_pct}%` },
             ].map((x) => (
               <div key={x.l} className={card}>
-                <p className="text-[11px] uppercase tracking-wider text-slate-500">
+                <p className="text-[11px] uppercase tracking-wider text-at-muted">
                   {x.l}
                 </p>
                 <p className="mt-2 text-[24px] tabular-nums">{x.v}</p>
@@ -65,7 +65,7 @@ export function DonoRelatoriosClient({ email }: { email: string }) {
                     className="flex justify-between text-[13px]"
                   >
                     <span>{s.label}</span>
-                    <span className="tabular-nums text-slate-500">
+                    <span className="tabular-nums text-at-muted">
                       {s.count}
                       {s.pct_do_anterior != null && (
                         <span className="ml-2 text-[11px]">
@@ -99,7 +99,7 @@ export function DonoRelatoriosClient({ email }: { email: string }) {
                   "rounded-xl border px-4 py-2.5 text-[13px] transition",
                   light
                     ? "border-stone-200 hover:bg-stone-50"
-                    : "border-white/10 hover:bg-white/[0.04]"
+                    : "border-at-soft hover:bg-at-card-soft"
                 )}
               >
                 {l.label}

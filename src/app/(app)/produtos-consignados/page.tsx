@@ -44,7 +44,7 @@ export default async function ProdutosConsignadosPage() {
     <div className="space-y-8 max-w-3xl">
       <div>
         <h1 className="text-2xl font-bold text-white">Produtos consignados</h1>
-        <p className="text-slate-400 mt-1">
+        <p className="text-at-muted mt-1">
           Catálogo dos produtos deixados nos comércios: código, custo, preço de venda e comissão.
         </p>
       </div>
@@ -52,7 +52,7 @@ export default async function ProdutosConsignadosPage() {
 
       <div>
         <h2 className="text-lg font-semibold text-white">Abastecer expositores</h2>
-        <p className="text-slate-400 mt-1 text-sm">
+        <p className="text-at-muted mt-1 text-sm">
           Defina quantas unidades de cada produto ficam em cada expositor. No recolhe você conta o
           que sobrou e o sistema calcula o vendido.
         </p>

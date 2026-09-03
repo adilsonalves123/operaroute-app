@@ -239,7 +239,7 @@ export function NovoChamadoButton() {
               <div className="flex items-start justify-between gap-3 border-b border-slate-800 px-5 py-4 shrink-0">
                 <div>
                   <h3 className="font-semibold text-white">Adicionar chamado</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
+                  <p className="text-xs text-at-muted mt-0.5">
                     Busque pelo número de série ou pelo nome do ponto
                   </p>
                 </div>
@@ -247,7 +247,7 @@ export function NovoChamadoButton() {
                   type="button"
                   onClick={fechar}
                   disabled={loading}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+                  className="rounded-lg p-1.5 text-at-muted hover:bg-slate-800 hover:text-white"
                   aria-label="Fechar"
                 >
                   <X className="h-5 w-5" />
@@ -270,7 +270,7 @@ export function NovoChamadoButton() {
                           "flex-1 inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition",
                           modo === "serie"
                             ? "bg-amber-500/20 text-amber-300"
-                            : "text-slate-400 hover:text-white"
+                            : "text-at-muted hover:text-white"
                         )}
                       >
                         <Hash className="h-3.5 w-3.5" />
@@ -288,7 +288,7 @@ export function NovoChamadoButton() {
                           "flex-1 inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-2 text-xs font-medium transition",
                           modo === "ponto"
                             ? "bg-amber-500/20 text-amber-300"
-                            : "text-slate-400 hover:text-white"
+                            : "text-at-muted hover:text-white"
                         )}
                       >
                         <MapPin className="h-3.5 w-3.5" />
@@ -297,7 +297,7 @@ export function NovoChamadoButton() {
                     </div>
 
                     <div className="flex items-center gap-2.5 rounded-lg border border-slate-600 bg-slate-900/90 px-3 py-2.5 focus-within:border-primary-neon focus-within:shadow-[0_0_0_2px_rgba(0,212,255,0.12)]">
-                      <Search className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+                      <Search className="h-4 w-4 shrink-0 text-at-muted" aria-hidden />
                       <input
                         type="search"
                         value={query}
@@ -307,19 +307,19 @@ export function NovoChamadoButton() {
                             ? "Digite o número de série..."
                             : "Digite o nome do ponto..."
                         }
-                        className="min-w-0 flex-1 !border-0 !bg-transparent !p-0 !shadow-none text-sm text-white placeholder:text-slate-400 focus:!border-transparent focus:!shadow-none"
+                        className="min-w-0 flex-1 !border-0 !bg-transparent !p-0 !shadow-none text-sm text-white placeholder:text-at-muted focus:!border-transparent focus:!shadow-none"
                         autoFocus
                       />
                     </div>
 
                     {buscando && (
-                      <p className="text-xs text-slate-500">Buscando...</p>
+                      <p className="text-xs text-at-muted">Buscando...</p>
                     )}
 
                     {modo === "serie" && !buscando && query.trim().length >= 2 && (
                       <div className="space-y-2">
                         {resultadosSerie.length === 0 ? (
-                          <p className="text-sm text-slate-500">
+                          <p className="text-sm text-at-muted">
                             Nenhuma máquina com essa série.
                           </p>
                         ) : (
@@ -333,7 +333,7 @@ export function NovoChamadoButton() {
                               <p className="text-sm font-medium text-white">
                                 {r.numero_serie ?? "—"} · {r.equipamento_nome}
                               </p>
-                              <p className="text-xs text-slate-500 mt-0.5">
+                              <p className="text-xs text-at-muted mt-0.5">
                                 Ponto: {r.ponto_nome}
                                 {r.numero_maquina ? ` · Nº ${r.numero_maquina}` : ""}
                                 {r.tipo
@@ -349,7 +349,7 @@ export function NovoChamadoButton() {
                     {modo === "ponto" && !buscando && query.trim().length >= 2 && (
                       <div className="space-y-3">
                         {resultadosPonto.length === 0 ? (
-                          <p className="text-sm text-slate-500">Nenhum ponto encontrado.</p>
+                          <p className="text-sm text-at-muted">Nenhum ponto encontrado.</p>
                         ) : (
                           resultadosPonto.map((p) => (
                             <div
@@ -362,7 +362,7 @@ export function NovoChamadoButton() {
                                 className="w-full text-left px-3 py-2.5 bg-slate-900/60 hover:bg-amber-500/5 transition"
                               >
                                 <p className="text-sm font-medium text-white">{p.ponto_nome}</p>
-                                <p className="text-xs text-slate-500">
+                                <p className="text-xs text-at-muted">
                                   {[p.bairro, p.cidade].filter(Boolean).join(" · ") ||
                                     "Sem endereço"}
                                   {p.equipamentos.length > 0
@@ -377,14 +377,14 @@ export function NovoChamadoButton() {
                                       key={eq.id}
                                       type="button"
                                       onClick={() => escolherPonto(p, eq)}
-                                      className="w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                                      className="w-full text-left px-3 py-2 text-xs text-at-muted hover:bg-slate-800/50 hover:text-white"
                                     >
                                       {eq.numero_serie
                                         ? `Série ${eq.numero_serie} · `
                                         : ""}
                                       {eq.numero_maquina ? `Nº ${eq.numero_maquina} · ` : ""}
                                       {eq.nome}
-                                      <span className="text-slate-600">
+                                      <span className="text-at-soft">
                                         {" "}
                                         ({getEquipamentoTipoLabel(eq.tipo as "cassino")})
                                       </span>
@@ -408,12 +408,12 @@ export function NovoChamadoButton() {
                             {selecao.pontoNome}
                           </p>
                           {selecao.equipamentoLabel && (
-                            <p className="text-xs text-slate-400 mt-0.5 truncate">
+                            <p className="text-xs text-at-muted mt-0.5 truncate">
                               {selecao.equipamentoLabel}
                             </p>
                           )}
                           {!selecao.equipamentoId && (
-                            <p className="text-[11px] text-slate-500 mt-1">
+                            <p className="text-[11px] text-at-muted mt-1">
                               Chamado no ponto (sem equipamento específico)
                             </p>
                           )}
@@ -445,7 +445,7 @@ export function NovoChamadoButton() {
                       className="min-h-[88px]"
                     />
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-slate-300">
+                      <label className="block text-sm font-medium text-at-primary/85">
                         Prioridade
                       </label>
                       <select
@@ -472,7 +472,7 @@ export function NovoChamadoButton() {
                   type="button"
                   onClick={fechar}
                   disabled={loading}
-                  className="rounded-lg px-4 py-2 text-sm text-slate-400 hover:text-white disabled:opacity-50"
+                  className="rounded-lg px-4 py-2 text-sm text-at-muted hover:text-white disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -498,7 +498,7 @@ export function NovoChamadoButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-4 py-2.5 text-[14px] font-medium text-[#c4a574] transition hover:bg-[#c4a574]/22"
+        className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-4 py-2.5 text-[14px] font-medium text-at-link transition hover:bg-[#c4a574]/22"
       >
         <Plus className="h-4 w-4" />
         Adicionar chamado

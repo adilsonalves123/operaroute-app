@@ -21,7 +21,7 @@ export function FuraFuraRotaDiaClient({ pontos }: { pontos: PontoRota[] }) {
 
   if (ordenados.length === 0) {
     return (
-      <div className="glass-card p-8 text-center text-sm text-slate-500">
+      <div className="glass-card p-8 text-center text-sm text-at-muted">
         Nenhum ponto ativo para visitar hoje.
       </div>
     );
@@ -42,14 +42,14 @@ export function FuraFuraRotaDiaClient({ pontos }: { pontos: PontoRota[] }) {
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium text-slate-500">#{index + 1}</span>
+                  <span className="text-xs font-medium text-at-muted">#{index + 1}</span>
                   <p className="font-medium text-white truncate">{ponto.nome}</p>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5 truncate">
+                <p className="text-xs text-at-muted mt-0.5 truncate">
                   {[ponto.endereco, ponto.bairro, ponto.cidade].filter(Boolean).join(", ") ||
                     "Sem endereço"}
                 </p>
-                <p className="text-xs text-slate-600 mt-1">
+                <p className="text-xs text-at-soft mt-1">
                   {ponto.ultima_coleta
                     ? `Última coleta: ${formatDate(ponto.ultima_coleta)}`
                     : "Nunca coletou"}
@@ -74,7 +74,7 @@ export function FuraFuraRotaDiaClient({ pontos }: { pontos: PontoRota[] }) {
                   href={nav.waze}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-primary-neon/40"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-at-primary/85 hover:border-primary-neon/40"
                 >
                   <Navigation className="h-3.5 w-3.5" />
                   Waze
@@ -83,7 +83,7 @@ export function FuraFuraRotaDiaClient({ pontos }: { pontos: PontoRota[] }) {
                   href={nav.google}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-300 hover:border-primary-neon/40"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-at-primary/85 hover:border-primary-neon/40"
                 >
                   <Navigation className="h-3.5 w-3.5" />
                   Maps

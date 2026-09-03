@@ -139,9 +139,9 @@ export function EquipamentoIdentificacaoFields({
           onChange={(e) => handleMesmoValor(e.target.checked)}
           className="mt-0.5 h-4 w-4 rounded border-slate-600 bg-slate-900 text-primary-neon focus:ring-primary-neon/30"
         />
-        <span className="text-sm text-slate-300">
+        <span className="text-sm text-at-primary/85">
           Usar a série do painel como nº no ponto
-          <span className="mt-0.5 block text-xs text-slate-500">
+          <span className="mt-0.5 block text-xs text-at-muted">
             Marque quando o código do visor for o mesmo que você usa no dia a dia neste ponto.
           </span>
         </span>

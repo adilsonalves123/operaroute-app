@@ -31,8 +31,8 @@ function LinhaCompacta({
   return (
     <div className="flex items-baseline justify-between gap-3 py-0.5">
       <div className="min-w-0">
-        <span className="text-slate-400">{label}</span>
-        {hint ? <span className="ml-1.5 text-[11px] text-slate-600">{hint}</span> : null}
+        <span className="text-at-muted">{label}</span>
+        {hint ? <span className="ml-1.5 text-[11px] text-at-soft">{hint}</span> : null}
       </div>
       <span className={cn("shrink-0 font-semibold tabular-nums", corLinha[tipo])}>
         {formatCurrency(valorReais)}
@@ -86,7 +86,7 @@ export function ResumoOperacaoNegativaView({
             </span>
           </div>
           {calculo.pendenciaOperacaoAbatidaReais > 0.009 && (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-at-muted">
               Abatido agora −{formatCurrency(calculo.pendenciaOperacaoAbatidaReais)}
               {calculo.pendenciaOperacaoRestanteReais > 0.009 && (
                 <> · ainda {formatCurrency(calculo.pendenciaOperacaoRestanteReais)}</>
@@ -105,17 +105,17 @@ export function ResumoOperacaoNegativaView({
           <p className="mt-2 text-4xl font-bold tabular-nums tracking-tight text-red-200">
             {formatCurrency(d.prejuizoVisitaReais)}
           </p>
-          <p className="mt-2 text-sm leading-snug text-slate-400">
+          <p className="mt-2 text-sm leading-snug text-at-muted">
             Comissão bloqueada — recupera na próxima positiva.
           </p>
           {fraseFechamento && (
-            <p className="mt-2 text-xs leading-relaxed text-slate-500">{fraseFechamento}</p>
+            <p className="mt-2 text-xs leading-relaxed text-at-muted">{fraseFechamento}</p>
           )}
         </div>
 
         {!fechamentoSimples && d.fechamento.length > 0 && (
           <div className="border-t border-red-500/15 px-4 py-2.5 sm:px-5">
-            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-500">
+            <p className="mb-1 text-[11px] font-medium uppercase tracking-wide text-at-muted">
               Quem cobriu
             </p>
             <div className="space-y-0.5 text-sm">
@@ -135,7 +135,7 @@ export function ResumoOperacaoNegativaView({
         {d.mostrarNegativoAcumulado && (
           <div className="border-t border-red-500/20 bg-black/25 px-4 py-3 sm:px-5">
             {temNegativoAnterior ? (
-              <div className="space-y-1 text-xs text-slate-500">
+              <div className="space-y-1 text-xs text-at-muted">
                 <div className="flex justify-between gap-3">
                   <span>Negativo anterior</span>
                   <span className="tabular-nums">{formatCurrency(d.negativoAnteriorReais)}</span>

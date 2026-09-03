@@ -40,18 +40,18 @@ export function PontoFormPageShell({
       <div className="flex items-start gap-3 sm:items-center sm:gap-4">
         <Link
           href={backHref}
-          className="mt-0.5 rounded-xl border border-white/[0.07] bg-[#0c1018]/80 p-2 text-slate-400 transition hover:border-[#c4a574]/25 hover:text-[#f4efe6]"
+          className="mt-0.5 rounded-xl border border-at bg-[#0c1018]/80 p-2 text-at-muted transition hover:border-[#c4a574]/25 hover:text-at-primary"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="min-w-0">
           <h1
-            className="text-2xl tracking-tight text-[#f4efe6]"
+            className="text-2xl tracking-tight text-at-primary"
             style={{ fontFamily: "var(--font-ponto-display), Georgia, serif" }}
           >
             {title}
           </h1>
-          <p className="mt-0.5 text-sm text-slate-500">{subtitle}</p>
+          <p className="mt-0.5 text-sm text-at-muted">{subtitle}</p>
         </div>
       </div>
       {children}

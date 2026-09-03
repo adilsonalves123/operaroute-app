@@ -54,7 +54,7 @@ export function PesquisaUpgradeBanner({ insight, className }: Props) {
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-3 top-3 rounded-lg p-1 text-slate-500 hover:bg-white/5 hover:text-slate-300"
+        className="absolute right-3 top-3 rounded-lg p-1 text-at-muted hover:bg-white/5 hover:text-at-primary/85"
         aria-label="Dispensar"
       >
         <X className="h-4 w-4" />
@@ -68,7 +68,7 @@ export function PesquisaUpgradeBanner({ insight, className }: Props) {
           <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-amber-300/80">
             Oportunidade · pesquisa
           </p>
-          <p className="text-sm leading-relaxed text-slate-200">{insight.mensagem}</p>
+          <p className="text-sm leading-relaxed text-at-primary/90">{insight.mensagem}</p>
           <div className="flex flex-wrap gap-2 pt-1">
             <Link
               href={insight.href}
@@ -78,7 +78,7 @@ export function PesquisaUpgradeBanner({ insight, className }: Props) {
                 ? `Ver plano ${insight.proximoPlanoNome}`
                 : "Ver planos"}
             </Link>
-            <p className="self-center text-[11px] text-slate-500">
+            <p className="self-center text-[11px] text-at-muted">
               Também usamos isso para promoções futuras.
             </p>
           </div>

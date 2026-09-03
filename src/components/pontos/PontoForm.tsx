@@ -247,7 +247,7 @@ export function PontoForm({
           <div className="space-y-3 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
             <div>
               <p className="text-sm font-medium text-white">Comissão por nicho (%)</p>
-              <p className="mt-0.5 text-xs text-slate-500">
+              <p className="mt-0.5 text-xs text-at-muted">
                 Cada nicho tem o próprio percentual neste ponto — consignado não herda o do cassino.
               </p>
             </div>
@@ -276,7 +276,7 @@ export function PontoForm({
               ))}
             </div>
             {nichosComissaoVisiveis(nichosAtivos).includes("consignado") && (
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] px-3 py-2.5 text-xs text-slate-400">
+              <div className="rounded-lg border border-amber-500/20 bg-amber-500/[0.04] px-3 py-2.5 text-xs text-at-muted">
                 <p className="font-medium text-amber-200/90">Consignado</p>
                 <p className="mt-0.5">
                   Não usa % aqui. O recolhe usa a tabela do produto: custo, valor final e quanto o

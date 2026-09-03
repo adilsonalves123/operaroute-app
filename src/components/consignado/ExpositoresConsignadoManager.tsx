@@ -29,7 +29,7 @@ function QtyField({
       <button
         type="button"
         onClick={() => onChange(String(Math.max(0, n - 1)))}
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-at-primary/85 hover:bg-slate-800"
       >
         <Minus className="h-3.5 w-3.5" />
       </button>
@@ -43,7 +43,7 @@ function QtyField({
       <button
         type="button"
         onClick={() => onChange(String(n + 1))}
-        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-at-primary/85 hover:bg-slate-800"
       >
         <Plus className="h-3.5 w-3.5" />
       </button>
@@ -128,19 +128,19 @@ function ExpositorCard({
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate font-medium text-white">{expositor.nome}</p>
-          <p className="text-xs text-slate-500">{expositor.pontoNome}</p>
+          <p className="text-xs text-at-muted">{expositor.pontoNome}</p>
         </div>
         {open ? (
-          <ChevronDown className="h-4 w-4 text-slate-400" />
+          <ChevronDown className="h-4 w-4 text-at-muted" />
         ) : (
-          <ChevronRight className="h-4 w-4 text-slate-400" />
+          <ChevronRight className="h-4 w-4 text-at-muted" />
         )}
       </button>
 
       {open && (
         <div className="space-y-3 border-t border-slate-800 p-4">
           {produtos.length === 0 ? (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-at-muted">
               Cadastre produtos no catálogo acima antes de abastecer o expositor.
             </p>
           ) : (
@@ -158,7 +158,7 @@ function ExpositorCard({
                         </span>
                         {p.nome}
                       </p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-at-muted">
                         Venda {formatCurrency(Number(p.preco_venda ?? 0))}
                       </p>
                     </div>
@@ -172,7 +172,7 @@ function ExpositorCard({
                 ))}
               </div>
               <div className="flex items-center justify-between">
-                <p className="text-xs text-slate-500">{totalUnidades} unidades no expositor</p>
+                <p className="text-xs text-at-muted">{totalUnidades} unidades no expositor</p>
                 <button
                   type="button"
                   onClick={salvar}
@@ -182,7 +182,7 @@ function ExpositorCard({
                   {saving ? "Salvando..." : "Salvar estoque"}
                 </button>
               </div>
-              {msg && <p className="text-xs text-slate-400">{msg}</p>}
+              {msg && <p className="text-xs text-at-muted">{msg}</p>}
             </>
           )}
         </div>
@@ -200,7 +200,7 @@ export function ExpositoresConsignadoManager({
 }) {
   if (expositores.length === 0) {
     return (
-      <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
+      <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-at-muted">
         Nenhum expositor cadastrado. Crie um equipamento do tipo{" "}
         <span className="text-amber-300">Expositor consignado</span> em um ponto para abastecer.
       </div>

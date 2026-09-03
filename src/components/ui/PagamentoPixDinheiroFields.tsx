@@ -46,11 +46,11 @@ export function PagamentoPixDinheiroFields({
         />
       </div>
       {total > 0.009 && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-at-muted">
           Total recebido: <span className="font-medium text-white">{formatCurrency(total)}</span>
         </p>
       )}
-      {hint && <p className="text-xs text-slate-500">{hint}</p>}
+      {hint && <p className="text-xs text-at-muted">{hint}</p>}
     </div>
   );
 }

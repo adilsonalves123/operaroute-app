@@ -111,7 +111,7 @@ export function AbrirChamadoButton({
                     Abrir chamado de manutenção
                   </h3>
                   {equipamentoNome && (
-                    <p className="text-xs text-slate-500 mt-0.5 truncate">
+                    <p className="text-xs text-at-muted mt-0.5 truncate">
                       Equipamento: {equipamentoNome}
                     </p>
                   )}
@@ -120,7 +120,7 @@ export function AbrirChamadoButton({
                   type="button"
                   onClick={fechar}
                   disabled={loading}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white shrink-0 disabled:opacity-50"
+                  className="rounded-lg p-1.5 text-at-muted hover:bg-slate-800 hover:text-white shrink-0 disabled:opacity-50"
                   aria-label="Fechar"
                 >
                   <X className="h-5 w-5" />
@@ -142,7 +142,7 @@ export function AbrirChamadoButton({
                   className="min-h-[88px]"
                 />
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-slate-300">Prioridade</label>
+                  <label className="block text-sm font-medium text-at-primary/85">Prioridade</label>
                   <select
                     value={prioridade}
                     onChange={(e) => setPrioridade(e.target.value as ChamadoPrioridade)}
@@ -162,7 +162,7 @@ export function AbrirChamadoButton({
                   type="button"
                   onClick={fechar}
                   disabled={loading}
-                  className="rounded-lg px-4 py-2 text-sm text-slate-400 hover:text-white disabled:opacity-50"
+                  className="rounded-lg px-4 py-2 text-sm text-at-muted hover:text-white disabled:opacity-50"
                 >
                   Cancelar
                 </button>

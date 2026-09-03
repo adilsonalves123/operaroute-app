@@ -41,7 +41,7 @@ export function ComissaoStaffLinha({
         <span className="font-semibold tabular-nums text-violet-200">
           {formatCurrency(valor)}
         </span>
-        <span className="text-slate-600"> · após brindes</span>
+        <span className="text-at-soft"> · após brindes</span>
       </p>
     );
   }
@@ -58,7 +58,7 @@ export function ComissaoStaffLinha({
           <p className="text-[11px] font-semibold uppercase tracking-wider text-violet-300/90">
             {titulo} ({pct}%)
           </p>
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-[11px] text-at-muted">
             Sobre o lucro depois do custo dos brindes
           </p>
         </div>

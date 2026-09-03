@@ -149,7 +149,7 @@ export function AppNavLinks({
       {bottom.length > 0 && (
         <div
           className={cn(
-            "mt-6 space-y-0.5 border-t border-white/[0.06] pt-4",
+            "mt-6 space-y-0.5 border-t border-at pt-4",
             collapsed && "mt-4 pt-3"
           )}
         >

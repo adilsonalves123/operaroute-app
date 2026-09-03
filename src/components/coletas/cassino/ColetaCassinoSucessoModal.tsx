@@ -170,18 +170,18 @@ export function ColetaCassinoSucessoModal({
             <CheckCircle className="h-6 w-6 text-green-400 shrink-0" />
             <div>
               <h2 className="text-lg font-bold text-white">Coleta registrada!</h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-at-muted">
                 Compartilhe o comprovante ou envie no WhatsApp
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="text-slate-400 hover:text-white p-1">
+          <button type="button" onClick={onClose} className="text-at-muted hover:text-white p-1">
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {gerando && (
-          <div className="flex items-center gap-2 text-sm text-slate-400">
+          <div className="flex items-center gap-2 text-sm text-at-muted">
             <Loader2 className="h-4 w-4 animate-spin" />
             Salvando cópia do relatório...
           </div>

@@ -51,7 +51,7 @@ export function TrialBanner({
           {expired ? (
             <p className="text-[13px] leading-snug text-rose-100/90 sm:text-[14px]">
               <span
-                className="text-[15px] tracking-tight text-[#f4efe6]"
+                className="text-[15px] tracking-tight text-at-primary"
                 style={{ fontFamily: "Georgia, serif" }}
               >
                 Avaliação encerrada
@@ -62,18 +62,18 @@ export function TrialBanner({
           ) : (
             <p className="text-[13px] leading-snug text-[#e8dfd0]/90 sm:text-[14px]">
               <span
-                className="text-[15px] tracking-tight text-[#f4efe6]"
+                className="text-[15px] tracking-tight text-at-primary"
                 style={{ fontFamily: "Georgia, serif" }}
               >
                 {plano ? `Trial ${plano}` : "Trial OperaRoute"}
               </span>
-              <span className="text-[#c4a574]/55"> · </span>
+              <span className="text-at-link/55"> · </span>
               {days === 0 ? (
-                <span className="text-[#c4a574]">último dia</span>
+                <span className="text-at-link">último dia</span>
               ) : (
                 <>
                   restam{" "}
-                  <span className="tabular-nums text-[#c4a574]">
+                  <span className="tabular-nums text-at-link">
                     {days} {days === 1 ? "dia" : "dias"}
                   </span>
                 </>
@@ -94,7 +94,7 @@ export function TrialBanner({
             className={`rounded-sm px-3 py-1.5 text-[12px] font-medium transition sm:text-[13px] ${
               expired
                 ? "border border-rose-300/30 bg-rose-400/15 text-rose-100 hover:bg-rose-400/25"
-                : "border border-[#c4a574]/35 bg-[#c4a574]/12 text-[#c4a574] hover:bg-[#c4a574]/20"
+                : "border border-[#c4a574]/35 bg-[#c4a574]/12 text-at-link hover:bg-[#c4a574]/20"
             }`}
           >
             {expired ? "Escolher plano" : "Ver planos"}
@@ -103,7 +103,7 @@ export function TrialBanner({
             <button
               type="button"
               onClick={() => setDismissed(true)}
-              className="rounded-sm p-1.5 text-[#e8dfd0]/40 transition hover:bg-white/[0.04] hover:text-[#f4efe6]"
+              className="rounded-sm p-1.5 text-[#e8dfd0]/40 transition hover:bg-at-card-soft hover:text-at-primary"
               aria-label="Dispensar"
             >
               <X className="h-3.5 w-3.5" />

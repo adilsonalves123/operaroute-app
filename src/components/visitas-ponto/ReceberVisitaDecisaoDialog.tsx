@@ -22,7 +22,7 @@ export function ReceberVisitaDecisaoDialog({
       aria-modal="true"
       aria-labelledby="receber-visita-decisao-titulo"
     >
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0f1524] p-5 shadow-2xl sm:p-6">
+      <div className="w-full max-w-md rounded-2xl border border-at-soft bg-[#0f1524] p-5 shadow-2xl sm:p-6">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2
@@ -31,7 +31,7 @@ export function ReceberVisitaDecisaoDialog({
             >
               Pagamento deste nicho
             </h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-400">
+            <p className="mt-2 text-sm leading-relaxed text-at-muted">
               O valor deste nicho será recebido agora. Deseja finalizar e encerrar a
               visita, ou continuar com os outros nichos?
             </p>
@@ -39,7 +39,7 @@ export function ReceberVisitaDecisaoDialog({
           <button
             type="button"
             onClick={onCancelar}
-            className="rounded-lg p-1.5 text-slate-500 transition hover:bg-white/5 hover:text-slate-300"
+            className="rounded-lg p-1.5 text-at-muted transition hover:bg-white/5 hover:text-at-primary/85"
             aria-label="Cancelar"
           >
             <X className="h-4 w-4" />
@@ -57,7 +57,7 @@ export function ReceberVisitaDecisaoDialog({
               <span className="block text-sm font-semibold text-cyan-50">
                 Continuar com outros nichos
               </span>
-              <span className="mt-1 block text-[12px] leading-snug text-slate-400">
+              <span className="mt-1 block text-[12px] leading-snug text-at-muted">
                 Este nicho fica pago e fora da cobrança. A visita segue aberta para os
                 que restam.
               </span>
@@ -67,14 +67,14 @@ export function ReceberVisitaDecisaoDialog({
           <button
             type="button"
             onClick={onEncerrar}
-            className="flex w-full items-start gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-left transition hover:bg-white/[0.07]"
+            className="flex w-full items-start gap-3 rounded-xl border border-at-soft bg-at-card-soft px-4 py-3.5 text-left transition hover:bg-white/[0.07]"
           >
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
             <span>
               <span className="block text-sm font-semibold text-slate-100">
                 Finalizar e encerrar a visita
               </span>
-              <span className="mt-1 block text-[12px] leading-snug text-slate-400">
+              <span className="mt-1 block text-[12px] leading-snug text-at-muted">
                 Fecha a visita agora. Nichos ainda sem pagamento ficam como pendência.
               </span>
             </span>
@@ -84,7 +84,7 @@ export function ReceberVisitaDecisaoDialog({
         <button
           type="button"
           onClick={onCancelar}
-          className="mt-4 w-full py-2 text-center text-sm text-slate-500 transition hover:text-slate-300"
+          className="mt-4 w-full py-2 text-center text-sm text-at-muted transition hover:text-at-primary/85"
         >
           Voltar sem salvar
         </button>

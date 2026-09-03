@@ -70,9 +70,9 @@ export function FecharColetaPanel({
           borderAccent
         )}
       >
-        <div className="border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
+        <div className="border-b border-at px-4 py-3.5 sm:px-5">
           <h2 className="text-base font-semibold tracking-tight text-white">{title}</h2>
-          <p className="mt-0.5 text-xs leading-snug text-slate-500">{subtitle}</p>
+          <p className="mt-0.5 text-xs leading-snug text-at-muted">{subtitle}</p>
         </div>
 
         <div className="space-y-4 px-4 py-4 sm:px-5">
@@ -82,14 +82,14 @@ export function FecharColetaPanel({
           {previa && <div className="space-y-2">{previa}</div>}
 
           {observacao && (
-            <details className="group rounded-xl border border-white/[0.06] bg-white/[0.02]">
-              <summary className="cursor-pointer list-none px-3.5 py-3 text-sm text-slate-400 marker:content-none [&::-webkit-details-marker]:hidden">
+            <details className="group rounded-xl border border-at bg-white/[0.02]">
+              <summary className="cursor-pointer list-none px-3.5 py-3 text-sm text-at-muted marker:content-none [&::-webkit-details-marker]:hidden">
                 <span className="flex items-center justify-between gap-2">
                   <span>Observação (opcional)</span>
-                  <span className="text-[11px] text-slate-600 group-open:hidden">Abrir</span>
+                  <span className="text-[11px] text-at-soft group-open:hidden">Abrir</span>
                 </span>
               </summary>
-              <div className="border-t border-white/[0.06] px-3.5 pb-3.5 pt-3">
+              <div className="border-t border-at px-3.5 pb-3.5 pt-3">
                 <textarea
                   value={observacaoValue ?? ""}
                   onChange={(e) => onObservacaoChange?.(e.target.value)}
@@ -108,7 +108,7 @@ export function FecharColetaPanel({
           )}
         </div>
 
-        <div className="space-y-3 border-t border-white/[0.06] bg-black/20 px-4 py-3.5 sm:px-5">
+        <div className="space-y-3 border-t border-at bg-black/20 px-4 py-3.5 sm:px-5">
           {depoisDaColeta}
           <button
             type="button"

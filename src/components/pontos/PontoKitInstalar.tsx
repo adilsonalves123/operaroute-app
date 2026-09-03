@@ -72,7 +72,7 @@ function KitThumb({
       )}
       aria-hidden
     >
-      <ImageIcon className="h-3.5 w-3.5 text-slate-600" />
+      <ImageIcon className="h-3.5 w-3.5 text-at-soft" />
     </span>
   );
 }
@@ -210,7 +210,7 @@ export function PontoKitInstalar({
         <Package className="h-5 w-5 text-cyan-400 shrink-0 mt-0.5" />
         <div>
           <h2 className="font-semibold text-white">Kit no ponto</h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-at-muted mt-1">
             Alocar kit montado no depósito. Veja abaixo o que está no bar e remova item a item se
             precisar — tudo volta ao estoque central.
           </p>
@@ -222,12 +222,12 @@ export function PontoKitInstalar({
           <span className="text-cyan-300">Kit ativo: </span>
           <span className="text-white font-medium">{kitAtivoNome ?? "—"}</span>
           {kitInstaladoEm && (
-            <span className="text-slate-500 text-xs ml-2">
+            <span className="text-at-muted text-xs ml-2">
               desde {new Date(kitInstaladoEm).toLocaleDateString("pt-BR")}
             </span>
           )}
           {resumoKit.totalOriginal > 0 && (
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-at-muted">
               Restante do kit:{" "}
               <span className="font-medium text-cyan-200 tabular-nums">
                 {resumoKit.pctRestante}%
@@ -240,8 +240,8 @@ export function PontoKitInstalar({
       )}
 
       {brindesNoPonto.length > 0 ? (
-        <div className="space-y-2 rounded-lg border border-white/[0.08] bg-slate-950/40 p-3">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        <div className="space-y-2 rounded-lg border border-at-soft bg-slate-950/40 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-at-muted">
             Itens alocados neste ponto ({brindesNoPonto.length})
           </p>
           <ul className="space-y-2">
@@ -262,18 +262,18 @@ export function PontoKitInstalar({
                   key={key}
                   className="flex items-center gap-3 rounded-lg border border-slate-800/80 bg-slate-900/50 px-3 py-2"
                 >
-                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-white/[0.08]">
+                  <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-at-soft">
                     {foto ? (
                       <LazyThumb src={foto} alt={item.nome} className="h-12 w-12" size={96} />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-slate-600">
+                      <div className="flex h-full w-full items-center justify-center text-at-soft">
                         <Package className="h-4 w-4" />
                       </div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-white truncate">{item.nome}</p>
-                    <p className="text-xs text-slate-500 tabular-nums">
+                    <p className="text-xs text-at-muted tabular-nums">
                       {item.atual} un. no ponto
                       {item.original > 0 ? ` · kit tinha ${item.original}` : ""}
                     </p>
@@ -305,7 +305,7 @@ export function PontoKitInstalar({
       ) : null}
 
       {kits.length === 0 ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-at-muted">
           Nenhum kit cadastrado.{" "}
           <a href="/estoque/kits" className="text-primary-neon hover:underline">
             Cadastrar e montar kits
@@ -314,7 +314,7 @@ export function PontoKitInstalar({
       ) : (
         <>
           <div ref={rootRef} className="relative">
-            <label className="text-xs text-slate-500">Kit para alocar / trocar</label>
+            <label className="text-xs text-at-muted">Kit para alocar / trocar</label>
             <button
               type="button"
               onClick={() => setOpen((v) => !v)}
@@ -332,14 +332,14 @@ export function PontoKitInstalar({
               ) : (
                 <KitThumb nome="" />
               )}
-              <span className={cn("min-w-0 flex-1 truncate", !selected && "text-slate-500")}>
+              <span className={cn("min-w-0 flex-1 truncate", !selected && "text-at-muted")}>
                 {selected
                   ? `${selected.nome} (${selected.quantidade_montada ?? 0} no depósito)`
                   : "Selecionar kit..."}
               </span>
               <ChevronDown
                 className={cn(
-                  "h-4 w-4 shrink-0 text-slate-400 transition",
+                  "h-4 w-4 shrink-0 text-at-muted transition",
                   open && "rotate-180"
                 )}
               />
@@ -363,7 +363,7 @@ export function PontoKitInstalar({
                       "flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm",
                       !selectedId
                         ? "bg-cyan-500/15 text-cyan-100"
-                        : "text-slate-400 hover:bg-white/[0.04]"
+                        : "text-at-muted hover:bg-at-card-soft"
                     )}
                   >
                     <KitThumb nome="" />
@@ -390,13 +390,13 @@ export function PontoKitInstalar({
                           semEstoque && "cursor-not-allowed opacity-45",
                           ativo
                             ? "bg-cyan-500/15 text-cyan-100"
-                            : "text-white hover:bg-white/[0.04]"
+                            : "text-white hover:bg-at-card-soft"
                         )}
                       >
                         <KitThumb src={fotoDoKit(k)} nome={k.nome} />
                         <span className="min-w-0 flex-1 truncate">
                           {k.nome}{" "}
-                          <span className="text-slate-500">
+                          <span className="text-at-muted">
                             ({k.quantidade_montada ?? 0} no depósito)
                           </span>
                         </span>
@@ -409,8 +409,8 @@ export function PontoKitInstalar({
           </div>
 
           {selected && (
-            <ul className="text-xs text-slate-400 space-y-1">
-              <li className="text-slate-500 uppercase tracking-wide">Itens deste kit (1 un.):</li>
+            <ul className="text-xs text-at-muted space-y-1">
+              <li className="text-at-muted uppercase tracking-wide">Itens deste kit (1 un.):</li>
               {selected.reposicao_itens.map((r, i) => (
                 <li key={i}>
                   {r.quantidade}× {r.nome}

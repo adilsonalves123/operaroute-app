@@ -80,7 +80,7 @@ export function DonoAtividadeClient({ email }: { email: string }) {
       wide
     >
       {loading && (
-        <div className="flex items-center gap-2 text-slate-500">
+        <div className="flex items-center gap-2 text-at-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando…
         </div>
@@ -93,20 +93,20 @@ export function DonoAtividadeClient({ email }: { email: string }) {
 
       {!loading && !erro && (
         <div className="space-y-8">
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.07] bg-white/[0.07] sm:grid-cols-2 lg:max-w-md">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-white/[0.07] sm:grid-cols-2 lg:max-w-md">
             <div className="bg-[#080b12] px-4 py-4">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">
                 Sessões 24h
               </p>
-              <p className="mt-1 text-[24px] tabular-nums text-[#f4efe6]">
+              <p className="mt-1 text-[24px] tabular-nums text-at-primary">
                 {resumo.sessoes_24h}
               </p>
             </div>
             <div className="bg-[#080b12] px-4 py-4">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">
                 Sessões 7d
               </p>
-              <p className="mt-1 text-[24px] tabular-nums text-[#f4efe6]">
+              <p className="mt-1 text-[24px] tabular-nums text-at-primary">
                 {resumo.sessoes_7d}
               </p>
             </div>
@@ -114,25 +114,25 @@ export function DonoAtividadeClient({ email }: { email: string }) {
 
           <div className="grid gap-8 lg:grid-cols-2">
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Sessões recentes
               </p>
-              <div className="overflow-x-auto rounded-sm border border-white/[0.07]">
+              <div className="overflow-x-auto rounded-sm border border-at">
                 <table className="w-full min-w-[520px] text-left text-[13px]">
                   <thead>
-                    <tr className="border-b border-white/[0.06] text-[10px] uppercase tracking-wider text-slate-500">
+                    <tr className="border-b border-at text-[10px] uppercase tracking-wider text-at-muted">
                       <th className="px-3 py-2.5 font-medium">Usuário</th>
                       <th className="px-3 py-2.5 font-medium">Operação</th>
                       <th className="px-3 py-2.5 font-medium">Quando</th>
                       <th className="px-3 py-2.5 font-medium">Disp.</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.04]">
+                  <tbody className="divide-y divide-[var(--at-border-soft)]">
                     {sessoes.length === 0 && (
                       <tr>
                         <td
                           colSpan={4}
-                          className="px-3 py-8 text-center text-slate-500"
+                          className="px-3 py-8 text-center text-at-muted"
                         >
                           Sem sessões. Rode auditoria-elaborada.sql se ainda não
                           rodou.
@@ -142,10 +142,10 @@ export function DonoAtividadeClient({ email }: { email: string }) {
                     {sessoes.map((s) => (
                       <tr key={s.id} className="hover:bg-white/[0.015]">
                         <td className="px-3 py-2.5">
-                          <p className="text-[#f4efe6]">
+                          <p className="text-at-primary">
                             {s.user_nome ?? "—"}
                           </p>
-                          <p className="text-[11px] text-slate-600">
+                          <p className="text-[11px] text-at-soft">
                             {s.user_email ?? ""}
                           </p>
                         </td>
@@ -153,7 +153,7 @@ export function DonoAtividadeClient({ email }: { email: string }) {
                           {s.empresa_id ? (
                             <Link
                               href={`/dono/empresas/${s.empresa_id}`}
-                              className="text-slate-300 hover:text-[#c4a574]"
+                              className="text-at-primary/85 hover:text-at-link"
                             >
                               {s.empresa_nome ?? "Cliente"}
                             </Link>
@@ -161,10 +161,10 @@ export function DonoAtividadeClient({ email }: { email: string }) {
                             "—"
                           )}
                         </td>
-                        <td className="px-3 py-2.5 text-slate-400">
+                        <td className="px-3 py-2.5 text-at-muted">
                           {when(s.iniciado_em)}
                         </td>
-                        <td className="px-3 py-2.5 text-slate-500">
+                        <td className="px-3 py-2.5 text-at-muted">
                           {s.dispositivo ?? "—"}
                         </td>
                       </tr>
@@ -175,26 +175,26 @@ export function DonoAtividadeClient({ email }: { email: string }) {
             </section>
 
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Eventos de auditoria
               </p>
-              <ul className="max-h-[70vh] divide-y divide-white/[0.05] overflow-y-auto rounded-sm border border-white/[0.07]">
+              <ul className="max-h-[70vh] divide-y divide-white/[0.05] overflow-y-auto rounded-sm border border-at">
                 {eventos.length === 0 && (
-                  <li className="px-4 py-8 text-center text-[12px] text-slate-500">
+                  <li className="px-4 py-8 text-center text-[12px] text-at-muted">
                     Sem eventos.
                   </li>
                 )}
                 {eventos.map((e) => (
                   <li key={e.id} className="px-4 py-3 text-[13px]">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-[#f4efe6]">
+                      <p className="text-at-primary">
                         {e.titulo || e.acao}
                       </p>
-                      <span className="shrink-0 text-[10px] uppercase text-slate-600">
+                      <span className="shrink-0 text-[10px] uppercase text-at-soft">
                         {e.severidade}
                       </span>
                     </div>
-                    <p className="mt-0.5 text-[11px] text-slate-500">
+                    <p className="mt-0.5 text-[11px] text-at-muted">
                       {e.empresa_nome ?? "—"} · {e.user_nome ?? "—"} ·{" "}
                       {e.modulo} · {when(e.created_at)}
                     </p>

@@ -21,7 +21,7 @@ import { resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
 import { fetchComissaoPontoPeriodo } from "@/lib/pontos/comissao-periodo";
 
 const ACAO_COLETA =
-  "inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-3 text-[13px] font-medium text-white transition hover:border-white/25 hover:bg-white/[0.08]";
+  "inline-flex w-full items-center justify-center rounded-full border border-at-soft bg-at-card-soft px-4 py-3 text-[13px] font-medium text-white transition hover:border-white/25 hover:bg-white/[0.08]";
 
 export default async function PontoDetailPage({
   params,
@@ -551,9 +551,9 @@ export default async function PontoDetailPage({
             </>
           ) : undefined,
           bolinha: (
-            <div className="space-y-2 border-t border-white/[0.06] pt-4">
+            <div className="space-y-2 border-t border-at pt-4">
               <h2 className="text-[15px] text-white">Estoque por máquina</h2>
-              <p className="text-[13px] leading-relaxed text-slate-500">
+              <p className="text-[13px] leading-relaxed text-at-muted">
                 Diferente do fura-fura, bolinha e cápsula guardam o estoque em cada
                 máquina. No cadastro ou em Equipamentos → detalhes → Brindes, escolha o
                 que vai em cada uma.
@@ -561,9 +561,9 @@ export default async function PontoDetailPage({
             </div>
           ),
           consignado: isConsignado ? (
-            <div className="space-y-2 border-t border-white/[0.06] pt-4">
+            <div className="space-y-2 border-t border-at pt-4">
               <h2 className="text-[15px] text-white">Consignado por expositor</h2>
-              <p className="text-[13px] leading-relaxed text-slate-500">
+              <p className="text-[13px] leading-relaxed text-at-muted">
                 Cadastre os produtos em Produtos consignados. Cada expositor guarda o
                 estoque na máquina — no recolhe o sistema calcula o vendido e a comissão.
               </p>
@@ -598,8 +598,8 @@ export default async function PontoDetailPage({
         }}
       />
 
-      <section className="space-y-3 border-t border-white/[0.06] pt-8">
-        <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+      <section className="space-y-3 border-t border-at pt-8">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-at-muted">
           Ficha
         </h2>
         <PontoDadosCard
@@ -620,11 +620,11 @@ export default async function PontoDetailPage({
         />
       </section>
 
-      <section className="space-y-3 border-t border-white/[0.06] pt-8">
+      <section className="space-y-3 border-t border-at pt-8">
         <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-rose-400/80">
           Zona de perigo
         </h2>
-        <p className="text-[13px] leading-relaxed text-slate-500">
+        <p className="text-[13px] leading-relaxed text-at-muted">
           Excluir remove o ponto, equipamentos e histórico vinculados. Pendências em
           aberto impedem a exclusão.
         </p>

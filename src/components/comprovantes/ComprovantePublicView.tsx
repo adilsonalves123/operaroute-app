@@ -183,27 +183,27 @@ export function ComprovantePublicView({
     <div className="mx-auto w-full max-w-md space-y-4 px-4 py-8">
       <div
         ref={reportRef}
-        className="overflow-hidden rounded-2xl border border-white/10 bg-[#0b1220] text-white shadow-xl"
+        className="overflow-hidden rounded-2xl border border-at-soft bg-[#0b1220] text-white shadow-xl"
       >
-        <div className="border-b border-white/10 bg-gradient-to-br from-cyan-500/20 to-transparent px-5 py-5">
+        <div className="border-b border-at-soft bg-gradient-to-br from-cyan-500/20 to-transparent px-5 py-5">
           <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-cyan-300/90">
             {tituloTopo}
           </p>
           <h1 className="mt-1 text-2xl font-bold tracking-tight">
             {snapshot.empresaNome}
           </h1>
-          <p className="mt-1 text-sm text-slate-300">{snapshot.pontoNome}</p>
-          <p className="mt-0.5 text-xs text-slate-500">{dataStr}</p>
+          <p className="mt-1 text-sm text-at-primary/85">{snapshot.pontoNome}</p>
+          <p className="mt-0.5 text-xs text-at-muted">{dataStr}</p>
         </div>
 
         <div className="space-y-4 px-5 py-5 text-sm">
           {!visitaNegativa && snapshot.nichos.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-at-muted">
                 Operação
               </p>
               {snapshot.nichos.map((n) => (
-                <div key={n.label} className="flex justify-between text-slate-200">
+                <div key={n.label} className="flex justify-between text-at-primary/90">
                   <span>{n.label}</span>
                   <span className="tabular-nums">{formatCurrency(n.valor)}</span>
                 </div>
@@ -212,8 +212,8 @@ export function ComprovantePublicView({
           )}
 
           {temMaquinas && (
-            <div className="space-y-1.5 border-t border-white/[0.06] pt-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            <div className="space-y-1.5 border-t border-at pt-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wider text-at-muted">
                 Máquinas
               </p>
               {snapshot.maquinas!.map((m, i) => {
@@ -221,7 +221,7 @@ export function ComprovantePublicView({
                   m.entradaAtual != null || m.saidaAtual != null;
                 return (
                   <div key={`${m.nome}-${i}`} className="space-y-0.5">
-                    <div className="flex justify-between text-slate-400">
+                    <div className="flex justify-between text-at-muted">
                       <span className="truncate pr-2">{m.nome}</span>
                       <span
                         className={`tabular-nums shrink-0 ${
@@ -232,11 +232,11 @@ export function ComprovantePublicView({
                       </span>
                     </div>
                     {temContadores && (
-                      <p className="text-[11px] text-slate-600">
+                      <p className="text-[11px] text-at-soft">
                         {m.entradaAtual != null && (
                           <span>
                             Entrada{" "}
-                            <span className="tabular-nums text-slate-500">
+                            <span className="tabular-nums text-at-muted">
                               {formatContador(m.entradaAtual)}
                             </span>
                           </span>
@@ -247,7 +247,7 @@ export function ComprovantePublicView({
                         {m.saidaAtual != null && (
                           <span>
                             Saída{" "}
-                            <span className="tabular-nums text-slate-500">
+                            <span className="tabular-nums text-at-muted">
                               {formatContador(m.saidaAtual)}
                             </span>
                           </span>
@@ -261,7 +261,7 @@ export function ComprovantePublicView({
           )}
 
           {temLinhasMeio && (
-          <div className="space-y-1.5 border-t border-white/[0.06] pt-3">
+          <div className="space-y-1.5 border-t border-at pt-3">
             {visitaNegativa ? (
               <>
                 <div className="flex justify-between text-red-300">
@@ -289,14 +289,14 @@ export function ComprovantePublicView({
               <>
                 {temOperacional && (
                   <>
-                    <div className="flex justify-between text-slate-300">
+                    <div className="flex justify-between text-at-primary/85">
                       <span>Valor operacional</span>
                       <span className="tabular-nums">
                         {formatCurrency(valorOperacional)}
                       </span>
                     </div>
                     {comissao > 0.009 && (
-                      <div className="flex justify-between text-slate-300">
+                      <div className="flex justify-between text-at-primary/85">
                         <span>{comissaoLabel}</span>
                         <span className="tabular-nums">
                           {formatCurrency(comissao)}
@@ -307,7 +307,7 @@ export function ComprovantePublicView({
                 )}
 
                 {!temOperacional && !recuperaNegativo && (
-                  <div className="flex justify-between text-slate-300">
+                  <div className="flex justify-between text-at-primary/85">
                     <span>Subtotal</span>
                     <span className="tabular-nums">
                       {formatCurrency(snapshot.subtotal)}
@@ -349,7 +349,7 @@ export function ComprovantePublicView({
                   </div>
                 )}
                 {haverAbatido > 0.009 && (
-                  <div className="flex justify-between text-slate-400">
+                  <div className="flex justify-between text-at-muted">
                     <span>Haver restante</span>
                     <span className="tabular-nums">
                       {formatCurrency(haverRestante)}
@@ -393,7 +393,7 @@ export function ComprovantePublicView({
               {formatCurrency(hero.valor)}
             </p>
             {hero.hint && (
-              <p className="mt-1.5 text-xs text-slate-500">{hero.hint}</p>
+              <p className="mt-1.5 text-xs text-at-muted">{hero.hint}</p>
             )}
           </div>
 
@@ -410,7 +410,7 @@ export function ComprovantePublicView({
                   {!recuperaNegativo &&
                     haverAbatido > 0.009 &&
                     snapshot.valorPago > 0.009 && (
-                    <p className="mt-1 text-[10px] text-slate-500">
+                    <p className="mt-1 text-[10px] text-at-muted">
                       {formatCurrency(snapshot.valorPago)} + haver{" "}
                       {formatCurrency(haverAbatido)}
                     </p>
@@ -418,21 +418,21 @@ export function ComprovantePublicView({
                   {!recuperaNegativo &&
                     haverAbatido > 0.009 &&
                     snapshot.valorPago <= 0.009 && (
-                    <p className="mt-1 text-[10px] text-slate-500">via haver</p>
+                    <p className="mt-1 text-[10px] text-at-muted">via haver</p>
                   )}
                 </div>
                 <div
                   className={`rounded-lg border px-3 py-3 ${
                     valorAindaDeve > 0.009
                       ? "border-amber-500/25 bg-amber-500/5"
-                      : "border-white/[0.06] bg-white/[0.02]"
+                      : "border-at bg-white/[0.02]"
                   }`}
                 >
                   <p
                     className={`text-[10px] font-semibold uppercase tracking-wider ${
                       valorAindaDeve > 0.009
                         ? "text-amber-400/80"
-                        : "text-slate-500"
+                        : "text-at-muted"
                     }`}
                   >
                     {labelAindaDeve}
@@ -441,7 +441,7 @@ export function ComprovantePublicView({
                     className={`mt-1 text-xl font-bold tabular-nums ${
                       valorAindaDeve > 0.009
                         ? "text-amber-300"
-                        : "text-slate-500"
+                        : "text-at-muted"
                     }`}
                   >
                     {formatCurrency(valorAindaDeve)}
@@ -457,7 +457,7 @@ export function ComprovantePublicView({
                   <p className="mt-1 break-all font-mono text-base text-violet-100">
                     {snapshot.chavePix}
                   </p>
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 text-xs text-at-muted">
                     Valor: {formatCurrency(snapshot.restante)}
                   </p>
                 </div>
@@ -466,13 +466,13 @@ export function ComprovantePublicView({
           )}
 
           {snapshot.notas?.map((n) => (
-            <p key={n} className="text-xs text-slate-500">
+            <p key={n} className="text-xs text-at-muted">
               {n}
             </p>
           ))}
         </div>
 
-        <div className="border-t border-white/10 px-5 py-3 text-center text-[11px] text-slate-600">
+        <div className="border-t border-at-soft px-5 py-3 text-center text-[11px] text-at-soft">
           OperaRout
         </div>
       </div>
@@ -495,7 +495,7 @@ export function ComprovantePublicView({
           type="button"
           onClick={handleSalvarPng}
           disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-white/10 disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-xl border border-at-soft bg-white/5 px-4 py-3 text-sm font-medium text-at-primary/90 hover:bg-white/10 disabled:opacity-50"
         >
           <Download className="h-4 w-4" />
           Salvar PNG

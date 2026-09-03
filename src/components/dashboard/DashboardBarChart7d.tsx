@@ -213,7 +213,7 @@ export function DashboardBarChart7d({ values, className, tema = "escuro" }: Prop
               i === active
                 ? claro
                   ? "text-[#78520a]"
-                  : "text-[#c4a574]"
+                  : "text-at-link"
                 : "text-at-soft"
             )}
             onMouseEnter={() => setHovered(i)}

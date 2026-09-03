@@ -71,7 +71,7 @@ function MiniBars({
           <span
             className={cn(
               "text-[10px] uppercase tracking-wide",
-              light ? "text-slate-500" : "text-slate-500"
+              light ? "text-at-muted" : "text-at-muted"
             )}
           >
             {labels[i]}
@@ -110,9 +110,9 @@ export function DonoCommandClient({ email }: { email: string }) {
 
   const card = light
     ? "rounded-2xl border border-stone-200/90 bg-white p-5 shadow-sm"
-    : "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5";
-  const muted = light ? "text-slate-500" : "text-slate-500";
-  const title = light ? "text-slate-900" : "text-[#f4efe6]";
+    : "rounded-2xl border border-at bg-white/[0.02] p-5";
+  const muted = light ? "text-at-muted" : "text-at-muted";
+  const title = light ? "text-slate-900" : "text-at-primary";
 
   return (
     <DonoShell
@@ -330,8 +330,8 @@ export function DonoCommandClient({ email }: { email: string }) {
                       className={cn(
                         "border-y text-[10px] uppercase tracking-[0.12em]",
                         light
-                          ? "border-stone-100 text-slate-500"
-                          : "border-white/[0.05] text-slate-500"
+                          ? "border-stone-100 text-at-muted"
+                          : "border-white/[0.05] text-at-muted"
                       )}
                     >
                       <th className="px-5 py-2.5 font-medium">Empresa</th>
@@ -373,8 +373,8 @@ export function DonoCommandClient({ email }: { email: string }) {
                               c.status !== "Ativo" &&
                                 c.status !== "Trial" &&
                                 (light
-                                  ? "bg-stone-100 text-slate-600"
-                                  : "bg-white/5 text-slate-400")
+                                  ? "bg-stone-100 text-at-soft"
+                                  : "bg-white/5 text-at-muted")
                             )}
                           >
                             {c.status}
@@ -429,7 +429,7 @@ export function DonoCommandClient({ email }: { email: string }) {
                         a.severidade === "info" &&
                           (light
                             ? "border-stone-200 bg-stone-50 hover:bg-stone-100"
-                            : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04]")
+                            : "border-at-soft bg-white/[0.02] hover:bg-at-card-soft")
                       )}
                     >
                       <p className={cn("text-[13px]", title)}>{a.titulo}</p>

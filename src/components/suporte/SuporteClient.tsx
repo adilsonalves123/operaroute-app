@@ -200,23 +200,9 @@ export function SuporteClient({ isStaff = false }: Props) {
 
   return (
     <div
-      className={cn(
-        display.variable,
-        sans.variable,
-        "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-4 sm:-mx-6 sm:px-6"
-      )}
+      className={cn(display.variable, sans.variable)}
       style={{ fontFamily: "var(--font-suporte-sans), system-ui, sans-serif" }}
     >
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 40% at 50% -5%, rgba(196,165,116,0.11), transparent 55%), linear-gradient(180deg, #06080e 0%, #0a0e16 55%, #07090f 100%)",
-          }}
-        />
-      </div>
-
       <div
         className={cn(
           "mx-auto flex h-[calc(100dvh-6.5rem)] max-w-5xl flex-col pt-5 transition duration-700 sm:h-[calc(100dvh-5.5rem)] sm:pt-7 lg:max-w-6xl",
@@ -226,25 +212,25 @@ export function SuporteClient({ isStaff = false }: Props) {
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p
-              className="text-[11px] font-medium uppercase text-[#c4a574]/90"
+              className="text-[11px] font-medium uppercase text-at-link/90"
               style={{ letterSpacing: "0.38em" }}
             >
               Ajuda · OperaRoute
             </p>
             <h1
-              className="mt-3 text-[clamp(2rem,4.5vw,3rem)] leading-[0.95] tracking-tight text-[#f4efe6]"
+              className="mt-3 text-[clamp(2rem,4.5vw,3rem)] leading-[0.95] tracking-tight text-at-primary"
               style={{ fontFamily: "var(--font-suporte-display), Georgia, serif" }}
             >
               Suporte
             </h1>
-            <p className="mt-3 max-w-md text-[13px] text-slate-400">
+            <p className="mt-3 max-w-md text-[13px] text-at-muted">
               Fale primeiro com a assistente. Se ela não resolver, a conversa passa para a equipe.
             </p>
           </div>
           {isStaff && (
             <Link
               href="/suporte/inbox"
-              className="inline-flex items-center gap-2 rounded-sm border border-white/[0.1] px-4 py-2.5 text-[13px] text-slate-400 transition hover:border-white/20 hover:text-[#f4efe6]"
+              className="inline-flex items-center gap-2 rounded-sm border border-white/[0.1] px-4 py-2.5 text-[13px] text-at-muted transition hover:border-at hover:text-at-primary"
             >
               <LifeBuoy className="h-3.5 w-3.5" />
               Inbox
@@ -258,10 +244,10 @@ export function SuporteClient({ isStaff = false }: Props) {
           <span
             className={cn(
               "rounded-sm border px-2.5 py-1",
-              !conversa && "border-white/15 text-slate-300",
-              conversa && modo === "ia" && "border-white/15 text-slate-300",
-              conversa && modo === "humano" && "border-[#c4a574]/40 text-[#e8d5b0]",
-              conversa && modo === "resolvido" && "border-white/10 text-slate-500"
+              !conversa && "border-at-soft text-at-primary/85",
+              conversa && modo === "ia" && "border-at-soft text-at-primary/85",
+              conversa && modo === "humano" && "border-[#c4a574]/40 text-at-link",
+              conversa && modo === "resolvido" && "border-at-soft text-at-muted"
             )}
           >
             {!conversa && "Pronto para começar"}
@@ -274,7 +260,7 @@ export function SuporteClient({ isStaff = false }: Props) {
               type="button"
               onClick={() => void escalar()}
               disabled={loading}
-              className="rounded-sm border border-white/10 px-2.5 py-1 text-slate-400 transition hover:border-white/20 hover:text-[#f4efe6] disabled:opacity-50"
+              className="rounded-sm border border-at-soft px-2.5 py-1 text-at-muted transition hover:border-at hover:text-at-primary disabled:opacity-50"
             >
               Falar com humano
             </button>
@@ -284,23 +270,23 @@ export function SuporteClient({ isStaff = false }: Props) {
               type="button"
               onClick={() => void encerrar()}
               disabled={loading}
-              className="rounded-sm border border-white/10 px-2.5 py-1 text-slate-500 transition hover:text-slate-300 disabled:opacity-50"
+              className="rounded-sm border border-at-soft px-2.5 py-1 text-at-muted transition hover:text-at-primary/85 disabled:opacity-50"
             >
               Encerrar
             </button>
           )}
         </div>
 
-        <div className="mt-5 flex min-h-0 flex-1 flex-col rounded-sm border border-white/[0.07] bg-white/[0.02]">
+        <div className="mt-5 flex min-h-0 flex-1 flex-col rounded-sm border border-at bg-white/[0.02]">
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6 sm:py-6">
             {boot && (
-              <p className="text-center text-[13px] text-slate-500">Carregando…</p>
+              <p className="text-center text-[13px] text-at-muted">Carregando…</p>
             )}
 
             {!boot && mensagens.length === 0 && (
               <div className="flex h-full min-h-[12rem] flex-col items-center justify-center space-y-5 py-10 text-center">
                 <p
-                  className="text-[clamp(1.35rem,2.5vw,1.75rem)] text-[#f4efe6]"
+                  className="text-[clamp(1.35rem,2.5vw,1.75rem)] text-at-primary"
                   style={{ fontFamily: "var(--font-suporte-display), Georgia, serif" }}
                 >
                   Como podemos ajudar?
@@ -311,7 +297,7 @@ export function SuporteClient({ isStaff = false }: Props) {
                       key={s}
                       type="button"
                       onClick={() => void enviar(s)}
-                      className="rounded-sm border border-white/[0.08] px-3.5 py-2 text-[13px] text-slate-400 transition hover:border-[#c4a574]/30 hover:text-[#f4efe6]"
+                      className="rounded-sm border border-at-soft px-3.5 py-2 text-[13px] text-at-muted transition hover:border-[#c4a574]/30 hover:text-at-primary"
                     >
                       {s}
                     </button>
@@ -325,7 +311,7 @@ export function SuporteClient({ isStaff = false }: Props) {
             ))}
 
             {loading && (
-              <div className="flex items-center gap-2 text-[12px] text-slate-500">
+              <div className="flex items-center gap-2 text-[12px] text-at-muted">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 {modo === "ia" ? "Assistente pensando…" : "Enviando…"}
               </div>
@@ -339,9 +325,9 @@ export function SuporteClient({ isStaff = false }: Props) {
             </p>
           )}
 
-          <div className="border-t border-white/[0.06] p-3 sm:p-4">
+          <div className="border-t border-at p-3 sm:p-4">
             {arquivo && (
-              <div className="mb-2.5 flex items-center gap-3 rounded-sm border border-white/[0.08] bg-white/[0.03] px-3 py-2">
+              <div className="mb-2.5 flex items-center gap-3 rounded-sm border border-at-soft bg-at-card-soft px-3 py-2">
                 {previewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -350,20 +336,20 @@ export function SuporteClient({ isStaff = false }: Props) {
                     className="h-12 w-12 rounded-sm object-cover"
                   />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-sm border border-white/10 text-slate-500">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-sm border border-at-soft text-at-muted">
                     <Paperclip className="h-4 w-4" />
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[12px] text-[#f4efe6]">{arquivo.name}</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="truncate text-[12px] text-at-primary">{arquivo.name}</p>
+                  <p className="text-[11px] text-at-muted">
                     {(arquivo.size / 1024).toFixed(0)} KB · pronto para enviar
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setArquivo(null)}
-                  className="rounded-sm p-1.5 text-slate-500 hover:bg-white/[0.05] hover:text-[#f4efe6]"
+                  className="rounded-sm p-1.5 text-at-muted hover:bg-white/[0.05] hover:text-at-primary"
                   aria-label="Remover anexo"
                 >
                   <X className="h-4 w-4" />
@@ -385,7 +371,7 @@ export function SuporteClient({ isStaff = false }: Props) {
                 type="button"
                 disabled={loading || resolvido}
                 onClick={() => fileRef.current?.click()}
-                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-white/[0.1] text-slate-400 transition hover:border-[#c4a574]/35 hover:text-[#c4a574] disabled:opacity-40"
+                className="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-sm border border-white/[0.1] text-at-muted transition hover:border-[#c4a574]/35 hover:text-at-link disabled:opacity-40"
                 aria-label="Anexar foto ou arquivo"
                 title="Anexar foto ou arquivo"
               >
@@ -410,7 +396,7 @@ export function SuporteClient({ isStaff = false }: Props) {
                       ? "Mensagem para a equipe…"
                       : "Pergunte à assistente…"
                 }
-                className="min-h-[3.25rem] max-h-40 flex-1 resize-none rounded-sm border border-white/[0.08] bg-transparent px-3.5 py-3 text-[14px] text-[#f4efe6] placeholder:text-slate-600 outline-none focus:border-[#c4a574]/35 disabled:opacity-50"
+                className="min-h-[3.25rem] max-h-40 flex-1 resize-none rounded-sm border border-at-soft bg-transparent px-3.5 py-3 text-[14px] text-at-primary placeholder:text-at-soft outline-none focus:border-[#c4a574]/35 disabled:opacity-50"
               />
               <button
                 type="button"
@@ -439,7 +425,7 @@ function MensagemBolha({ m }: { m: SuporteMensagem }) {
 
   if (isSistema) {
     return (
-      <p className="text-center text-[11px] tracking-wide text-slate-500">{m.corpo}</p>
+      <p className="text-center text-[11px] tracking-wide text-at-muted">{m.corpo}</p>
     );
   }
 
@@ -447,8 +433,8 @@ function MensagemBolha({ m }: { m: SuporteMensagem }) {
     <div className={cn("flex gap-2.5", isCliente ? "flex-row-reverse" : "flex-row")}>
       <div
         className={cn(
-          "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-white/[0.08]",
-          isCliente ? "text-[#c4a574]" : "text-slate-400"
+          "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border border-at-soft",
+          isCliente ? "text-at-link" : "text-at-muted"
         )}
       >
         {isCliente ? <UserRound className="h-3.5 w-3.5" /> : <Bot className="h-3.5 w-3.5" />}
@@ -457,14 +443,14 @@ function MensagemBolha({ m }: { m: SuporteMensagem }) {
         className={cn(
           "max-w-[85%] rounded-sm px-3.5 py-2.5 text-[13px] leading-relaxed",
           isCliente
-            ? "bg-[#c4a574]/15 text-[#f4efe6]"
+            ? "bg-[#c4a574]/15 text-at-primary"
             : m.autor === "staff"
-              ? "border border-[#c4a574]/25 bg-white/[0.04] text-[#f0ebe3]"
-              : "bg-white/[0.04] text-slate-300"
+              ? "border border-[#c4a574]/25 bg-at-card-soft text-at-primary"
+              : "bg-at-card-soft text-at-primary/85"
         )}
       >
         {(m.autor === "staff" || m.autor === "ia") && (
-          <p className="mb-1 text-[10px] uppercase tracking-[0.14em] text-slate-500">
+          <p className="mb-1 text-[10px] uppercase tracking-[0.14em] text-at-muted">
             {m.autor === "staff" ? m.autor_nome ?? "Equipe" : "Assistente"}
           </p>
         )}

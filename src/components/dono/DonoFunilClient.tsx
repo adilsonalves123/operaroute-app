@@ -48,7 +48,7 @@ export function DonoFunilClient({ email }: { email: string }) {
       subtitle="Da visita ao cliente ativo — onde as pessoas entram, travam e convertem."
     >
       {loading && (
-        <div className="flex items-center gap-2 text-slate-500">
+        <div className="flex items-center gap-2 text-at-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando…
         </div>
@@ -61,7 +61,7 @@ export function DonoFunilClient({ email }: { email: string }) {
 
       {data && (
         <div className="space-y-10">
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.07] bg-white/[0.07] sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-white/[0.07] sm:grid-cols-4">
             {[
               { l: "Visitas 7d", v: data.funil.visitas_7d },
               { l: "Visitas 30d", v: data.funil.visitas_30d },
@@ -72,10 +72,10 @@ export function DonoFunilClient({ email }: { email: string }) {
               },
             ].map((c) => (
               <div key={c.l} className="bg-[#080b12] px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">
                   {c.l}
                 </p>
-                <p className="mt-1.5 text-[22px] tabular-nums text-[#f4efe6]">
+                <p className="mt-1.5 text-[22px] tabular-nums text-at-primary">
                   {c.v}
                 </p>
               </div>
@@ -83,24 +83,24 @@ export function DonoFunilClient({ email }: { email: string }) {
           </div>
 
           <section>
-            <p className="mb-4 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+            <p className="mb-4 text-[11px] uppercase tracking-[0.16em] text-at-soft">
               Pipeline visual
             </p>
             <div className="space-y-3">
               {data.funil.steps.map((s) => (
                 <div key={s.id}>
                   <div className="mb-1 flex items-end justify-between gap-3 text-[13px]">
-                    <span className="text-[#f4efe6]">{s.label}</span>
-                    <span className="tabular-nums text-slate-400">
+                    <span className="text-at-primary">{s.label}</span>
+                    <span className="tabular-nums text-at-muted">
                       {s.count}
                       {s.pct_do_anterior != null && (
-                        <span className="ml-2 text-[11px] text-slate-600">
+                        <span className="ml-2 text-[11px] text-at-soft">
                           {s.pct_do_anterior}%
                         </span>
                       )}
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-sm bg-white/[0.06]">
+                  <div className="h-2 overflow-hidden rounded-sm bg-at-card-soft">
                     <div
                       className="h-full rounded-sm bg-gradient-to-r from-[#c4a574]/80 to-[#c4a574]/35 transition-all"
                       style={{ width: `${Math.max(4, (s.count / maxStep) * 100)}%` }}
@@ -109,15 +109,15 @@ export function DonoFunilClient({ email }: { email: string }) {
                 </div>
               ))}
             </div>
-            <p className="mt-4 text-[12px] text-slate-500">{data.funil.aviso_app}</p>
+            <p className="mt-4 text-[12px] text-at-muted">{data.funil.aviso_app}</p>
           </section>
 
           <div className="grid gap-8 lg:grid-cols-3">
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Conversão
               </p>
-              <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07] text-[13px]">
+              <ul className="divide-y divide-white/[0.05] rounded-sm border border-at text-[13px]">
                 <Row
                   label="Criaram conta"
                   value={String(data.funil.cadastros_total)}
@@ -142,44 +142,44 @@ export function DonoFunilClient({ email }: { email: string }) {
             </section>
 
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Objetivos (pesquisa)
               </p>
-              <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07]">
+              <ul className="divide-y divide-white/[0.05] rounded-sm border border-at">
                 {data.pesquisa.por_objetivo.map((o) => (
                   <li
                     key={o.objetivo}
                     className="flex justify-between gap-2 px-4 py-3 text-[13px]"
                   >
-                    <span className="text-[#f4efe6]">{o.objetivo}</span>
-                    <span className="tabular-nums text-slate-500">{o.count}</span>
+                    <span className="text-at-primary">{o.objetivo}</span>
+                    <span className="tabular-nums text-at-muted">{o.count}</span>
                   </li>
                 ))}
                 {data.pesquisa.por_objetivo.length === 0 && (
-                  <li className="px-4 py-8 text-center text-[12px] text-slate-500">
+                  <li className="px-4 py-8 text-center text-[12px] text-at-muted">
                     Sem dados.
                   </li>
                 )}
               </ul>
-              <p className="mt-3 text-[12px] text-slate-500">
+              <p className="mt-3 text-[12px] text-at-muted">
                 Funcionários: {data.pesquisa.possui_funcionarios.sim} sim ·{" "}
                 {data.pesquisa.possui_funcionarios.nao} não
               </p>
             </section>
 
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Faixa × MRR
               </p>
-              <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07]">
+              <ul className="divide-y divide-white/[0.05] rounded-sm border border-at">
                 {data.pesquisa.por_faixa.map((f) => (
                   <li
                     key={f.faixa}
                     className="flex items-center justify-between gap-2 px-4 py-3 text-[13px]"
                   >
-                    <span className="text-[#f4efe6]">{f.faixa}</span>
-                    <span className="text-slate-500">{f.count}</span>
-                    <span className="tabular-nums text-[#e8d5b0]">
+                    <span className="text-at-primary">{f.faixa}</span>
+                    <span className="text-at-muted">{f.count}</span>
+                    <span className="tabular-nums text-at-link">
                       {money(f.mrr)}
                     </span>
                   </li>
@@ -191,13 +191,13 @@ export function DonoFunilClient({ email }: { email: string }) {
           <div className="flex flex-wrap gap-3">
             <Link
               href="/dono/ia"
-              className="rounded-sm border border-[#c4a574]/35 bg-[#c4a574]/10 px-4 py-2.5 text-[13px] text-[#e8d5b0]"
+              className="rounded-sm border border-[#c4a574]/35 bg-[#c4a574]/10 px-4 py-2.5 text-[13px] text-at-link"
             >
               IA · analisar conversões
             </Link>
             <Link
               href="/dono/empresas?saude=trial_expirando"
-              className="rounded-sm border border-white/10 px-4 py-2.5 text-[13px] text-slate-400 hover:text-[#f4efe6]"
+              className="rounded-sm border border-at-soft px-4 py-2.5 text-[13px] text-at-muted hover:text-at-primary"
             >
               Ver trials acabando
             </Link>
@@ -219,11 +219,11 @@ function Row({
 }) {
   return (
     <li className="flex justify-between px-4 py-2.5">
-      <span className="text-slate-500">{label}</span>
+      <span className="text-at-muted">{label}</span>
       <span
         className={cn(
           "tabular-nums",
-          warn ? "text-rose-300" : "text-[#f4efe6]"
+          warn ? "text-rose-300" : "text-at-primary"
         )}
       >
         {value}

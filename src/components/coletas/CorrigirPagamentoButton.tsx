@@ -161,7 +161,7 @@ export function CorrigirPagamentoButton({
       <button
         type="button"
         onClick={abrir}
-        className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-sm text-slate-200 hover:border-white/25 hover:bg-white/[0.07]"
+        className="inline-flex items-center gap-2 rounded-lg border border-at-soft bg-at-card-soft px-3 py-2 text-sm text-at-primary/90 hover:border-white/25 hover:bg-white/[0.07]"
       >
         <Pencil className="h-3.5 w-3.5" />
         Corrigir pagamento
@@ -170,17 +170,17 @@ export function CorrigirPagamentoButton({
       {ok && !open && <p className="text-xs text-emerald-400">{ok}</p>}
 
       {open && (
-        <div className="rounded-xl border border-white/10 bg-slate-950/80 p-4 space-y-3">
+        <div className="rounded-xl border border-at-soft bg-slate-950/80 p-4 space-y-3">
           <div>
             <p className="text-sm font-medium text-white">Corrigir pagamento</p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-at-muted">
               Só altera Pix / dinheiro e o valor recebido. Não mexe em lucro, comissão nem
               brindes.
               {totalSugestao > 0.009 && (
                 <>
                   {" "}
                   Valor da coleta:{" "}
-                  <strong className="text-slate-300">{formatCurrency(totalSugestao)}</strong>
+                  <strong className="text-at-primary/85">{formatCurrency(totalSugestao)}</strong>
                 </>
               )}
             </p>
@@ -207,7 +207,7 @@ export function CorrigirPagamentoButton({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block space-y-1">
-              <span className="text-xs text-slate-500">Pix (R$)</span>
+              <span className="text-xs text-at-muted">Pix (R$)</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -220,7 +220,7 @@ export function CorrigirPagamentoButton({
               />
             </label>
             <label className="block space-y-1">
-              <span className="text-xs text-slate-500">Dinheiro (R$)</span>
+              <span className="text-xs text-at-muted">Dinheiro (R$)</span>
               <input
                 type="text"
                 inputMode="numeric"
@@ -234,9 +234,9 @@ export function CorrigirPagamentoButton({
             </label>
           </div>
 
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-at-muted">
             Total informado:{" "}
-            <span className="tabular-nums text-slate-200">{formatCurrency(totalInformado)}</span>
+            <span className="tabular-nums text-at-primary/90">{formatCurrency(totalInformado)}</span>
             {aReceber > 0.009 && totalInformado > aReceber + 0.009 && (
               <span className="text-amber-400">
                 {" "}
@@ -265,7 +265,7 @@ export function CorrigirPagamentoButton({
               type="button"
               disabled={busy}
               onClick={() => setOpen(false)}
-              className="rounded-lg border border-slate-700 px-3.5 py-2 text-sm text-slate-400 hover:text-white"
+              className="rounded-lg border border-slate-700 px-3.5 py-2 text-sm text-at-muted hover:text-white"
             >
               Cancelar
             </button>

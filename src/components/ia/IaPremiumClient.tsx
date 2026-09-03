@@ -98,24 +98,9 @@ export function IaPremiumClient() {
 
   return (
     <div
-      className={cn(
-        display.variable,
-        sans.variable,
-        "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-8 sm:-mx-6 sm:px-6 lg:min-h-[calc(100dvh-4rem)]"
-      )}
+      className={cn(display.variable, sans.variable)}
       style={{ fontFamily: "var(--font-ia-sans), system-ui, sans-serif" }}
     >
-      {/* Atmosphere */}
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 90% 55% at 50% -10%, rgba(196,165,116,0.16), transparent 55%), radial-gradient(ellipse 60% 40% at 100% 40%, rgba(0,212,255,0.06), transparent 50%), radial-gradient(ellipse 50% 35% at 0% 80%, rgba(120,90,50,0.12), transparent 45%), linear-gradient(180deg, #06080e 0%, #0a0e16 45%, #07090f 100%)",
-          }}
-        />
-      </div>
-
       <style>{`
         @keyframes iaRise {
           from { opacity: 0; transform: translateY(18px); }
@@ -137,18 +122,18 @@ export function IaPremiumClient() {
           style={{ animation: ativo ? "iaRise 0.9s ease-out both" : undefined }}
         >
           <p
-            className="text-[11px] font-medium uppercase tracking-[0.42em] text-[#c4a574]/90"
+            className="text-[11px] font-medium uppercase tracking-[0.42em] text-at-link/90"
             style={{ letterSpacing: "0.42em" }}
           >
             OperaRoute
           </p>
           <h1
-            className="mt-4 text-[clamp(2.75rem,8vw,4.75rem)] leading-[0.95] tracking-tight text-[#f4efe6]"
+            className="mt-4 text-[clamp(2.75rem,8vw,4.75rem)] leading-[0.95] tracking-tight text-at-primary"
             style={{ fontFamily: "var(--font-ia-display), Georgia, serif" }}
           >
             Inteligência
           </h1>
-          <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-slate-400">
+          <p className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed text-at-muted">
             Pergunte sobre a operação. A resposta nasce dos seus pontos, coletas e
             estoque — não de um modelo genérico.
           </p>
@@ -164,7 +149,7 @@ export function IaPremiumClient() {
           style={{ animation: ativo ? "iaRise 0.85s 0.15s ease-out both" : undefined }}
         >
           <div
-            className="rounded-2xl border border-white/[0.08] bg-[#0c1018]/92 p-2 sm:p-2.5"
+            className="rounded-2xl border border-at-soft bg-[#0c1018]/92 p-2 sm:p-2.5"
             style={{
               boxShadow:
                 "0 0 0 1px rgba(196,165,116,0.06), 0 24px 80px -32px rgba(0,0,0,0.85)",
@@ -183,7 +168,7 @@ export function IaPremiumClient() {
                 onKeyDown={onKeyDown}
                 placeholder="O que a operação precisa saber agora?"
                 disabled={loading}
-                className="min-h-[3.25rem] max-h-40 flex-1 resize-none border-0 bg-transparent px-3 py-3 text-[15px] text-[#f4efe6] placeholder:text-slate-500 focus:outline-none focus:ring-0 disabled:opacity-60"
+                className="min-h-[3.25rem] max-h-40 flex-1 resize-none border-0 bg-transparent px-3 py-3 text-[15px] text-at-primary placeholder:text-at-muted focus:outline-none focus:ring-0 disabled:opacity-60"
               />
               <button
                 type="button"
@@ -213,7 +198,7 @@ export function IaPremiumClient() {
             className="space-y-1"
             style={{ animation: ativo ? "iaRise 0.9s 0.28s ease-out both" : undefined }}
           >
-            <p className="mb-4 text-center text-[11px] uppercase tracking-[0.28em] text-slate-500">
+            <p className="mb-4 text-center text-[11px] uppercase tracking-[0.28em] text-at-muted">
               Comece por aqui
             </p>
             <ul className="divide-y divide-white/[0.05] border-y border-white/[0.05]">
@@ -230,18 +215,18 @@ export function IaPremiumClient() {
                         : undefined,
                     }}
                   >
-                    <span className="w-7 shrink-0 font-mono text-[11px] text-[#c4a574]/70">
+                    <span className="w-7 shrink-0 font-mono text-[11px] text-at-link/70">
                       {p.id}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] text-slate-500 group-hover:text-slate-400">
+                      <span className="block text-[13px] text-at-muted group-hover:text-at-muted">
                         {p.label}
                       </span>
-                      <span className="mt-0.5 block text-[15px] text-slate-200 group-hover:text-[#f4efe6]">
+                      <span className="mt-0.5 block text-[15px] text-at-primary/90 group-hover:text-at-primary">
                         {p.q}
                       </span>
                     </span>
-                    <span className="hidden shrink-0 text-[11px] uppercase tracking-wider text-[#c4a574]/0 transition group-hover:text-[#c4a574]/80 sm:inline">
+                    <span className="hidden shrink-0 text-[11px] uppercase tracking-wider text-at-link/0 transition group-hover:text-at-link/80 sm:inline">
                       Perguntar
                     </span>
                   </button>
@@ -262,7 +247,7 @@ export function IaPremiumClient() {
               >
                 <div className="flex justify-end">
                   <p
-                    className="max-w-[92%] rounded-2xl rounded-br-md border border-[#c4a574]/20 bg-[#c4a574]/10 px-4 py-3 text-[15px] leading-relaxed text-[#f4efe6] sm:max-w-[85%]"
+                    className="max-w-[92%] rounded-2xl rounded-br-md border border-[#c4a574]/20 bg-[#c4a574]/10 px-4 py-3 text-[15px] leading-relaxed text-at-primary sm:max-w-[85%]"
                     style={{ fontFamily: "var(--font-ia-display), Georgia, serif" }}
                   >
                     {t.pergunta}
@@ -272,22 +257,22 @@ export function IaPremiumClient() {
                 <div className="relative pl-4 sm:pl-6">
                   <div className="absolute bottom-2 left-0 top-2 w-px bg-gradient-to-b from-[#c4a574]/50 to-transparent" />
                   {!t.resposta ? (
-                    <div className="flex items-center gap-3 py-2 text-sm text-slate-400">
-                      <Sparkles className="h-4 w-4 animate-pulse text-[#c4a574]" />
+                    <div className="flex items-center gap-3 py-2 text-sm text-at-muted">
+                      <Sparkles className="h-4 w-4 animate-pulse text-at-link" />
                       <span className="tracking-wide">Lendo a operação…</span>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <p className="text-[11px] uppercase tracking-[0.22em] text-[#c4a574]/80">
+                      <p className="text-[11px] uppercase tracking-[0.22em] text-at-link/80">
                         Resposta
                         {t.fonte ? (
-                          <span className="ml-2 tracking-normal text-slate-500 normal-case">
+                          <span className="ml-2 tracking-normal text-at-muted normal-case">
                             · {t.fonte === "openai" ? "modelo vivo" : "análise local"}
                           </span>
                         ) : null}
                       </p>
                       <div
-                        className="whitespace-pre-wrap text-[15.5px] leading-[1.7] text-slate-200/95"
+                        className="whitespace-pre-wrap text-[15.5px] leading-[1.7] text-at-primary/90/95"
                       >
                         {t.resposta}
                       </div>
@@ -298,8 +283,8 @@ export function IaPremiumClient() {
             ))}
 
             {loading && turnos.every((t) => t.resposta) && (
-              <div className="flex items-center gap-3 pl-4 text-sm text-slate-400 sm:pl-6">
-                <Loader2 className="h-4 w-4 animate-spin text-[#c4a574]" />
+              <div className="flex items-center gap-3 pl-4 text-sm text-at-muted sm:pl-6">
+                <Loader2 className="h-4 w-4 animate-spin text-at-link" />
                 Analisando…
               </div>
             )}
@@ -312,7 +297,7 @@ export function IaPremiumClient() {
                   setErro("");
                   inputRef.current?.focus();
                 }}
-                className="text-[11px] uppercase tracking-[0.2em] text-slate-500 transition hover:text-[#c4a574]"
+                className="text-[11px] uppercase tracking-[0.2em] text-at-muted transition hover:text-at-link"
               >
                 Nova conversa
               </button>

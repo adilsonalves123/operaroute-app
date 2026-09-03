@@ -32,7 +32,7 @@ export function DonoAssinaturasClient({ email }: { email: string }) {
 
   const card = light
     ? "rounded-2xl border border-stone-200 bg-white"
-    : "rounded-2xl border border-white/[0.07] bg-white/[0.02]";
+    : "rounded-2xl border border-at bg-white/[0.02]";
 
   return (
     <DonoShell
@@ -42,7 +42,7 @@ export function DonoAssinaturasClient({ email }: { email: string }) {
       subtitle="Assinaturas pagas e trials reais — sem shells órfãs."
     >
       {loading && (
-        <Loader2 className="h-4 w-4 animate-spin text-slate-500" />
+        <Loader2 className="h-4 w-4 animate-spin text-at-muted" />
       )}
       {data?.crm && (
         <div className="space-y-6">
@@ -54,7 +54,7 @@ export function DonoAssinaturasClient({ email }: { email: string }) {
               { l: "Anual", v: data.crm.ciclos.anual },
             ].map((x) => (
               <div key={x.l} className={cn(card, "p-4")}>
-                <p className="text-[11px] uppercase tracking-wider text-slate-500">
+                <p className="text-[11px] uppercase tracking-wider text-at-muted">
                   {x.l}
                 </p>
                 <p className="mt-1 text-[24px] tabular-nums">{x.v}</p>
@@ -65,7 +65,7 @@ export function DonoAssinaturasClient({ email }: { email: string }) {
           <div className={cn(card, "overflow-hidden")}>
             <table className="w-full text-left text-[13px]">
               <thead>
-                <tr className="border-b border-inherit text-[10px] uppercase tracking-wider text-slate-500">
+                <tr className="border-b border-inherit text-[10px] uppercase tracking-wider text-at-muted">
                   <th className="px-4 py-3 font-medium">Empresa</th>
                   <th className="px-4 py-3 font-medium">Ciclo</th>
                   <th className="px-4 py-3 font-medium">Status</th>
@@ -86,11 +86,11 @@ export function DonoAssinaturasClient({ email }: { email: string }) {
                         {c.empresa}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 capitalize text-slate-500">
+                    <td className="px-4 py-3 capitalize text-at-muted">
                       {c.ciclo}
                     </td>
                     <td className="px-4 py-3">{c.status}</td>
-                    <td className="px-4 py-3 tabular-nums text-slate-500">
+                    <td className="px-4 py-3 tabular-nums text-at-muted">
                       {formatDay(c.vencimento)}
                     </td>
                   </tr>

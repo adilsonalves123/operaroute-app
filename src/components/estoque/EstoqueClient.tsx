@@ -672,7 +672,7 @@ export function EstoqueClient({
       <>
         {!editingId && (
           <div className="space-y-2">
-            <p className="text-sm font-medium text-slate-300">Categoria *</p>
+            <p className="text-sm font-medium text-at-primary/85">Categoria *</p>
             <div className="grid gap-2 sm:grid-cols-3">
               <SelectCard
                 label="Brindes"
@@ -763,15 +763,15 @@ export function EstoqueClient({
                   }
                   placeholder="Ex.: 4,00"
                 />
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-at-muted">
                   Na coleta (modo tabela): cada unidade vendida, o dono do estabelecimento fica
                   com este valor. Você recebe o valor final menos essa comissão.
                   {vendaNum > 0 && comissaoNum >= 0 && (
                     <>
                       {" "}
                       Ex.: vende 1 → comércio{" "}
-                      <span className="text-slate-300">{formatCurrency(comissaoNum)}</span>, você{" "}
-                      <span className="text-slate-300">
+                      <span className="text-at-primary/85">{formatCurrency(comissaoNum)}</span>, você{" "}
+                      <span className="text-at-primary/85">
                         {formatCurrency(Math.max(0, vendaNum - comissaoNum))}
                       </span>
                       {custoNum > 0 && (
@@ -877,13 +877,13 @@ export function EstoqueClient({
           <button
             type="button"
             onClick={closeNovoPainel}
-            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300"
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85"
           >
             Cancelar
           </button>
         </div>
         {!editingId && !isConsignado && (
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-at-muted">
             &quot;Salvar e continuar&quot; mantém categoria, valores, quantidades e foto para o próximo
             cadastro — altere só o que mudar (ex.: nome do item).
           </p>
@@ -952,7 +952,7 @@ export function EstoqueClient({
           >
             <Box className="h-5 w-5 text-primary-neon" />
             <span className="font-medium text-white">Cadastrar item avulso</span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-at-muted">
               Facas, relógios e outros brindes que entram no estoque.
             </span>
           </button>
@@ -963,7 +963,7 @@ export function EstoqueClient({
           >
             <Wrench className="h-5 w-5 text-cyan-400" />
             <span className="font-medium text-white">Montar kit</span>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-at-muted">
               Defina o que entra em cada kit e quantos kits montar (ex.: 5 facas por kit × 10 kits).
             </span>
           </button>
@@ -971,7 +971,7 @@ export function EstoqueClient({
         <button
           type="button"
           onClick={closeNovoPainel}
-          className="text-sm text-slate-500 hover:text-slate-300"
+          className="text-sm text-at-muted hover:text-at-primary/85"
         >
           Cancelar
         </button>
@@ -992,7 +992,7 @@ export function EstoqueClient({
         <button
           type="button"
           onClick={openNovoMenu}
-          className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/35 bg-[#c4a574]/10 px-4 py-2.5 text-[14px] font-medium text-[#c4a574] transition hover:bg-[#c4a574]/15"
+          className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/35 bg-[#c4a574]/10 px-4 py-2.5 text-[14px] font-medium text-at-link transition hover:bg-[#c4a574]/15"
         >
           <Plus className="h-4 w-4" />
           Novo item
@@ -1001,45 +1001,31 @@ export function EstoqueClient({
 
     return (
       <div
-        className={cn(
-          display.variable,
-          sans.variable,
-          "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-x-hidden px-4 pb-16 text-[15px] sm:-mx-6 sm:px-6"
-        )}
+        className={cn(display.variable, sans.variable, "text-[15px]")}
         style={{ fontFamily: "var(--font-estoque-sans), system-ui, sans-serif" }}
       >
-        <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-          <div
-            className="absolute inset-0"
-            style={{
-              background:
-                "radial-gradient(ellipse 80% 45% at 50% -8%, rgba(196,165,116,0.12), transparent 55%), radial-gradient(ellipse 35% 30% at 90% 20%, rgba(34,211,238,0.05), transparent 50%), linear-gradient(180deg, #06080e 0%, #0a0e16 55%, #07090f 100%)",
-            }}
-          />
-        </div>
-
         <div className="mx-auto max-w-6xl pt-6 sm:pt-10">
           <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p
-                className="text-[12px] font-medium uppercase text-[#c4a574]/90"
+                className="text-[12px] font-medium uppercase text-at-link/90"
                 style={{ letterSpacing: "0.38em" }}
               >
                 Operação · Depósito
               </p>
               <h1
-                className="mt-3 text-[clamp(2.2rem,5vw,3.4rem)] leading-[0.95] tracking-tight text-[#f4efe6]"
+                className="mt-3 text-[clamp(2.2rem,5vw,3.4rem)] leading-[0.95] tracking-tight text-at-primary"
                 style={{ fontFamily: "var(--font-estoque-display), Georgia, serif" }}
               >
                 Estoque
               </h1>
-              <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-slate-400">
+              <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-at-muted">
                 Brindes, peças, kits e máquinas no depósito central.
                 {!estoqueVazio && (
                   <>
                     {" "}
                     ·{" "}
-                    <span className="tabular-nums text-[#f4efe6]/90">
+                    <span className="tabular-nums text-at-primary/90">
                       {totalUnidades} un. avulsas
                     </span>
                     {totalKits > 0 && (
@@ -1086,13 +1072,13 @@ export function EstoqueClient({
             </Link>
             <Link
               href="/estoque/kits"
-              className="rounded-sm border border-white/[0.08] px-3 py-1.5 text-[13px] text-slate-400 transition hover:border-white/15 hover:text-[#f4efe6]"
+              className="rounded-sm border border-at-soft px-3 py-1.5 text-[13px] text-at-muted transition hover:border-at-soft hover:text-at-primary"
             >
               Kits
             </Link>
             <Link
               href="/equipamentos"
-              className="rounded-sm border border-white/[0.08] px-3 py-1.5 text-[13px] text-slate-400 transition hover:border-white/15 hover:text-[#f4efe6]"
+              className="rounded-sm border border-at-soft px-3 py-1.5 text-[13px] text-at-muted transition hover:border-at-soft hover:text-at-primary"
             >
               Máquinas
             </Link>
@@ -1120,8 +1106,8 @@ export function EstoqueClient({
                 className={cn(
                   "shrink-0 rounded-sm border px-3.5 py-1.5 text-[13px] transition",
                   filtroCategoria === f.id
-                    ? "border-[#c4a574]/40 bg-[#c4a574]/12 text-[#c4a574]"
-                    : "border-white/[0.06] text-slate-500 hover:border-white/12 hover:text-slate-300"
+                    ? "border-[#c4a574]/40 bg-[#c4a574]/12 text-at-link"
+                    : "border-at text-at-muted hover:border-white/12 hover:text-at-primary/85"
                 )}
               >
                 {f.label}
@@ -1130,13 +1116,13 @@ export function EstoqueClient({
           </div>
 
           {filtroCategoria === "Pecas" && (
-            <p className="mt-4 rounded-sm border border-amber-500/15 bg-amber-500/5 px-3 py-2 text-[13px] text-slate-500">
+            <p className="mt-4 rounded-sm border border-amber-500/15 bg-amber-500/5 px-3 py-2 text-[13px] text-at-muted">
               Peças de reparo ficam separadas dos brindes e aparecem na conclusão do chamado.
             </p>
           )}
 
           {filtroCategoria === "Equipamentos" && (
-            <p className="mt-4 rounded-sm border border-cyan-500/15 bg-cyan-500/5 px-3 py-2 text-[13px] text-slate-500">
+            <p className="mt-4 rounded-sm border border-cyan-500/15 bg-cyan-500/5 px-3 py-2 text-[13px] text-at-muted">
               Máquinas no depósito (ainda sem ponto). Inventário completo em{" "}
               <Link href="/equipamentos" className="text-cyan-300 hover:underline">
                 Máquinas e equipamentos
@@ -1156,17 +1142,17 @@ export function EstoqueClient({
   if (estoqueVazio && !novoPainel) {
     return shell(
       <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-stretch">
-        <div className="flex flex-col justify-center border border-white/[0.06] bg-white/[0.02] px-6 py-14 sm:px-10">
+        <div className="flex flex-col justify-center border border-at bg-white/[0.02] px-6 py-14 sm:px-10">
           <div className="flex h-14 w-14 items-center justify-center rounded-sm border border-[#c4a574]/25 bg-[#c4a574]/10">
-            <Package className="h-6 w-6 text-[#c4a574]" />
+            <Package className="h-6 w-6 text-at-link" />
           </div>
           <h2
-            className="mt-6 text-[1.75rem] tracking-tight text-[#f4efe6]"
+            className="mt-6 text-[1.75rem] tracking-tight text-at-primary"
             style={{ fontFamily: "var(--font-estoque-display), Georgia, serif" }}
           >
             Estoque vazio
           </h2>
-          <p className="mt-3 max-w-md text-[15px] leading-relaxed text-slate-400">
+          <p className="mt-3 max-w-md text-[15px] leading-relaxed text-at-muted">
             Cadastre brindes, peças de reparo ou máquinas no depósito central e aloque nos
             pontos quando precisar.
           </p>
@@ -1174,7 +1160,7 @@ export function EstoqueClient({
             <button
               type="button"
               onClick={openNovoMenu}
-              className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/35 bg-[#c4a574]/10 px-4 py-2.5 text-[14px] font-medium text-[#c4a574] transition hover:bg-[#c4a574]/15"
+              className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/35 bg-[#c4a574]/10 px-4 py-2.5 text-[14px] font-medium text-at-link transition hover:bg-[#c4a574]/15"
             >
               <Plus className="h-4 w-4" />
               Novo item
@@ -1182,17 +1168,17 @@ export function EstoqueClient({
             <CadastrarEquipamentoEstoqueForm nichosAtivos={nichosAtivos} />
           </div>
         </div>
-        <div className="grid gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-3 lg:grid-cols-1 lg:grid-rows-3">
+        <div className="grid gap-px overflow-hidden rounded-sm border border-at bg-at-card-soft sm:grid-cols-3 lg:grid-cols-1 lg:grid-rows-3">
           {[
             { t: "Cadastrar", d: "Itens avulsos, peças de reparo ou máquinas no depósito." },
             { t: "Montar", d: "Monte kits com a composição certa e deixe prontos no estoque." },
             { t: "Alocar", d: "Envie brindes ou kits para o ponto quando for operar." },
           ].map((step) => (
-            <div key={step.t} className="bg-[#0a0e16]/95 px-5 py-5">
-              <p className="text-[11px] uppercase tracking-[0.18em] text-[#c4a574]/80">
+            <div key={step.t} className="bg-at-card/95 px-5 py-5">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-at-link/80">
                 {step.t}
               </p>
-              <p className="mt-2 text-[14px] leading-relaxed text-slate-400">{step.d}</p>
+              <p className="mt-2 text-[14px] leading-relaxed text-at-muted">{step.d}</p>
             </div>
           ))}
         </div>
@@ -1217,20 +1203,20 @@ export function EstoqueClient({
 
       {filtroCategoria === "Equipamentos" ? (
         <section className="space-y-3">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] pb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-at pb-2">
             <div className="flex items-center gap-2">
               <Gamepad2 className="h-4 w-4 text-cyan-400" />
-              <h2 className="text-sm font-semibold text-[#f4efe6]">Equipamentos no depósito</h2>
-              <span className="text-xs text-slate-500">{totalEquipamentos}</span>
+              <h2 className="text-sm font-semibold text-at-primary">Equipamentos no depósito</h2>
+              <span className="text-xs text-at-muted">{totalEquipamentos}</span>
             </div>
-            <Link href="/equipamentos" className="text-xs text-[#c4a574] hover:underline">
+            <Link href="/equipamentos" className="text-xs text-at-link hover:underline">
               Ver todas →
             </Link>
           </div>
 
           {equipamentosEstoque.length === 0 ? (
-            <div className="space-y-3 border border-dashed border-white/[0.08] px-4 py-8 text-center">
-              <p className="text-sm text-slate-500">
+            <div className="space-y-3 border border-dashed border-at-soft px-4 py-8 text-center">
+              <p className="text-sm text-at-muted">
                 Nenhuma máquina no depósito central (todas já estão em pontos, ou ainda não
                 cadastrou).
               </p>
@@ -1246,7 +1232,7 @@ export function EstoqueClient({
               {equipamentosEstoque.map((eq) => (
                 <div
                   key={eq.id}
-                  className="flex flex-wrap items-center gap-4 border border-white/[0.06] bg-white/[0.02] p-4"
+                  className="flex flex-wrap items-center gap-4 border border-at bg-white/[0.02] p-4"
                 >
                   <div className="shrink-0">
                     {eq.foto_url ? (
@@ -1257,21 +1243,21 @@ export function EstoqueClient({
                         size={112}
                       />
                     ) : (
-                      <div className="flex h-14 w-14 items-center justify-center rounded-sm border border-white/[0.08] bg-slate-900/50 text-slate-600">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-sm border border-at-soft bg-slate-900/50 text-at-soft">
                         <Gamepad2 className="h-5 w-5" />
                       </div>
                     )}
                   </div>
                   <div className="min-w-[200px] flex-1">
-                    <p className="font-medium text-[#f4efe6]">
+                    <p className="font-medium text-at-primary">
                       {getEquipamentoDisplayNome(eq)}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-at-muted">
                       {getEquipamentoTipoLabel(eq.tipo as EquipamentoTipo)}
                       {eq.numero_serie?.trim() ? ` · Série ${eq.numero_serie.trim()}` : ""}
                       {" · "}
                       <span
-                        className={eq.status === "ativo" ? "text-green-400" : "text-slate-400"}
+                        className={eq.status === "ativo" ? "text-green-400" : "text-at-muted"}
                       >
                         {eq.status}
                       </span>
@@ -1279,7 +1265,7 @@ export function EstoqueClient({
                   </div>
                   <Link
                     href="/equipamentos"
-                    className="rounded-sm border border-white/[0.1] px-3 py-1.5 text-xs text-slate-300 hover:bg-white/[0.04]"
+                    className="rounded-sm border border-white/[0.1] px-3 py-1.5 text-xs text-at-primary/85 hover:bg-at-card-soft"
                   >
                     Abrir
                   </Link>
@@ -1291,30 +1277,30 @@ export function EstoqueClient({
       ) : (
         <>
           <section className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/[0.06] pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-at pb-2">
               <div className="flex items-center gap-2">
                 {filtroCategoria === "Pecas" ? (
                   <Cpu className="h-4 w-4 text-amber-400" />
                 ) : (
-                  <Box className="h-4 w-4 text-slate-400" />
+                  <Box className="h-4 w-4 text-at-muted" />
                 )}
-                <h2 className="text-sm font-semibold text-[#f4efe6]">
+                <h2 className="text-sm font-semibold text-at-primary">
                   {filtroCategoria === "Pecas" ? "Peças de reparo" : "Itens avulsos"}
                 </h2>
-                <span className="text-xs text-slate-500">
+                <span className="text-xs text-at-muted">
                   {itemsFiltrados.reduce((s, i) => s + Number(i.quantidade ?? 0), 0)} un.
                 </span>
               </div>
             </div>
 
             {itemsFiltrados.length === 0 ? (
-              <p className="rounded-sm border border-dashed border-white/[0.08] py-6 text-center text-sm text-slate-500">
+              <p className="rounded-sm border border-dashed border-at-soft py-6 text-center text-sm text-at-muted">
                 {filtroCategoria === "Pecas"
                   ? "Nenhuma peça cadastrada. Use + Novo item e escolha a categoria Peças."
                   : (
                       <>
                         Nenhum item avulso. Use{" "}
-                        <strong className="text-slate-400">+ Novo item</strong> para cadastrar.
+                        <strong className="text-at-muted">+ Novo item</strong> para cadastrar.
                       </>
                     )}
               </p>
@@ -1322,13 +1308,13 @@ export function EstoqueClient({
               <div className="space-y-3">
                 {itemsFiltrados.length > 12 ? (
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-3.5 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <Search className="pointer-events-none absolute left-3.5 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-at-muted" />
                     <input
                       type="search"
                       value={buscaItem}
                       onChange={(e) => setBuscaItem(e.target.value)}
                       placeholder="Buscar item pelo nome..."
-                      className="w-full rounded-lg border border-white/[0.08] bg-slate-950/60 py-2.5 !pl-11 pr-4 text-sm text-white placeholder:text-slate-500 outline-none focus:border-[#c4a574]/40"
+                      className="w-full rounded-lg border border-at-soft bg-slate-950/60 py-2.5 !pl-11 pr-4 text-sm text-white placeholder:text-at-muted outline-none focus:border-[#c4a574]/40"
                     />
                   </div>
                 ) : null}
@@ -1358,12 +1344,12 @@ export function EstoqueClient({
                 {temMaisItens ? (
                   <div
                     ref={loadMoreRef}
-                    className="py-4 text-center text-xs text-slate-500"
+                    className="py-4 text-center text-xs text-at-muted"
                   >
                     Carregando mais itens… ({itemsVisiveis.length} de {itemsFiltrados.length})
                   </div>
                 ) : itemsFiltrados.length > ITENS_POR_PAGINA ? (
-                  <p className="text-center text-xs text-slate-600">
+                  <p className="text-center text-xs text-at-soft">
                     {itemsFiltrados.length} itens exibidos
                   </p>
                 ) : null}
@@ -1376,23 +1362,23 @@ export function EstoqueClient({
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-cyan-500/15 pb-2">
                 <div className="flex items-center gap-2">
                   <Wrench className="h-4 w-4 text-cyan-400" />
-                  <h2 className="text-sm font-semibold text-[#f4efe6]">Kits no depósito</h2>
-                  <span className="text-xs text-slate-500">{totalKits} un. montadas</span>
+                  <h2 className="text-sm font-semibold text-at-primary">Kits no depósito</h2>
+                  <span className="text-xs text-at-muted">{totalKits} un. montadas</span>
                 </div>
                 <Link
                   href="/estoque/kits?novo=1"
-                  className="text-xs text-[#c4a574] hover:underline"
+                  className="text-xs text-at-link hover:underline"
                 >
                   Montar kit →
                 </Link>
               </div>
 
               {initialKits.length === 0 ? (
-                <p className="rounded-sm border border-dashed border-cyan-500/20 py-6 text-center text-sm text-slate-500">
+                <p className="rounded-sm border border-dashed border-cyan-500/20 py-6 text-center text-sm text-at-muted">
                   Nenhum kit cadastrado.{" "}
                   <Link
                     href="/estoque/kits?novo=1"
-                    className="text-[#c4a574] hover:underline"
+                    className="text-at-link hover:underline"
                   >
                     Montar um kit
                   </Link>{" "}
@@ -1434,10 +1420,10 @@ export function EstoqueClient({
 
       {transferKitId && (
         <div className="space-y-4 border border-cyan-500/20 bg-white/[0.02] p-5">
-          <h3 className="text-sm font-medium text-[#f4efe6]">Alocar kit no ponto</h3>
-          <p className="text-xs text-slate-500">
+          <h3 className="text-sm font-medium text-at-primary">Alocar kit no ponto</h3>
+          <p className="text-xs text-at-muted">
             1 kit sai do depósito central e os itens vão para o pool do bar.{" "}
-            <Link href="/pontos" className="text-[#c4a574] hover:underline">
+            <Link href="/pontos" className="text-at-link hover:underline">
               Ver pontos
             </Link>
             .
@@ -1447,7 +1433,7 @@ export function EstoqueClient({
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <label className="text-sm text-slate-300">Ponto</label>
+              <label className="text-sm text-at-primary/85">Ponto</label>
               <select
                 value={transferPontoId}
                 onChange={(e) => setTransferPontoId(e.target.value)}
@@ -1473,7 +1459,7 @@ export function EstoqueClient({
               <button
                 type="button"
                 onClick={() => setTransferKitId(null)}
-                className="rounded-sm border border-white/[0.1] px-3 py-2 text-sm text-slate-400"
+                className="rounded-sm border border-white/[0.1] px-3 py-2 text-sm text-at-muted"
               >
                 Cancelar
               </button>
@@ -1484,17 +1470,17 @@ export function EstoqueClient({
 
       {transferItemId && (
         <div className="space-y-4 border border-amber-500/20 bg-white/[0.02] p-5">
-          <h3 className="text-sm font-medium text-[#f4efe6]">Alocar brinde para um ponto</h3>
-          <p className="text-xs text-slate-500">
+          <h3 className="text-sm font-medium text-at-primary">Alocar brinde para um ponto</h3>
+          <p className="text-xs text-at-muted">
             Debita do estoque central e credita em{" "}
-            <Link href="/pontos" className="text-[#c4a574] hover:underline">
+            <Link href="/pontos" className="text-at-link hover:underline">
               brindes do ponto
             </Link>
             .
           </p>
           <div className="grid gap-3 sm:grid-cols-3">
             <div className="space-y-1.5">
-              <label className="text-sm text-slate-300">Ponto</label>
+              <label className="text-sm text-at-primary/85">Ponto</label>
               <select
                 value={transferPontoId}
                 onChange={(e) => setTransferPontoId(e.target.value)}
@@ -1527,7 +1513,7 @@ export function EstoqueClient({
               <button
                 type="button"
                 onClick={() => setTransferItemId(null)}
-                className="rounded-sm border border-white/[0.1] px-3 py-2 text-sm text-slate-400"
+                className="rounded-sm border border-white/[0.1] px-3 py-2 text-sm text-at-muted"
               >
                 Cancelar
               </button>

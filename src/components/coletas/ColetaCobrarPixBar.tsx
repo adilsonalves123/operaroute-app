@@ -73,7 +73,7 @@ export function ColetaCobrarPixBar({
     >
       <div>
         <p className="text-sm font-medium text-cyan-200">Cobrar / mandar chave Pix</p>
-        <p className="mt-0.5 text-[11px] leading-snug text-slate-500">
+        <p className="mt-0.5 text-[11px] leading-snug text-at-muted">
           Abre o WhatsApp com o resumo e{" "}
           {chavePix?.trim() ? (
             <>

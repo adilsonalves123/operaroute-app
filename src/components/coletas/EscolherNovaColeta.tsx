@@ -94,16 +94,16 @@ export function EscolherNovaColeta({ pontoId, nichosAtivos }: Props) {
       style={{ fontFamily: "var(--font-escolher-sans), system-ui, sans-serif" }}
     >
       <div>
-        <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#c4a574]/80">
+        <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-at-link/80">
           Nova coleta
         </p>
         <h1
-          className="mt-1.5 text-2xl tracking-tight text-[#f4efe6]"
+          className="mt-1.5 text-2xl tracking-tight text-at-primary"
           style={{ fontFamily: "var(--font-escolher-display), Georgia, serif" }}
         >
           Escolha o módulo
         </h1>
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-at-muted">
           Selecione o tipo de coleta para abrir o formulário certo.
         </p>
       </div>
@@ -125,8 +125,8 @@ export function EscolherNovaColeta({ pontoId, nichosAtivos }: Props) {
                   <Icon className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="font-semibold text-[#f4efe6]">{opcao.label}</p>
-                  <p className="mt-1 text-sm text-slate-500">{opcao.description}</p>
+                  <p className="font-semibold text-at-primary">{opcao.label}</p>
+                  <p className="mt-1 text-sm text-at-muted">{opcao.description}</p>
                 </div>
               </div>
             </Link>

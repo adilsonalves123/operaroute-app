@@ -35,10 +35,10 @@ export function FuraFuraCaixaPainel({
       <div className={cn("p-5", compact && "p-4")}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.12em] text-slate-500">
+            <p className="text-xs uppercase tracking-[0.12em] text-at-muted">
               {titulo} · {periodoLabel}
             </p>
-            <p className="mt-1 text-sm text-slate-400">{descricao}</p>
+            <p className="mt-1 text-sm text-at-muted">{descricao}</p>
           </div>
           <Wallet className="h-5 w-5 shrink-0 text-primary-neon/60" />
         </div>
@@ -46,32 +46,32 @@ export function FuraFuraCaixaPainel({
         <p className={cn("mt-4 font-bold tabular-nums text-white", compact ? "text-2xl" : "text-3xl")}>
           {formatCurrency(caixa.dinheiroOperacao)}
         </p>
-        <p className="mt-1 text-xs text-slate-500">
+        <p className="mt-1 text-xs text-at-muted">
           Lucro líquido recebido das coletas (após comissão)
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
-          <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-            <p className="text-slate-500">Entrada</p>
+          <div className="rounded-lg border border-at bg-black/20 px-3 py-2">
+            <p className="text-at-muted">Entrada</p>
             <p className="mt-0.5 font-semibold tabular-nums text-emerald-400/90">
               {formatCurrency(caixa.brutoMaquina)}
             </p>
           </div>
-          <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-            <p className="text-slate-500">Comissão</p>
+          <div className="rounded-lg border border-at bg-black/20 px-3 py-2">
+            <p className="text-at-muted">Comissão</p>
             <p className="mt-0.5 font-semibold tabular-nums text-amber-300/90">
               {formatCurrency(comissao)}
             </p>
           </div>
-          <div className="rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2">
-            <p className="text-slate-500">Brindes</p>
-            <p className="mt-0.5 font-semibold tabular-nums text-slate-300">
+          <div className="rounded-lg border border-at bg-black/20 px-3 py-2">
+            <p className="text-at-muted">Brindes</p>
+            <p className="mt-0.5 font-semibold tabular-nums text-at-primary/85">
               {formatCurrency(caixa.reservaBrindes)}
             </p>
           </div>
         </div>
 
-        <div className="mt-5 space-y-2 rounded-xl border border-white/[0.06] bg-black/20 p-4">
+        <div className="mt-5 space-y-2 rounded-xl border border-at bg-black/20 p-4">
           <div className="flex items-center justify-between gap-3 text-sm">
             <span className="flex items-center gap-2 text-amber-300/90">
               <Gift className="h-3.5 w-3.5" />
@@ -83,18 +83,18 @@ export function FuraFuraCaixaPainel({
             </span>
           </div>
           {pctReserva > 0 && (
-            <p className="text-[11px] text-slate-500">
+            <p className="text-[11px] text-at-muted">
               {pctReserva}% do caixa vai para recomprar prêmios entregues
             </p>
           )}
 
-          <div className="border-t border-white/[0.08] pt-3">
+          <div className="border-t border-at-soft pt-3">
             <div className="flex items-end justify-between gap-3">
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-green-400/90">
                   Lucro líquido livre
                 </p>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="mt-0.5 text-xs text-at-muted">
                   O que fica no bolso depois de reservar brindes
                 </p>
               </div>
@@ -111,10 +111,10 @@ export function FuraFuraCaixaPainel({
         </div>
 
         {(caixa.recebido > 0 || caixa.pendenteReceber > 0.009 || caixa.haver > 0.009) && (
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs text-at-muted">
             <span>
               Já recebido:{" "}
-              <strong className="text-slate-300">{formatCurrency(caixa.recebido)}</strong>
+              <strong className="text-at-primary/85">{formatCurrency(caixa.recebido)}</strong>
             </span>
             {caixa.pendenteReceber > 0.009 && (
               <span>

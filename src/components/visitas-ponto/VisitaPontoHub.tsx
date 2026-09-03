@@ -128,15 +128,15 @@ export function VisitaPontoHub({
       <header className="space-y-3">
         <Link
           href={`/pontos/${resumo.pontoId}`}
-          className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-primary-neon"
+          className="inline-flex items-center gap-1.5 text-xs text-at-muted hover:text-primary-neon"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar ao ponto
         </Link>
         <div>
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Visita ao ponto</p>
+          <p className="text-xs uppercase tracking-[0.14em] text-at-muted">Visita ao ponto</p>
           <h1 className="text-2xl font-bold text-white">{resumo.pontoNome}</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-at-muted">
             {temColeta
               ? "Operações salvas. Faça outro nicho ou cobre tudo agora — o cliente ainda não pagou."
               : "Escolha um nicho para começar. Pode cobrar no final ou já no primeiro."}
@@ -155,7 +155,7 @@ export function VisitaPontoHub({
             </p>
             <div className="mt-3 space-y-1.5 text-sm">
               {resumo.nichos.map((n) => (
-                <div key={n.nicho} className="flex justify-between text-slate-300">
+                <div key={n.nicho} className="flex justify-between text-at-primary/85">
                   <span className="inline-flex items-center gap-1.5">
                     <CheckCircle2 className="h-3.5 w-3.5 text-green-400" />
                     {n.label}
@@ -166,7 +166,7 @@ export function VisitaPontoHub({
                 </div>
               ))}
               {dividaSaldo > 0.009 && (
-                <div className="flex justify-between text-amber-300/90 border-t border-white/[0.06] pt-2">
+                <div className="flex justify-between text-amber-300/90 border-t border-at pt-2">
                   <span>Dívida anterior (opcional no Cobrar)</span>
                   <span className="tabular-nums">{formatCurrency(dividaSaldo)}</span>
                 </div>
@@ -191,7 +191,7 @@ export function VisitaPontoHub({
                   e.preventDefault();
                   router.push(outroNichoHref);
                 }}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-black/20 px-4 py-3.5 text-sm font-semibold text-white hover:border-white/25"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-at-soft bg-black/20 px-4 py-3.5 text-sm font-semibold text-white hover:border-white/25"
               >
                 Outro nicho
                 {primeiroPendente ? ` · ${primeiroPendente.label}` : ""}
@@ -199,7 +199,7 @@ export function VisitaPontoHub({
             ) : (
               <a
                 href="#nichos-visita"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-black/20 px-4 py-3.5 text-sm font-semibold text-white hover:border-white/25"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-at-soft bg-black/20 px-4 py-3.5 text-sm font-semibold text-white hover:border-white/25"
               >
                 Ver nichos
               </a>
@@ -212,12 +212,12 @@ export function VisitaPontoHub({
               Cobrar agora {formatCurrency(valorCta)}
             </Link>
           </div>
-          <p className="text-center text-xs text-slate-500">
+          <p className="text-center text-xs text-at-muted">
             Pix, dinheiro, desconto e WhatsApp abrem na tela Cobrar.
           </p>
 
           {resumo.cassinoNegativo && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-at-muted">
               Cassino negativo ({formatCurrency(resumo.cassinoNegativo.valorOperacao)}) não entra na
               cobrança —{" "}
               <Link href={resumo.cassinoNegativo.href} className="text-primary-neon hover:underline">
@@ -236,7 +236,7 @@ export function VisitaPontoHub({
 
       <div id="nichos-visita" className="space-y-3 scroll-mt-24">
         <div>
-          <h2 className="text-sm font-medium text-slate-300">
+          <h2 className="text-sm font-medium text-at-primary/85">
             {temColeta
               ? nichosPendentes.length > 0
                 ? "Fazer outro nicho? (opcional)"
@@ -244,7 +244,7 @@ export function VisitaPontoHub({
               : "O que fazer agora?"}
           </h2>
           {temColeta && (
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-at-muted">
               {nichosPendentes.length > 0
                 ? "Não é obrigatório. Se já terminou, use Cobrar agora."
                 : "Todos os nichos disponíveis já foram feitos — pode cobrar."}
@@ -280,7 +280,7 @@ export function VisitaPontoHub({
                   {feito && <CheckCircle2 className="h-4 w-4 text-green-400" />}
                 </div>
                 <p className="mt-3 font-semibold text-white">{opcao.label}</p>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-at-muted">
                   {feito
                     ? `Feito · ${formatCurrency(nichoResumo?.totalCobravel ?? 0)} — toque para corrigir`
                     : opcao.descricao}
@@ -291,7 +291,7 @@ export function VisitaPontoHub({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-3 border-t border-white/[0.06] pt-6">
+      <div className="flex flex-wrap gap-3 border-t border-at pt-6">
         <CancelarVisitaPontoButton
           visitaPontoId={resumo.visitaPontoId}
           pontoId={resumo.pontoId}

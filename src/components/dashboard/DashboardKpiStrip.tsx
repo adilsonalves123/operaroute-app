@@ -18,7 +18,7 @@ export function DashboardKpiStrip({ items }: { items: KpiItem[] }) {
 
         return (
           <div key={item.label} className="px-4 py-4 sm:px-5 sm:py-5">
-            <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-slate-500">
+            <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-at-muted">
               {item.label}
             </p>
             <p

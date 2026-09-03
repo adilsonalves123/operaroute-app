@@ -15,7 +15,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
     return (
       <div className="space-y-1.5">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-slate-300">
+          <label htmlFor={inputId} className="block text-sm font-medium text-at-primary/85">
             {label}
           </label>
         )}
@@ -26,7 +26,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           {...props}
         />
         {error && <p className="text-xs text-red-400">{error}</p>}
-        {hint && !error && <p className="text-xs text-slate-500">{hint}</p>}
+        {hint && !error && <p className="text-xs text-at-muted">{hint}</p>}
       </div>
     );
   }
@@ -43,7 +43,7 @@ export function FormTextarea({ label, error, className, id, ...props }: FormText
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-slate-300">
+        <label htmlFor={inputId} className="block text-sm font-medium text-at-primary/85">
           {label}
         </label>
       )}
@@ -68,7 +68,7 @@ export function FormSelect({ label, error, options, className, id, ...props }: F
   return (
     <div className="space-y-1.5">
       {label && (
-        <label htmlFor={inputId} className="block text-sm font-medium text-slate-300">
+        <label htmlFor={inputId} className="block text-sm font-medium text-at-primary/85">
           {label}
         </label>
       )}

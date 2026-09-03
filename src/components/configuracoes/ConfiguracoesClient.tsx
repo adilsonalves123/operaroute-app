@@ -167,7 +167,7 @@ export function ConfiguracoesClient(props: Props) {
         description="Upgrade, renovação manual no Mercado Pago e cancelamento."
         icon={CreditCard}
       >
-        <div className="divide-y divide-white/[0.06]">
+        <div className="divide-y divide-[var(--at-border-soft)]">
           <ConfiguracoesAssinaturaCard
             acesso={props.acesso}
             faixa={props.faixa}

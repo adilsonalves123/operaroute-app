@@ -42,7 +42,7 @@ export function PushAtivarBanner() {
         </div>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white">Ative os alertas push</p>
-          <p className="mt-0.5 text-xs text-slate-400 leading-relaxed">
+          <p className="mt-0.5 text-xs text-at-muted leading-relaxed">
             Receba no celular/PC quando o operador fizer coleta, manutencao, equipamento
             arrumado ou suporte.
           </p>

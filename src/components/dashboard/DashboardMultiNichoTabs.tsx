@@ -133,7 +133,7 @@ export function DashboardMultiNichoView({
         <div>
           <div className="mb-4 flex flex-wrap items-center gap-3">
             <h2 className="text-sm font-medium text-white">{active.config.label}</h2>
-            <span className="text-xs text-slate-600">·</span>
+            <span className="text-xs text-at-soft">·</span>
             <div className="flex flex-wrap gap-1 rounded-lg border border-slate-800 p-0.5">
               {nichos.map((id) => (
                 <button
@@ -144,7 +144,7 @@ export function DashboardMultiNichoView({
                     "rounded-md px-3 py-1 text-xs font-medium transition",
                     tab === id
                       ? "bg-slate-800 text-white"
-                      : "text-slate-500 hover:text-slate-300"
+                      : "text-at-muted hover:text-at-primary/85"
                   )}
                 >
                   {TAB_LABELS[id]}
@@ -181,7 +181,7 @@ export function DashboardMultiNichoTabs({
               "-mb-px border-b-2 pb-2.5 text-sm font-medium transition",
               tab === id
                 ? "border-primary-neon text-white"
-                : "border-transparent text-slate-500 hover:text-slate-300"
+                : "border-transparent text-at-muted hover:text-at-primary/85"
             )}
           >
             {TAB_LABELS[id]}

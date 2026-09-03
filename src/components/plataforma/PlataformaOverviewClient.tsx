@@ -18,10 +18,10 @@ const SAUDE_LABEL: Record<string, string> = {
 
 const SAUDE_STYLE: Record<string, string> = {
   ativo: "text-emerald-300/90 border-emerald-500/25 bg-emerald-500/[0.06]",
-  trial: "text-[#e8d5b0] border-[#c4a574]/30 bg-[#c4a574]/10",
+  trial: "text-at-link border-[#c4a574]/30 bg-[#c4a574]/10",
   trial_expirando: "text-amber-200 border-amber-500/30 bg-amber-500/10",
   trial_expirado: "text-rose-300 border-rose-500/30 bg-rose-500/10",
-  inativo: "text-slate-400 border-white/10 bg-white/[0.03]",
+  inativo: "text-at-muted border-at-soft bg-at-card-soft",
   suspenso: "text-rose-200 border-rose-500/35 bg-rose-500/15",
 };
 
@@ -62,7 +62,7 @@ export function PlataformaOverviewClient() {
       subtitle="MRR pago, clientes reais, trials em risco e suporte — o pulso do OperaRoute."
     >
       {loading && (
-        <div className="flex items-center gap-2 text-[13px] text-slate-500">
+        <div className="flex items-center gap-2 text-[13px] text-at-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando métricas…
         </div>
@@ -76,7 +76,7 @@ export function PlataformaOverviewClient() {
 
       {overview && (
         <div className="space-y-10">
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-at-card-soft sm:grid-cols-4">
             {[
               {
                 label: "MRR (pago)",
@@ -101,19 +101,19 @@ export function PlataformaOverviewClient() {
                 tip: "MRR ÷ pagantes",
               },
             ].map((c) => (
-              <div key={c.label} className="bg-[#0a0e16]/95 px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+              <div key={c.label} className="bg-at-card/95 px-4 py-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">
                   {c.label}
                 </p>
-                <p className="mt-1.5 text-[22px] font-medium tabular-nums text-[#f4efe6]">
+                <p className="mt-1.5 text-[22px] font-medium tabular-nums text-at-primary">
                   {c.value}
                 </p>
-                {c.tip && <p className="mt-1 text-[10px] text-slate-600">{c.tip}</p>}
+                {c.tip && <p className="mt-1 text-[10px] text-at-soft">{c.tip}</p>}
               </div>
             ))}
           </div>
 
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-3 lg:grid-cols-6">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-at-card-soft sm:grid-cols-3 lg:grid-cols-6">
             {[
               { label: "Ativos", value: overview.ativos },
               { label: "Em trial", value: overview.trials },
@@ -122,14 +122,14 @@ export function PlataformaOverviewClient() {
               { label: "Novos 7d", value: overview.novos_7d },
               { label: "Suporte humano", value: overview.suporte_humano_aberto, amber: true },
             ].map((c) => (
-              <div key={c.label} className="bg-[#0a0e16]/95 px-3 py-3.5">
-                <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">
+              <div key={c.label} className="bg-at-card/95 px-3 py-3.5">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-at-muted">
                   {c.label}
                 </p>
                 <p
                   className={cn(
                     "mt-1 text-[20px] font-medium tabular-nums",
-                    c.warn ? "text-rose-300" : c.amber ? "text-amber-200" : "text-[#f4efe6]"
+                    c.warn ? "text-rose-300" : c.amber ? "text-amber-200" : "text-at-primary"
                   )}
                 >
                   {c.value}
@@ -140,40 +140,40 @@ export function PlataformaOverviewClient() {
 
           <div className="grid gap-8 lg:grid-cols-2">
             <section>
-              <p className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 <TrendingUp className="h-3.5 w-3.5" />
                 Por faixa de pontos
               </p>
-              <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07]">
+              <ul className="divide-y divide-white/[0.05] rounded-sm border border-at">
                 {overview.por_faixa.map((f) => (
                   <li
                     key={f.faixa}
                     className="flex items-center justify-between gap-3 px-4 py-3 text-[13px]"
                   >
-                    <span className="text-[#f4efe6]">{f.faixa} pts</span>
-                    <span className="text-slate-500">{f.count} clientes</span>
-                    <span className="tabular-nums text-slate-400">{money(f.mrr)}</span>
+                    <span className="text-at-primary">{f.faixa} pts</span>
+                    <span className="text-at-muted">{f.count} clientes</span>
+                    <span className="tabular-nums text-at-muted">{money(f.mrr)}</span>
                   </li>
                 ))}
               </ul>
             </section>
 
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Nichos mais usados
               </p>
-              <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07]">
+              <ul className="divide-y divide-white/[0.05] rounded-sm border border-at">
                 {overview.por_nicho.slice(0, 8).map((n) => (
                   <li
                     key={n.nicho}
                     className="flex items-center justify-between px-4 py-3 text-[13px]"
                   >
-                    <span className="text-[#f4efe6]">{n.nicho.replace(/_/g, " ")}</span>
-                    <span className="tabular-nums text-slate-500">{n.count}</span>
+                    <span className="text-at-primary">{n.nicho.replace(/_/g, " ")}</span>
+                    <span className="tabular-nums text-at-muted">{n.count}</span>
                   </li>
                 ))}
                 {overview.por_nicho.length === 0 && (
-                  <li className="px-4 py-6 text-center text-[12px] text-slate-500">
+                  <li className="px-4 py-6 text-center text-[12px] text-at-muted">
                     Sem dados de nicho ainda.
                   </li>
                 )}
@@ -196,7 +196,7 @@ export function PlataformaOverviewClient() {
           </div>
 
           {overview.onboarding_incompleto > 0 && (
-            <p className="text-[12px] text-slate-500">
+            <p className="text-[12px] text-at-muted">
               {overview.onboarding_incompleto} conta(s) com onboarding incompleto.
             </p>
           )}
@@ -219,13 +219,13 @@ function TenantLista({
 }) {
   return (
     <section>
-      <p className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+      <p className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-at-soft">
         {icon && <AlertTriangle className="h-3.5 w-3.5 text-amber-400/80" />}
         {titulo}
       </p>
-      <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07]">
+      <ul className="divide-y divide-white/[0.05] rounded-sm border border-at">
         {itens.length === 0 && (
-          <li className="px-4 py-8 text-center text-[12px] text-slate-500">{empty}</li>
+          <li className="px-4 py-8 text-center text-[12px] text-at-muted">{empty}</li>
         )}
         {itens.map((t) => (
           <li key={t.id}>
@@ -234,8 +234,8 @@ function TenantLista({
               className="flex items-center gap-3 px-4 py-3 transition hover:bg-white/[0.02]"
             >
               <div className="min-w-0 flex-1">
-                <p className="truncate text-[13px] text-[#f4efe6]">{t.nome_operacao}</p>
-                <p className="truncate text-[11px] text-slate-500">
+                <p className="truncate text-[13px] text-at-primary">{t.nome_operacao}</p>
+                <p className="truncate text-[11px] text-at-muted">
                   {t.owner_nome ?? "—"} · {t.owner_email ?? "sem e-mail"}
                 </p>
               </div>

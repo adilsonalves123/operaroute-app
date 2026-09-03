@@ -135,7 +135,7 @@ export function NichoCarouselCard({
             <span className="block h-5 w-5 rounded-full border-2 border-slate-500 bg-slate-950/40 backdrop-blur-sm" />
           ) : (
             <span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-600 bg-slate-950/70 backdrop-blur-sm">
-              <Plus className="h-3 w-3 text-slate-400" />
+              <Plus className="h-3 w-3 text-at-muted" />
             </span>
           )}
         </div>
@@ -152,7 +152,7 @@ export function NichoCarouselCard({
             className={cn(
               "shrink-0 rounded-md p-1",
               disponivel ? visual.accent.iconBg : "bg-slate-800",
-              disponivel ? visual.accent.iconText : "text-slate-500"
+              disponivel ? visual.accent.iconText : "text-at-muted"
             )}
           >
             {NICHO_ICONS[nicho]}
@@ -160,7 +160,7 @@ export function NichoCarouselCard({
           <span
             className={cn(
               "text-sm font-semibold leading-tight",
-              disponivel ? "text-white" : "text-slate-400"
+              disponivel ? "text-white" : "text-at-muted"
             )}
           >
             {label}
@@ -169,7 +169,7 @@ export function NichoCarouselCard({
         <p
           className={cn(
             "line-clamp-3 flex-1 text-[11px] leading-snug",
-            disponivel ? "text-slate-400" : "text-slate-600"
+            disponivel ? "text-at-muted" : "text-at-soft"
           )}
         >
           {description}
@@ -190,7 +190,7 @@ export function NichoCarouselCard({
               {lockedCta.label}
               <ArrowRight className="h-3 w-3 shrink-0 opacity-70" />
             </span>
-            <p className="text-[9px] leading-snug text-slate-600">{lockedCta.hint}</p>
+            <p className="text-[9px] leading-snug text-at-soft">{lockedCta.hint}</p>
           </div>
         )}
       </div>
@@ -352,7 +352,7 @@ export function NichoCardsCarousel({
       {(title || subtitle) && (
         <div>
           {title && (
-            <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+            <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-at-muted">
               {title}
             </h2>
           )}
@@ -367,7 +367,7 @@ export function NichoCardsCarousel({
           <button
             type="button"
             onClick={() => scrollBy(-1)}
-            className="absolute left-0 top-[calc(50%-12px)] z-10 -translate-y-1/2 rounded-full border border-slate-700 bg-slate-900/95 p-1.5 text-slate-300 shadow-lg hover:bg-slate-800 hover:text-white transition"
+            className="absolute left-0 top-[calc(50%-12px)] z-10 -translate-y-1/2 rounded-full border border-slate-700 bg-slate-900/95 p-1.5 text-at-primary/85 shadow-lg hover:bg-slate-800 hover:text-white transition"
             aria-label="Nichos anteriores"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -377,7 +377,7 @@ export function NichoCardsCarousel({
           <button
             type="button"
             onClick={() => scrollBy(1)}
-            className="absolute right-0 top-[calc(50%-12px)] z-10 -translate-y-1/2 rounded-full border border-slate-700 bg-slate-900/95 p-1.5 text-slate-300 shadow-lg hover:bg-slate-800 hover:text-white transition"
+            className="absolute right-0 top-[calc(50%-12px)] z-10 -translate-y-1/2 rounded-full border border-slate-700 bg-slate-900/95 p-1.5 text-at-primary/85 shadow-lg hover:bg-slate-800 hover:text-white transition"
             aria-label="Próximos nichos"
           >
             <ChevronRight className="h-5 w-5" />

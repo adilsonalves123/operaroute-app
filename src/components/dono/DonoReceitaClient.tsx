@@ -135,7 +135,7 @@ export function DonoReceitaClient({ email }: { email: string }) {
       wide
     >
       {loading && (
-        <div className="flex items-center gap-2 text-slate-500">
+        <div className="flex items-center gap-2 text-at-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando arrecadação…
         </div>
@@ -150,11 +150,11 @@ export function DonoReceitaClient({ email }: { email: string }) {
       {data && !loading && (
         <div className="space-y-10">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="max-w-xl text-[12px] text-slate-500">{data.aviso}</p>
+            <p className="max-w-xl text-[12px] text-at-muted">{data.aviso}</p>
             <button
               type="button"
               onClick={() => setShowForm((v) => !v)}
-              className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-3.5 py-2 text-[13px] text-[#e8d5b0]"
+              className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-3.5 py-2 text-[13px] text-at-link"
             >
               <Plus className="h-4 w-4" />
               Registrar pagamento
@@ -164,9 +164,9 @@ export function DonoReceitaClient({ email }: { email: string }) {
           {showForm && (
             <form
               onSubmit={registrar}
-              className="grid gap-3 rounded-sm border border-white/[0.08] bg-white/[0.02] p-4 sm:grid-cols-2 lg:grid-cols-5"
+              className="grid gap-3 rounded-sm border border-at-soft bg-white/[0.02] p-4 sm:grid-cols-2 lg:grid-cols-5"
             >
-              <label className="text-[12px] text-slate-400 lg:col-span-2">
+              <label className="text-[12px] text-at-muted lg:col-span-2">
                 Cliente
                 <select
                   value={form.empresa_id}
@@ -183,7 +183,7 @@ export function DonoReceitaClient({ email }: { email: string }) {
                           : f.valor,
                     }));
                   }}
-                  className="mt-1 w-full rounded-sm border border-white/10 bg-[#0a0e16] px-3 py-2 text-[13px] text-[#f4efe6]"
+                  className="mt-1 w-full rounded-sm border border-at-soft bg-at-card px-3 py-2 text-[13px] text-at-primary"
                 >
                   <option value="">— avulso / sem cliente —</option>
                   {(data.clientes ?? []).map((c) => (
@@ -193,7 +193,7 @@ export function DonoReceitaClient({ email }: { email: string }) {
                   ))}
                 </select>
               </label>
-              <label className="text-[12px] text-slate-400">
+              <label className="text-[12px] text-at-muted">
                 Ciclo
                 <select
                   value={form.ciclo}
@@ -203,13 +203,13 @@ export function DonoReceitaClient({ email }: { email: string }) {
                       ciclo: e.target.value as "mensal" | "anual",
                     }))
                   }
-                  className="mt-1 w-full rounded-sm border border-white/10 bg-[#0a0e16] px-3 py-2 text-[13px] text-[#f4efe6]"
+                  className="mt-1 w-full rounded-sm border border-at-soft bg-at-card px-3 py-2 text-[13px] text-at-primary"
                 >
                   <option value="mensal">Mensal</option>
                   <option value="anual">Anual</option>
                 </select>
               </label>
-              <label className="text-[12px] text-slate-400">
+              <label className="text-[12px] text-at-muted">
                 Valor (R$)
                 <input
                   required
@@ -221,24 +221,24 @@ export function DonoReceitaClient({ email }: { email: string }) {
                     }))
                   }
                   placeholder="279,00"
-                  className="mt-1 w-full rounded-sm border border-white/10 bg-[#0a0e16] px-3 py-2 text-[13px] text-[#f4efe6]"
+                  className="mt-1 w-full rounded-sm border border-at-soft bg-at-card px-3 py-2 text-[13px] text-at-primary"
                 />
               </label>
-              <label className="text-[12px] text-slate-400">
+              <label className="text-[12px] text-at-muted">
                 Data
                 <input
                   type="date"
                   required
                   value={form.pago_em}
                   onChange={(e) => setForm((f) => ({ ...f, pago_em: e.target.value }))}
-                  className="mt-1 w-full rounded-sm border border-white/10 bg-[#0a0e16] px-3 py-2 text-[13px] text-[#f4efe6]"
+                  className="mt-1 w-full rounded-sm border border-at-soft bg-at-card px-3 py-2 text-[13px] text-at-primary"
                 />
               </label>
               <div className="flex items-end sm:col-span-2 lg:col-span-5">
                 <button
                   type="submit"
                   disabled={saving}
-                  className="rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-4 py-2 text-[13px] text-[#e8d5b0] disabled:opacity-50"
+                  className="rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-4 py-2 text-[13px] text-at-link disabled:opacity-50"
                 >
                   {saving ? "Salvando…" : "Confirmar arrecadação"}
                 </button>
@@ -247,7 +247,7 @@ export function DonoReceitaClient({ email }: { email: string }) {
           )}
 
           <section>
-            <p className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+            <p className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-at-soft">
               <Wallet className="h-3.5 w-3.5" />
               Arrecadação
             </p>
@@ -259,7 +259,7 @@ export function DonoReceitaClient({ email }: { email: string }) {
             </div>
           </section>
 
-          <div className="grid gap-px overflow-hidden rounded-sm border border-white/[0.07] bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-px overflow-hidden rounded-sm border border-at bg-white/[0.07] sm:grid-cols-2 lg:grid-cols-5">
             {[
               {
                 l: "Fecharam mensal",
@@ -286,24 +286,24 @@ export function DonoReceitaClient({ email }: { email: string }) {
               },
             ].map((c) => (
               <div key={c.l} className="bg-[#080b12] px-4 py-4">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">
                   {c.l}
                 </p>
-                <p className="mt-1.5 text-[22px] font-medium tabular-nums text-[#f4efe6]">
+                <p className="mt-1.5 text-[22px] font-medium tabular-nums text-at-primary">
                   {c.v}
                 </p>
                 {c.tip && (
-                  <p className="mt-1 text-[10px] text-slate-600">{c.tip}</p>
+                  <p className="mt-1 text-[10px] text-at-soft">{c.tip}</p>
                 )}
               </div>
             ))}
           </div>
 
           <section>
-            <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+            <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-at-soft">
               Últimos 30 dias
             </p>
-            <div className="flex h-28 items-end gap-0.5 rounded-sm border border-white/[0.07] bg-black/20 px-2 py-2">
+            <div className="flex h-28 items-end gap-0.5 rounded-sm border border-at bg-black/20 px-2 py-2">
               {data.serie_30d.map((d) => (
                 <div
                   key={d.dia}
@@ -319,12 +319,12 @@ export function DonoReceitaClient({ email }: { email: string }) {
 
           <div className="grid gap-8 lg:grid-cols-2">
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Pagamentos recentes
               </p>
-              <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07]">
+              <ul className="divide-y divide-white/[0.05] rounded-sm border border-at">
                 {data.recentes.length === 0 && (
-                  <li className="px-4 py-8 text-center text-[12px] text-slate-500">
+                  <li className="px-4 py-8 text-center text-[12px] text-at-muted">
                     Nenhum pagamento ainda. Registre o primeiro acima.
                   </li>
                 )}
@@ -334,14 +334,14 @@ export function DonoReceitaClient({ email }: { email: string }) {
                     className="flex items-center justify-between gap-3 px-4 py-3 text-[13px]"
                   >
                     <div className="min-w-0">
-                      <p className="truncate text-[#f4efe6]">
+                      <p className="truncate text-at-primary">
                         {p.empresa_nome ?? "Avulso"}
                       </p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-[11px] text-at-muted">
                         {p.ciclo} · {when(p.pago_em)}
                       </p>
                     </div>
-                    <span className="shrink-0 tabular-nums text-[#e8d5b0]">
+                    <span className="shrink-0 tabular-nums text-at-link">
                       {moneyCentavos(p.valor_centavos)}
                     </span>
                   </li>
@@ -350,29 +350,29 @@ export function DonoReceitaClient({ email }: { email: string }) {
             </section>
 
             <section>
-              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-3 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Clientes · ciclo de cobrança
               </p>
-              <div className="overflow-x-auto rounded-sm border border-white/[0.07]">
+              <div className="overflow-x-auto rounded-sm border border-at">
                 <table className="w-full min-w-[480px] text-left text-[13px]">
                   <thead>
-                    <tr className="border-b border-white/[0.06] text-[10px] uppercase tracking-wider text-slate-500">
+                    <tr className="border-b border-at text-[10px] uppercase tracking-wider text-at-muted">
                       <th className="px-3 py-2.5 font-medium">Operação</th>
                       <th className="px-3 py-2.5 font-medium">Ciclo</th>
                       <th className="px-3 py-2.5 font-medium text-right">Preço</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/[0.04]">
+                  <tbody className="divide-y divide-[var(--at-border-soft)]">
                     {(data.clientes ?? []).map((c) => (
                       <tr key={c.id} className="hover:bg-white/[0.015]">
                         <td className="px-3 py-2.5">
                           <Link
                             href={`/dono/empresas/${c.id}`}
-                            className="text-[#f4efe6] hover:text-[#c4a574]"
+                            className="text-at-primary hover:text-at-link"
                           >
                             {c.nome}
                           </Link>
-                          <p className="text-[11px] text-slate-600">{c.saude}</p>
+                          <p className="text-[11px] text-at-soft">{c.saude}</p>
                         </td>
                         <td className="px-3 py-2.5">
                           <div className="flex gap-1">
@@ -384,8 +384,8 @@ export function DonoReceitaClient({ email }: { email: string }) {
                                 className={cn(
                                   "rounded-sm border px-2 py-0.5 text-[10px] uppercase tracking-wider",
                                   c.ciclo === ciclo
-                                    ? "border-[#c4a574]/40 bg-[#c4a574]/15 text-[#e8d5b0]"
-                                    : "border-white/10 text-slate-500 hover:text-slate-300"
+                                    ? "border-[#c4a574]/40 bg-[#c4a574]/15 text-at-link"
+                                    : "border-at-soft text-at-muted hover:text-at-primary/85"
                                 )}
                               >
                                 {ciclo}
@@ -393,9 +393,9 @@ export function DonoReceitaClient({ email }: { email: string }) {
                             ))}
                           </div>
                         </td>
-                        <td className="px-3 py-2.5 text-right tabular-nums text-slate-300">
+                        <td className="px-3 py-2.5 text-right tabular-nums text-at-primary/85">
                           {money(c.preco_ciclo)}
-                          <span className="text-[10px] text-slate-600">
+                          <span className="text-[10px] text-at-soft">
                             {c.ciclo === "anual" ? "/ano" : "/mês"}
                           </span>
                         </td>
@@ -427,32 +427,32 @@ function PeriodoCard({
         "rounded-sm border px-4 py-4",
         highlight
           ? "border-[#c4a574]/35 bg-[#c4a574]/[0.08]"
-          : "border-white/[0.07] bg-white/[0.02]"
+          : "border-at bg-white/[0.02]"
       )}
     >
-      <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+      <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">
         {titulo}
       </p>
-      <p className="mt-2 text-[26px] font-medium tabular-nums text-[#f4efe6]">
+      <p className="mt-2 text-[26px] font-medium tabular-nums text-at-primary">
         {moneyCentavos(p.arrecadado_centavos)}
       </p>
-      <p className="mt-2 text-[11px] text-slate-500">
+      <p className="mt-2 text-[11px] text-at-muted">
         {p.qtd_pagamentos} pagamento(s)
       </p>
       <div className="mt-3 flex gap-3 text-[11px]">
-        <span className="text-slate-400">
+        <span className="text-at-muted">
           Mensal{" "}
-          <span className="tabular-nums text-[#e8d5b0]">
+          <span className="tabular-nums text-at-link">
             {moneyCentavos(p.mensal_centavos)}
           </span>
-          <span className="text-slate-600"> · {p.qtd_mensal}</span>
+          <span className="text-at-soft"> · {p.qtd_mensal}</span>
         </span>
-        <span className="text-slate-400">
+        <span className="text-at-muted">
           Anual{" "}
-          <span className="tabular-nums text-[#e8d5b0]">
+          <span className="tabular-nums text-at-link">
             {moneyCentavos(p.anual_centavos)}
           </span>
-          <span className="text-slate-600"> · {p.qtd_anual}</span>
+          <span className="text-at-soft"> · {p.qtd_anual}</span>
         </span>
       </div>
     </div>

@@ -85,13 +85,13 @@ export function PermissoesMatrix({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-sm font-semibold text-white">Permissões de acesso</h3>
-          <p className="text-xs text-slate-400 mt-0.5 max-w-lg">
-            <strong className="text-slate-300">Ver</strong> controla o menu. Nas áreas de campo,
+          <p className="text-xs text-at-muted mt-0.5 max-w-lg">
+            <strong className="text-at-primary/85">Ver</strong> controla o menu. Nas áreas de campo,
             Criar/Editar liberam ações do dia a dia. Em Rotas,{" "}
-            <strong className="text-slate-300">Gerenciar</strong> é montar e enviar para a equipe.
+            <strong className="text-at-primary/85">Gerenciar</strong> é montar e enviar para a equipe.
           </p>
         </div>
-        <label className="flex items-center gap-2 text-xs text-slate-300 cursor-pointer shrink-0">
+        <label className="flex items-center gap-2 text-xs text-at-primary/85 cursor-pointer shrink-0">
           <input
             type="checkbox"
             checked={personalizado}
@@ -110,7 +110,7 @@ export function PermissoesMatrix({
       <div className="space-y-5">
         {MODULOS_POR_GRUPO.map((grupo) => (
           <section key={grupo.id} className="space-y-2">
-            <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <h4 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-at-muted">
               {GRUPO_MODULO_LABELS[grupo.id]}
             </h4>
             <ul className="divide-y divide-slate-800/80 rounded-lg border border-slate-800/80 overflow-hidden">
@@ -122,9 +122,9 @@ export function PermissoesMatrix({
                     className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between gap-x-4 px-3 py-2.5 bg-slate-950/30"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm text-slate-200">{MODULO_LABELS[modulo]}</p>
+                      <p className="text-sm text-at-primary/90">{MODULO_LABELS[modulo]}</p>
                       {meta.dica && (
-                        <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">{meta.dica}</p>
+                        <p className="text-[11px] text-at-muted mt-0.5 leading-snug">{meta.dica}</p>
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 shrink-0">
@@ -132,7 +132,7 @@ export function PermissoesMatrix({
                         <label
                           key={acao}
                           className={cn(
-                            "inline-flex items-center gap-1.5 text-[11px] text-slate-400",
+                            "inline-flex items-center gap-1.5 text-[11px] text-at-muted",
                             editavel ? "cursor-pointer" : "cursor-default opacity-70"
                           )}
                         >
@@ -159,7 +159,7 @@ export function PermissoesMatrix({
         <button
           type="button"
           onClick={restaurarPadrao}
-          className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white"
+          className="inline-flex items-center gap-1.5 text-xs text-at-muted hover:text-white"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Restaurar padrão da função

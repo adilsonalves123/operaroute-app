@@ -16,11 +16,6 @@ import {
 import type { ChamadoResumoEquipamento } from "@/lib/chamados/types";
 import type { Equipamento, Nicho } from "@/lib/types/database";
 import { cn } from "@/lib/utils";
-import { useAppTheme } from "@/components/layout/AppTheme";
-import {
-  analisePageBackground,
-  appThemeToAnaliseVisual,
-} from "@/lib/analise/analise-visual-theme";
 
 const display = Instrument_Serif({
   weight: "400",
@@ -54,8 +49,6 @@ export function EquipamentosGlobalClient({
   chamadosAbertos,
   nichosAtivos,
 }: Props) {
-  const { theme: appTheme } = useAppTheme();
-  const visualTema = appThemeToAnaliseVisual(appTheme);
   const [busca, setBusca] = useState("");
   const [filtroPonto, setFiltroPonto] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>("ativo");
@@ -123,21 +116,9 @@ export function EquipamentosGlobalClient({
 
   return (
     <div
-      data-analise-visual={visualTema}
-      className={cn(
-        display.variable,
-        sans.variable,
-        "premium-desk-root relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-16 sm:-mx-6 sm:px-6"
-      )}
+      className={cn(display.variable, sans.variable)}
       style={{ fontFamily: "var(--font-eq-sans), system-ui, sans-serif" }}
     >
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{ background: analisePageBackground(visualTema) }}
-        />
-      </div>
-
       <div className="relative mx-auto max-w-6xl pt-6 sm:pt-10">
         <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>

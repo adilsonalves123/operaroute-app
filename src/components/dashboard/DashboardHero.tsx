@@ -30,14 +30,14 @@ export function DashboardHero({
       <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary-neon/5 blur-3xl" />
       <div className="relative flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div className="min-w-0 flex-1 space-y-4">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-at-muted">
             <span className="uppercase tracking-[0.14em]">{nichoLabel}</span>
-            <span className="text-slate-700">·</span>
+            <span className="text-at-soft">·</span>
             <span>{periodLabel}</span>
           </div>
 
           <div>
-            <p className="text-xs font-medium uppercase tracking-[0.12em] text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-[0.12em] text-at-muted">
               Saldo líquido do período
             </p>
             <p className="mt-2 text-4xl font-semibold tabular-nums tracking-tight text-primary-neon sm:text-5xl">
@@ -49,7 +49,7 @@ export function DashboardHero({
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
               {entrada !== undefined && (
                 <div>
-                  <span className="text-slate-500">Entrada </span>
+                  <span className="text-at-muted">Entrada </span>
                   <span className="font-medium tabular-nums text-green-400">
                     {formatCurrency(entrada)}
                   </span>
@@ -57,7 +57,7 @@ export function DashboardHero({
               )}
               {saida !== undefined && (
                 <div>
-                  <span className="text-slate-500">Saída </span>
+                  <span className="text-at-muted">Saída </span>
                   <span className="font-medium tabular-nums text-red-400">
                     {formatCurrency(saida)}
                   </span>
@@ -65,7 +65,7 @@ export function DashboardHero({
               )}
               {margem && (
                 <div>
-                  <span className="text-slate-500">Margem </span>
+                  <span className="text-at-muted">Margem </span>
                   <span className="font-medium tabular-nums text-primary-neon">
                     {margem}
                   </span>
@@ -77,7 +77,7 @@ export function DashboardHero({
 
         {sparkline.length > 1 && (
           <div className="shrink-0 lg:w-44">
-            <p className="mb-2 text-[10px] uppercase tracking-wider text-slate-600">Últimos 7 dias</p>
+            <p className="mb-2 text-[10px] uppercase tracking-wider text-at-soft">Últimos 7 dias</p>
             <DashboardSparkline values={sparkline} />
           </div>
         )}

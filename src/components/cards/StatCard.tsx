@@ -30,7 +30,7 @@ export function StatCard({
 
   return (
     <div className={cn("glass-card p-5 border", colorMap[color])}>
-      <p className="text-sm text-slate-400">{label}</p>
+      <p className="text-sm text-at-muted">{label}</p>
       <p className={cn("mt-2 text-2xl font-bold", colorMap[color].split(" ")[0])}>
         {displayValue}
       </p>

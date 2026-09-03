@@ -52,13 +52,13 @@ export default async function NegativosRecuperadosPage({
       <div className="flex items-center gap-4">
         <Link
           href="/financeiro"
-          className="rounded-lg p-2 text-slate-400 hover:bg-slate-800"
+          className="rounded-lg p-2 text-at-muted hover:bg-slate-800"
         >
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-white">Recuperado de negativo</h1>
-          <p className="text-slate-400 text-sm mt-0.5">
+          <p className="text-at-muted text-sm mt-0.5">
             Por ponto · {periodoLabels[periodo].toLowerCase()}
           </p>
         </div>
@@ -72,7 +72,7 @@ export default async function NegativosRecuperadosPage({
             className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
               periodo === p
                 ? "bg-primary-neon/20 text-primary-neon border border-primary-neon/40"
-                : "text-slate-400 border border-slate-700 hover:border-slate-500 hover:text-slate-200"
+                : "text-at-muted border border-slate-700 hover:border-slate-500 hover:text-at-primary/90"
             }`}
           >
             {periodoLabels[p]}
@@ -82,11 +82,11 @@ export default async function NegativosRecuperadosPage({
 
       <div className="grid gap-3 grid-cols-2">
         <div className="glass-card p-4 border border-orange-500/20">
-          <p className="text-sm text-slate-400">Recuperado no período</p>
+          <p className="text-sm text-at-muted">Recuperado no período</p>
           <p className="text-xl font-bold text-white mt-0.5">{formatCurrency(totalRecuperado)}</p>
         </div>
         <div className="glass-card p-4 border border-red-500/20">
-          <p className="text-sm text-slate-400">Ainda em aberto</p>
+          <p className="text-sm text-at-muted">Ainda em aberto</p>
           <p className="text-xl font-bold text-red-400 mt-0.5">{formatCurrency(totalEmAberto)}</p>
         </div>
       </div>
@@ -111,13 +111,13 @@ export default async function NegativosRecuperadosPage({
                     Recuperado: {formatCurrency(linha.recuperadoPeriodo)}
                   </p>
                 ) : (
-                  <p className="text-sm text-slate-500 mt-0.5">Sem recuperação no período</p>
+                  <p className="text-sm text-at-muted mt-0.5">Sem recuperação no período</p>
                 )}
               </div>
               <div className="text-right shrink-0">
                 {linha.emAberto > 0.009 ? (
                   <>
-                    <p className="text-xs text-slate-500">Falta</p>
+                    <p className="text-xs text-at-muted">Falta</p>
                     <p className="font-semibold text-red-400">{formatCurrency(linha.emAberto)}</p>
                   </>
                 ) : (

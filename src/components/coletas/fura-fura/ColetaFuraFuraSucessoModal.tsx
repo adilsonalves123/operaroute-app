@@ -49,12 +49,12 @@ export function ColetaFuraFuraSucessoModal({
             <CheckCircle className="h-6 w-6 shrink-0 text-green-400" />
             <div>
               <h2 className="text-lg font-bold text-white">Coleta registrada!</h2>
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-at-muted">
                 Compartilhe o comprovante ou envie no WhatsApp
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-1 text-slate-400 hover:text-white">
+          <button type="button" onClick={onClose} className="p-1 text-at-muted hover:text-white">
             <X className="h-5 w-5" />
           </button>
         </div>

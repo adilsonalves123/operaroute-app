@@ -287,7 +287,7 @@ export function RotaMapaAvancado({
       ref={containerRef}
       className={cn(
         "rota-mapa-root z-0",
-        className ?? "h-[420px] w-full rounded-xl overflow-hidden border border-white/[0.08]"
+        className ?? "h-[420px] w-full rounded-xl overflow-hidden border border-at-soft"
       )}
       style={{ minHeight: 280 }}
     />

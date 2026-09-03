@@ -104,7 +104,7 @@ function QtyStepper({
       <button
         type="button"
         onClick={() => set(n - 1)}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-at-primary/85 hover:bg-slate-800"
         aria-label="Diminuir"
       >
         <Minus className="h-4 w-4" />
@@ -119,7 +119,7 @@ function QtyStepper({
       <button
         type="button"
         onClick={() => set(n + 1)}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-700 text-at-primary/85 hover:bg-slate-800"
         aria-label="Aumentar"
       >
         <Plus className="h-4 w-4" />
@@ -789,7 +789,7 @@ export function NovaColetaConsignadoForm() {
   if (editarColetaId && !editandoCarregado) {
     return (
       <ColetaNovaPageShell title="Editar recolhe Consignado" subtitle="Carregando coleta…" backHref="/coletas">
-        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
+        <p className="text-sm text-at-muted">Carregando dados da coleta…</p>
       </ColetaNovaPageShell>
     );
   }
@@ -815,7 +815,7 @@ export function NovaColetaConsignadoForm() {
             active="consignado"
           />
         ) : ensuringVisita ? (
-          <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 px-3 py-2 text-xs text-slate-400">
+          <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 px-3 py-2 text-xs text-at-muted">
             Preparando visita multi-nicho…
           </div>
         ) : undefined
@@ -840,10 +840,10 @@ export function NovaColetaConsignadoForm() {
           }
           comissaoField={
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-300">Repasse</label>
-              <div className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm text-slate-300">
+              <label className="block text-sm font-medium text-at-primary/85">Repasse</label>
+              <div className="rounded-lg border border-slate-700 bg-slate-950/70 px-3 py-2.5 text-sm text-at-primary/85">
                 Tabela do produto
-                <p className="mt-0.5 text-[11px] text-slate-500">
+                <p className="mt-0.5 text-[11px] text-at-muted">
                   Valor final − o que o cliente ganha (cadastro)
                 </p>
               </div>
@@ -879,7 +879,7 @@ export function NovaColetaConsignadoForm() {
               loading={loadingPonto}
               empty={
                 !loadingPonto && expositores.length === 0 && pontoId ? (
-                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
+                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-at-muted">
                     Nenhum expositor de Consignado ativo neste ponto.
                   </div>
                 ) : undefined
@@ -922,7 +922,7 @@ export function NovaColetaConsignadoForm() {
                             variant="icon"
                           />
                         </div>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-at-muted">
                           {exp.linhas.length} produtos · {totalDeixado} un. deixadas
                           {expCalc && expCalc.totalVendido > 0 && (
                             <span className="ml-2 text-green-400">
@@ -934,7 +934,7 @@ export function NovaColetaConsignadoForm() {
                     </div>
 
                     {exp.linhas.length === 0 ? (
-                      <div className="rounded-lg border border-dashed border-slate-700 px-3 py-3 text-xs text-slate-500">
+                      <div className="rounded-lg border border-dashed border-slate-700 px-3 py-3 text-xs text-at-muted">
                         Nenhum produto no expositor. Deixe produtos em Pontos → equipamento → aba
                         Estoque.
                       </div>
@@ -942,7 +942,7 @@ export function NovaColetaConsignadoForm() {
                       <div className="space-y-3">
                         <div className="flex gap-2">
                           <div className="relative min-w-0 flex-1">
-                            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
+                            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-at-muted" />
                             <input
                               type="text"
                               value={buscaCodigo[exp.equipamentoId] ?? ""}
@@ -1004,7 +1004,7 @@ export function NovaColetaConsignadoForm() {
                                     />
                                   ) : (
                                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-slate-800/80 ring-1 ring-white/5">
-                                      <Package className="h-5 w-5 text-slate-500" />
+                                      <Package className="h-5 w-5 text-at-muted" />
                                     </div>
                                   )}
                                   <div className="min-w-0 flex-1">
@@ -1016,10 +1016,10 @@ export function NovaColetaConsignadoForm() {
                                         {linha.nome}
                                       </p>
                                     </div>
-                                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-slate-400">
+                                    <div className="mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] tabular-nums text-at-muted">
                                       <span>
                                         Custo{" "}
-                                        <strong className="font-medium text-slate-300">
+                                        <strong className="font-medium text-at-primary/85">
                                           {formatCurrency(linha.custoUnitario)}
                                         </strong>
                                       </span>
@@ -1062,13 +1062,13 @@ export function NovaColetaConsignadoForm() {
 
                                 <div className="grid grid-cols-2 gap-2">
                                   <div className="rounded-lg border border-slate-800 bg-slate-950/60 px-2.5 py-2">
-                                    <p className="text-[11px] text-slate-500">Deixado</p>
-                                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-300">
+                                    <p className="text-[11px] text-at-muted">Deixado</p>
+                                    <p className="mt-0.5 text-sm font-semibold tabular-nums text-at-primary/85">
                                       {linha.deixado}
                                     </p>
                                   </div>
                                   <div className="space-y-1">
-                                    <label className="block text-[11px] text-slate-400">
+                                    <label className="block text-[11px] text-at-muted">
                                       Sobrou
                                     </label>
                                     <QtyStepper
@@ -1091,7 +1091,7 @@ export function NovaColetaConsignadoForm() {
                                 ) : linhaCalc ? (
                                   <div className="space-y-1 text-xs">
                                     <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-                                      <span className="text-slate-400">
+                                      <span className="text-at-muted">
                                         Vendeu{" "}
                                         <span className="font-semibold text-emerald-300">
                                           {linhaCalc.vendido}
@@ -1103,7 +1103,7 @@ export function NovaColetaConsignadoForm() {
                                         </span>
                                       </span>
                                     </div>
-                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-slate-500">
+                                    <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-at-muted">
                                       <span>
                                         Cliente{" "}
                                         <span className="tabular-nums text-amber-300">
@@ -1118,7 +1118,7 @@ export function NovaColetaConsignadoForm() {
                                       </span>
                                       <span>
                                         Custo{" "}
-                                        <span className="tabular-nums text-slate-400">
+                                        <span className="tabular-nums text-at-muted">
                                           {formatCurrency(linhaCalc.custo)}
                                         </span>
                                       </span>
@@ -1156,7 +1156,7 @@ export function NovaColetaConsignadoForm() {
               accent="amber"
               empty={
                 !calculo || calculo.linhas.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
+                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-at-muted">
                     Conte o que sobrou de pelo menos um produto para ver o resumo e registrar o
                     pagamento.
                     {calculoError ? (

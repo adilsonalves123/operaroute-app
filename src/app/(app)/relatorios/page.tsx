@@ -161,7 +161,7 @@ export default async function RelatoriosPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-white">Relatórios de coleta</h1>
-        <p className="mt-1 text-slate-400">{subtitle}</p>
+        <p className="mt-1 text-at-muted">{subtitle}</p>
       </div>
 
       <RelatoriosRetencaoPanel retencaoDias={retencaoDias} podeGerir={podeGerir} />

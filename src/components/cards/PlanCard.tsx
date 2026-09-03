@@ -24,11 +24,11 @@ export function PlanCard({ nome, preco, descricao, features, destaque }: PlanCar
         </span>
       )}
       <h3 className="text-xl font-bold text-white">{nome}</h3>
-      <p className="text-slate-400 text-sm mt-1">{descricao}</p>
+      <p className="text-at-muted text-sm mt-1">{descricao}</p>
       <p className="text-3xl font-bold text-primary-neon mt-4">{preco}</p>
       <ul className="mt-6 space-y-3 flex-1">
         {features.map((f) => (
-          <li key={f} className="flex items-center gap-2 text-sm text-slate-300">
+          <li key={f} className="flex items-center gap-2 text-sm text-at-primary/85">
             <Check className="h-4 w-4 text-green-400 shrink-0" />
             {f}
           </li>

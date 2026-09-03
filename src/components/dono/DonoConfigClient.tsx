@@ -11,7 +11,7 @@ export function DonoConfigClient({ email }: { email: string }) {
 
   const card = light
     ? "rounded-2xl border border-stone-200 bg-white p-5"
-    : "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5";
+    : "rounded-2xl border border-at bg-white/[0.02] p-5";
 
   return (
     <DonoShell
@@ -22,7 +22,7 @@ export function DonoConfigClient({ email }: { email: string }) {
       <div className="max-w-xl space-y-4">
         <div className={card}>
           <p className="text-[13px] font-medium">Aparência</p>
-          <p className="mt-1 text-[12px] text-slate-500">
+          <p className="mt-1 text-[12px] text-at-muted">
             Tema do painel do dono (não afeta o app dos clientes).
           </p>
           <div className="mt-4 flex gap-2">
@@ -36,10 +36,10 @@ export function DonoConfigClient({ email }: { email: string }) {
                   theme === t
                     ? light
                       ? "border-stone-900 bg-stone-900 text-white"
-                      : "border-[#c4a574]/50 bg-[#c4a574]/15 text-[#e8d5b0]"
+                      : "border-[#c4a574]/50 bg-[#c4a574]/15 text-at-link"
                     : light
                       ? "border-stone-200"
-                      : "border-white/10"
+                      : "border-at-soft"
                 )}
               >
                 {t === "dark" ? "Escuro" : "Claro"}
@@ -50,7 +50,7 @@ export function DonoConfigClient({ email }: { email: string }) {
 
         <div className={card}>
           <p className="text-[13px] font-medium">Integrações</p>
-          <ul className="mt-3 space-y-2 text-[13px] text-slate-500">
+          <ul className="mt-3 space-y-2 text-[13px] text-at-muted">
             <li>Supabase · conectado via .env.local</li>
             <li>OpenAI · IA Copiloto e sugestões de suporte</li>
             <li>Gateway de pagamento · em breve (Asaas/Stripe)</li>
@@ -59,7 +59,7 @@ export function DonoConfigClient({ email }: { email: string }) {
 
         <div className={card}>
           <p className="text-[13px] font-medium">SQL necessários</p>
-          <ul className="mt-3 space-y-1 text-[12px] text-slate-500">
+          <ul className="mt-3 space-y-1 text-[12px] text-at-muted">
             <li>supabase/plataforma-receita.sql</li>
             <li>supabase/plataforma-funil.sql</li>
             <li>supabase/plataforma-nichos-covers.sql</li>
@@ -73,7 +73,7 @@ export function DonoConfigClient({ email }: { email: string }) {
             href="/dono/nichos"
             className={cn(
               "inline-block rounded-xl border px-4 py-2.5 text-[13px]",
-              light ? "border-stone-200" : "border-white/10"
+              light ? "border-stone-200" : "border-at-soft"
             )}
           >
             Fotos dos nichos →
@@ -82,7 +82,7 @@ export function DonoConfigClient({ email }: { email: string }) {
             href="/dono/conta"
             className={cn(
               "inline-block rounded-xl border px-4 py-2.5 text-[13px]",
-              light ? "border-stone-200" : "border-white/10"
+              light ? "border-stone-200" : "border-at-soft"
             )}
           >
             Ir para minha conta →

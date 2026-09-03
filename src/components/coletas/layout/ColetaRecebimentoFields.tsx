@@ -49,12 +49,12 @@ export function ColetaRecebimentoFields({
 }) {
   return (
     <div className={cn("border-t border-slate-800 pt-4 space-y-3", className)}>
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-at-muted">
         {somenteDesconto ? "Desconto da operação" : "Recebimento"}
       </p>
 
       <div className="space-y-1.5">
-        <label className="block text-xs text-slate-400">Desconto (R$)</label>
+        <label className="block text-xs text-at-muted">Desconto (R$)</label>
         <input
           type="number"
           step="0.01"
@@ -69,7 +69,7 @@ export function ColetaRecebimentoFields({
       {!somenteDesconto && (
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1.5">
-            <label className="block text-xs text-slate-400">Dinheiro (R$)</label>
+            <label className="block text-xs text-at-muted">Dinheiro (R$)</label>
             <input
               inputMode="numeric"
               value={dinheiro}
@@ -80,7 +80,7 @@ export function ColetaRecebimentoFields({
             />
           </div>
           <div className="space-y-1.5">
-            <label className="block text-xs text-slate-400">Pix (R$)</label>
+            <label className="block text-xs text-at-muted">Pix (R$)</label>
             <input
               inputMode="numeric"
               value={pix}
@@ -93,7 +93,7 @@ export function ColetaRecebimentoFields({
         </div>
       )}
 
-      {hint && <p className="text-[11px] text-slate-500">{hint}</p>}
+      {hint && <p className="text-[11px] text-at-muted">{hint}</p>}
 
       {!somenteDesconto && status && status.valorPago > 0.009 && (
         <div
@@ -105,15 +105,15 @@ export function ColetaRecebimentoFields({
           )}
         >
           <div className="flex justify-between gap-3">
-            <span className="text-slate-400">Pago hoje</span>
+            <span className="text-at-muted">Pago hoje</span>
             <span className="font-semibold text-green-400 tabular-nums">
               {formatCurrency(status.valorPago)}
             </span>
           </div>
           {(status.aplicadoVisita ?? 0) > 0.009 && (
             <div className="flex justify-between gap-3">
-              <span className="text-slate-400">Na visita de hoje</span>
-              <span className="font-medium text-slate-200 tabular-nums">
+              <span className="text-at-muted">Na visita de hoje</span>
+              <span className="font-medium text-at-primary/90 tabular-nums">
                 {formatCurrency(status.aplicadoVisita!)}
               </span>
             </div>

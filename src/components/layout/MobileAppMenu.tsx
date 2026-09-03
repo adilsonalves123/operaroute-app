@@ -79,7 +79,7 @@ export function MobileAppMenu({ nomeOperacao, chamadosAbertos = 0 }: Props) {
           <button
             type="button"
             onClick={closeMenu}
-            className="rounded-lg p-2 text-slate-400 transition hover:bg-white/[0.05] hover:text-[#c4a574]"
+            className="rounded-lg p-2 text-at-muted transition hover:bg-white/[0.05] hover:text-at-link"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" />

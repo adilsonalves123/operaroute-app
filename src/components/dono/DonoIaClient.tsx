@@ -95,11 +95,11 @@ export function DonoIaClient({ email }: { email: string }) {
                 "w-full rounded-sm border px-3 py-2.5 text-left transition",
                 modo === m.id
                   ? "border-[#c4a574]/40 bg-[#c4a574]/12"
-                  : "border-white/[0.07] hover:bg-white/[0.02]"
+                  : "border-at hover:bg-white/[0.02]"
               )}
             >
-              <p className="text-[13px] text-[#f4efe6]">{m.label}</p>
-              <p className="text-[11px] text-slate-500">{m.desc}</p>
+              <p className="text-[13px] text-at-primary">{m.label}</p>
+              <p className="text-[11px] text-at-muted">{m.desc}</p>
             </button>
           ))}
           {!iaOk && (
@@ -119,19 +119,19 @@ export function DonoIaClient({ email }: { email: string }) {
             )}
 
             {texto ? (
-              <div className="rounded-sm border border-white/[0.08] bg-white/[0.02] px-5 py-5">
+              <div className="rounded-sm border border-at-soft bg-white/[0.02] px-5 py-5">
                 {modelo && (
-                  <p className="mb-3 text-[10px] uppercase tracking-[0.16em] text-slate-600">
+                  <p className="mb-3 text-[10px] uppercase tracking-[0.16em] text-at-soft">
                     Modelo · {modelo}
                   </p>
                 )}
-                <div className="whitespace-pre-wrap text-[14px] leading-relaxed text-slate-200">
+                <div className="whitespace-pre-wrap text-[14px] leading-relaxed text-at-primary/90">
                   {texto}
                 </div>
               </div>
             ) : (
               !loading && (
-                <p className="max-w-md text-[13px] text-slate-500">
+                <p className="max-w-md text-[13px] text-at-muted">
                   Escolha um modo, escreva um contexto se quiser e envie. A IA lê
                   MRR, funil, trials em risco e fila de suporte antes de responder.
                 </p>
@@ -139,15 +139,15 @@ export function DonoIaClient({ email }: { email: string }) {
             )}
 
             {loading && (
-              <p className="flex items-center gap-2 text-[13px] text-slate-400">
+              <p className="flex items-center gap-2 text-[13px] text-at-muted">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Analisando o painel…
               </p>
             )}
           </div>
 
-          <div className="mt-6 rounded-sm border border-white/[0.1] bg-white/[0.03] p-3">
-            <label className="mb-2 block text-[11px] uppercase tracking-[0.14em] text-slate-500">
+          <div className="mt-6 rounded-sm border border-white/[0.1] bg-at-card-soft p-3">
+            <label className="mb-2 block text-[11px] uppercase tracking-[0.14em] text-at-muted">
               Mensagem
             </label>
             <textarea
@@ -165,17 +165,17 @@ export function DonoIaClient({ email }: { email: string }) {
                   void gerar();
                 }
               }}
-              className="w-full resize-y rounded-sm border border-transparent bg-transparent px-1 py-1 text-[13px] text-[#f4efe6] outline-none placeholder:text-slate-600"
+              className="w-full resize-y rounded-sm border border-transparent bg-transparent px-1 py-1 text-[13px] text-at-primary outline-none placeholder:text-at-soft"
             />
             <div className="mt-2 flex items-center justify-between gap-3">
-              <p className="text-[11px] text-slate-600">
+              <p className="text-[11px] text-at-soft">
                 Ctrl+Enter para enviar
               </p>
               <button
                 type="button"
                 disabled={loading}
                 onClick={() => void gerar()}
-                className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-4 py-2 text-[13px] text-[#e8d5b0] disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-4 py-2 text-[13px] text-at-link disabled:opacity-50"
               >
                 {loading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

@@ -4,11 +4,6 @@ import { Instrument_Serif, Outfit } from "next/font/google";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
-import { useAppTheme } from "@/components/layout/AppTheme";
-import {
-  analisePageBackground,
-  appThemeToAnaliseVisual,
-} from "@/lib/analise/analise-visual-theme";
 
 const display = Instrument_Serif({
   weight: "400",
@@ -31,26 +26,15 @@ export const champagneBtnSolid =
   "inline-flex items-center justify-center gap-2 rounded-lg bg-at-tab-active px-5 py-2.5 text-[13px] font-semibold text-[var(--at-tab-active-text)] transition hover:brightness-110 disabled:opacity-50";
 
 export function ConfigShell({ children }: { children: ReactNode }) {
-  const { theme } = useAppTheme();
-  const visualTema = appThemeToAnaliseVisual(theme);
-
   return (
     <div
-      data-analise-visual={visualTema}
       className={cn(
         display.variable,
         sans.variable,
-        "premium-desk-root relative -mx-4 -mt-2 min-h-[70vh] px-4 pb-16 sm:-mx-0 sm:px-0",
         "font-[family-name:var(--font-config-sans)]"
       )}
     >
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[420px]" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{ background: analisePageBackground(visualTema) }}
-        />
-      </div>
-      <div className="relative mx-auto max-w-4xl">{children}</div>
+      <div className="relative mx-auto max-w-4xl pt-6 sm:pt-10">{children}</div>
     </div>
   );
 }

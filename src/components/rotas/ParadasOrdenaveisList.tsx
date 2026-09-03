@@ -65,12 +65,12 @@ export function ParadasOrdenaveisList({
             <div className="flex gap-2">
               {!somenteLeitura && (
                 <div className="flex flex-col items-center gap-0.5 shrink-0 pt-1">
-                  <GripVertical className="h-4 w-4 text-slate-600" />
+                  <GripVertical className="h-4 w-4 text-at-soft" />
                   <button
                     type="button"
                     disabled={bloqueada || index === 0 || paradaConcluida(paradas[index - 1])}
                     onClick={() => onMover(index, "up")}
-                    className="rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white disabled:opacity-30"
+                    className="rounded p-1 text-at-muted hover:bg-slate-800 hover:text-white disabled:opacity-30"
                     title="Subir"
                   >
                     <ArrowUp className="h-3.5 w-3.5" />
@@ -83,7 +83,7 @@ export function ParadasOrdenaveisList({
                       paradaConcluida(paradas[index + 1])
                     }
                     onClick={() => onMover(index, "down")}
-                    className="rounded p-1 text-slate-500 hover:bg-slate-800 hover:text-white disabled:opacity-30"
+                    className="rounded p-1 text-at-muted hover:bg-slate-800 hover:text-white disabled:opacity-30"
                     title="Descer"
                   >
                     <ArrowDown className="h-3.5 w-3.5" />
@@ -106,10 +106,10 @@ export function ParadasOrdenaveisList({
                 <img
                   src={parada.fotoUrl}
                   alt=""
-                  className="h-14 w-14 shrink-0 rounded-lg object-cover border border-white/10"
+                  className="h-14 w-14 shrink-0 rounded-lg object-cover border border-at-soft"
                 />
               ) : (
-                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-slate-600">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-800 text-at-soft">
                   <MapPin className="h-5 w-5" />
                 </div>
               )}
@@ -123,19 +123,19 @@ export function ParadasOrdenaveisList({
                         "text-[10px] uppercase font-medium px-1.5 py-0.5 rounded",
                         parada.statusParada === "concluida"
                           ? "bg-green-500/20 text-green-400"
-                          : "bg-slate-500/20 text-slate-400"
+                          : "bg-slate-500/20 text-at-muted"
                       )}
                     >
                       {statusParadaLabel(parada.statusParada)}
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-500 truncate">
+                <p className="text-xs text-at-muted truncate">
                   {[parada.endereco, parada.cidade].filter(Boolean).join(" · ") ||
                     "Sem endereço — ok para checklist da rota"}
                 </p>
                 {parada.distanciaAnteriorKm != null && (
-                  <p className="text-xs text-slate-600 mt-0.5">
+                  <p className="text-xs text-at-soft mt-0.5">
                     +{parada.distanciaAnteriorKm.toFixed(1)} km da parada anterior
                   </p>
                 )}
@@ -167,7 +167,7 @@ export function ParadasOrdenaveisList({
                 </span>
               )}
               {concluida && parada.statusParada === "pulada" && (
-                <SkipForward className="h-4 w-4 text-slate-500 shrink-0 mt-2" />
+                <SkipForward className="h-4 w-4 text-at-muted shrink-0 mt-2" />
               )}
             </div>
 
@@ -184,7 +184,7 @@ export function ParadasOrdenaveisList({
                   href={nav.waze}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-400 hover:border-primary-neon/30"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-at-muted hover:border-primary-neon/30"
                 >
                   <Navigation className="h-3 w-3" />
                   Waze
@@ -193,7 +193,7 @@ export function ParadasOrdenaveisList({
                   href={nav.google}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-slate-400 hover:border-primary-neon/30"
+                  className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1 text-xs text-at-muted hover:border-primary-neon/30"
                 >
                   <Navigation className="h-3 w-3" />
                   Maps

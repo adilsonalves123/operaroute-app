@@ -72,11 +72,11 @@ export function HistoricoVisitaCassinoPublicView({
           {pendente && <AlertBadge variant="warning">Pagamento pendente</AlertBadge>}
           {quitada && <AlertBadge variant="success">Quitada</AlertBadge>}
         </div>
-        <p className="text-sm text-slate-400">
+        <p className="text-sm text-at-muted">
           {formatDateTime(raw.dataIso || snapshot.dataIso)}
         </p>
         {raw.gpsRegistrado && (
-          <p className="inline-flex items-center gap-1 text-xs text-slate-500">
+          <p className="inline-flex items-center gap-1 text-xs text-at-muted">
             <MapPin className="h-3.5 w-3.5" />
             GPS registrado
           </p>
@@ -101,7 +101,7 @@ export function HistoricoVisitaCassinoPublicView({
       <div className="space-y-3">
         <h2 className="text-sm font-semibold text-white">
           Máquinas{" "}
-          <span className="font-normal text-slate-500">({raw.maquinas.length})</span>
+          <span className="font-normal text-at-muted">({raw.maquinas.length})</span>
         </h2>
         {raw.maquinas.map((m, i) => (
           <div
@@ -112,7 +112,7 @@ export function HistoricoVisitaCassinoPublicView({
               <div>
                 <p className="font-medium text-white">{m.nome}</p>
                 {m.tipo && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-at-muted">
                     {getEquipamentoTipoLabel(m.tipo as never)}
                   </p>
                 )}
@@ -123,14 +123,14 @@ export function HistoricoVisitaCassinoPublicView({
             </div>
             <div className="grid gap-3 p-4 sm:grid-cols-2">
               <div className="space-y-1.5 rounded-xl bg-slate-900/70 p-3 text-xs">
-                <p className="font-medium text-slate-300">Entrada</p>
-                <div className="flex justify-between gap-2 text-slate-400">
+                <p className="font-medium text-at-primary/85">Entrada</p>
+                <div className="flex justify-between gap-2 text-at-muted">
                   <span>Anterior</span>
                   <span className="tabular-nums">
                     {formatContador(Number(m.entradaAnterior ?? 0))}
                   </span>
                 </div>
-                <div className="flex justify-between gap-2 text-slate-400">
+                <div className="flex justify-between gap-2 text-at-muted">
                   <span>Atual</span>
                   <span className="tabular-nums">
                     {formatContador(Number(m.entradaAtual ?? 0))}
@@ -144,14 +144,14 @@ export function HistoricoVisitaCassinoPublicView({
                 </div>
               </div>
               <div className="space-y-1.5 rounded-xl bg-slate-900/70 p-3 text-xs">
-                <p className="font-medium text-slate-300">Saída</p>
-                <div className="flex justify-between gap-2 text-slate-400">
+                <p className="font-medium text-at-primary/85">Saída</p>
+                <div className="flex justify-between gap-2 text-at-muted">
                   <span>Anterior</span>
                   <span className="tabular-nums">
                     {formatContador(Number(m.saidaAnterior ?? 0))}
                   </span>
                 </div>
-                <div className="flex justify-between gap-2 text-slate-400">
+                <div className="flex justify-between gap-2 text-at-muted">
                   <span>Atual</span>
                   <span className="tabular-nums">
                     {formatContador(Number(m.saidaAtual ?? 0))}
@@ -180,14 +180,14 @@ export function HistoricoVisitaCassinoPublicView({
 
       {raw.observacao && (
         <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-at-muted">
             Observação
           </p>
-          <p className="mt-1 text-sm text-slate-300">{raw.observacao}</p>
+          <p className="mt-1 text-sm text-at-primary/85">{raw.observacao}</p>
         </div>
       )}
 
-      <p className="pt-2 text-center text-[11px] text-slate-600">OperaRout</p>
+      <p className="pt-2 text-center text-[11px] text-at-soft">OperaRout</p>
     </div>
   );
 }

@@ -82,15 +82,15 @@ export function VisitaPontoResumoView({
       <header className="space-y-3">
         <Link
           href={`/visitas-ponto/${resumo.visitaPontoId}`}
-          className="inline-flex items-center gap-1.5 text-xs text-slate-500 hover:text-primary-neon"
+          className="inline-flex items-center gap-1.5 text-xs text-at-muted hover:text-primary-neon"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Voltar à visita
         </Link>
         <div>
-          <p className="text-xs uppercase tracking-[0.14em] text-slate-500">Cobrar visita</p>
+          <p className="text-xs uppercase tracking-[0.14em] text-at-muted">Cobrar visita</p>
           <h1 className="text-2xl font-bold text-white">{resumo.pontoNome}</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-at-muted">
             Prévia e pagamento de todos os nichos. Descontos de operação já entram no valor de cada
             coleta.
           </p>
@@ -120,11 +120,11 @@ export function VisitaPontoResumoView({
           return (
             <section
               key={nicho.nicho}
-              className="overflow-hidden rounded-xl border border-white/[0.08] bg-white/[0.02]"
+              className="overflow-hidden rounded-xl border border-at-soft bg-white/[0.02]"
             >
-              <div className="flex items-center justify-between border-b border-white/[0.06] px-4 py-3">
+              <div className="flex items-center justify-between border-b border-at px-4 py-3">
                 <div className="flex items-center gap-2">
-                  <Icon className="h-4 w-4 text-slate-400" />
+                  <Icon className="h-4 w-4 text-at-muted" />
                   <h2 className="font-semibold text-white">{nicho.label}</h2>
                 </div>
                 <div className="text-right">
@@ -134,10 +134,10 @@ export function VisitaPontoResumoView({
                 </div>
               </div>
               {nicho.maquinas.length > 0 ? (
-                <ul className="divide-y divide-white/[0.04]">
+                <ul className="divide-y divide-[var(--at-border-soft)]">
                   {nicho.maquinas.map((m) => (
                     <li key={m.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
-                      <span className="text-slate-300">
+                      <span className="text-at-primary/85">
                         {m.nome}
                         {m.numeroMaquina ? ` · #${m.numeroMaquina}` : ""}
                       </span>
@@ -153,7 +153,7 @@ export function VisitaPontoResumoView({
                   ))}
                 </ul>
               ) : (
-                <p className="px-4 py-3 text-sm text-slate-500">Sem detalhe por máquina.</p>
+                <p className="px-4 py-3 text-sm text-at-muted">Sem detalhe por máquina.</p>
               )}
               {nicho.custoBrindes > 0.009 && (
                 <p className="border-t border-white/[0.04] px-4 py-2 text-xs text-amber-400/90">
@@ -186,7 +186,7 @@ export function VisitaPontoResumoView({
       {resumo.cassinoNegativo && (
         <section className="rounded-xl border border-red-500/20 bg-red-500/[0.04] p-4">
           <p className="text-sm font-medium text-red-300">Cassino negativo — fora da cobrança</p>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className="mt-1 text-sm text-at-muted">
             Operação {formatCurrency(resumo.cassinoNegativo.valorOperacao)} · lucro{" "}
             {formatCurrency(resumo.cassinoNegativo.lucroReais)}
           </p>
@@ -200,7 +200,7 @@ export function VisitaPontoResumoView({
       )}
 
       {resumo.nichos.length === 0 && (
-        <p className="text-sm text-slate-500">Nenhuma coleta registrada nesta visita ainda.</p>
+        <p className="text-sm text-at-muted">Nenhuma coleta registrada nesta visita ainda.</p>
       )}
     </div>
   );

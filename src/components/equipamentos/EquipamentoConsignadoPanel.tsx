@@ -126,7 +126,7 @@ export function EquipamentoConsignadoPanel({
   }
 
   if (loadingCatalogo) {
-    return <p className="text-sm text-slate-500">Carregando catálogo...</p>;
+    return <p className="text-sm text-at-muted">Carregando catálogo...</p>;
   }
 
   if (produtos.length === 0) {
@@ -136,7 +136,7 @@ export function EquipamentoConsignadoPanel({
           <Store className="h-4 w-4" />
           <p className="text-sm font-medium">Nenhum produto consignado cadastrado</p>
         </div>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-at-muted">
           Cadastre os itens com código, custo, valor final e comissão do comércio.
         </p>
         <Link
@@ -154,7 +154,7 @@ export function EquipamentoConsignadoPanel({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-white">Produtos neste expositor</p>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-at-muted mt-0.5">
             Defina quantas unidades de cada produto ficam aqui — igual aos brindes da máquina de
             ursinho.
           </p>
@@ -186,7 +186,7 @@ export function EquipamentoConsignadoPanel({
                 />
               ) : (
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-800/80">
-                  <Package className="h-4 w-4 text-slate-500" />
+                  <Package className="h-4 w-4 text-at-muted" />
                 </div>
               )}
               <div className="min-w-0 flex-1">
@@ -196,7 +196,7 @@ export function EquipamentoConsignadoPanel({
                   </span>
                   {p.nome}
                 </p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-[11px] text-at-muted">
                   Custo {formatCurrency(Number(p.custo_unitario ?? 0))} · Final{" "}
                   {formatCurrency(Number(p.preco_venda ?? 0))}
                   {p.comissao_fixa != null
@@ -213,7 +213,7 @@ export function EquipamentoConsignadoPanel({
                       [p.id]: String(Math.max(0, q - 1) || ""),
                     }))
                   }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-at-primary/85 hover:bg-slate-800"
                 >
                   <Minus className="h-3.5 w-3.5" />
                 </button>
@@ -237,7 +237,7 @@ export function EquipamentoConsignadoPanel({
                       [p.id]: String(q + 1),
                     }))
                   }
-                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-at-primary/85 hover:bg-slate-800"
                 >
                   <Plus className="h-3.5 w-3.5" />
                 </button>
@@ -259,7 +259,7 @@ export function EquipamentoConsignadoPanel({
         </button>
         <Link
           href="/produtos-consignados"
-          className="text-xs text-slate-500 hover:text-cyan-400 hover:underline"
+          className="text-xs text-at-muted hover:text-cyan-400 hover:underline"
         >
           Gerenciar catálogo
         </Link>

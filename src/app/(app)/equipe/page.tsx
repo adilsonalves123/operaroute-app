@@ -1,4 +1,5 @@
 import { EquipeClient } from "@/components/equipe/EquipeClient";
+import { PremiumPageHeader } from "@/components/layout/PremiumPageHeader";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import { getLimiteUsuariosEquipe } from "@/lib/equipe/limits";
 import { isAdminConfigured } from "@/lib/supabase/admin";
@@ -10,12 +11,12 @@ export default async function EquipePage() {
 
   if (!profile?.empresa_id) {
     return (
-      <div className="space-y-6 max-w-4xl">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Equipe</h1>
-          <p className="text-slate-400 mt-1">Gerencie gerentes e operadores da operação</p>
-        </div>
-        <div className="glass-card p-8 text-center text-sm text-slate-500">
+      <div className="mx-auto max-w-5xl space-y-8 pt-6 sm:pt-10">
+        <PremiumPageHeader
+          title="Equipe"
+          subtitle="Gerencie gerentes e operadores da operação"
+        />
+        <div className="rounded-sm border border-at bg-at-card p-8 text-center text-sm text-at-muted">
           Faça login e conclua a configuração para gerenciar a equipe.
         </div>
       </div>
@@ -35,13 +36,11 @@ export default async function EquipePage() {
   const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
 
   return (
-    <div className="space-y-6 max-w-5xl">
-      <div>
-        <h1 className="text-2xl font-bold text-white">Equipe</h1>
-        <p className="text-slate-400 mt-1">
-          Adicione gerentes, operadores e visualizadores. Defina o que cada um pode ver e fazer.
-        </p>
-      </div>
+    <div className="mx-auto max-w-5xl space-y-8 pt-6 sm:pt-10">
+      <PremiumPageHeader
+        title="Equipe"
+        subtitle="Adicione gerentes, operadores e visualizadores. Defina o que cada um pode ver e fazer."
+      />
       <EquipeClient
         membros={membros ?? []}
         limiteUsuarios={limiteUsuarios}

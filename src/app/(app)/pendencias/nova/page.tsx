@@ -109,7 +109,7 @@ export default function NovaPendenciaPage() {
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/pendencias" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
+        <Link href="/pendencias" className="rounded-lg p-2 text-at-muted hover:bg-slate-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold text-white">Nova pendência</h1>

@@ -18,11 +18,11 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800/50 text-slate-500">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-800/50 text-at-muted">
         {icon ?? <Inbox className="h-8 w-8" />}
       </div>
       <h3 className="text-lg font-semibold text-white">{title}</h3>
-      <p className="mt-2 max-w-sm text-sm text-slate-400">{description}</p>
+      <p className="mt-2 max-w-sm text-sm text-at-muted">{description}</p>
       {actionLabel && actionHref && (
         <Link
           href={actionHref}

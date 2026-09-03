@@ -183,7 +183,7 @@ export function EquipamentoDetalheModal({
       >
         <div className="flex items-start justify-between gap-3 border-b border-slate-800 px-5 py-4 shrink-0">
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-wide text-slate-500">Detalhes da máquina</p>
+            <p className="text-xs uppercase tracking-wide text-at-muted">Detalhes da máquina</p>
             <h3 className="truncate text-lg font-semibold text-white">
               {getEquipamentoDisplayNome(eq)}
             </h3>
@@ -206,7 +206,7 @@ export function EquipamentoDetalheModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white"
+            className="rounded-lg p-1.5 text-at-muted hover:bg-slate-800 hover:text-white"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" />
@@ -215,7 +215,7 @@ export function EquipamentoDetalheModal({
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {loading && !dados ? (
-            <div className="flex items-center justify-center gap-2 py-10 text-slate-400">
+            <div className="flex items-center justify-center gap-2 py-10 text-at-muted">
               <Loader2 className="h-5 w-5 animate-spin" />
               Carregando histórico...
             </div>
@@ -234,7 +234,7 @@ export function EquipamentoDetalheModal({
                     className={
                       aba === item.id
                         ? "rounded-lg border border-primary-neon/40 bg-primary-neon/10 px-3 py-1.5 text-xs font-medium text-primary-neon"
-                        : "rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-400 hover:border-slate-600 hover:text-white"
+                        : "rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-at-muted hover:border-slate-600 hover:text-white"
                     }
                   >
                     {item.label}
@@ -252,7 +252,7 @@ export function EquipamentoDetalheModal({
                         className="h-56"
                       />
                     ) : (
-                      <div className="flex h-56 items-center justify-center rounded-lg border border-dashed border-slate-700 text-sm text-slate-500">
+                      <div className="flex h-56 items-center justify-center rounded-lg border border-dashed border-slate-700 text-sm text-at-muted">
                         Sem foto do equipamento
                       </div>
                     )}
@@ -261,7 +261,7 @@ export function EquipamentoDetalheModal({
                   <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-2">
                     <p className="text-sm font-medium text-white">Dados atuais</p>
                     {eq.numero_serie && (
-                      <div className="text-xs text-slate-400">
+                      <div className="text-xs text-at-muted">
                         Série: <span className="font-mono text-cyan-300">{eq.numero_serie}</span>
                       </div>
                     )}
@@ -273,7 +273,7 @@ export function EquipamentoDetalheModal({
                     {eq.tipo === "cassino" && (
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div>
-                          <p className="text-xs text-slate-500">Entrada</p>
+                          <p className="text-xs text-at-muted">Entrada</p>
                           <p className="font-semibold text-green-400">
                             {eq.numero_entrada != null
                               ? formatContador(Math.round(Number(eq.numero_entrada)))
@@ -281,7 +281,7 @@ export function EquipamentoDetalheModal({
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-slate-500">Saída</p>
+                          <p className="text-xs text-at-muted">Saída</p>
                           <p className="font-semibold text-red-400">
                             {eq.numero_saida != null
                               ? formatContador(Math.round(Number(eq.numero_saida)))
@@ -294,7 +294,7 @@ export function EquipamentoDetalheModal({
                       eq.tipo === "vending_ursinho" ||
                       isEquipamentoTipoDiversao(eq.tipo)) && (
                       <div>
-                        <p className="text-xs text-slate-500">Entrada atual</p>
+                        <p className="text-xs text-at-muted">Entrada atual</p>
                         <p className="font-semibold text-emerald-300">
                           {eq.entrada_atual != null
                             ? formatContador(Math.round(Number(eq.entrada_atual)))
@@ -304,7 +304,7 @@ export function EquipamentoDetalheModal({
                     )}
                     {eq.tipo === "bolinha" && (
                       <div>
-                        <p className="text-xs text-slate-500">Valor da jogada</p>
+                        <p className="text-xs text-at-muted">Valor da jogada</p>
                         <p className="font-semibold text-emerald-300">
                           {eq.preco_jogada != null && Number(eq.preco_jogada) > 0
                             ? formatCurrency(Number(eq.preco_jogada))
@@ -336,14 +336,14 @@ export function EquipamentoDetalheModal({
 
                         {ultimaLeitura ? (
                           <>
-                            <p className="text-xs text-slate-400">
+                            <p className="text-xs text-at-muted">
                               {ultimaLeitura.created_at
                                 ? formatDateTime(ultimaLeitura.created_at)
                                 : "Sem data"}
                             </p>
                             <div className="grid gap-3 sm:grid-cols-2">
                               <div className="rounded-lg bg-slate-950/50 px-3 py-2">
-                                <p className="text-xs text-slate-500">Entrada atual</p>
+                                <p className="text-xs text-at-muted">Entrada atual</p>
                                 <p className="font-semibold text-green-400">
                                   {ultimaLeitura.entrada_atual != null
                                     ? formatContador(Math.round(Number(ultimaLeitura.entrada_atual)))
@@ -351,7 +351,7 @@ export function EquipamentoDetalheModal({
                                 </p>
                               </div>
                               <div className="rounded-lg bg-slate-950/50 px-3 py-2">
-                                <p className="text-xs text-slate-500">Saída atual</p>
+                                <p className="text-xs text-at-muted">Saída atual</p>
                                 <p className="font-semibold text-red-400">
                                   {ultimaLeitura.saida_atual != null
                                     ? formatContador(Math.round(Number(ultimaLeitura.saida_atual)))
@@ -360,7 +360,7 @@ export function EquipamentoDetalheModal({
                               </div>
                             </div>
                             {ultimaLeitura.lucro_centavos != null && (
-                              <p className="text-sm text-slate-300">
+                              <p className="text-sm text-at-primary/85">
                                 Lucro da leitura:{" "}
                                 <span className="font-semibold text-white">
                                   {formatCurrency(centesimosToReais(ultimaLeitura.lucro_centavos))}
@@ -369,7 +369,7 @@ export function EquipamentoDetalheModal({
                             )}
                           </>
                         ) : (
-                          <p className="text-sm text-slate-400">
+                          <p className="text-sm text-at-muted">
                             Nenhuma leitura individual encontrada para este equipamento.
                           </p>
                         )}
@@ -387,17 +387,17 @@ export function EquipamentoDetalheModal({
                               <AlertBadge variant={statusVariant[ultimaManutencao.status]}>
                                 {ultimaManutencao.status}
                               </AlertBadge>
-                              <span className="text-xs text-slate-400">
+                              <span className="text-xs text-at-muted">
                                 {formatDateTime(ultimaManutencao.created_at)}
                               </span>
                             </div>
                             <p className="font-medium text-white">{ultimaManutencao.titulo}</p>
                             {ultimaManutencao.descricao && (
-                              <p className="text-sm text-slate-300">{ultimaManutencao.descricao}</p>
+                              <p className="text-sm text-at-primary/85">{ultimaManutencao.descricao}</p>
                             )}
                           </>
                         ) : (
-                          <p className="text-sm text-slate-400">
+                          <p className="text-sm text-at-muted">
                             Nenhum chamado registrado para este equipamento.
                           </p>
                         )}
@@ -456,7 +456,7 @@ export function EquipamentoDetalheModal({
                         <>
                           <div className="grid gap-3 sm:grid-cols-2">
                             <div className="rounded-lg bg-slate-950/50 px-3 py-2">
-                              <p className="text-xs text-slate-500">Entrada atual</p>
+                              <p className="text-xs text-at-muted">Entrada atual</p>
                               <p className="font-semibold text-green-400">
                                 {ultimaLeitura.entrada_atual != null
                                   ? formatContador(Math.round(Number(ultimaLeitura.entrada_atual)))
@@ -464,7 +464,7 @@ export function EquipamentoDetalheModal({
                               </p>
                             </div>
                             <div className="rounded-lg bg-slate-950/50 px-3 py-2">
-                              <p className="text-xs text-slate-500">Saída atual</p>
+                              <p className="text-xs text-at-muted">Saída atual</p>
                               <p className="font-semibold text-red-400">
                                 {ultimaLeitura.saida_atual != null
                                   ? formatContador(Math.round(Number(ultimaLeitura.saida_atual)))
@@ -472,16 +472,16 @@ export function EquipamentoDetalheModal({
                               </p>
                             </div>
                             <div className="rounded-lg bg-slate-950/50 px-3 py-2">
-                              <p className="text-xs text-slate-500">Entrada período</p>
-                              <p className="font-semibold text-slate-200">
+                              <p className="text-xs text-at-muted">Entrada período</p>
+                              <p className="font-semibold text-at-primary/90">
                                 {ultimaLeitura.entrada_periodo != null
                                   ? formatContador(Math.round(Number(ultimaLeitura.entrada_periodo)))
                                   : "—"}
                               </p>
                             </div>
                             <div className="rounded-lg bg-slate-950/50 px-3 py-2">
-                              <p className="text-xs text-slate-500">Saída período</p>
-                              <p className="font-semibold text-slate-200">
+                              <p className="text-xs text-at-muted">Saída período</p>
+                              <p className="font-semibold text-at-primary/90">
                                 {ultimaLeitura.saida_periodo != null
                                   ? formatContador(Math.round(Number(ultimaLeitura.saida_periodo)))
                                   : "—"}
@@ -498,7 +498,7 @@ export function EquipamentoDetalheModal({
                           )}
                         </>
                       ) : (
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-at-muted">
                           Nenhuma leitura individual encontrada para este equipamento.
                         </p>
                       )}
@@ -511,11 +511,11 @@ export function EquipamentoDetalheModal({
                               className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2"
                             >
                               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                                <span className="text-slate-400">
+                                <span className="text-at-muted">
                                   {formatDateTime(item.created_at)}
                                 </span>
                                 {item.ponto_nome && (
-                                  <span className="text-slate-500">{item.ponto_nome}</span>
+                                  <span className="text-at-muted">{item.ponto_nome}</span>
                                 )}
                               </div>
                               <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm">
@@ -552,18 +552,18 @@ export function EquipamentoDetalheModal({
                             <AlertBadge variant={statusVariant[ultimaManutencao.status]}>
                               {ultimaManutencao.status}
                             </AlertBadge>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-at-muted">
                               {formatDateTime(ultimaManutencao.created_at)}
                             </span>
                           </div>
                           <p className="font-medium text-white">{ultimaManutencao.titulo}</p>
                           {ultimaManutencao.descricao && (
-                            <p className="text-sm text-slate-300">{ultimaManutencao.descricao}</p>
+                            <p className="text-sm text-at-primary/85">{ultimaManutencao.descricao}</p>
                           )}
                           {ultimaManutencao.observacao_resolucao && (
                             <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2">
-                              <p className="text-xs text-slate-500">Resolução</p>
-                              <p className="text-sm text-slate-300">
+                              <p className="text-xs text-at-muted">Resolução</p>
+                              <p className="text-sm text-at-primary/85">
                                 {ultimaManutencao.observacao_resolucao}
                               </p>
                             </div>
@@ -576,7 +576,7 @@ export function EquipamentoDetalheModal({
                           </Link>
                         </>
                       ) : (
-                        <p className="text-sm text-slate-400">
+                        <p className="text-sm text-at-muted">
                           Nenhum chamado registrado para este equipamento.
                         </p>
                       )}

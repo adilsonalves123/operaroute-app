@@ -145,7 +145,7 @@ export function EstoqueAlocadosClient({
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition",
               tab === t.id
                 ? "border border-cyan-500/30 bg-cyan-500/15 text-cyan-300"
-                : "border border-slate-700 text-slate-400 hover:text-white"
+                : "border border-slate-700 text-at-muted hover:text-white"
             )}
           >
             {t.icon}
@@ -157,18 +157,18 @@ export function EstoqueAlocadosClient({
       {tab === "fura_fura" && (
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="glass-card p-4">
-            <p className="text-xs text-slate-500">Pontos com kit ativo</p>
+            <p className="text-xs text-at-muted">Pontos com kit ativo</p>
             <p className="text-2xl font-bold text-white tabular-nums">{furaStats.comKit}</p>
           </div>
           <div className="glass-card border-amber-500/20 p-4">
-            <p className="text-xs text-slate-500">Potencial de troca (≤40%)</p>
+            <p className="text-xs text-at-muted">Potencial de troca (≤40%)</p>
             <p className="text-2xl font-bold text-amber-400 tabular-nums">
               {furaStats.potencial}
             </p>
           </div>
           <div className="glass-card p-4">
-            <p className="text-xs text-slate-500">Pontos ativos listados</p>
-            <p className="text-2xl font-bold text-slate-200 tabular-nums">
+            <p className="text-xs text-at-muted">Pontos ativos listados</p>
+            <p className="text-2xl font-bold text-at-primary/90 tabular-nums">
               {furaStats.total}
             </p>
           </div>
@@ -177,7 +177,7 @@ export function EstoqueAlocadosClient({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg border border-slate-600 bg-slate-900/90 px-3 py-2.5">
-          <Search className="h-4 w-4 shrink-0 text-slate-400" />
+          <Search className="h-4 w-4 shrink-0 text-at-muted" />
           <input
             type="search"
             value={busca}
@@ -187,7 +187,7 @@ export function EstoqueAlocadosClient({
                 ? "Buscar ponto, kit, cidade..."
                 : "Buscar ponto, máquina ou item..."
             }
-            className="min-w-0 flex-1 !border-0 !bg-transparent !p-0 text-sm text-white placeholder:text-slate-400 focus:!shadow-none"
+            className="min-w-0 flex-1 !border-0 !bg-transparent !p-0 text-sm text-white placeholder:text-at-muted focus:!shadow-none"
           />
         </div>
         {tab === "fura_fura" && (
@@ -198,7 +198,7 @@ export function EstoqueAlocadosClient({
               "inline-flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium",
               soTroca
                 ? "border border-amber-500/40 bg-amber-500/15 text-amber-200"
-                : "border border-slate-700 text-slate-400 hover:text-white"
+                : "border border-slate-700 text-at-muted hover:text-white"
             )}
           >
             <AlertTriangle className="h-3.5 w-3.5" />
@@ -253,14 +253,14 @@ export function EstoqueAlocadosClient({
                         )}
                       </div>
                       {local && (
-                        <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500">
+                        <p className="mt-0.5 flex items-center gap-1 text-xs text-at-muted">
                           <MapPin className="h-3 w-3" />
                           {local}
                         </p>
                       )}
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-slate-500">Kit restante</p>
+                      <p className="text-xs text-at-muted">Kit restante</p>
                       <p
                         className={cn(
                           "text-xl font-bold tabular-nums",
@@ -277,19 +277,19 @@ export function EstoqueAlocadosClient({
                   </div>
 
                   {!p.kit_ativo_id ? (
-                    <p className="text-sm text-slate-500">Sem kit ativo neste ponto.</p>
+                    <p className="text-sm text-at-muted">Sem kit ativo neste ponto.</p>
                   ) : (
                     <>
-                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
+                      <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-at-muted">
                         <span>
                           Kit:{" "}
-                          <span className="font-medium text-slate-200">
+                          <span className="font-medium text-at-primary/90">
                             {p.kit_nome ?? "—"}
                           </span>
                         </span>
                         <span>
                           Unidades:{" "}
-                          <span className="tabular-nums text-slate-200">
+                          <span className="tabular-nums text-at-primary/90">
                             {p.resumo.totalAtual}/{p.resumo.totalOriginal}
                           </span>
                         </span>
@@ -299,7 +299,7 @@ export function EstoqueAlocadosClient({
                             <span
                               className={cn(
                                 "tabular-nums",
-                                furosBaixo ? "text-rose-300" : "text-slate-200"
+                                furosBaixo ? "text-rose-300" : "text-at-primary/90"
                               )}
                             >
                               {p.furos_estoque}
@@ -331,13 +331,13 @@ export function EstoqueAlocadosClient({
                               key={`${p.id}-${i.nome}`}
                               className="flex items-center justify-between gap-2 rounded-md border border-slate-800 bg-slate-950/40 px-2.5 py-1.5 text-xs"
                             >
-                              <span className="truncate text-slate-300">{i.nome}</span>
+                              <span className="truncate text-at-primary/85">{i.nome}</span>
                               <span
                                 className={cn(
                                   "shrink-0 tabular-nums",
                                   i.original > 0 && i.atual / i.original <= 0.3
                                     ? "text-amber-300"
-                                    : "text-slate-400"
+                                    : "text-at-muted"
                                 )}
                               >
                                 {i.atual}
@@ -371,20 +371,20 @@ export function EstoqueAlocadosClient({
                   >
                     {m.ponto_nome}
                   </Link>
-                  <p className="mt-0.5 text-sm text-slate-400">
+                  <p className="mt-0.5 text-sm text-at-muted">
                     {m.numero_maquina ? `Nº ${m.numero_maquina} · ` : ""}
                     {m.nome}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-slate-500">No equipamento</p>
+                  <p className="text-xs text-at-muted">No equipamento</p>
                   <p className="text-xl font-bold tabular-nums text-cyan-300">
-                    {m.total} <span className="text-sm font-normal text-slate-500">un.</span>
+                    {m.total} <span className="text-sm font-normal text-at-muted">un.</span>
                   </p>
                 </div>
               </div>
               {m.itens.length === 0 ? (
-                <p className="text-xs text-slate-500">Sem itens alocados.</p>
+                <p className="text-xs text-at-muted">Sem itens alocados.</p>
               ) : (
                 <div className="grid gap-1.5 sm:grid-cols-2">
                   {m.itens.map((i) => (
@@ -392,8 +392,8 @@ export function EstoqueAlocadosClient({
                       key={`${m.id}-${i.item_id ?? i.nome}`}
                       className="flex items-center justify-between gap-2 rounded-md border border-slate-800 bg-slate-950/40 px-2.5 py-1.5 text-xs"
                     >
-                      <span className="truncate text-slate-300">{i.nome}</span>
-                      <span className="shrink-0 tabular-nums text-slate-400">
+                      <span className="truncate text-at-primary/85">{i.nome}</span>
+                      <span className="shrink-0 tabular-nums text-at-muted">
                         {i.quantidade}
                         {i.custo_unitario != null && Number(i.custo_unitario) > 0
                           ? ` · ${formatCurrency(Number(i.custo_unitario))}`

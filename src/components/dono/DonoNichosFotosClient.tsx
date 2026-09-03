@@ -158,7 +158,7 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
 
   const card = light
     ? "rounded-2xl border border-stone-200 bg-white overflow-hidden"
-    : "rounded-2xl border border-white/[0.07] bg-white/[0.02] overflow-hidden";
+    : "rounded-2xl border border-at bg-white/[0.02] overflow-hidden";
 
   return (
     <DonoShell
@@ -167,11 +167,11 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
       subtitle="Edite nome, descrição e foto. Pause para esconder o card no app dos clientes."
     >
       <div className="space-y-4">
-        <p className="text-[12px] text-slate-500">
+        <p className="text-[12px] text-at-muted">
           Pausado = some do carrossel e da escolha de nichos no app. Quem já tem o
           nicho contratado continua vendo. JPEG/PNG/WebP/GIF · até 5 MB.
         </p>
-        <p className="text-[12px] text-slate-500">
+        <p className="text-[12px] text-at-muted">
           SQL:{" "}
           <code className="text-[11px]">supabase/plataforma-nichos-covers.sql</code>
         </p>
@@ -188,7 +188,7 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
         )}
 
         {loading ? (
-          <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+          <Loader2 className="h-5 w-5 animate-spin text-at-muted" />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {itens.map((item) => {
@@ -226,7 +226,7 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
                         </span>
                       )}
                       {item.customCover && (
-                        <span className="rounded-md bg-black/60 px-2 py-0.5 text-[10px] uppercase tracking-wider text-[#e8d5b0]">
+                        <span className="rounded-md bg-black/60 px-2 py-0.5 text-[10px] uppercase tracking-wider text-at-link">
                           Foto custom
                         </span>
                       )}
@@ -234,7 +234,7 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
                   </div>
                   <div className="space-y-3 p-3">
                     <div className="space-y-2">
-                      <label className="block text-[10px] uppercase tracking-wider text-slate-500">
+                      <label className="block text-[10px] uppercase tracking-wider text-at-muted">
                         Nome
                       </label>
                       <input
@@ -249,10 +249,10 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
                           "w-full rounded-lg border px-3 py-2 text-[13px] outline-none",
                           light
                             ? "border-stone-200 bg-stone-50 text-slate-900"
-                            : "border-white/10 bg-white/[0.03] text-[#f4efe6]"
+                            : "border-at-soft bg-at-card-soft text-at-primary"
                         )}
                       />
-                      <label className="block text-[10px] uppercase tracking-wider text-slate-500">
+                      <label className="block text-[10px] uppercase tracking-wider text-at-muted">
                         Descrição
                       </label>
                       <textarea
@@ -267,8 +267,8 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
                         className={cn(
                           "w-full resize-y rounded-lg border px-3 py-2 text-[12px] outline-none",
                           light
-                            ? "border-stone-200 bg-stone-50 text-slate-700"
-                            : "border-white/10 bg-white/[0.03] text-slate-300"
+                            ? "border-stone-200 bg-stone-50 text-at-soft"
+                            : "border-at-soft bg-at-card-soft text-at-primary/85"
                         )}
                       />
                     </div>
@@ -295,7 +295,7 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
                           "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] disabled:opacity-50",
                           light
                             ? "border-stone-200 hover:bg-stone-50"
-                            : "border-[#c4a574]/35 bg-[#c4a574]/10 text-[#e8d5b0]"
+                            : "border-[#c4a574]/35 bg-[#c4a574]/10 text-at-link"
                         )}
                       >
                         {busy === item.id ? (
@@ -313,7 +313,7 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
                           "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] disabled:opacity-50",
                           light
                             ? "border-stone-200 hover:bg-stone-50"
-                            : "border-white/10 text-slate-300"
+                            : "border-at-soft text-at-primary/85"
                         )}
                       >
                         <ImagePlus className="h-3.5 w-3.5" />
@@ -349,8 +349,8 @@ export function DonoNichosFotosClient({ email }: { email: string }) {
                           className={cn(
                             "inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-[12px] disabled:opacity-50",
                             light
-                              ? "border-stone-200 text-slate-600"
-                              : "border-white/10 text-slate-400"
+                              ? "border-stone-200 text-at-soft"
+                              : "border-at-soft text-at-muted"
                           )}
                         >
                           <RotateCcw className="h-3.5 w-3.5" />

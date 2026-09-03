@@ -111,12 +111,12 @@ export function PontoHero({
       <div className="space-y-4">
         <Link
           href="/pontos"
-          className="inline-flex items-center gap-2 text-[13px] text-slate-400 hover:text-white"
+          className="inline-flex items-center gap-2 text-[13px] text-at-muted hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
           Pontos
         </Link>
-        <div className="rounded-2xl border border-white/10 bg-slate-950/60 p-4 space-y-4">
+        <div className="rounded-2xl border border-at-soft bg-slate-950/60 p-4 space-y-4">
           <p className="text-sm font-medium text-white">Foto — {nome}</p>
           <FotoPontoField preview={preview} onChange={handleFile} size="md" />
           {error && <p className="text-sm text-red-400">{error}</p>}
@@ -145,7 +145,7 @@ export function PontoHero({
                 setPreview(null);
                 setError("");
               }}
-              className="rounded-full border border-white/15 px-5 py-2 text-sm text-slate-400"
+              className="rounded-full border border-at-soft px-5 py-2 text-sm text-at-muted"
             >
               Cancelar
             </button>
@@ -160,7 +160,7 @@ export function PontoHero({
       <div className="flex items-center justify-between gap-3">
         <Link
           href="/pontos"
-          className="inline-flex items-center gap-2 text-[13px] text-slate-400 hover:text-white"
+          className="inline-flex items-center gap-2 text-[13px] text-at-muted hover:text-white"
         >
           <ArrowLeft className="h-4 w-4" />
           Pontos
@@ -171,14 +171,14 @@ export function PontoHero({
             setPreview(fotoUrl);
             setEditando(true);
           }}
-          className="inline-flex items-center gap-1.5 text-[12px] text-slate-500 hover:text-slate-300"
+          className="inline-flex items-center gap-1.5 text-[12px] text-at-muted hover:text-at-primary/85"
         >
           <Camera className="h-3.5 w-3.5" />
           {fotoUrl ? "Trocar foto" : "Adicionar foto"}
         </button>
       </div>
 
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-white/[0.08]">
+      <section className="relative overflow-hidden rounded-[1.75rem] border border-at-soft">
         <div className="relative aspect-[16/10] min-h-[220px] w-full bg-slate-950 sm:aspect-[2/1] sm:min-h-[280px]">
           {fotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -200,7 +200,7 @@ export function PontoHero({
                     ? "bg-emerald-400/15 text-emerald-200"
                     : status === "inadimplente"
                       ? "bg-rose-400/15 text-rose-200"
-                      : "bg-white/10 text-slate-300"
+                      : "bg-white/10 text-at-primary/85"
                 )}
               >
                 {STATUS_LABEL[status] ?? status}
@@ -215,7 +215,7 @@ export function PontoHero({
               {nome}
             </h1>
             {local && (
-              <p className="max-w-lg text-[13px] leading-relaxed text-slate-300/90">
+              <p className="max-w-lg text-[13px] leading-relaxed text-at-primary/85/90">
                 {local}
               </p>
             )}
@@ -233,10 +233,10 @@ export function PontoHero({
         />
       )}
 
-      <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-white/[0.06] pb-4 text-[13px]">
+      <nav className="flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-at pb-4 text-[13px]">
         <Link
           href={`/pontos/${pontoId}/editar`}
-          className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white"
+          className="inline-flex items-center gap-1.5 text-at-muted hover:text-white"
         >
           <Pencil className="h-3.5 w-3.5" />
           Editar
@@ -246,7 +246,7 @@ export function PontoHero({
             href={`https://wa.me/55${whatsapp.replace(/\D/g, "")}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white"
+            className="inline-flex items-center gap-1.5 text-at-muted hover:text-white"
           >
             <MessageCircle className="h-3.5 w-3.5" />
             WhatsApp
@@ -264,7 +264,7 @@ export function PontoHero({
         )}
         <Link
           href="/pendencias"
-          className="text-slate-400 hover:text-white"
+          className="text-at-muted hover:text-white"
         >
           Pendências
           {pendenciasCount > 0 ? ` (${pendenciasCount})` : ""}
@@ -272,7 +272,7 @@ export function PontoHero({
         {chamadosCount > 0 && (
           <Link
             href="/chamados"
-            className="inline-flex items-center gap-1.5 text-slate-400 hover:text-white"
+            className="inline-flex items-center gap-1.5 text-at-muted hover:text-white"
           >
             <Wrench className="h-3.5 w-3.5" />
             Manutenção ({chamadosCount})

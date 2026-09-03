@@ -300,10 +300,10 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
             {enderecoLoading ? "Buscando endereço…" : "2. Preencher endereço"}
           </button>
         </div>
-        <p className="text-center text-[11px] leading-relaxed text-slate-500">
+        <p className="text-center text-[11px] leading-relaxed text-at-muted">
           Separe as funções: o GPS grava a posição do ponto; o endereço usa essa
           posição para rua, bairro, cidade e CEP.{" "}
-          <span className="text-slate-400">
+          <span className="text-at-muted">
             O número do imóvel digite sempre na fachada
           </span>
           {ultimaPrecisaoM != null ? (
@@ -342,7 +342,7 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
           type="button"
           onClick={() => void handleBuscaClick()}
           disabled={buscaLoading}
-          className="shrink-0 rounded-lg border border-white/15 px-4 py-2.5 text-[12px] font-medium text-slate-200 transition hover:bg-white/[0.04] disabled:opacity-50 sm:mb-0.5"
+          className="shrink-0 rounded-lg border border-at-soft px-4 py-2.5 text-[12px] font-medium text-at-primary/90 transition hover:bg-at-card-soft disabled:opacity-50 sm:mb-0.5"
         >
           {buscaLoading ? "Buscando…" : "Preencher"}
         </button>

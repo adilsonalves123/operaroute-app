@@ -72,7 +72,7 @@ function roleBadgeClass(role: UserRole) {
     case "operador":
       return "bg-amber-500/20 text-amber-300 border-amber-500/30";
     default:
-      return "bg-slate-500/20 text-slate-300 border-slate-500/30";
+      return "bg-slate-500/20 text-at-primary/85 border-slate-500/30";
   }
 }
 
@@ -465,13 +465,13 @@ export function EquipeClient({
       )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-at-muted">
           <Users className="h-4 w-4 text-primary-neon shrink-0" />
           <span>
             {colaboradoresAtivos} de {limiteColaboradores} colaboradores
           </span>
-          <span className="text-slate-600 hidden sm:inline">·</span>
-          <span className="text-xs text-slate-500">Admin não conta no limite</span>
+          <span className="text-at-soft hidden sm:inline">·</span>
+          <span className="text-xs text-at-muted">Admin não conta no limite</span>
           {!podeAdicionar && (
             <Link href="/planos" className="text-primary-neon hover:underline text-xs">
               Upgrade
@@ -568,7 +568,7 @@ export function EquipeClient({
             <button
               type="button"
               onClick={closeLoginModal}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300"
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85"
             >
               Cancelar
             </button>
@@ -665,8 +665,8 @@ export function EquipeClient({
           )}
 
           {!editingId && loginDisponivel && !editingAdmin && (
-            <div className="rounded-lg border border-white/10 bg-slate-900/50 p-4 space-y-3">
-              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
+            <div className="rounded-lg border border-at-soft bg-slate-900/50 p-4 space-y-3">
+              <label className="flex items-center gap-2 text-sm text-at-primary/85 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.criar_login}
@@ -749,7 +749,7 @@ export function EquipeClient({
             <button
               type="button"
               onClick={closeForm}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800"
             >
               Cancelar
             </button>
@@ -790,7 +790,7 @@ export function EquipeClient({
                     <button
                       type="button"
                       onClick={() => openEdit(membro)}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+                      className="rounded-lg p-2 text-at-muted hover:bg-slate-800 hover:text-white"
                       title="Editar"
                     >
                       <Pencil className="h-4 w-4" />
@@ -798,7 +798,7 @@ export function EquipeClient({
                     <button
                       type="button"
                       onClick={() => handleDelete(membro)}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-red-500/10 hover:text-red-400"
+                      className="rounded-lg p-2 text-at-muted hover:bg-red-500/10 hover:text-red-400"
                       title="Remover"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -808,7 +808,7 @@ export function EquipeClient({
                   <button
                     type="button"
                     onClick={() => openEdit(membro)}
-                    className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white shrink-0"
+                    className="rounded-lg p-2 text-at-muted hover:bg-slate-800 hover:text-white shrink-0"
                     title="Editar contato"
                   >
                     <Pencil className="h-4 w-4" />
@@ -816,7 +816,7 @@ export function EquipeClient({
                 ) : null}
               </div>
 
-              <div className="space-y-1.5 text-sm text-slate-400">
+              <div className="space-y-1.5 text-sm text-at-muted">
                 {membro.whatsapp && (
                   <p className="flex items-center gap-2 truncate">
                     <MessageCircle className="h-3.5 w-3.5 shrink-0 text-green-400" />
@@ -825,17 +825,17 @@ export function EquipeClient({
                 )}
                 {membro.email && (
                   <p className="flex items-center gap-2 truncate">
-                    <Mail className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+                    <Mail className="h-3.5 w-3.5 shrink-0 text-at-muted" />
                     {membro.email}
                   </p>
                 )}
                 {membro.comissao_percentual > 0 && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-at-muted">
                     Comissão: {membro.comissao_percentual}% após brindes
                   </p>
                 )}
                 {membro.status === "inativo" && (
-                  <p className="text-xs text-slate-500">Inativo</p>
+                  <p className="text-xs text-at-muted">Inativo</p>
                 )}
                 {membro.user_id ? (
                   <p className="text-xs text-green-400/90 flex items-center gap-1">
@@ -863,7 +863,7 @@ export function EquipeClient({
                     <button
                       type="button"
                       onClick={() => handleRedefinirSenha(membro)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-400 hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-at-muted hover:text-white"
                     >
                       <KeyRound className="h-3.5 w-3.5" />
                       Nova senha

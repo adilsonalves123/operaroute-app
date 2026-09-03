@@ -558,7 +558,7 @@ export function FuraKitsClient({
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href="/estoque"
-          className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-primary-neon"
+          className="inline-flex items-center gap-1 text-sm text-at-muted hover:text-primary-neon"
         >
           <ArrowLeft className="h-4 w-4" />
           Estoque central
@@ -573,9 +573,9 @@ export function FuraKitsClient({
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-white sm:text-4xl">
             Kits
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            Monte a receita de <span className="text-slate-200">um</span> kit (ex.: 5 facas). Depois
-            escolha <span className="text-slate-200">quantos kits</span> montar de uma vez — o
+          <p className="mt-2 text-sm leading-relaxed text-at-muted">
+            Monte a receita de <span className="text-at-primary/90">um</span> kit (ex.: 5 facas). Depois
+            escolha <span className="text-at-primary/90">quantos kits</span> montar de uma vez — o
             estoque sai multiplicado.
           </p>
         </div>
@@ -596,12 +596,12 @@ export function FuraKitsClient({
           id="kit-edit-form"
           className="overflow-hidden rounded-3xl border border-amber-500/15 bg-slate-950/60 shadow-[0_20px_60px_rgba(0,0,0,0.35)]"
         >
-          <div className="flex items-center justify-between border-b border-white/[0.06] px-5 py-4 sm:px-6">
+          <div className="flex items-center justify-between border-b border-at px-5 py-4 sm:px-6">
             <div>
               <h2 className="text-lg font-semibold text-white">
                 {editingId ? "Editar receita" : "Montar kits"}
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-at-muted">
                 {editingId
                   ? "Passo 1: o que entra em cada kit. Passo 2: monte mais kits no depósito (opcional)."
                   : "Passo 1: o que entra em cada kit. Passo 2: quantos kits iguais montar."}
@@ -610,7 +610,7 @@ export function FuraKitsClient({
             <button
               type="button"
               onClick={resetForm}
-              className="rounded-full p-2 text-slate-500 hover:bg-white/5 hover:text-white"
+              className="rounded-full p-2 text-at-muted hover:bg-white/5 hover:text-white"
               aria-label="Fechar"
             >
               <X className="h-5 w-5" />
@@ -643,7 +643,7 @@ export function FuraKitsClient({
                     Passo 1 · Receita de 1 kit
                   </p>
                   <h3 className="text-sm font-semibold text-white">O que entra em cada kit</h3>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-at-muted">
                     {totalNoKit > 0
                       ? `${totalNoKit} peça${totalNoKit === 1 ? "" : "s"} por kit (não é a quantidade de kits)`
                       : "Toque nas fotos abaixo para montar a receita"}
@@ -652,7 +652,7 @@ export function FuraKitsClient({
               </div>
 
               {reposicao.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-10 text-center text-sm text-slate-500">
+                <div className="rounded-2xl border border-dashed border-slate-700 px-4 py-10 text-center text-sm text-at-muted">
                   Toque nas fotos do estoque para montar a receita.
                 </div>
               ) : (
@@ -674,7 +674,7 @@ export function FuraKitsClient({
                               size={200}
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-slate-950 text-slate-600">
+                            <div className="flex h-full w-full items-center justify-center bg-slate-950 text-at-soft">
                               <Package className="h-8 w-8" />
                             </div>
                           )}
@@ -691,8 +691,8 @@ export function FuraKitsClient({
                           </button>
                         </div>
                         <div className="p-2.5">
-                          <p className="line-clamp-2 text-xs font-medium text-slate-200">{r.nome}</p>
-                          <p className="text-[10px] text-slate-500">
+                          <p className="line-clamp-2 text-xs font-medium text-at-primary/90">{r.nome}</p>
+                          <p className="text-[10px] text-at-muted">
                             {formatCurrency(parseFloat(r.custo_unitario) || 0)} / un.
                           </p>
                         </div>
@@ -706,11 +706,11 @@ export function FuraKitsClient({
             <div className="space-y-6">
             <div>
               <h3 className="mb-1 text-sm font-semibold text-white">Adicionar do estoque</h3>
-              <p className="mb-3 text-xs text-slate-500">
+              <p className="mb-3 text-xs text-at-muted">
                 Busque e toque na miniatura. Se já estiver no kit, soma +1.
               </p>
               {estoque.length === 0 ? (
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-at-muted">
                   Cadastre itens no estoque primeiro.{" "}
                   <Link href="/estoque" className="text-primary-neon hover:underline">
                     Ir ao estoque
@@ -719,19 +719,19 @@ export function FuraKitsClient({
               ) : (
                 <div className="space-y-3">
                   <div className="relative">
-                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-at-muted" />
                     <input
                       type="search"
                       value={buscaEstoque}
                       onChange={(e) => setBuscaEstoque(e.target.value)}
                       placeholder="Buscar pelo nome…"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-900 py-2.5 pl-10 pr-9 text-sm text-white placeholder:text-slate-500 outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-900 py-2.5 pl-10 pr-9 text-sm text-white placeholder:text-at-muted outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/30"
                     />
                     {buscaEstoque ? (
                       <button
                         type="button"
                         onClick={() => setBuscaEstoque("")}
-                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-500 hover:bg-white/5 hover:text-white"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full p-1 text-at-muted hover:bg-white/5 hover:text-white"
                         aria-label="Limpar busca"
                       >
                         <X className="h-3.5 w-3.5" />
@@ -740,13 +740,13 @@ export function FuraKitsClient({
                   </div>
 
                   {estoque.length > 20 ? (
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[11px] text-at-muted">
                       {estoque.length} itens no estoque — use a busca para achar rápido.
                     </p>
                   ) : null}
 
                   {estoqueFiltrado.length === 0 ? (
-                    <p className="rounded-xl border border-dashed border-slate-700 px-3 py-5 text-center text-sm text-slate-500">
+                    <p className="rounded-xl border border-dashed border-slate-700 px-3 py-5 text-center text-sm text-at-muted">
                       Nenhum item com “{buscaEstoque.trim()}”.
                     </p>
                   ) : (
@@ -764,7 +764,7 @@ export function FuraKitsClient({
                                 "flex flex-col items-center gap-1.5 rounded-xl border p-2 text-center transition",
                                 noKit
                                   ? "border-cyan-400/40 bg-cyan-500/10 ring-1 ring-cyan-400/20"
-                                  : "border-white/[0.06] bg-slate-900/40 hover:border-cyan-400/30 hover:bg-slate-900/70"
+                                  : "border-at bg-slate-900/40 hover:border-cyan-400/30 hover:bg-slate-900/70"
                               )}
                             >
                               <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-slate-950">
@@ -776,7 +776,7 @@ export function FuraKitsClient({
                                     size={128}
                                   />
                                 ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-slate-600">
+                                  <div className="flex h-full w-full items-center justify-center text-at-soft">
                                     <Package className="h-5 w-5" />
                                   </div>
                                 )}
@@ -789,7 +789,7 @@ export function FuraKitsClient({
                                   </span>
                                 ) : null}
                               </div>
-                              <p className="line-clamp-2 w-full text-[10px] font-medium leading-tight text-slate-300">
+                              <p className="line-clamp-2 w-full text-[10px] font-medium leading-tight text-at-primary/85">
                                 {e.nome_item}
                               </p>
                             </button>
@@ -810,7 +810,7 @@ export function FuraKitsClient({
                                 "flex w-16 shrink-0 flex-col items-center gap-1 rounded-xl border p-1 text-center transition",
                                 noKit
                                   ? "border-cyan-400/40 bg-cyan-500/10 ring-1 ring-cyan-400/20"
-                                  : "border-white/[0.06] bg-slate-900/40 hover:border-cyan-400/30 hover:bg-slate-900/70"
+                                  : "border-at bg-slate-900/40 hover:border-cyan-400/30 hover:bg-slate-900/70"
                               )}
                             >
                               <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-slate-950">
@@ -822,7 +822,7 @@ export function FuraKitsClient({
                                     size={96}
                                   />
                                 ) : (
-                                  <div className="flex h-full w-full items-center justify-center text-slate-600">
+                                  <div className="flex h-full w-full items-center justify-center text-at-soft">
                                     <Package className="h-4 w-4" />
                                   </div>
                                 )}
@@ -835,7 +835,7 @@ export function FuraKitsClient({
                                   </span>
                                 ) : null}
                               </div>
-                              <p className="line-clamp-2 w-full text-[9px] font-medium leading-tight text-slate-300">
+                              <p className="line-clamp-2 w-full text-[9px] font-medium leading-tight text-at-primary/85">
                                 {e.nome_item}
                               </p>
                             </button>
@@ -846,7 +846,7 @@ export function FuraKitsClient({
                     </>
                   )}
                   {!buscaEstoque.trim() && estoque.length > 48 ? (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-at-muted">
                       Mostrando 48 de {estoque.length}. Busque pelo nome para ver o restante.
                     </p>
                   ) : null}
@@ -863,10 +863,10 @@ export function FuraKitsClient({
                     ? "Montar mais kits no depósito (opcional)"
                     : "Quantos kits iguais montar agora?"}
                 </h3>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-at-muted">
                   {editingId ? (
                     <>
-                      Deixe <span className="text-slate-200">0</span> para só salvar a receita.
+                      Deixe <span className="text-at-primary/90">0</span> para só salvar a receita.
                       Aumente para montar mais kits iguais — ex.: {totalNoKit || 1} peça
                       {(totalNoKit || 1) === 1 ? "" : "s"} por kit × {Math.max(qtdSalvar, 1)} ={" "}
                       {(totalNoKit || 1) * Math.max(qtdSalvar, 1)} saem do estoque avulso.
@@ -890,30 +890,30 @@ export function FuraKitsClient({
                     }
                     label="Quantidade de kits"
                   />
-                  <div className="text-sm text-slate-400">
+                  <div className="text-sm text-at-muted">
                     <p>
                       <span className="font-semibold tabular-nums text-white">{qtdSalvar}</span>{" "}
                       kit{qtdSalvar === 1 ? "" : "s"}
                       {editingId ? " a montar agora" : " no depósito"}
                     </p>
                     {receitaNumeros.length > 0 && maxPossivelNovo > 0 && (
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-xs text-at-muted">
                         Estoque permite montar até {maxPossivelNovo} agora
                       </p>
                     )}
                     {editingId && qtdSalvar === 0 ? (
-                      <p className="mt-0.5 text-xs text-slate-500">
+                      <p className="mt-0.5 text-xs text-at-muted">
                         Só a receita será atualizada.
                       </p>
                     ) : null}
                   </div>
                 </div>
                 {receitaNumeros.length > 0 && qtdSalvar > 0 && (
-                  <ul className="mt-4 space-y-1 border-t border-amber-500/15 pt-3 text-xs text-slate-400">
+                  <ul className="mt-4 space-y-1 border-t border-amber-500/15 pt-3 text-xs text-at-muted">
                     {receitaNumeros.map((r) => (
                       <li key={r.estoque_item_id}>
                         {r.nome}:{" "}
-                        <span className="tabular-nums text-slate-200">
+                        <span className="tabular-nums text-at-primary/90">
                           {r.quantidade} × {qtdSalvar} = {r.quantidade * qtdSalvar}
                         </span>{" "}
                         saem do estoque
@@ -927,7 +927,7 @@ export function FuraKitsClient({
 
             {msg && showForm && <p className="text-sm text-amber-400">{msg}</p>}
 
-            <div className="flex flex-wrap gap-2 border-t border-white/[0.06] pt-4">
+            <div className="flex flex-wrap gap-2 border-t border-at pt-4">
               <button
                 type="button"
                 onClick={() => void save()}
@@ -947,7 +947,7 @@ export function FuraKitsClient({
               <button
                 type="button"
                 onClick={resetForm}
-                className="rounded-full border border-slate-700 px-5 py-2.5 text-sm text-slate-400 hover:bg-slate-800"
+                className="rounded-full border border-slate-700 px-5 py-2.5 text-sm text-at-muted hover:bg-slate-800"
               >
                 Cancelar
               </button>
@@ -972,9 +972,9 @@ export function FuraKitsClient({
       <div className="space-y-5 xl:grid xl:grid-cols-2 xl:items-start xl:gap-5 xl:space-y-0">
         {kits.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-slate-700 px-6 py-16 text-center">
-            <Package className="mx-auto mb-4 h-12 w-12 text-slate-600" />
-            <p className="text-slate-400">Nenhum kit ainda.</p>
-            <p className="mt-1 text-sm text-slate-600">
+            <Package className="mx-auto mb-4 h-12 w-12 text-at-soft" />
+            <p className="text-at-muted">Nenhum kit ainda.</p>
+            <p className="mt-1 text-sm text-at-soft">
               Ex.: Kit Faca — 5 facas por kit, monte quantos quiser de uma vez.
             </p>
           </div>
@@ -1027,7 +1027,7 @@ export function FuraKitsClient({
                       <button
                         type="button"
                         onClick={() => void toggleAtivo(kit)}
-                        className="rounded-full px-3 py-1.5 text-xs text-slate-400 hover:bg-white/5"
+                        className="rounded-full px-3 py-1.5 text-xs text-at-muted hover:bg-white/5"
                       >
                         {kit.ativo ? "Desativar" : "Ativar"}
                       </button>
@@ -1047,7 +1047,7 @@ export function FuraKitsClient({
                     <p className="text-sm font-medium text-white">
                       Montar mais kits de &ldquo;{kit.nome}&rdquo;
                     </p>
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-xs text-at-muted">
                       Usa a mesma receita. Estoque permite até {maxMais} agora.
                     </p>
                     <div className="mt-4 flex flex-wrap items-center gap-4">
@@ -1069,7 +1069,7 @@ export function FuraKitsClient({
                       <button
                         type="button"
                         onClick={() => setMontarKitId(null)}
-                        className="text-sm text-slate-500 hover:text-slate-300"
+                        className="text-sm text-at-muted hover:text-at-primary/85"
                       >
                         Cancelar
                       </button>

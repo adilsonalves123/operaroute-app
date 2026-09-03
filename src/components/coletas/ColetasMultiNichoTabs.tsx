@@ -81,13 +81,13 @@ export function ColetasMultiNichoTabs({
       <header className="relative space-y-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#c4a574]/80">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-at-link/80">
               Operação diária
             </p>
             <h1
               className={cn(
                 display.className,
-                "mt-2 text-[2.65rem] leading-none tracking-tight text-[#f4efe6] sm:text-5xl"
+                "mt-2 text-[2.65rem] leading-none tracking-tight text-at-primary sm:text-5xl"
               )}
             >
               Coletas
@@ -104,7 +104,7 @@ export function ColetasMultiNichoTabs({
         </div>
 
         <nav
-          className="inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-white/[0.07] bg-slate-950/50 p-1.5 backdrop-blur-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-at bg-slate-950/50 p-1.5 backdrop-blur-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Nichos"
         >
           {nichos.map((id) => {
@@ -118,7 +118,7 @@ export function ColetasMultiNichoTabs({
                   "shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
                   active
                     ? "bg-[#c4a574] text-[#0a0e16] shadow-sm"
-                    : "text-slate-400 hover:bg-white/[0.04] hover:text-[#f4efe6]"
+                    : "text-at-muted hover:bg-at-card-soft hover:text-at-primary"
                 )}
               >
                 {TAB_LABELS[id]}

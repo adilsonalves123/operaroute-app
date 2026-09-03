@@ -133,7 +133,7 @@ export function InteligenciaIAPainel({
           <button
             type="button"
             onClick={() => setMinimizado((v) => !v)}
-            className="flex min-w-0 flex-1 gap-3 text-left rounded-lg -m-1 p-1 hover:bg-white/[0.03] transition"
+            className="flex min-w-0 flex-1 gap-3 text-left rounded-lg -m-1 p-1 hover:bg-at-card-soft transition"
             aria-expanded={!minimizado}
           >
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/20">
@@ -143,18 +143,18 @@ export function InteligenciaIAPainel({
               <div className="flex items-center gap-2">
                 <h2 className="text-lg font-semibold text-white">Inteligência personalizada (IA)</h2>
                 {minimizado ? (
-                  <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+                  <ChevronDown className="h-4 w-4 shrink-0 text-at-muted" />
                 ) : (
-                  <ChevronUp className="h-4 w-4 shrink-0 text-slate-500" />
+                  <ChevronUp className="h-4 w-4 shrink-0 text-at-muted" />
                 )}
               </div>
-              <p className="mt-0.5 text-sm text-slate-500">
+              <p className="mt-0.5 text-sm text-at-muted">
                 {minimizado && mensagens.length > 0
                   ? `${mensagens.length} mensagem(ns)${loading ? " · pensando..." : ""}`
                   : "Análise operacional em todos os nichos — com base nos seus dados reais"}
               </p>
               {!minimizado && openaiAtivo != null && (
-                <p className="mt-1 text-xs text-slate-600">
+                <p className="mt-1 text-xs text-at-soft">
                   {openaiAtivo
                     ? "Motor: OpenAI · análise contextual"
                     : "Motor: análise local · configure OPENAI_API_KEY para IA completa"}
@@ -168,7 +168,7 @@ export function InteligenciaIAPainel({
               type="button"
               onClick={novoBriefing}
               disabled={loading}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:border-purple-500/30 hover:text-purple-300 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-at-muted hover:border-purple-500/30 hover:text-purple-300 disabled:opacity-50"
             >
               <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
               Novo briefing
@@ -180,7 +180,7 @@ export function InteligenciaIAPainel({
       {semCabecalho && (
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           {openaiAtivo != null && (
-            <p className="text-xs text-slate-600">
+            <p className="text-xs text-at-soft">
               {openaiAtivo
                 ? "Motor: OpenAI · análise contextual"
                 : "Motor: análise local · configure OPENAI_API_KEY para IA completa"}
@@ -190,7 +190,7 @@ export function InteligenciaIAPainel({
             type="button"
             onClick={novoBriefing}
             disabled={loading}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:border-purple-500/30 hover:text-purple-300 disabled:opacity-50"
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-at-muted hover:border-purple-500/30 hover:text-purple-300 disabled:opacity-50"
           >
             <RefreshCw className={cn("h-3.5 w-3.5", loading && "animate-spin")} />
             Novo briefing
@@ -237,8 +237,8 @@ export function InteligenciaIAPainel({
                   className={cn(
                     "rounded-xl px-4 py-3 text-sm leading-relaxed",
                     m.role === "user"
-                      ? "ml-8 border border-slate-700/50 bg-slate-800/40 text-slate-200"
-                      : "mr-4 border border-purple-500/15 bg-purple-500/[0.04] text-slate-200"
+                      ? "ml-8 border border-slate-700/50 bg-slate-800/40 text-at-primary/90"
+                      : "mr-4 border border-purple-500/15 bg-purple-500/[0.04] text-at-primary/90"
                   )}
                 >
                   {m.role === "assistant" && (
@@ -252,7 +252,7 @@ export function InteligenciaIAPainel({
               ))}
 
               {loading && (
-                <div className="mr-4 flex items-center gap-2 rounded-xl border border-purple-500/15 bg-purple-500/[0.04] px-4 py-3 text-sm text-slate-400">
+                <div className="mr-4 flex items-center gap-2 rounded-xl border border-purple-500/15 bg-purple-500/[0.04] px-4 py-3 text-sm text-at-muted">
                   <Loader2 className="h-4 w-4 shrink-0 animate-spin text-purple-400" />
                   <span className="animate-pulse">Pensando na resposta...</span>
                 </div>
@@ -295,7 +295,7 @@ function CampoPergunta({
   multiline?: boolean;
 }) {
   const sharedClass =
-    "w-full rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-sm text-white placeholder:text-slate-600 disabled:opacity-60 resize-y";
+    "w-full rounded-xl border border-slate-700 bg-slate-900/50 px-4 py-3 text-sm text-white placeholder:text-at-soft disabled:opacity-60 resize-y";
 
   return (
     <div className={cn("flex gap-2 items-end", className)}>

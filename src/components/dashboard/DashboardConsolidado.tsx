@@ -89,34 +89,34 @@ function OperacaoCard({
       <p className="text-2xl font-semibold tabular-nums text-white">
         {formatCurrency(linha.liquidoOperacao)}
       </p>
-      <p className="mt-0.5 text-xs text-slate-500">lucro líquido (recebido)</p>
+      <p className="mt-0.5 text-xs text-at-muted">lucro líquido (recebido)</p>
       <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-        <span className="text-slate-500">
+        <span className="text-at-muted">
           Entrada{" "}
           <span className="text-emerald-400/90 tabular-nums">{formatCurrency(linha.entrada)}</span>
         </span>
-        <span className="text-slate-500">
+        <span className="text-at-muted">
           Saída{" "}
           <span className="text-rose-400/90 tabular-nums">{formatCurrency(linha.saida)}</span>
         </span>
-        <span className="text-slate-500">
+        <span className="text-at-muted">
           Movimento{" "}
-          <span className="text-slate-300 tabular-nums">
+          <span className="text-at-primary/85 tabular-nums">
             {formatCurrency(linha.liquidoMovimento)}
           </span>
         </span>
         {linha.aReceber > 0.009 && (
-          <span className="text-slate-500">
+          <span className="text-at-muted">
             Pendente{" "}
             <span className="text-amber-400 tabular-nums">{formatCurrency(linha.aReceber)}</span>
           </span>
         )}
         {linha.haver > 0.009 && (
-          <span className="text-slate-500">
+          <span className="text-at-muted">
             Haver <span className="text-cyan-400 tabular-nums">+{formatCurrency(linha.haver)}</span>
           </span>
         )}
-        <span className="text-slate-600">
+        <span className="text-at-soft">
           {linha.movimentos} {linha.movimentos === 1 ? "mov." : "mov."}
         </span>
       </div>
@@ -145,13 +145,13 @@ export function DashboardConsolidado({
         <div className="pointer-events-none absolute -right-12 -top-12 h-32 w-32 rounded-full bg-primary-neon/5 blur-2xl" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <p className="text-xs text-slate-500">
-              {periodLabel} · <span className="text-slate-400">operação completa</span>
+            <p className="text-xs text-at-muted">
+              {periodLabel} · <span className="text-at-muted">operação completa</span>
             </p>
             <p className="mt-1 text-3xl font-semibold tabular-nums text-primary-neon sm:text-4xl">
               {formatCurrency(total.liquidoOperacao)}
             </p>
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-at-muted">
               lucro líquido · entrada {formatCurrency(total.entrada)} · saída{" "}
               {formatCurrency(total.saida)}
             </p>
@@ -161,7 +161,7 @@ export function DashboardConsolidado({
               <div className="space-y-1 text-sm">
                 {total.aReceber > 0.009 && (
                   <p>
-                    <span className="text-slate-500">A receber </span>
+                    <span className="text-at-muted">A receber </span>
                     <span className="font-medium text-amber-400 tabular-nums">
                       {formatCurrency(total.aReceber)}
                     </span>
@@ -169,7 +169,7 @@ export function DashboardConsolidado({
                 )}
                 {total.haver > 0.009 && (
                   <p>
-                    <span className="text-slate-500">Haver </span>
+                    <span className="text-at-muted">Haver </span>
                     <span className="font-medium text-cyan-400 tabular-nums">
                       +{formatCurrency(total.haver)}
                     </span>

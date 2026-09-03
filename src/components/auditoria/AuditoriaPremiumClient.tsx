@@ -34,9 +34,9 @@ const sans = Outfit({
 const SEV_STYLE: Record<AuditoriaSeveridade, string> = {
   critical: "border-rose-500/40 text-rose-200 bg-rose-500/10",
   high: "border-amber-500/35 text-amber-100 bg-amber-500/10",
-  medium: "border-[#c4a574]/35 text-[#e8d5b0] bg-[#c4a574]/10",
-  low: "border-white/15 text-slate-300 bg-white/[0.03]",
-  info: "border-white/10 text-slate-400 bg-transparent",
+  medium: "border-[#c4a574]/35 text-at-link bg-[#c4a574]/10",
+  low: "border-at-soft text-at-primary/85 bg-at-card-soft",
+  info: "border-at-soft text-at-muted bg-transparent",
 };
 
 function formatWhen(iso: string) {
@@ -136,23 +136,9 @@ export function AuditoriaPremiumClient() {
 
   return (
     <div
-      className={cn(
-        display.variable,
-        sans.variable,
-        "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-16 sm:-mx-6 sm:px-6"
-      )}
+      className={cn(display.variable, sans.variable)}
       style={{ fontFamily: "var(--font-audit-sans), system-ui, sans-serif" }}
     >
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 40% at 70% -10%, rgba(196,165,116,0.1), transparent 50%), radial-gradient(ellipse 40% 30% at 0% 80%, rgba(120,40,40,0.08), transparent 45%), linear-gradient(180deg, #06080e 0%, #0a0e16 55%, #07090f 100%)",
-          }}
-        />
-      </div>
-
       <div
         className={cn(
           "mx-auto max-w-6xl pt-6 transition duration-700 sm:pt-10",
@@ -162,31 +148,31 @@ export function AuditoriaPremiumClient() {
         <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p
-              className="text-[11px] font-medium uppercase text-[#c4a574]/90"
+              className="text-[11px] font-medium uppercase text-at-link/90"
               style={{ letterSpacing: "0.38em" }}
             >
               Vigilância · OperaRoute
             </p>
             <h1
-              className="mt-3 text-[clamp(2.2rem,5vw,3.4rem)] leading-[0.95] tracking-tight text-[#f4efe6]"
+              className="mt-3 text-[clamp(2.2rem,5vw,3.4rem)] leading-[0.95] tracking-tight text-at-primary"
               style={{ fontFamily: "var(--font-audit-display), Georgia, serif" }}
             >
               Auditoria
             </h1>
-            <p className="mt-3 max-w-lg text-[13px] text-slate-400">
+            <p className="mt-3 max-w-lg text-[13px] text-at-muted">
               Quem entrou, o que mudou, contadores suspeitos e divergências — trilha completa da
               operação.
             </p>
           </div>
-          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-slate-500">
-            <Shield className="h-3.5 w-3.5 text-[#c4a574]/80" />
+          <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.16em] text-at-muted">
+            <Shield className="h-3.5 w-3.5 text-at-link/80" />
             Registro imutável
           </div>
         </header>
 
         <div className="mt-8 h-px w-full bg-gradient-to-r from-[#c4a574]/45 via-white/10 to-transparent" />
 
-        <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-5">
+        <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-at-card-soft sm:grid-cols-5">
           {[
             { label: "7 dias", value: stats.total7d },
             { label: "Críticos", value: stats.critical, warn: true },
@@ -194,12 +180,12 @@ export function AuditoriaPremiumClient() {
             { label: "Acessos", value: stats.sessoes },
             { label: "Anomalias", value: stats.anomalias, warn: true },
           ].map((c) => (
-            <div key={c.label} className="bg-[#0a0e16]/95 px-4 py-3.5">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{c.label}</p>
+            <div key={c.label} className="bg-at-card/95 px-4 py-3.5">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">{c.label}</p>
               <p
                 className={cn(
                   "mt-1.5 text-[22px] font-medium tabular-nums",
-                  c.warn ? "text-rose-300" : c.amber ? "text-amber-200" : "text-[#f4efe6]"
+                  c.warn ? "text-rose-300" : c.amber ? "text-amber-200" : "text-at-primary"
                 )}
               >
                 {c.value}
@@ -210,18 +196,18 @@ export function AuditoriaPremiumClient() {
 
         <div className="mt-8 flex flex-col gap-3 lg:flex-row lg:items-center">
           <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-at-muted" />
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               placeholder="Buscar por pessoa, ação, resumo…"
-              className="w-full rounded-sm border border-white/[0.08] bg-white/[0.03] py-2.5 pl-10 pr-4 text-[13px] text-[#f4efe6] outline-none focus:border-[#c4a574]/35"
+              className="w-full rounded-sm border border-at-soft bg-at-card-soft py-2.5 pl-10 pr-4 text-[13px] text-at-primary outline-none focus:border-[#c4a574]/35"
             />
           </div>
           <select
             value={severidade}
             onChange={(e) => setSeveridade(e.target.value)}
-            className="rounded-sm border border-white/[0.08] bg-[#0a0e16] px-3 py-2.5 text-[13px] text-[#f4efe6] outline-none"
+            className="rounded-sm border border-at-soft bg-at-card px-3 py-2.5 text-[13px] text-at-primary outline-none"
           >
             <option value="todos">Todas severidades</option>
             {(Object.keys(SEVERIDADE_LABEL) as AuditoriaSeveridade[]).map((s) => (
@@ -233,7 +219,7 @@ export function AuditoriaPremiumClient() {
           <select
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
-            className="rounded-sm border border-white/[0.08] bg-[#0a0e16] px-3 py-2.5 text-[13px] text-[#f4efe6] outline-none"
+            className="rounded-sm border border-at-soft bg-at-card px-3 py-2.5 text-[13px] text-at-primary outline-none"
           >
             <option value="todos">Todas categorias</option>
             {(Object.keys(CATEGORIA_LABEL) as AuditoriaCategoria[]).map((c) => (
@@ -252,27 +238,27 @@ export function AuditoriaPremiumClient() {
 
         <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
           <section>
-            <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-slate-600">
+            <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-at-soft">
               Linha do tempo
             </p>
 
             {loading && (
-              <div className="flex items-center gap-2 text-[13px] text-slate-500">
+              <div className="flex items-center gap-2 text-[13px] text-at-muted">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 Carregando trilha…
               </div>
             )}
 
             {!loading && eventos.length === 0 && (
-              <div className="rounded-sm border border-dashed border-white/10 px-6 py-16 text-center">
-                <AlertTriangle className="mx-auto h-6 w-6 text-slate-600" />
+              <div className="rounded-sm border border-dashed border-at-soft px-6 py-16 text-center">
+                <AlertTriangle className="mx-auto h-6 w-6 text-at-soft" />
                 <p
-                  className="mt-4 text-xl text-[#f4efe6]"
+                  className="mt-4 text-xl text-at-primary"
                   style={{ fontFamily: "var(--font-audit-display), Georgia, serif" }}
                 >
                   Ainda sem eventos
                 </p>
-                <p className="mx-auto mt-2 max-w-sm text-[13px] text-slate-500">
+                <p className="mx-auto mt-2 max-w-sm text-[13px] text-at-muted">
                   Assim que a equipe entrar e editar máquinas, coletas ou financeiro, tudo aparece
                   aqui com detalhe.
                 </p>
@@ -282,10 +268,10 @@ export function AuditoriaPremiumClient() {
             <div className="space-y-10">
               {porDia.map(([dia, items]) => (
                 <div key={dia}>
-                  <p className="mb-3 text-[12px] capitalize text-slate-500">
+                  <p className="mb-3 text-[12px] capitalize text-at-muted">
                     {formatDia(items[0].created_at)}
                   </p>
-                  <ul className="relative space-y-0 border-l border-white/[0.08] pl-5">
+                  <ul className="relative space-y-0 border-l border-at-soft pl-5">
                     {items.map((e) => {
                       const open = aberto === e.id;
                       const sev = (e.severidade ?? "info") as AuditoriaSeveridade;
@@ -314,24 +300,24 @@ export function AuditoriaPremiumClient() {
                               >
                                 {SEVERIDADE_LABEL[sev]}
                               </span>
-                              <span className="text-[10px] uppercase tracking-[0.12em] text-slate-600">
+                              <span className="text-[10px] uppercase tracking-[0.12em] text-at-soft">
                                 {CATEGORIA_LABEL[(e.categoria as AuditoriaCategoria) ?? "sistema"] ??
                                   e.categoria}
                               </span>
-                              <span className="ml-auto flex items-center gap-1 text-[11px] tabular-nums text-slate-500">
+                              <span className="ml-auto flex items-center gap-1 text-[11px] tabular-nums text-at-muted">
                                 <Clock className="h-3 w-3" />
                                 {formatWhen(e.created_at)}
                               </span>
                             </div>
-                            <p className="mt-1.5 text-[15px] text-[#f4efe6] group-hover:text-white">
+                            <p className="mt-1.5 text-[15px] text-at-primary group-hover:text-white">
                               {e.titulo || e.acao}
                             </p>
                             {e.resumo && (
-                              <p className="mt-1 text-[12px] leading-relaxed text-slate-500">
+                              <p className="mt-1 text-[12px] leading-relaxed text-at-muted">
                                 {e.resumo}
                               </p>
                             )}
-                            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[11px] text-slate-600">
+                            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[11px] text-at-soft">
                               <UserRound className="h-3 w-3" />
                               {e.user_nome || "Sistema"}
                               {e.user_role && (
@@ -347,7 +333,7 @@ export function AuditoriaPremiumClient() {
                           </button>
 
                           {open && (
-                            <div className="mt-3 space-y-3 rounded-sm border border-white/[0.07] bg-white/[0.02] p-3 text-[12px]">
+                            <div className="mt-3 space-y-3 rounded-sm border border-at bg-white/[0.02] p-3 text-[12px]">
                               <div className="grid gap-2 sm:grid-cols-2">
                                 <Meta label="Ação" value={e.acao} />
                                 <Meta label="Tabela" value={e.tabela} />
@@ -366,7 +352,7 @@ export function AuditoriaPremiumClient() {
                                 <JsonBlock title="Meta" data={e.meta} />
                               )}
                               {e.user_agent && (
-                                <p className="truncate text-[10px] text-slate-600">{e.user_agent}</p>
+                                <p className="truncate text-[10px] text-at-soft">{e.user_agent}</p>
                               )}
                             </div>
                           )}
@@ -380,22 +366,22 @@ export function AuditoriaPremiumClient() {
           </section>
 
           <aside>
-            <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-slate-600">
+            <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-at-soft">
               Últimos acessos
             </p>
-            <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07] bg-white/[0.02]">
+            <ul className="divide-y divide-white/[0.05] rounded-sm border border-at bg-white/[0.02]">
               {sessoes.length === 0 && (
-                <li className="px-3 py-6 text-center text-[12px] text-slate-500">
+                <li className="px-3 py-6 text-center text-[12px] text-at-muted">
                   Sem sessões registradas ainda.
                 </li>
               )}
               {sessoes.map((s) => (
                 <li key={s.id} className="px-3 py-3">
-                  <p className="truncate text-[13px] text-[#f4efe6]">{s.user_nome ?? "Usuário"}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">
+                  <p className="truncate text-[13px] text-at-primary">{s.user_nome ?? "Usuário"}</p>
+                  <p className="mt-0.5 text-[11px] text-at-muted">
                     {s.user_role ?? "—"} · {s.dispositivo ?? "—"}
                   </p>
-                  <p className="mt-1 text-[11px] tabular-nums text-slate-600">
+                  <p className="mt-1 text-[11px] tabular-nums text-at-soft">
                     {formatWhen(s.iniciado_em)}
                     {s.encerrado_em ? " · saiu" : " · ativo"}
                   </p>
@@ -412,8 +398,8 @@ export function AuditoriaPremiumClient() {
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-[0.12em] text-slate-600">{label}</p>
-      <p className="mt-0.5 break-all text-slate-300">{value}</p>
+      <p className="text-[10px] uppercase tracking-[0.12em] text-at-soft">{label}</p>
+      <p className="mt-0.5 break-all text-at-primary/85">{value}</p>
     </div>
   );
 }
@@ -428,8 +414,8 @@ function JsonBlock({
   if (!data || Object.keys(data).length === 0) return null;
   return (
     <div>
-      <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-slate-600">{title}</p>
-      <pre className="max-h-40 overflow-auto rounded-sm bg-black/30 p-2 text-[11px] leading-relaxed text-slate-400">
+      <p className="mb-1 text-[10px] uppercase tracking-[0.12em] text-at-soft">{title}</p>
+      <pre className="max-h-40 overflow-auto rounded-sm bg-black/30 p-2 text-[11px] leading-relaxed text-at-muted">
         {JSON.stringify(data, null, 2)}
       </pre>
     </div>

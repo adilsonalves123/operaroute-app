@@ -13,12 +13,12 @@ export function BuscaNumeroSerieClient({ backHref = "/pontos" }: { backHref?: st
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href={backHref} className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
+        <Link href={backHref} className="rounded-lg p-2 text-at-muted hover:bg-slate-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div>
           <h1 className="text-2xl font-bold text-white">Buscar máquina</h1>
-          <p className="text-slate-400 text-sm mt-0.5">
+          <p className="text-at-muted text-sm mt-0.5">
             Pesquise pelo número de série — histórico de leituras e fotos
           </p>
         </div>
@@ -39,7 +39,7 @@ export function BuscaNumeroSerieClient({ backHref = "/pontos" }: { backHref?: st
         {buscou && serie.trim().length >= 2 && <HistoricoNumeroSerie serie={serie} />}
 
         {buscou && serie.trim().length < 2 && (
-          <p className="text-sm text-slate-500">Digite ao menos 2 caracteres para buscar.</p>
+          <p className="text-sm text-at-muted">Digite ao menos 2 caracteres para buscar.</p>
         )}
       </div>
     </div>

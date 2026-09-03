@@ -166,7 +166,7 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-semibold text-white">Novo equipamento no estoque</h2>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-xs text-at-muted">
                     Só máquinas e expositores. Produtos e itens ficam em Estoque / Produtos consignados.
                   </p>
                 </div>
@@ -174,14 +174,14 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
                   type="button"
                   onClick={fechar}
                   disabled={loading}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800"
+                  className="rounded-lg p-1.5 text-at-muted hover:bg-slate-800"
                 >
                   <X className="h-4 w-4" />
                 </button>
               </div>
 
               <div className="mt-4 space-y-2">
-                <p className="text-sm font-medium text-slate-300">Nicho / tipo *</p>
+                <p className="text-sm font-medium text-at-primary/85">Nicho / tipo *</p>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {tipos.map((t) => (
                     <SelectCard
@@ -295,7 +295,7 @@ export function CadastrarEquipamentoEstoqueForm({ nichosAtivos, onCreated }: Pro
                 type="button"
                 onClick={fechar}
                 disabled={loading}
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+                className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800"
               >
                 Cancelar
               </button>

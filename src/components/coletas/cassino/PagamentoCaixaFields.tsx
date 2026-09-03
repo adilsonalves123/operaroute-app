@@ -59,7 +59,7 @@ function CaixaToggle({
         className="h-4 w-4 shrink-0 rounded border-slate-600 bg-slate-800 text-primary-neon focus:ring-primary-neon/40"
       />
       <span className="min-w-0 flex-1 text-sm font-medium text-white">{titulo}</span>
-      <span className="shrink-0 text-sm font-semibold tabular-nums text-slate-300">
+      <span className="shrink-0 text-sm font-semibold tabular-nums text-at-primary/85">
         {formatCurrency(valorReais)}
       </span>
       <span className="sr-only">{descricao}</span>
@@ -167,7 +167,7 @@ export function PagamentoCaixaFields({
             checked={dinheiroDoCaixa}
             onChange={onDinheiroDoCaixaChange}
           />
-          <p className="text-[11px] text-slate-500 leading-snug">
+          <p className="text-[11px] text-at-muted leading-snug">
             Desmarcado = valor vale na coleta, mas não movimenta o financeiro.
           </p>
         </div>
@@ -176,7 +176,7 @@ export function PagamentoCaixaFields({
       {totalInformado > 0.009 && (
         <div className="rounded-lg border border-slate-700/50 bg-slate-900/50 px-3 py-2.5 space-y-1 text-sm">
           <div className="flex justify-between gap-3">
-            <span className="text-slate-400">Total informado</span>
+            <span className="text-at-muted">Total informado</span>
             <span className="font-semibold tabular-nums text-white">
               {formatCurrency(totalInformado)}
             </span>
@@ -184,15 +184,15 @@ export function PagamentoCaixaFields({
           {modo === "saida" && (
             <>
               <div className="flex justify-between gap-3">
-                <span className="text-slate-400">Sai do caixa</span>
+                <span className="text-at-muted">Sai do caixa</span>
                 <span className="font-semibold tabular-nums text-primary-neon">
                   {formatCurrency(movimentaCaixa)}
                 </span>
               </div>
               {foraCaixa > 0.009 && (
                 <div className="flex justify-between gap-3">
-                  <span className="text-slate-500">Fora do caixa</span>
-                  <span className="tabular-nums text-slate-400">{formatCurrency(foraCaixa)}</span>
+                  <span className="text-at-muted">Fora do caixa</span>
+                  <span className="tabular-nums text-at-muted">{formatCurrency(foraCaixa)}</span>
                 </div>
               )}
             </>

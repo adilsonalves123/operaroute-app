@@ -127,9 +127,9 @@ export function FotoColetaLeitura({
 
   return (
     <div className={cn("space-y-2", className)}>
-      {label ? <span className="block text-sm font-medium text-slate-300">{label}</span> : null}
+      {label ? <span className="block text-sm font-medium text-at-primary/85">{label}</span> : null}
       {hint ?? hintPadrao ? (
-        <p className="text-xs text-slate-500">{hint ?? hintPadrao}</p>
+        <p className="text-xs text-at-muted">{hint ?? hintPadrao}</p>
       ) : null}
 
       <input
@@ -174,7 +174,7 @@ export function FotoColetaLeitura({
             type="button"
             disabled={abrindo != null}
             onClick={() => setMenuAberto((v) => !v)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-600 px-3 py-2.5 text-sm text-slate-300 hover:border-cyan-500/40 hover:text-cyan-300 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-600 px-3 py-2.5 text-sm text-at-primary/85 hover:border-cyan-500/40 hover:text-cyan-300 disabled:opacity-50"
           >
             <Camera className="h-4 w-4" />
             Trocar foto
@@ -189,7 +189,7 @@ export function FotoColetaLeitura({
             "flex w-full items-center justify-center gap-2 rounded-xl border border-dashed py-8 text-sm transition disabled:cursor-wait disabled:opacity-60",
             erroExibido
               ? "border-red-500/50 text-red-400"
-              : "border-slate-600 text-slate-400 hover:border-cyan-500/40 hover:text-cyan-300",
+              : "border-slate-600 text-at-muted hover:border-cyan-500/40 hover:text-cyan-300",
             buttonClassName
           )}
         >
@@ -199,29 +199,29 @@ export function FotoColetaLeitura({
       )}
 
       {menuAberto ? (
-        <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl">
+        <div className="overflow-hidden rounded-xl border border-at-soft bg-slate-900/95 shadow-xl">
           <button
             type="button"
             disabled={abrindo != null}
             onClick={() => void abrir("camera")}
-            className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-slate-100 hover:bg-white/[0.04] disabled:opacity-50"
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-slate-100 hover:bg-at-card-soft disabled:opacity-50"
           >
             <Camera className="h-4 w-4 text-cyan-400" />
             <span>
               <span className="block font-medium">Câmera</span>
-              <span className="block text-[11px] text-slate-500">Tirar foto agora</span>
+              <span className="block text-[11px] text-at-muted">Tirar foto agora</span>
             </span>
           </button>
           <button
             type="button"
             disabled={abrindo != null}
             onClick={() => void abrir("galeria")}
-            className="flex w-full items-center gap-3 border-t border-white/[0.06] px-4 py-3.5 text-left text-sm text-slate-100 hover:bg-violet-500/10 disabled:opacity-50"
+            className="flex w-full items-center gap-3 border-t border-at px-4 py-3.5 text-left text-sm text-slate-100 hover:bg-violet-500/10 disabled:opacity-50"
           >
             <ImageIcon className="h-4 w-4 text-violet-300" />
             <span>
               <span className="block font-medium">Galeria</span>
-              <span className="block text-[11px] text-slate-500">Escolher foto salva</span>
+              <span className="block text-[11px] text-at-muted">Escolher foto salva</span>
             </span>
           </button>
         </div>

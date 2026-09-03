@@ -109,29 +109,29 @@ export function VisitaPontoCheckoutForm({
     <section className="rounded-2xl border border-primary-neon/25 bg-black/20 p-5 space-y-5">
       <div>
         <h2 className="text-lg font-semibold text-white">Cobrar visita</h2>
-        <p className="mt-1 text-sm text-slate-400">
+        <p className="mt-1 text-sm text-at-muted">
           Um só lugar: operações de hoje, dívida, haver, pix e dinheiro.
         </p>
       </div>
 
       <div className="space-y-2 text-sm">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-at-muted">
           1 · Operação de hoje
         </p>
         {resumo.nichos.map((n) => (
-          <div key={n.nicho} className="flex justify-between text-slate-300">
+          <div key={n.nicho} className="flex justify-between text-at-primary/85">
             <span>{n.label}</span>
             <span className="tabular-nums">{formatCurrency(n.totalCobravel)}</span>
           </div>
         ))}
-        <div className="flex justify-between border-t border-white/[0.06] pt-2 text-slate-400">
+        <div className="flex justify-between border-t border-at pt-2 text-at-muted">
           <span>Subtotal visita</span>
           <span className="tabular-nums">{formatCurrency(resumo.subtotalCobravel)}</span>
         </div>
       </div>
 
       <div className="space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-at-muted">
           2 · Ajustes
         </p>
 
@@ -141,7 +141,7 @@ export function VisitaPontoCheckoutForm({
               "flex cursor-pointer gap-3 rounded-lg border p-3 transition-colors",
               incluirDivida
                 ? "border-amber-500/40 bg-amber-500/10"
-                : "border-white/[0.08] bg-black/20 hover:border-white/15"
+                : "border-at-soft bg-black/20 hover:border-at-soft"
             )}
           >
             <input
@@ -155,7 +155,7 @@ export function VisitaPontoCheckoutForm({
                 <Clock className="h-4 w-4 shrink-0" />
                 Incluir dívida anterior
               </p>
-              <p className="mt-0.5 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-at-muted">
                 Pendências antigas: {formatCurrency(dividaSaldo)}
                 {incluirDivida
                   ? " · entra no total a cobrar (pode pagar parcial)"
@@ -163,7 +163,7 @@ export function VisitaPontoCheckoutForm({
               </p>
               {resumo.dividaRecebidaInicio != null &&
                 resumo.dividaRecebidaInicio > 0.009 && (
-                  <p className="mt-1 text-[11px] text-slate-500">
+                  <p className="mt-1 text-[11px] text-at-muted">
                     Já recebido no início desta visita:{" "}
                     {formatCurrency(resumo.dividaRecebidaInicio)}
                   </p>
@@ -181,7 +181,7 @@ export function VisitaPontoCheckoutForm({
               "flex cursor-pointer gap-3 rounded-lg border p-3 transition-colors",
               descontarHaver
                 ? "border-cyan-500/40 bg-cyan-500/10"
-                : "border-white/[0.08] bg-black/20 hover:border-white/15"
+                : "border-at-soft bg-black/20 hover:border-at-soft"
             )}
           >
             <input
@@ -195,7 +195,7 @@ export function VisitaPontoCheckoutForm({
                 <HandCoins className="h-4 w-4 shrink-0" />
                 Descontar haver do ponto
               </p>
-              <p className="mt-0.5 text-xs text-slate-400">
+              <p className="mt-0.5 text-xs text-at-muted">
                 Crédito aberto: {formatCurrency(haverSaldo)}
                 {descontarHaver && calculo.haverAbatido > 0.009
                   ? ` · abate ${formatCurrency(calculo.haverAbatido)} nesta cobrança`
@@ -294,13 +294,13 @@ export function VisitaPontoCheckoutForm({
               "rounded-lg border px-3 py-3",
               calculo.restante > 0.009
                 ? "border-amber-500/25 bg-amber-500/5"
-                : "border-white/[0.06] bg-white/[0.02]"
+                : "border-at bg-white/[0.02]"
             )}
           >
             <p
               className={cn(
                 "text-[10px] font-semibold uppercase tracking-wider",
-                calculo.restante > 0.009 ? "text-amber-400/80" : "text-slate-500"
+                calculo.restante > 0.009 ? "text-amber-400/80" : "text-at-muted"
               )}
             >
               Ainda deve
@@ -308,7 +308,7 @@ export function VisitaPontoCheckoutForm({
             <p
               className={cn(
                 "mt-1 text-xl font-bold tabular-nums",
-                calculo.restante > 0.009 ? "text-amber-300" : "text-slate-500"
+                calculo.restante > 0.009 ? "text-amber-300" : "text-at-muted"
               )}
             >
               {formatCurrency(calculo.restante)}

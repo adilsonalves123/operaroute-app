@@ -76,7 +76,7 @@ export default async function ColetasPage() {
   if (!profile?.empresa_id) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">{config.labels.coleta}s</h1>
+        <h1 className="mt-3 text-[clamp(2rem,4vw,2.75rem)] leading-[0.95] tracking-tight text-at-primary" style={{ fontFamily: "Georgia, serif" }}>{config.labels.coleta}s</h1>
         <ColetasClient coletas={[]} />
       </div>
     );
@@ -156,13 +156,13 @@ export default async function ColetasPage() {
         />
         <header className="relative flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#c4a574]/80">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-at-link/80">
               Operação
             </p>
-            <h1 className="mt-1.5 text-3xl font-semibold tracking-tight text-[#f4efe6] sm:text-[2rem]">
+            <h1 className="mt-1.5 text-3xl font-semibold tracking-tight text-at-primary sm:text-[2rem]">
               Coletas
             </h1>
-            <p className="mt-1.5 text-sm text-slate-500">Histórico de leituras cassino por visita</p>
+            <p className="mt-1.5 text-sm text-at-muted">Histórico de leituras cassino por visita</p>
           </div>
           <Link
             href="/coletas/nova/cassino"
@@ -190,8 +190,8 @@ export default async function ColetasPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Coletas fura-fura</h1>
-            <p className="text-slate-400 mt-1">Histórico de coletas</p>
+            <h1 className="mt-3 text-[clamp(2rem,4vw,2.75rem)] leading-[0.95] tracking-tight text-at-primary" style={{ fontFamily: "Georgia, serif" }}>Coletas fura-fura</h1>
+            <p className="text-at-muted mt-1">Histórico de coletas</p>
           </div>
           <Link
             href="/coletas/nova/fura-fura"
@@ -219,8 +219,8 @@ export default async function ColetasPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Coletas ursinho</h1>
-            <p className="text-slate-400 mt-1">Histórico de coletas por máquina</p>
+            <h1 className="mt-3 text-[clamp(2rem,4vw,2.75rem)] leading-[0.95] tracking-tight text-at-primary" style={{ fontFamily: "Georgia, serif" }}>Coletas ursinho</h1>
+            <p className="text-at-muted mt-1">Histórico de coletas por máquina</p>
           </div>
           <Link
             href="/coletas/nova/ursinho"
@@ -248,8 +248,8 @@ export default async function ColetasPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Coletas diversão</h1>
-            <p className="text-slate-400 mt-1">Histórico de coletas por máquina</p>
+            <h1 className="mt-3 text-[clamp(2rem,4vw,2.75rem)] leading-[0.95] tracking-tight text-at-primary" style={{ fontFamily: "Georgia, serif" }}>Coletas diversão</h1>
+            <p className="text-at-muted mt-1">Histórico de coletas por máquina</p>
           </div>
           <Link
             href="/coletas/nova/diversao"
@@ -280,8 +280,8 @@ export default async function ColetasPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Coletas bolinha</h1>
-            <p className="text-slate-400 mt-1">Histórico de coletas por máquina</p>
+            <h1 className="mt-3 text-[clamp(2rem,4vw,2.75rem)] leading-[0.95] tracking-tight text-at-primary" style={{ fontFamily: "Georgia, serif" }}>Coletas bolinha</h1>
+            <p className="text-at-muted mt-1">Histórico de coletas por máquina</p>
           </div>
           <Link
             href="/coletas/nova/bolinha"
@@ -312,8 +312,8 @@ export default async function ColetasPage() {
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Recolhes consignado</h1>
-            <p className="text-slate-400 mt-1">Histórico de recolhes por expositor</p>
+            <h1 className="mt-3 text-[clamp(2rem,4vw,2.75rem)] leading-[0.95] tracking-tight text-at-primary" style={{ fontFamily: "Georgia, serif" }}>Recolhes consignado</h1>
+            <p className="text-at-muted mt-1">Histórico de recolhes por expositor</p>
           </div>
           <Link
             href="/coletas/nova/consignado"
@@ -342,8 +342,8 @@ export default async function ColetasPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">{config.labels.coleta}s</h1>
-          <p className="text-slate-400 mt-1">Histórico de coletas da operação</p>
+          <h1 className="mt-3 text-[clamp(2rem,4vw,2.75rem)] leading-[0.95] tracking-tight text-at-primary" style={{ fontFamily: "Georgia, serif" }}>{config.labels.coleta}s</h1>
+          <p className="text-at-muted mt-1">Histórico de coletas da operação</p>
         </div>
         <Link
           href="/coletas/nova"

@@ -19,7 +19,7 @@ const links = [
 
 export function ConfiguracoesAtalhosCard({ embedded = false }: { embedded?: boolean }) {
   const inner = (
-    <div className="grid gap-px sm:grid-cols-2 bg-white/[0.04]">
+    <div className="grid gap-px sm:grid-cols-2 bg-at-card-soft">
       {links.map((item) => {
         const Icon = item.icon;
         return (
@@ -36,7 +36,7 @@ export function ConfiguracoesAtalhosCard({ embedded = false }: { embedded?: bool
                 <p className="font-medium text-at-primary group-hover:text-at-link transition">
                   {item.title}
                 </p>
-                <ArrowUpRight className="h-3.5 w-3.5 text-at-soft group-hover:text-[#c4a574] transition" />
+                <ArrowUpRight className="h-3.5 w-3.5 text-at-soft group-hover:text-at-link transition" />
               </div>
               <p className="mt-1 text-[12px] leading-relaxed text-at-muted">
                 {item.desc}

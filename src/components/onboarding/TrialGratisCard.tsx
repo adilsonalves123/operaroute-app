@@ -34,17 +34,17 @@ export function TrialGratisCard({ resumo, className, compact = false }: Props) {
           >
             Aproveite seus {resumo.dias} dias grátis
           </h2>
-          <p className="text-sm leading-relaxed text-slate-300">
+          <p className="text-sm leading-relaxed text-at-primary/85">
             No trial você usa o plano <strong className="text-white">{resumo.planoNome}</strong>,
             sem cartão:
           </p>
           <ul className="grid gap-2 sm:grid-cols-2 text-sm">
-            <li className="rounded-xl border border-white/[0.08] bg-black/20 px-3 py-2.5">
-              <p className="text-[11px] uppercase tracking-wide text-slate-500">Pontos</p>
+            <li className="rounded-xl border border-at-soft bg-black/20 px-3 py-2.5">
+              <p className="text-[11px] uppercase tracking-wide text-at-muted">Pontos</p>
               <p className="mt-0.5 font-semibold text-emerald-200">{resumo.labelPontos}</p>
             </li>
-            <li className="rounded-xl border border-white/[0.08] bg-black/20 px-3 py-2.5">
-              <p className="text-[11px] uppercase tracking-wide text-slate-500">Nichos</p>
+            <li className="rounded-xl border border-at-soft bg-black/20 px-3 py-2.5">
+              <p className="text-[11px] uppercase tracking-wide text-at-muted">Nichos</p>
               <p className="mt-0.5 font-semibold text-emerald-200">{resumo.labelNichos}</p>
             </li>
           </ul>
@@ -56,7 +56,7 @@ export function TrialGratisCard({ resumo, className, compact = false }: Props) {
             </p>
           )}
           {!compact && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-at-muted">
               Ao acabar os {resumo.dias} dias, escolha um plano em Planos para continuar.
             </p>
           )}

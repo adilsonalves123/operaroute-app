@@ -241,7 +241,7 @@ export function DonoUniversidadeClient({ email }: { email: string }) {
                 "rounded-2xl border p-3",
                 light
                   ? "border-stone-200 bg-white"
-                  : "border-white/10 bg-white/[0.03]"
+                  : "border-at-soft bg-at-card-soft"
               )}
             >
               <div className="mb-2 flex items-center justify-between gap-2 px-2">
@@ -256,7 +256,7 @@ export function DonoUniversidadeClient({ email }: { email: string }) {
                     "inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition disabled:opacity-50",
                     light
                       ? "bg-stone-900 text-white hover:bg-stone-800"
-                      : "bg-[#c9a87c]/25 text-[#e8d5b0] hover:bg-[#c9a87c]/35"
+                      : "bg-[#c9a87c]/25 text-at-link hover:bg-[#c9a87c]/35"
                   )}
                 >
                   {creating ? (
@@ -281,7 +281,7 @@ export function DonoUniversidadeClient({ email }: { email: string }) {
                             : "bg-[#c9a87c]/20 text-[#f4f0e8]"
                           : light
                             ? "hover:bg-stone-100"
-                            : "hover:bg-white/[0.04]"
+                            : "hover:bg-at-card-soft"
                       )}
                     >
                       <GraduationCap className="mt-0.5 h-4 w-4 shrink-0 opacity-70" />
@@ -305,7 +305,7 @@ export function DonoUniversidadeClient({ email }: { email: string }) {
                 "space-y-4 rounded-2xl border p-5",
                 light
                   ? "border-stone-200 bg-white"
-                  : "border-white/10 bg-white/[0.03]"
+                  : "border-at-soft bg-at-card-soft"
               )}
             >
               {!selecionada ? (
@@ -323,7 +323,7 @@ export function DonoUniversidadeClient({ email }: { email: string }) {
                         "mt-1 w-full rounded-xl border px-3 py-2.5 text-sm outline-none",
                         light
                           ? "border-stone-200 bg-stone-50"
-                          : "border-white/10 bg-black/30"
+                          : "border-at-soft bg-black/30"
                       )}
                     />
                   </div>
@@ -340,7 +340,7 @@ export function DonoUniversidadeClient({ email }: { email: string }) {
                         "mt-1 w-full resize-y rounded-xl border px-3 py-2.5 text-sm outline-none",
                         light
                           ? "border-stone-200 bg-stone-50"
-                          : "border-white/10 bg-black/30"
+                          : "border-at-soft bg-black/30"
                       )}
                     />
                   </div>
@@ -357,7 +357,7 @@ export function DonoUniversidadeClient({ email }: { email: string }) {
                           "mt-1 w-full rounded-xl border px-3 py-2.5 text-sm outline-none",
                           light
                             ? "border-stone-200 bg-stone-50"
-                            : "border-white/10 bg-black/30"
+                            : "border-at-soft bg-black/30"
                         )}
                       >
                         {MODULOS_EDIT.map((m) => (
@@ -379,7 +379,7 @@ export function DonoUniversidadeClient({ email }: { email: string }) {
                           "mt-1 w-full rounded-xl border px-3 py-2.5 text-sm outline-none",
                           light
                             ? "border-stone-200 bg-stone-50"
-                            : "border-white/10 bg-black/30"
+                            : "border-at-soft bg-black/30"
                         )}
                       />
                     </div>
@@ -397,7 +397,7 @@ export function DonoUniversidadeClient({ email }: { email: string }) {
                         "mt-1 w-full rounded-xl border px-3 py-2.5 text-sm outline-none",
                         light
                           ? "border-stone-200 bg-stone-50"
-                          : "border-white/10 bg-black/30"
+                          : "border-at-soft bg-black/30"
                       )}
                     />
                     <p className="mt-1.5 text-[11px] text-stone-500">

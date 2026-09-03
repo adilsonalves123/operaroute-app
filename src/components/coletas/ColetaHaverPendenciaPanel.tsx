@@ -89,7 +89,7 @@ export function ColetaStatusFaixa({
         </p>
       </div>
 
-      {children ? <div className="relative mt-3 border-t border-white/20 pt-2.5">{children}</div> : null}
+      {children ? <div className="relative mt-3 border-t border-at pt-2.5">{children}</div> : null}
     </div>
   );
 }
@@ -168,7 +168,7 @@ export function ColetaHaverPendenciaPanel({
             "flex cursor-pointer gap-3 border px-3.5 py-3 transition-colors",
             descontarHaver
               ? "border-[#c4a574]/35 bg-[#c4a574]/[0.06]"
-              : "border-white/[0.08] bg-transparent hover:border-white/15"
+              : "border-at-soft bg-transparent hover:border-at-soft"
           )}
         >
           <input
@@ -179,15 +179,15 @@ export function ColetaHaverPendenciaPanel({
           />
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <span className="flex items-center gap-2 text-sm text-slate-200">
-                <HandCoins className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+              <span className="flex items-center gap-2 text-sm text-at-primary/90">
+                <HandCoins className="h-3.5 w-3.5 shrink-0 text-at-muted" />
                 Descontar haver nesta cobrança?
               </span>
-              <span className="text-sm tabular-nums text-slate-300">
+              <span className="text-sm tabular-nums text-at-primary/85">
                 {formatCurrency(haverSaldo)}
               </span>
             </div>
-            <p className="text-[12px] leading-relaxed text-slate-500">
+            <p className="text-[12px] leading-relaxed text-at-muted">
               Se marcar, o cliente paga menos esse crédito.
             </p>
           </div>
@@ -200,7 +200,7 @@ export function ColetaHaverPendenciaPanel({
             "flex cursor-pointer gap-3 border px-3.5 py-3 transition-colors",
             incluirPendencia
               ? "border-amber-600/40 bg-amber-950/20"
-              : "border-white/[0.08] bg-transparent hover:border-white/15"
+              : "border-at-soft bg-transparent hover:border-at-soft"
           )}
         >
           <input
@@ -211,15 +211,15 @@ export function ColetaHaverPendenciaPanel({
           />
           <div className="min-w-0 flex-1 space-y-1">
             <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-              <span className="flex items-center gap-2 text-sm text-slate-200">
-                <Clock className="h-3.5 w-3.5 shrink-0 text-slate-500" />
+              <span className="flex items-center gap-2 text-sm text-at-primary/90">
+                <Clock className="h-3.5 w-3.5 shrink-0 text-at-muted" />
                 Incluir pendência nesta cobrança
               </span>
-              <span className="text-sm tabular-nums text-slate-300">
+              <span className="text-sm tabular-nums text-at-primary/85">
                 {formatCurrency(pendenciaSaldo)}
               </span>
             </div>
-            <p className="text-[12px] leading-relaxed text-slate-500">
+            <p className="text-[12px] leading-relaxed text-at-muted">
               Soma ao total a cobrar agora. Se não marcar, o excedente ainda pode abater a
               pendência.
             </p>

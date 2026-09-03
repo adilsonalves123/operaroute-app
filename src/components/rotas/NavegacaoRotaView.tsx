@@ -133,7 +133,7 @@ export function NavegacaoRotaView({ paradas, onFechar, onParadaAvancar }: Props)
               >
                 <X className="h-5 w-5" />
               </button>
-              <div className="min-w-0 flex-1 rounded-xl bg-slate-900/90 backdrop-blur border border-white/10 px-4 py-3">
+              <div className="min-w-0 flex-1 rounded-xl bg-slate-900/90 backdrop-blur border border-at-soft px-4 py-3">
                 <div className="flex items-center gap-2 text-primary-neon">
                   <Navigation className="h-4 w-4 shrink-0" />
                   <span className="text-xs font-medium uppercase tracking-wide">
@@ -143,7 +143,7 @@ export function NavegacaoRotaView({ paradas, onFechar, onParadaAvancar }: Props)
                 <p className="mt-1 text-base font-semibold text-white leading-snug">
                   {carregandoRota ? "Calculando rota…" : instrucao}
                 </p>
-                <div className="mt-2 flex flex-wrap gap-3 text-sm text-slate-300">
+                <div className="mt-2 flex flex-wrap gap-3 text-sm text-at-primary/85">
                   <span className="font-bold text-white">{distanciaExibir}</span>
                   {tempoExibir && <span>· {tempoExibir}</span>}
                   {chegou && (
@@ -164,7 +164,7 @@ export function NavegacaoRotaView({ paradas, onFechar, onParadaAvancar }: Props)
               "rounded-full p-3 shadow-lg backdrop-blur",
               seguirUsuario
                 ? "bg-primary-neon text-slate-900"
-                : "bg-slate-900/90 text-white border border-white/20"
+                : "bg-slate-900/90 text-white border border-at"
             )}
             title="Seguir minha posição"
           >
@@ -182,14 +182,14 @@ export function NavegacaoRotaView({ paradas, onFechar, onParadaAvancar }: Props)
       {/* Painel inferior */}
       <div
         className={cn(
-          "relative z-[1001] shrink-0 border-t border-white/10 bg-slate-900/95 backdrop-blur transition-all",
+          "relative z-[1001] shrink-0 border-t border-at-soft bg-slate-900/95 backdrop-blur transition-all",
           painelAberto ? "max-h-[45vh]" : "max-h-14"
         )}
       >
         <button
           type="button"
           onClick={() => setPainelAberto((p) => !p)}
-          className="flex w-full items-center justify-center py-2 text-slate-500"
+          className="flex w-full items-center justify-center py-2 text-at-muted"
         >
           <ChevronUp
             className={cn("h-5 w-5 transition", painelAberto && "rotate-180")}
@@ -220,16 +220,16 @@ export function NavegacaoRotaView({ paradas, onFechar, onParadaAvancar }: Props)
                     <img
                       src={destino.fotoUrl}
                       alt=""
-                      className="h-16 w-16 rounded-xl object-cover border border-white/10"
+                      className="h-16 w-16 rounded-xl object-cover border border-at-soft"
                     />
                   ) : (
                     <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-slate-800">
-                      <MapPin className="h-6 w-6 text-slate-600" />
+                      <MapPin className="h-6 w-6 text-at-soft" />
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-white truncate">{destino.nome}</p>
-                    <p className="text-xs text-slate-500 truncate">
+                    <p className="text-xs text-at-muted truncate">
                       {[destino.endereco, destino.cidade].filter(Boolean).join(" · ")}
                     </p>
                     {(destino.pendente ?? 0) > 0.009 && (
@@ -255,7 +255,7 @@ export function NavegacaoRotaView({ paradas, onFechar, onParadaAvancar }: Props)
                       "inline-flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold",
                       chegou
                         ? "bg-green-500 text-white"
-                        : "border border-slate-600 text-slate-300"
+                        : "border border-slate-600 text-at-primary/85"
                     )}
                   >
                     <CheckCircle2 className="h-4 w-4" />
@@ -264,16 +264,16 @@ export function NavegacaoRotaView({ paradas, onFechar, onParadaAvancar }: Props)
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-xs text-slate-500 uppercase tracking-wide">
+                  <p className="text-xs text-at-muted uppercase tracking-wide">
                     Próximas paradas
                   </p>
                   {paradasComCoords.slice(indiceDestino + 1, indiceDestino + 4).map((p) => (
-                    <p key={p.id} className="text-sm text-slate-400 truncate">
+                    <p key={p.id} className="text-sm text-at-muted truncate">
                       {p.ordem}. {p.nome}
                     </p>
                   ))}
                   {paradasComCoords.length - indiceDestino - 1 <= 0 && (
-                    <p className="text-sm text-slate-600">Última parada</p>
+                    <p className="text-sm text-at-soft">Última parada</p>
                   )}
                 </div>
               </>

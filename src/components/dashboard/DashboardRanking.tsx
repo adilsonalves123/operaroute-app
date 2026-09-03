@@ -24,10 +24,10 @@ export function DashboardRanking({
 
   return (
     <div className="bank-card p-5 sm:p-6">
-      <h3 className="text-sm font-medium text-slate-300">{title}</h3>
+      <h3 className="text-sm font-medium text-at-primary/85">{title}</h3>
 
       {ranking.length === 0 ? (
-        <p className="mt-4 text-sm text-slate-500">Nenhuma coleta registrada neste período.</p>
+        <p className="mt-4 text-sm text-at-muted">Nenhuma coleta registrada neste período.</p>
       ) : (
         <div className="mt-4 space-y-4">
           {ranking.map(({ ponto, valor }, index) => {
@@ -40,7 +40,7 @@ export function DashboardRanking({
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <div className="flex min-w-0 items-baseline gap-2.5">
-                    <span className="w-5 shrink-0 text-xs tabular-nums text-slate-600">
+                    <span className="w-5 shrink-0 text-xs tabular-nums text-at-soft">
                       {index + 1}.
                     </span>
                     <span className="truncate text-sm font-medium text-white group-hover:text-primary-neon transition-colors">
@@ -48,10 +48,10 @@ export function DashboardRanking({
                     </span>
                   </div>
                   <div className="shrink-0 text-right">
-                    <span className="text-sm font-semibold tabular-nums text-slate-200">
+                    <span className="text-sm font-semibold tabular-nums text-at-primary/90">
                       {formatCurrency(valor)}
                     </span>
-                    <span className="ml-2 text-[10px] tabular-nums text-slate-600">
+                    <span className="ml-2 text-[10px] tabular-nums text-at-soft">
                       {pct.toFixed(0)}%
                     </span>
                   </div>

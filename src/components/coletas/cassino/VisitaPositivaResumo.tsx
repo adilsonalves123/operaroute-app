@@ -198,17 +198,17 @@ export function VisitaPositivaResumo({
         )}
       >
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-at-soft bg-black/20">
             {cobertoPorHaver ? (
               <HandCoins className="h-5 w-5 text-cyan-400" />
             ) : calculo.totalACobrarReais > 0.009 ? (
               <ArrowDownLeft className="h-5 w-5 text-cyan-300" />
             ) : (
-              <Wallet className="h-5 w-5 text-slate-400" />
+              <Wallet className="h-5 w-5 text-at-muted" />
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-at-muted">
               Resultado
             </p>
             <h2 className="mt-0.5 text-base font-semibold text-white sm:text-lg">
@@ -223,18 +223,18 @@ export function VisitaPositivaResumo({
                 "mt-1 text-3xl font-bold tabular-nums tracking-tight",
                 cobertoPorHaver || calculo.totalACobrarReais > 0.009
                   ? "text-cyan-300"
-                  : "text-slate-200"
+                  : "text-at-primary/90"
               )}
             >
               {formatCurrency(calculo.totalACobrarReais)}
             </p>
             {cobertoPorHaver && (
-              <p className="mt-1.5 text-sm text-slate-400">
+              <p className="mt-1.5 text-sm text-at-muted">
                 Operação de {formatCurrency(operacao)} coberta pelo haver
               </p>
             )}
             {!cobertoPorHaver && calculo.valorPagoReais > 0.009 && (
-              <p className="mt-1.5 text-sm text-slate-400">
+              <p className="mt-1.5 text-sm text-at-muted">
                 Recebido {formatCurrency(calculo.valorPagoReais)}
                 {calculo.restanteReais > 0.009
                   ? ` · falta ${formatCurrency(calculo.restanteReais)}`
@@ -248,7 +248,7 @@ export function VisitaPositivaResumo({
       {/* 2. Números da visita — uma vez */}
       <section className="grid grid-cols-3 gap-2 sm:gap-3">
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 sm:p-4">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500 sm:text-[11px]">
+          <p className="text-[10px] uppercase tracking-wide text-at-muted sm:text-[11px]">
             Lucro
           </p>
           <p className="mt-1 text-base font-semibold tabular-nums text-white sm:text-xl">
@@ -256,7 +256,7 @@ export function VisitaPositivaResumo({
           </p>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 sm:p-4">
-          <p className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-slate-500 sm:text-[11px]">
+          <p className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-at-muted sm:text-[11px]">
             <BadgePercent className="hidden h-3 w-3 sm:block" />
             Comissão
             {comissaoPercentual > 0 ? ` ${comissaoPercentual}%` : ""}
@@ -266,7 +266,7 @@ export function VisitaPositivaResumo({
           </p>
         </div>
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-3 sm:p-4">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500 sm:text-[11px]">
+          <p className="text-[10px] uppercase tracking-wide text-at-muted sm:text-[11px]">
             Operação
           </p>
           <p className="mt-1 text-base font-semibold tabular-nums text-emerald-400 sm:text-xl">
@@ -321,7 +321,7 @@ export function VisitaPositivaResumo({
             </div>
           </div>
           {calculo.haverQuitadoReais > 0.009 && calculo.haverRestanteReais > 0.009 && (
-            <p className="mt-2 text-xs text-slate-400">
+            <p className="mt-2 text-xs text-at-muted">
               Ainda em aberto: {formatCurrency(calculo.haverRestanteReais)}
             </p>
           )}
@@ -333,13 +333,13 @@ export function VisitaPositivaResumo({
         <button
           type="button"
           onClick={() => setDetalheAberto((v) => !v)}
-          className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition hover:bg-white/[0.03]"
+          className="flex w-full items-center justify-between gap-3 px-4 py-3.5 text-left transition hover:bg-at-card-soft"
           aria-expanded={detalheAberto}
         >
-          <p className="text-sm font-medium text-slate-300">Ver conta passo a passo</p>
+          <p className="text-sm font-medium text-at-primary/85">Ver conta passo a passo</p>
           <ChevronDown
             className={cn(
-              "h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200",
+              "h-4 w-4 shrink-0 text-at-muted transition-transform duration-200",
               detalheAberto && "rotate-180"
             )}
           />
@@ -349,7 +349,7 @@ export function VisitaPositivaResumo({
           <div className="border-t border-slate-800/80 px-4 pb-4 pt-1">
             <div className="mb-3 mt-2 grid grid-cols-3 gap-2">
               <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-2 py-2">
-                <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                <p className="text-[10px] uppercase tracking-wide text-at-muted">
                   Entrada
                 </p>
                 <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-400">
@@ -357,7 +357,7 @@ export function VisitaPositivaResumo({
                 </p>
               </div>
               <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-2 py-2">
-                <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                <p className="text-[10px] uppercase tracking-wide text-at-muted">
                   Saída
                 </p>
                 <p className="mt-0.5 text-sm font-semibold tabular-nums text-rose-400">
@@ -365,7 +365,7 @@ export function VisitaPositivaResumo({
                 </p>
               </div>
               <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-2 py-2">
-                <p className="text-[10px] uppercase tracking-wide text-slate-500">
+                <p className="text-[10px] uppercase tracking-wide text-at-muted">
                   Bruto
                 </p>
                 <p className="mt-0.5 text-sm font-semibold tabular-nums text-white">
@@ -384,13 +384,13 @@ export function VisitaPositivaResumo({
                     <div
                       className={cn(
                         "flex items-center justify-between gap-3 rounded-lg px-2 py-2",
-                        destaque && "bg-white/[0.03]"
+                        destaque && "bg-at-card-soft"
                       )}
                     >
                       <p
                         className={cn(
                           "text-sm",
-                          destaque ? "font-medium text-white" : "text-slate-400"
+                          destaque ? "font-medium text-white" : "text-at-muted"
                         )}
                       >
                         {passo.label}
@@ -418,7 +418,7 @@ export function VisitaPositivaResumo({
           <div className="space-y-2 text-sm">
             {calculo.valorPagoReais > 0.009 && (
               <div className="flex justify-between gap-4">
-                <span className="text-slate-400">Recebido</span>
+                <span className="text-at-muted">Recebido</span>
                 <span className="font-semibold tabular-nums text-emerald-400">
                   {formatCurrency(calculo.valorPagoReais)}
                 </span>

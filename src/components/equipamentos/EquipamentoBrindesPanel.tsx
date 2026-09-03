@@ -78,7 +78,7 @@ function BrindeFoto({
         className
       )}
     >
-      <ImageIcon className="h-5 w-5 text-slate-600" />
+      <ImageIcon className="h-5 w-5 text-at-soft" />
     </div>
   );
 }
@@ -137,7 +137,7 @@ function BrindeSelectDropdown({
         onClick={() => handleSelect(item.key)}
         className={cn(
           "flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition",
-          active ? "bg-pink-500/15 text-white" : "text-slate-200 hover:bg-slate-800"
+          active ? "bg-pink-500/15 text-white" : "text-at-primary/90 hover:bg-slate-800"
         )}
       >
         <BrindeFoto src={item.foto_url} nome={item.nome} className="h-9 w-9 rounded-md" plain />
@@ -148,7 +148,7 @@ function BrindeSelectDropdown({
 
   return (
     <div ref={rootRef} className="relative space-y-1.5">
-      <label className="block text-sm font-medium text-slate-300">Item</label>
+      <label className="block text-sm font-medium text-at-primary/85">Item</label>
       <button
         type="button"
         disabled={loading}
@@ -166,10 +166,10 @@ function BrindeSelectDropdown({
             <span className="min-w-0 flex-1 truncate text-white">{itemLabel(selected)}</span>
           </>
         ) : (
-          <span className="flex-1 text-slate-500">Selecione o brinde...</span>
+          <span className="flex-1 text-at-muted">Selecione o brinde...</span>
         )}
         <ChevronDown
-          className={cn("h-4 w-4 shrink-0 text-slate-400 transition", open && "rotate-180")}
+          className={cn("h-4 w-4 shrink-0 text-at-muted transition", open && "rotate-180")}
         />
       </button>
 
@@ -180,7 +180,7 @@ function BrindeSelectDropdown({
         >
           {itensPonto.length > 0 && (
             <div>
-              <p className="sticky top-0 border-b border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-400">
+              <p className="sticky top-0 border-b border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-at-muted">
                 No ponto
               </p>
               {itensPonto.map(renderOption)}
@@ -188,7 +188,7 @@ function BrindeSelectDropdown({
           )}
           {itensCentral.length > 0 && (
             <div>
-              <p className="sticky top-0 border-b border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-slate-400">
+              <p className="sticky top-0 border-b border-slate-800 bg-slate-900 px-3 py-2 text-xs font-semibold text-at-muted">
                 Estoque central
               </p>
               {itensCentral.map(renderOption)}
@@ -397,22 +397,22 @@ export function EquipamentoBrindesPanel({
           />
           <div>
             <h4 className="font-medium text-white">{titulo}</h4>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-at-muted mt-0.5">
               {estoquePorMaquina
                 ? "Só esta máquina. Escolha a cápsula/brinde no estoque central (ex.: cápsula R$ 2,00)."
                 : "Abra a lista para escolher o brinde. Pode vir do ponto ou do estoque central."}
             </p>
           </div>
         </div>
-        <span className="text-xs text-slate-400 tabular-nums shrink-0">
+        <span className="text-xs text-at-muted tabular-nums shrink-0">
           {totalNaMaquina} un. total
         </span>
       </div>
 
       {catalogo.length === 0 ? (
         <div className="rounded-lg border border-dashed border-slate-700 bg-slate-950/40 p-4 text-center space-y-2">
-          <p className="text-sm text-slate-400">Nenhum item disponível para alocar.</p>
-          <p className="text-xs text-slate-500">
+          <p className="text-sm text-at-muted">Nenhum item disponível para alocar.</p>
+          <p className="text-xs text-at-muted">
             Cadastre {estoquePorMaquina ? "cápsulas/brindes" : "brindes"} no{" "}
             <Link href="/estoque" className="text-primary-neon hover:underline">
               estoque central
@@ -468,7 +468,7 @@ export function EquipamentoBrindesPanel({
           </div>
 
           {selected && (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-at-muted">
               Origem:{" "}
               {selected.source === "ponto" ? "estoque do ponto" : "estoque central"} · máx.{" "}
               {selected.quantidade} un.
@@ -478,14 +478,14 @@ export function EquipamentoBrindesPanel({
       )}
 
       {brindesMaquina.length === 0 ? (
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-at-muted">
           {estoquePorMaquina
             ? "Nenhuma cápsula/brinde nesta máquina ainda."
             : "Nenhum brinde alocado nesta máquina ainda."}
         </p>
       ) : (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+          <p className="text-xs font-medium text-at-muted uppercase tracking-wide">
             Alocados nesta máquina
           </p>
           {brindesMaquina.map((item) => {
@@ -499,7 +499,7 @@ export function EquipamentoBrindesPanel({
                   <BrindeFoto src={foto} nome={item.nome} className="h-12 w-12" />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-white">{item.nome}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-at-muted">
                       {formatCurrency(Number(item.custo_unitario ?? 0))}/un
                     </p>
                   </div>
@@ -507,7 +507,7 @@ export function EquipamentoBrindesPanel({
                 <div className="flex items-center gap-3">
                   <p className="text-lg font-semibold text-white tabular-nums">
                     {item.quantidade}{" "}
-                    <span className="text-sm font-normal text-slate-500">un.</span>
+                    <span className="text-sm font-normal text-at-muted">un.</span>
                   </p>
                   {item.item_id && (
                     <button
@@ -515,7 +515,7 @@ export function EquipamentoBrindesPanel({
                       onClick={() => devolver(item.item_id!, item.quantidade)}
                       disabled={loading}
                       title="Devolver tudo ao ponto"
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
                     >
                       <ArrowLeft className="h-3.5 w-3.5" />
                       Devolver

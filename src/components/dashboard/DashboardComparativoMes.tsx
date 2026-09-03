@@ -26,11 +26,11 @@ export function DashboardComparativoMes({
   return (
     <div className="glass-card flex flex-wrap items-center gap-x-8 gap-y-3 px-5 py-4 text-sm">
       <div>
-        <p className="text-xs text-slate-500 uppercase tracking-wide">vs mês anterior</p>
+        <p className="text-xs text-at-muted uppercase tracking-wide">vs mês anterior</p>
         <p className="font-semibold text-white tabular-nums mt-0.5">
           Lucro {formatCurrency(lucroAtual)}
         </p>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs text-at-muted">
           Mês passado: {formatCurrency(lucroAnterior)}
         </p>
       </div>
@@ -48,8 +48,8 @@ export function DashboardComparativoMes({
           {deltaLucro}% lucro
         </div>
       )}
-      <div className="text-xs text-slate-500">
-        Coletas: <span className="text-slate-300">{coletasAtual}</span>
+      <div className="text-xs text-at-muted">
+        Coletas: <span className="text-at-primary/85">{coletasAtual}</span>
         {coletasAnterior > 0 && (
           <>
             {" "}

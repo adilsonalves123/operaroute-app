@@ -106,8 +106,8 @@ export function EnviarRotaModal({
       aria-modal="true"
       aria-labelledby="enviar-rota-title"
     >
-      <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-white/10 bg-[#0c1220] shadow-2xl overflow-hidden">
-        <div className="relative px-5 pt-5 pb-3 border-b border-white/[0.06]">
+      <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl border border-at-soft bg-[#0c1220] shadow-2xl overflow-hidden">
+        <div className="relative px-5 pt-5 pb-3 border-b border-at">
           <div
             className="pointer-events-none absolute inset-0 opacity-40"
             style={{
@@ -121,14 +121,14 @@ export function EnviarRotaModal({
               <h2 id="enviar-rota-title" className="text-xl font-semibold tracking-tight text-white mt-1">
                 {rota.nome}
               </h2>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-at-muted mt-1">
                 {rota.cidade ?? "—"} · {prog.total} paradas · progresso mantido ao reatribuir
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-lg p-2 text-slate-400 hover:bg-white/5 hover:text-white"
+              className="rounded-lg p-2 text-at-muted hover:bg-white/5 hover:text-white"
               aria-label="Fechar"
             >
               <X className="h-5 w-5" />
@@ -148,16 +148,16 @@ export function EnviarRotaModal({
           />
 
           {operador && (
-            <div className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-slate-900/40 px-3 py-2 text-xs text-slate-400">
+            <div className="flex items-center gap-2 rounded-lg border border-at bg-slate-900/40 px-3 py-2 text-xs text-at-muted">
               <User className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-              <span className="text-slate-300">{operador.nome}</span>
+              <span className="text-at-primary/85">{operador.nome}</span>
               <span>·</span>
               <span>{operador.whatsapp ? operador.whatsapp : "sem WhatsApp cadastrado"}</span>
             </div>
           )}
 
-          <p className="text-xs text-slate-500 leading-relaxed">
-            A rota aparece em <strong className="text-slate-400">Minha rota</strong> no app dele.
+          <p className="text-xs text-at-muted leading-relaxed">
+            A rota aparece em <strong className="text-at-muted">Minha rota</strong> no app dele.
             WhatsApp é opcional, só o resumo das paradas.
           </p>
 
@@ -181,7 +181,7 @@ export function EnviarRotaModal({
               type="button"
               disabled={loading || !operadorId}
               onClick={() => void handleWhatsApp()}
-              className="inline-flex w-full items-center justify-center gap-1.5 py-2 text-sm text-slate-500 hover:text-emerald-300 disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-1.5 py-2 text-sm text-at-muted hover:text-emerald-300 disabled:opacity-50"
             >
               <MessageCircle className="h-3.5 w-3.5" />
               Também avisar no WhatsApp
@@ -189,7 +189,7 @@ export function EnviarRotaModal({
             <button
               type="button"
               onClick={onClose}
-              className="py-2 text-sm text-slate-500 hover:text-slate-300"
+              className="py-2 text-sm text-at-muted hover:text-at-primary/85"
             >
               Cancelar
             </button>
@@ -230,7 +230,7 @@ export function EnviarRotaWizardFields({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-at-muted">
         Salvar <strong className="text-white">{totalParadas}</strong> paradas em{" "}
         <strong className="text-cyan-300">{cidade || "—"}</strong> e atribuir no app.
       </p>

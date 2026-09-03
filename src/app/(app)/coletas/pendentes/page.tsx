@@ -3,7 +3,7 @@ import { FuraFuraPendentesClient } from "@/components/coletas/fura-fura/FuraFura
 
 export default function ColetasPendentesPage() {
   return (
-    <Suspense fallback={<div className="text-slate-500 p-8">Carregando...</div>}>
+    <Suspense fallback={<div className="text-at-muted p-8">Carregando...</div>}>
       <FuraFuraPendentesClient />
     </Suspense>
   );

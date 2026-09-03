@@ -120,17 +120,17 @@ export function PontoComissaoPeriodo({
             {formatCurrency(total)}
           </p>
           {!aberto ? (
-            <p className="mt-0.5 text-[12px] text-slate-500">
+            <p className="mt-0.5 text-[12px] text-at-muted">
               {label} · toque para expandir
             </p>
           ) : (
-            <p className="mt-0.5 text-[12px] text-slate-500">{label}</p>
+            <p className="mt-0.5 text-[12px] text-at-muted">{label}</p>
           )}
         </div>
         {aberto ? (
-          <ChevronUp className="h-4 w-4 shrink-0 text-slate-500" />
+          <ChevronUp className="h-4 w-4 shrink-0 text-at-muted" />
         ) : (
-          <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-at-muted" />
         )}
       </button>
 
@@ -149,8 +149,8 @@ export function PontoComissaoPeriodo({
                   key={linha.nicho}
                   className="flex items-center justify-between gap-3 text-[13px]"
                 >
-                  <span className="text-slate-400">{linha.label}</span>
-                  <span className="font-medium text-slate-200 tabular-nums">
+                  <span className="text-at-muted">{linha.label}</span>
+                  <span className="font-medium text-at-primary/90 tabular-nums">
                     {formatCurrency(linha.valor)}
                   </span>
                 </li>
@@ -159,7 +159,7 @@ export function PontoComissaoPeriodo({
           ) : null}
 
           {total < 0.0001 ? (
-            <p className="text-[13px] text-slate-500">
+            <p className="text-[13px] text-at-muted">
               Nenhuma comissão lançada neste período.
             </p>
           ) : null}
@@ -176,14 +176,14 @@ export function PontoComissaoPeriodo({
             <button
               type="button"
               onClick={() => void compartilhar()}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-3.5 py-2 text-[13px] font-medium text-slate-200 transition hover:bg-white/[0.08]"
+              className="inline-flex items-center gap-2 rounded-full border border-at-soft bg-at-card-soft px-3.5 py-2 text-[13px] font-medium text-at-primary/90 transition hover:bg-white/[0.08]"
             >
               <Share2 className="h-3.5 w-3.5" />
               Compartilhar
             </button>
           </div>
 
-          {feedback ? <p className="text-[12px] text-slate-400">{feedback}</p> : null}
+          {feedback ? <p className="text-[12px] text-at-muted">{feedback}</p> : null}
         </div>
       ) : null}
     </section>

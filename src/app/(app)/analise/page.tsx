@@ -86,7 +86,7 @@ export default async function AnalisePage({
 
   if (!data) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-slate-500">
+      <p className="px-4 py-16 text-center text-sm text-at-muted">
         Faça login para ver a análise.
       </p>
     );

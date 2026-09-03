@@ -167,7 +167,7 @@ function NichoCardVertical({
             <span className="block h-5 w-5 rounded-full border-2 border-slate-500 bg-slate-950/40 backdrop-blur-sm" />
           ) : (
             <span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-600 bg-slate-950/70 backdrop-blur-sm">
-              <Plus className="h-3 w-3 text-slate-400" />
+              <Plus className="h-3 w-3 text-at-muted" />
             </span>
           )}
         </div>
@@ -184,7 +184,7 @@ function NichoCardVertical({
             className={cn(
               "shrink-0 rounded-md p-1",
               contratado ? visual.accent.iconBg : "bg-slate-800",
-              contratado ? visual.accent.iconText : "text-slate-500"
+              contratado ? visual.accent.iconText : "text-at-muted"
             )}
           >
             {NICHO_ICONS[nicho]}
@@ -192,7 +192,7 @@ function NichoCardVertical({
           <span
             className={cn(
               "text-sm font-semibold leading-tight",
-              contratado ? "text-white" : "text-slate-400"
+              contratado ? "text-white" : "text-at-muted"
             )}
           >
             {label}
@@ -201,7 +201,7 @@ function NichoCardVertical({
         <p
           className={cn(
             "line-clamp-3 flex-1 text-[11px] leading-snug",
-            contratado ? "text-slate-400" : "text-slate-600"
+            contratado ? "text-at-muted" : "text-at-soft"
           )}
         >
           {description}
@@ -222,7 +222,7 @@ function NichoCardVertical({
               {cta.label}
               <ArrowRight className="h-3 w-3 shrink-0 opacity-70" />
             </span>
-            <p className="text-[9px] leading-snug text-slate-600">{cta.hint}</p>
+            <p className="text-[9px] leading-snug text-at-soft">{cta.hint}</p>
           </div>
         )}
       </div>
@@ -337,7 +337,7 @@ export function PontoNichoPainel({
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-at-muted">
           Nichos
         </h2>
         <p className="mt-1 text-[15px] text-white">Escolha o tipo de máquina neste ponto</p>
@@ -345,7 +345,7 @@ export function PontoNichoPainel({
 
       {bloqueados.length > 0 && (
         <div className="rounded-xl border border-slate-800 bg-slate-900/50 px-4 py-3 text-sm">
-          <p className="text-slate-300">
+          <p className="text-at-primary/85">
             {planoStatus.podeAdicionarNicho ? (
               <>
                 Seu plano permite até{" "}
@@ -371,7 +371,7 @@ export function PontoNichoPainel({
               </>
             )}
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-at-muted">
             Nichos são ativados em{" "}
             <Link href="/planos" className="text-primary-neon hover:underline">
               Planos e assinatura
@@ -388,7 +388,7 @@ export function PontoNichoPainel({
           <button
             type="button"
             onClick={() => scrollBy(-1)}
-            className="absolute left-0 top-[calc(50%-12px)] z-10 -translate-y-1/2 rounded-full border border-slate-700 bg-slate-900/95 p-1.5 text-slate-300 shadow-lg hover:bg-slate-800 hover:text-white transition"
+            className="absolute left-0 top-[calc(50%-12px)] z-10 -translate-y-1/2 rounded-full border border-slate-700 bg-slate-900/95 p-1.5 text-at-primary/85 shadow-lg hover:bg-slate-800 hover:text-white transition"
             aria-label="Nichos anteriores"
           >
             <ChevronLeft className="h-5 w-5" />
@@ -399,7 +399,7 @@ export function PontoNichoPainel({
           <button
             type="button"
             onClick={() => scrollBy(1)}
-            className="absolute right-0 top-[calc(50%-12px)] z-10 -translate-y-1/2 rounded-full border border-slate-700 bg-slate-900/95 p-1.5 text-slate-300 shadow-lg hover:bg-slate-800 hover:text-white transition"
+            className="absolute right-0 top-[calc(50%-12px)] z-10 -translate-y-1/2 rounded-full border border-slate-700 bg-slate-900/95 p-1.5 text-at-primary/85 shadow-lg hover:bg-slate-800 hover:text-white transition"
             aria-label="Próximos nichos"
           >
             <ChevronRight className="h-5 w-5" />

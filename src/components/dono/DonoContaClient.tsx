@@ -13,7 +13,7 @@ export function DonoContaClient({ email }: { email: string }) {
 
   const card = light
     ? "rounded-2xl border border-stone-200 bg-white p-5"
-    : "rounded-2xl border border-white/[0.07] bg-white/[0.02] p-5";
+    : "rounded-2xl border border-at bg-white/[0.02] p-5";
 
   async function sair() {
     await fetch("/api/dono/login", { method: "DELETE" });
@@ -29,17 +29,17 @@ export function DonoContaClient({ email }: { email: string }) {
             <span
               className={cn(
                 "flex h-12 w-12 items-center justify-center rounded-full text-[18px] font-medium",
-                light ? "bg-stone-900 text-white" : "bg-[#c4a574]/25 text-[#e8d5b0]"
+                light ? "bg-stone-900 text-white" : "bg-[#c4a574]/25 text-at-link"
               )}
             >
               {nome.slice(0, 1)}
             </span>
             <div>
               <p className="text-[16px] font-medium">{nome}</p>
-              <p className="text-[13px] text-slate-500">{email}</p>
+              <p className="text-[13px] text-at-muted">{email}</p>
             </div>
           </div>
-          <p className="mt-4 text-[12px] text-slate-500">
+          <p className="mt-4 text-[12px] text-at-muted">
             Login separado do app dos clientes. Credenciais em{" "}
             <code className="text-[11px]">DONO_EMAIL</code> /{" "}
             <code className="text-[11px]">DONO_PASSWORD</code> no{" "}

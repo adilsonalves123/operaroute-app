@@ -90,11 +90,11 @@ export function RelatoriosRetencaoPanel({ retencaoDias, podeGerir }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-white/[0.07] bg-slate-900/40 px-4 py-3 space-y-3">
+    <div className="rounded-xl border border-at bg-slate-900/40 px-4 py-3 space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-white">Guardar fotos e relatórios</p>
-          <p className="text-xs text-slate-500 mt-0.5">
+          <p className="text-xs text-at-muted mt-0.5">
             Padrão 90 dias. Você escolhe — ou apaga na mão quando quiser.
           </p>
         </div>
@@ -126,7 +126,7 @@ export function RelatoriosRetencaoPanel({ retencaoDias, podeGerir }: Props) {
               className={
                 dias === op.value
                   ? "rounded-lg border border-primary-neon/50 bg-primary-neon/10 px-3 py-1.5 text-xs font-medium text-primary-neon"
-                  : "rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-slate-400 hover:border-slate-600 hover:text-slate-200"
+                  : "rounded-lg border border-slate-700 px-3 py-1.5 text-xs text-at-muted hover:border-slate-600 hover:text-at-primary/90"
               }
             >
               {op.value === 0 ? "Nunca" : `${op.value} dias`}
@@ -134,12 +134,12 @@ export function RelatoriosRetencaoPanel({ retencaoDias, podeGerir }: Props) {
           ))}
         </div>
       ) : (
-        <p className="text-xs text-slate-400">
-          Retenção atual: <span className="text-slate-300">{labelRetencaoMidia(dias)}</span>
+        <p className="text-xs text-at-muted">
+          Retenção atual: <span className="text-at-primary/85">{labelRetencaoMidia(dias)}</span>
         </p>
       )}
 
-      {msg && <p className="text-xs text-slate-400">{msg}</p>}
+      {msg && <p className="text-xs text-at-muted">{msg}</p>}
     </div>
   );
 }

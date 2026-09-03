@@ -125,10 +125,10 @@ export function ColetaConsignadoSucessoModal({ open, data, expositores, onClose 
             <CheckCircle className="h-6 w-6 shrink-0 text-green-400" />
             <div>
               <h2 className="text-lg font-bold text-white">Coleta registrada!</h2>
-              <p className="text-sm text-slate-400">Comprovante detalhado abaixo</p>
+              <p className="text-sm text-at-muted">Comprovante detalhado abaixo</p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-1 text-slate-400 hover:text-white">
+          <button type="button" onClick={onClose} className="p-1 text-at-muted hover:text-white">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -160,7 +160,7 @@ export function ColetaConsignadoSucessoModal({ open, data, expositores, onClose 
                 <Package className="mt-0.5 h-5 w-5 shrink-0 text-orange-300" />
                 <div>
                   <p className="font-medium text-white">Deseja repor produtos agora?</p>
-                  <p className="mt-1 text-sm text-slate-400">
+                  <p className="mt-1 text-sm text-at-muted">
                     A coleta já contabilizou o que saiu. A reposição é opcional e fica separada para
                     não confundir o recolhe.
                   </p>
@@ -170,7 +170,7 @@ export function ColetaConsignadoSucessoModal({ open, data, expositores, onClose 
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 rounded-lg border border-slate-600 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800"
+                  className="flex-1 rounded-lg border border-slate-600 py-2.5 text-sm font-medium text-at-primary/90 hover:bg-slate-800"
                 >
                   Não, concluir
                 </button>
@@ -185,7 +185,7 @@ export function ColetaConsignadoSucessoModal({ open, data, expositores, onClose 
             </div>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-at-primary/85">
                 Informe quantas unidades colocar de volta em cada produto.
               </p>
               {linhasRepor.map((exp) => (
@@ -211,7 +211,7 @@ export function ColetaConsignadoSucessoModal({ open, data, expositores, onClose 
                             />
                           ) : (
                             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-800">
-                              <Package className="h-4 w-4 text-slate-500" />
+                              <Package className="h-4 w-4 text-at-muted" />
                             </div>
                           )}
                           <div className="min-w-0">
@@ -221,7 +221,7 @@ export function ColetaConsignadoSucessoModal({ open, data, expositores, onClose 
                               ) : null}
                               {linha.nome}
                             </p>
-                            <p className="text-[11px] text-slate-500">
+                            <p className="text-[11px] text-at-muted">
                               Saldo agora: {linha.saldoAtual} · {formatCurrency(linha.precoVenda)} un
                             </p>
                           </div>
@@ -232,7 +232,7 @@ export function ColetaConsignadoSucessoModal({ open, data, expositores, onClose 
                             onClick={() =>
                               updateRepor(exp.equipamentoId, linha.produtoId, String(Math.max(0, n - 1)))
                             }
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-at-primary/85 hover:bg-slate-800"
                           >
                             <Minus className="h-3.5 w-3.5" />
                           </button>
@@ -254,7 +254,7 @@ export function ColetaConsignadoSucessoModal({ open, data, expositores, onClose 
                             onClick={() =>
                               updateRepor(exp.equipamentoId, linha.produtoId, String(n + 1))
                             }
-                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-700 text-at-primary/85 hover:bg-slate-800"
                           >
                             <Plus className="h-3.5 w-3.5" />
                           </button>
@@ -273,7 +273,7 @@ export function ColetaConsignadoSucessoModal({ open, data, expositores, onClose 
                   type="button"
                   disabled={saving}
                   onClick={onClose}
-                  className="flex-1 rounded-lg border border-slate-600 py-2.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+                  className="flex-1 rounded-lg border border-slate-600 py-2.5 text-sm text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
                 >
                   Pular
                 </button>

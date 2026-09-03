@@ -27,8 +27,8 @@ export function FotoPontoField({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-slate-300">{label}</label>
-      {hint && <p className="text-xs text-slate-500">{hint}</p>}
+      <label className="block text-sm font-medium text-at-primary/85">{label}</label>
+      {hint && <p className="text-xs text-at-muted">{hint}</p>}
       <input
         ref={inputRef}
         type="file"
@@ -43,7 +43,7 @@ export function FotoPontoField({
             src={preview}
             alt="Foto do ponto"
             fullWidth={false}
-            className={cn("rounded-xl object-cover border border-white/10", previewClass)}
+            className={cn("rounded-xl object-cover border border-at-soft", previewClass)}
           />
           <button
             type="button"
@@ -62,7 +62,7 @@ export function FotoPontoField({
           onClick={() => inputRef.current?.click()}
           className={cn(
             "flex w-full max-w-sm items-center justify-center gap-2 rounded-xl border border-dashed py-8 text-sm",
-            "border-slate-600 text-slate-400 hover:border-primary-neon/40 hover:text-primary-neon"
+            "border-slate-600 text-at-muted hover:border-primary-neon/40 hover:text-primary-neon"
           )}
         >
           <Camera className="h-5 w-5" />

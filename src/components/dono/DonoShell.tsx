@@ -137,20 +137,20 @@ function DonoShellInner({
 
   const shellBg = light
     ? "bg-[#f4f1eb] text-slate-900"
-    : "bg-[#07090f] text-[#f4efe6]";
+    : "bg-[#07090f] text-at-primary";
   const asideBg = light
     ? "border-stone-200/80 bg-white/80"
-    : "border-white/[0.06] bg-[#0a0e16]/90";
+    : "border-at bg-at-card/90";
   const topBg = light
     ? "border-stone-200/80 bg-white/70"
-    : "border-white/[0.06] bg-[#0a0e16]/70";
-  const muted = light ? "text-slate-500" : "text-slate-400";
+    : "border-at bg-at-card/70";
+  const muted = light ? "text-at-muted" : "text-at-muted";
   const navIdle = light
-    ? "text-slate-600 hover:bg-stone-100 hover:text-slate-900"
-    : "text-slate-400 hover:bg-white/[0.04] hover:text-[#f4efe6]";
+    ? "text-at-soft hover:bg-stone-100 hover:text-slate-900"
+    : "text-at-muted hover:bg-at-card-soft hover:text-at-primary";
   const navActive = light
     ? "bg-stone-900 text-white"
-    : "bg-[#c4a574]/15 text-[#e8d5b0]";
+    : "bg-[#c4a574]/15 text-at-link";
 
   function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
     return (
@@ -252,7 +252,7 @@ function DonoShellInner({
             <div
               className={cn(
                 "flex h-9 w-9 items-center justify-center rounded-lg",
-                light ? "bg-stone-900 text-white" : "bg-[#c4a574]/20 text-[#c4a574]"
+                light ? "bg-stone-900 text-white" : "bg-[#c4a574]/20 text-at-link"
               )}
             >
               <Layers className="h-4 w-4" />
@@ -261,7 +261,7 @@ function DonoShellInner({
               <p
                 className={cn(
                   "text-[15px] leading-none",
-                  light ? "text-slate-900" : "text-[#f4efe6]"
+                  light ? "text-slate-900" : "text-at-primary"
                 )}
                 style={{ fontFamily: "var(--font-dono-display), Georgia, serif" }}
               >
@@ -276,7 +276,7 @@ function DonoShellInner({
           <div
             className={cn(
               "border-t px-4 py-4",
-              light ? "border-stone-200" : "border-white/[0.06]"
+              light ? "border-stone-200" : "border-at"
             )}
           >
             <p className={cn("truncate text-[12px]", muted)}>{email}</p>
@@ -285,7 +285,7 @@ function DonoShellInner({
               onClick={() => void sair()}
               className={cn(
                 "mt-2 inline-flex items-center gap-1.5 text-[12px] transition",
-                light ? "text-slate-500 hover:text-slate-900" : "text-slate-500 hover:text-[#c4a574]"
+                light ? "text-at-muted hover:text-slate-900" : "text-at-muted hover:text-at-link"
               )}
             >
               <LogOut className="h-3.5 w-3.5" />
@@ -305,7 +305,7 @@ function DonoShellInner({
             <aside
               className={cn(
                 "absolute left-0 top-0 flex h-full w-[260px] flex-col border-r",
-                light ? "bg-white" : "bg-[#0a0e16]"
+                light ? "bg-white" : "bg-at-card"
               )}
             >
               <div className="flex items-center justify-between px-4 py-4">
@@ -356,8 +356,8 @@ function DonoShellInner({
                 className={cn(
                   "w-full rounded-lg border py-2 !pl-10 pr-3 text-[13px] outline-none",
                   light
-                    ? "border-stone-200 bg-stone-50 text-slate-900 placeholder:text-slate-400 focus:border-stone-400"
-                    : "border-white/10 bg-white/[0.03] text-[#f4efe6] placeholder:text-slate-600 focus:border-[#c4a574]/40"
+                    ? "border-stone-200 bg-stone-50 text-slate-900 placeholder:text-at-muted focus:border-stone-400"
+                    : "border-at-soft bg-at-card-soft text-at-primary placeholder:text-at-soft focus:border-[#c4a574]/40"
                 )}
               />
             </form>
@@ -384,13 +384,13 @@ function DonoShellInner({
                       "absolute right-0 mt-2 w-80 overflow-hidden rounded-xl border shadow-xl",
                       light
                         ? "border-stone-200 bg-white"
-                        : "border-white/10 bg-[#0d121c]"
+                        : "border-at-soft bg-[#0d121c]"
                     )}
                   >
                     <p
                       className={cn(
                         "border-b px-3 py-2 text-[11px] uppercase tracking-wider",
-                        light ? "border-stone-100 text-slate-500" : "border-white/5 text-slate-500"
+                        light ? "border-stone-100 text-at-muted" : "border-white/5 text-at-muted"
                       )}
                     >
                       Notificações
@@ -408,7 +408,7 @@ function DonoShellInner({
                             onClick={() => setNotifOpen(false)}
                             className={cn(
                               "block px-3 py-2.5 transition",
-                              light ? "hover:bg-stone-50" : "hover:bg-white/[0.03]"
+                              light ? "hover:bg-stone-50" : "hover:bg-at-card-soft"
                             )}
                           >
                             <p className="text-[13px]">{n.titulo}</p>
@@ -439,13 +439,13 @@ function DonoShellInner({
                   "ml-1 flex items-center gap-2 rounded-lg border px-2.5 py-1.5 text-[12px] transition",
                   light
                     ? "border-stone-200 hover:bg-stone-50"
-                    : "border-white/10 hover:bg-white/[0.04]"
+                    : "border-at-soft hover:bg-at-card-soft"
                 )}
               >
                 <span
                   className={cn(
                     "flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-medium",
-                    light ? "bg-stone-900 text-white" : "bg-[#c4a574]/25 text-[#e8d5b0]"
+                    light ? "bg-stone-900 text-white" : "bg-[#c4a574]/25 text-at-link"
                   )}
                 >
                   {nome.slice(0, 1)}
@@ -461,7 +461,7 @@ function DonoShellInner({
                 <h1
                   className={cn(
                     "text-[clamp(1.7rem,3vw,2.2rem)] leading-tight tracking-tight",
-                    light ? "text-slate-900" : "text-[#f4efe6]"
+                    light ? "text-slate-900" : "text-at-primary"
                   )}
                   style={{ fontFamily: "var(--font-dono-display), Georgia, serif" }}
                 >

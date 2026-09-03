@@ -123,13 +123,13 @@ export function DonoEmpresaDetailClient({
     >
       <Link
         href="/dono/empresas"
-        className="mb-6 inline-block text-[12px] text-slate-500 hover:text-[#c4a574]"
+        className="mb-6 inline-block text-[12px] text-at-muted hover:text-at-link"
       >
         ← Todos os clientes
       </Link>
 
       {loading && (
-        <div className="flex items-center gap-2 text-slate-500">
+        <div className="flex items-center gap-2 text-at-muted">
           <Loader2 className="h-4 w-4 animate-spin" />
           Carregando…
         </div>
@@ -148,7 +148,7 @@ export function DonoEmpresaDetailClient({
 
       {tenant && !loading && (
         <div className="space-y-8">
-          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-5">
+          <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-at-card-soft sm:grid-cols-5">
             {[
               {
                 label: tenant.pagamento_confirmado ? "MRR pago" : "Catálogo",
@@ -164,18 +164,18 @@ export function DonoEmpresaDetailClient({
               { label: "Máquinas", value: String(tenant.equipamentos_count) },
               { label: "Equipe", value: String(tenant.equipe_count) },
             ].map((c) => (
-              <div key={c.label} className="bg-[#0a0e16]/95 px-4 py-3.5">
-                <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500">
+              <div key={c.label} className="bg-at-card/95 px-4 py-3.5">
+                <p className="text-[10px] uppercase tracking-[0.14em] text-at-muted">
                   {c.label}
                 </p>
-                <p className="mt-1 text-[20px] tabular-nums text-[#f4efe6]">{c.value}</p>
+                <p className="mt-1 text-[20px] tabular-nums text-at-primary">{c.value}</p>
               </div>
             ))}
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
-            <div className="space-y-2 rounded-sm border border-white/[0.07] p-4 text-[13px]">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">Conta</p>
+            <div className="space-y-2 rounded-sm border border-at p-4 text-[13px]">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">Conta</p>
               <Row label="Saúde" value={tenant.saude} />
               <Row label="Status empresa" value={tenant.status ?? "—"} />
               <Row
@@ -209,12 +209,12 @@ export function DonoEmpresaDetailClient({
               <Row label="Lançamentos fin." value={String(uso.financeiro)} />
             </div>
 
-            <div className="space-y-4 rounded-sm border border-white/[0.07] p-4">
+            <div className="space-y-4 rounded-sm border border-at p-4">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">
                   Cortesia
                 </p>
-                <p className="mt-1 text-[12px] text-slate-500">
+                <p className="mt-1 text-[12px] text-at-muted">
                   Só neste cliente. Não altera planos nem outros usuários.
                 </p>
               </div>
@@ -226,14 +226,14 @@ export function DonoEmpresaDetailClient({
                   value={cortesiaQtd}
                   onChange={(e) => setCortesiaQtd(e.target.value)}
                   placeholder="Quantidade"
-                  className="rounded-sm border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-[#f4efe6] outline-none focus:border-[#c4a574]/40"
+                  className="rounded-sm border border-at-soft bg-at-card-soft px-3 py-2 text-[13px] text-at-primary outline-none focus:border-[#c4a574]/40"
                 />
                 <select
                   value={cortesiaUnidade}
                   onChange={(e) =>
                     setCortesiaUnidade(e.target.value as "dias" | "meses")
                   }
-                  className="rounded-sm border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-[#f4efe6] outline-none"
+                  className="rounded-sm border border-at-soft bg-at-card-soft px-3 py-2 text-[13px] text-at-primary outline-none"
                 >
                   <option value="dias">Dias</option>
                   <option value="meses">Meses</option>
@@ -245,21 +245,21 @@ export function DonoEmpresaDetailClient({
                 onChange={(e) =>
                   setCortesiaModo(e.target.value as "somar" | "hoje")
                 }
-                className="w-full rounded-sm border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-[#f4efe6] outline-none"
+                className="w-full rounded-sm border border-at-soft bg-at-card-soft px-3 py-2 text-[13px] text-at-primary outline-none"
               >
                 <option value="somar">Somar ao prazo atual (se ainda válido)</option>
                 <option value="hoje">Contar a partir de hoje</option>
               </select>
 
               <div>
-                <p className="mb-1 text-[11px] text-slate-500">
+                <p className="mb-1 text-[11px] text-at-muted">
                   Ou defina a data final exata
                 </p>
                 <input
                   type="date"
                   value={cortesiaData}
                   onChange={(e) => setCortesiaData(e.target.value)}
-                  className="w-full rounded-sm border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-[#f4efe6] outline-none"
+                  className="w-full rounded-sm border border-at-soft bg-at-card-soft px-3 py-2 text-[13px] text-at-primary outline-none"
                 />
               </div>
 
@@ -267,7 +267,7 @@ export function DonoEmpresaDetailClient({
                 value={cortesiaMotivo}
                 onChange={(e) => setCortesiaMotivo(e.target.value)}
                 placeholder="Motivo (opcional) — ex.: parceiro, cortesia Adilson"
-                className="w-full rounded-sm border border-white/10 bg-white/[0.03] px-3 py-2 text-[13px] text-[#f4efe6] outline-none placeholder:text-slate-600"
+                className="w-full rounded-sm border border-at-soft bg-at-card-soft px-3 py-2 text-[13px] text-at-primary outline-none placeholder:text-at-soft"
               />
 
               <div className="flex flex-wrap gap-2">
@@ -287,7 +287,7 @@ export function DonoEmpresaDetailClient({
                       setCortesiaUnidade(p.u);
                       setCortesiaData("");
                     }}
-                    className="rounded-sm border border-white/10 px-2.5 py-1 text-[11px] text-slate-400 hover:border-white/20 hover:text-[#f4efe6]"
+                    className="rounded-sm border border-at-soft px-2.5 py-1 text-[11px] text-at-muted hover:border-at hover:text-at-primary"
                   >
                     {p.l}
                   </button>
@@ -325,11 +325,11 @@ export function DonoEmpresaDetailClient({
                 Aplicar cortesia
               </ActionBtn>
 
-              <div className="border-t border-white/[0.06] pt-4">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+              <div className="border-t border-at pt-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">
                   Alterar nichos (suporte)
                 </p>
-                <p className="mt-1 text-[12px] text-slate-500">
+                <p className="mt-1 text-[12px] text-at-muted">
                   Marque os nichos desejados e clique em Salvar. Pode trocar mesmo
                   acima do limite do plano.
                 </p>
@@ -362,8 +362,8 @@ export function DonoEmpresaDetailClient({
                         className={cn(
                           "rounded-sm border px-2.5 py-1.5 text-[11px] transition",
                           on
-                            ? "border-[#c4a574]/40 bg-[#c4a574]/10 text-[#f4efe6]"
-                            : "border-white/[0.08] text-slate-500 hover:border-white/20 hover:text-slate-300"
+                            ? "border-[#c4a574]/40 bg-[#c4a574]/10 text-at-primary"
+                            : "border-at-soft text-at-muted hover:border-at hover:text-at-primary/85"
                         )}
                       >
                         {on ? "✓ " : ""}
@@ -441,15 +441,15 @@ export function DonoEmpresaDetailClient({
                       );
                       setNichoMsg("");
                     }}
-                    className="rounded-sm border border-white/10 px-3 py-2 text-[12px] text-slate-400 hover:border-white/20 hover:text-[#f4efe6]"
+                    className="rounded-sm border border-at-soft px-3 py-2 text-[12px] text-at-muted hover:border-at hover:text-at-primary"
                   >
                     Desfazer
                   </button>
                 </div>
               </div>
 
-              <div className="border-t border-white/[0.06] pt-4">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">
+              <div className="border-t border-at pt-4">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">
                   Outras ações
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
@@ -502,19 +502,19 @@ export function DonoEmpresaDetailClient({
 
           <div className="grid gap-6 lg:grid-cols-2">
             <div>
-              <p className="mb-2 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-2 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Últimos acessos
               </p>
-              <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07]">
+              <ul className="divide-y divide-white/[0.05] rounded-sm border border-at">
                 {sessoes.length === 0 && (
-                  <li className="px-3 py-6 text-center text-[12px] text-slate-500">
+                  <li className="px-3 py-6 text-center text-[12px] text-at-muted">
                     Sem sessões registradas.
                   </li>
                 )}
                 {sessoes.map((s) => (
                   <li key={s.id} className="px-3 py-2.5 text-[12px]">
-                    <p className="text-[#f4efe6]">{s.user_nome ?? "Usuário"}</p>
-                    <p className="text-slate-500">
+                    <p className="text-at-primary">{s.user_nome ?? "Usuário"}</p>
+                    <p className="text-at-muted">
                       {formatWhen(s.iniciado_em)} · {s.dispositivo ?? "—"}
                     </p>
                   </li>
@@ -522,19 +522,19 @@ export function DonoEmpresaDetailClient({
               </ul>
             </div>
             <div>
-              <p className="mb-2 text-[11px] uppercase tracking-[0.16em] text-slate-600">
+              <p className="mb-2 text-[11px] uppercase tracking-[0.16em] text-at-soft">
                 Suporte
               </p>
-              <ul className="divide-y divide-white/[0.05] rounded-sm border border-white/[0.07]">
+              <ul className="divide-y divide-white/[0.05] rounded-sm border border-at">
                 {suporte.length === 0 && (
-                  <li className="px-3 py-6 text-center text-[12px] text-slate-500">
+                  <li className="px-3 py-6 text-center text-[12px] text-at-muted">
                     Sem conversas.
                   </li>
                 )}
                 {suporte.map((s) => (
                   <li key={s.id} className="px-3 py-2.5 text-[12px]">
-                    <p className="text-[#f4efe6]">{s.assunto ?? "Sem assunto"}</p>
-                    <p className="text-slate-500">
+                    <p className="text-at-primary">{s.assunto ?? "Sem assunto"}</p>
+                    <p className="text-at-muted">
                       {s.modo} · {s.user_nome} · {formatWhen(s.last_message_at)}
                     </p>
                   </li>
@@ -551,8 +551,8 @@ export function DonoEmpresaDetailClient({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-3 border-b border-white/[0.04] py-1.5 last:border-0">
-      <span className="text-slate-500">{label}</span>
-      <span className="text-right text-slate-300">{value}</span>
+      <span className="text-at-muted">{label}</span>
+      <span className="text-right text-at-primary/85">{value}</span>
     </div>
   );
 }
@@ -577,7 +577,7 @@ function ActionBtn({
         "rounded-sm border px-3 py-2 text-[12px] transition disabled:opacity-40",
         danger
           ? "border-rose-500/30 text-rose-300 hover:bg-rose-500/10"
-          : "border-white/10 text-slate-300 hover:border-[#c4a574]/35 hover:text-[#e8d5b0]"
+          : "border-at-soft text-at-primary/85 hover:border-[#c4a574]/35 hover:text-at-link"
       )}
     >
       {children}

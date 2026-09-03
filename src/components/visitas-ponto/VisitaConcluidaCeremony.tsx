@@ -115,18 +115,18 @@ export function VisitaConcluidaCeremony({
           style={{ animation: ativo ? "visitaRise 0.9s ease-out both" : undefined }}
         >
           <p
-            className="text-[11px] font-medium uppercase text-[#c4a574]"
+            className="text-[11px] font-medium uppercase text-at-link"
             style={{ letterSpacing: "0.42em" }}
           >
             OperaRout
           </p>
           <h1
-            className="mt-5 text-[clamp(2.75rem,9vw,4.25rem)] leading-[0.92] tracking-tight text-[#f4efe6]"
+            className="mt-5 text-[clamp(2.75rem,9vw,4.25rem)] leading-[0.92] tracking-tight text-at-primary"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             {resumo.pontoNome || "Ponto"}
           </h1>
-          <p className="mt-4 max-w-md text-[15px] leading-relaxed text-slate-400">
+          <p className="mt-4 max-w-md text-[15px] leading-relaxed text-at-muted">
             {quitada
               ? "Fechamento concluído. A visita encerrou quitada — o caixa desta passagem está resolvido."
               : `Visita encerrada com saldo em aberto de ${formatCurrency(totais.restante)}.`}
@@ -142,40 +142,40 @@ export function VisitaConcluidaCeremony({
           style={{ animation: ativo ? "visitaRise 0.8s 0.12s ease-out both" : undefined }}
         >
           <p
-            className="text-[11px] uppercase text-slate-500"
+            className="text-[11px] uppercase text-at-muted"
             style={{ letterSpacing: "0.28em" }}
           >
             {quitada ? "Total liquidado" : "Total da visita"}
           </p>
           <p
-            className="mt-2 text-[clamp(2.8rem,8vw,4rem)] leading-none tracking-tight tabular-nums text-[#f4efe6]"
+            className="mt-2 text-[clamp(2.8rem,8vw,4rem)] leading-none tracking-tight tabular-nums text-at-primary"
             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
           >
             {formatCurrency(totais.totalACobrar)}
           </p>
           <div className="mt-5 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
-            <p className="text-slate-400">
+            <p className="text-at-muted">
               Recebido{" "}
               <span className="tabular-nums text-[#e8dcc8]">{formatCurrency(totais.valorPago)}</span>
             </p>
-            <span className="hidden text-slate-700 sm:inline" aria-hidden>
+            <span className="hidden text-at-soft sm:inline" aria-hidden>
               ·
             </span>
             {quitada ? (
-              <p className="font-medium tracking-wide text-[#c4a574]">Quitado</p>
+              <p className="font-medium tracking-wide text-at-link">Quitado</p>
             ) : (
               <p className="tabular-nums text-amber-300/90">
                 Em aberto {formatCurrency(totais.restante)}
               </p>
             )}
           </div>
-          <p className="mt-3 min-h-[1.25rem] text-[12px] text-slate-600">
+          <p className="mt-3 min-h-[1.25rem] text-[12px] text-at-soft">
             {dataStr}
-            {dataStr ? <span className="text-slate-700"> · </span> : null}
+            {dataStr ? <span className="text-at-soft"> · </span> : null}
             {nichosLabel}
           </p>
           {totais.desconto > 0.009 && (
-            <p className="mt-2 text-[12px] text-slate-500">
+            <p className="mt-2 text-[12px] text-at-muted">
               Desconto {formatCurrency(totais.desconto)}
             </p>
           )}
@@ -200,7 +200,7 @@ export function VisitaConcluidaCeremony({
           </Link>
           <Link
             href="/coletas"
-            className="text-[13px] text-slate-400 underline-offset-4 transition hover:text-[#e8dcc8] hover:underline"
+            className="text-[13px] text-at-muted underline-offset-4 transition hover:text-[#e8dcc8] hover:underline"
           >
             Nova coleta
           </Link>
@@ -211,12 +211,12 @@ export function VisitaConcluidaCeremony({
           style={{ animation: ativo ? "visitaRise 0.75s 0.28s ease-out both" : undefined }}
         >
           <p
-            className="text-[11px] uppercase text-slate-500"
+            className="text-[11px] uppercase text-at-muted"
             style={{ letterSpacing: "0.28em" }}
           >
             Comprovante
           </p>
-          <p className="mt-2 max-w-md text-sm text-slate-400">
+          <p className="mt-2 max-w-md text-sm text-at-muted">
             {quitada
               ? "Opcional — envie o recibo ao cliente ou guarde o PNG."
               : "Envie a cobrança do restante ou o comprovante parcial."}
@@ -242,12 +242,12 @@ export function VisitaConcluidaCeremony({
             style={{ animation: ativo ? "visitaRise 0.75s 0.34s ease-out both" : undefined }}
           >
             <p
-              className="text-[11px] uppercase text-slate-500"
+              className="text-[11px] uppercase text-at-muted"
               style={{ letterSpacing: "0.28em" }}
             >
               Detalhe da passagem
             </p>
-            <ul className="mt-6 divide-y divide-white/[0.06] border-y border-white/[0.08]">
+            <ul className="mt-6 divide-y divide-[var(--at-border-soft)] border-y border-at-soft">
               {resumo.nichos.map((nicho) => {
                 const Icon = ICONS[nicho.nicho] ?? Package;
                 const valor = valorNichoComprovante(nicho);
@@ -256,9 +256,9 @@ export function VisitaConcluidaCeremony({
                     <div className="flex items-start justify-between gap-4">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2">
-                          <Icon className="h-3.5 w-3.5 shrink-0 text-[#c4a574]/70" />
+                          <Icon className="h-3.5 w-3.5 shrink-0 text-at-link/70" />
                           <h2
-                            className="text-xl text-[#f4efe6]"
+                            className="text-xl text-at-primary"
                             style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
                           >
                             {nicho.label}
@@ -269,13 +269,13 @@ export function VisitaConcluidaCeremony({
                             {nicho.maquinas.map((m) => (
                               <li
                                 key={m.id}
-                                className="flex justify-between gap-4 text-[13px] text-slate-500"
+                                className="flex justify-between gap-4 text-[13px] text-at-muted"
                               >
                                 <span className="truncate">
                                   {m.nome}
                                   {m.numeroMaquina ? ` · #${m.numeroMaquina}` : ""}
                                 </span>
-                                <span className="shrink-0 tabular-nums text-slate-400">
+                                <span className="shrink-0 tabular-nums text-at-muted">
                                   {formatCurrency(
                                     nicho.nicho === "cassino" ? m.lucro : m.valorCobravel
                                   )}
@@ -287,7 +287,7 @@ export function VisitaConcluidaCeremony({
                         {nicho.href && (
                           <Link
                             href={nicho.href}
-                            className="mt-3 inline-block pl-5 text-[12px] text-[#c4a574]/80 underline-offset-4 hover:text-[#c4a574] hover:underline"
+                            className="mt-3 inline-block pl-5 text-[12px] text-at-link/80 underline-offset-4 hover:text-at-link hover:underline"
                           >
                             Corrigir leituras e valores
                           </Link>
@@ -310,13 +310,13 @@ export function VisitaConcluidaCeremony({
         {resumo.cassinoNegativo && (
           <section className="mt-10 border-l-2 border-red-400/40 pl-4">
             <p className="text-sm text-red-300/90">Cassino negativo — fora da cobrança</p>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1 text-sm text-at-muted">
               Operação {formatCurrency(resumo.cassinoNegativo.valorOperacao)} · lucro{" "}
               {formatCurrency(resumo.cassinoNegativo.lucroReais)}
             </p>
             <Link
               href={resumo.cassinoNegativo.href}
-              className="mt-2 inline-block text-[12px] text-[#c4a574] hover:underline"
+              className="mt-2 inline-block text-[12px] text-at-link hover:underline"
             >
               Corrigir leituras e valores
             </Link>

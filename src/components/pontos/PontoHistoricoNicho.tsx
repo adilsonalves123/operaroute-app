@@ -52,15 +52,15 @@ function HistoricoRow({
   return (
     <Link
       href={href}
-      className={`group flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] px-3 py-3 transition ${hoverClass}`}
+      className={`group flex items-center justify-between gap-3 rounded-xl border border-at px-3 py-3 transition ${hoverClass}`}
     >
       <div className="min-w-0">
-        <p className="text-sm text-slate-200">{data}</p>
-        <p className="mt-0.5 text-[11px] text-slate-500 group-hover:text-slate-400">{hint}</p>
+        <p className="text-sm text-at-primary/90">{data}</p>
+        <p className="mt-0.5 text-[11px] text-at-muted group-hover:text-at-muted">{hint}</p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
         <span className="text-sm font-semibold tabular-nums text-green-400">{valor}</span>
-        <ChevronRight className="h-4 w-4 text-slate-600 transition group-hover:text-primary-neon" />
+        <ChevronRight className="h-4 w-4 text-at-soft transition group-hover:text-primary-neon" />
       </div>
     </Link>
   );
@@ -92,10 +92,10 @@ function HistoricoCollapse({
         <div className="min-w-0">
           <h3 className="font-semibold text-white">{titulo}</h3>
           {subtitulo && aberto ? (
-            <p className="mt-1 text-xs text-slate-500">{subtitulo}</p>
+            <p className="mt-1 text-xs text-at-muted">{subtitulo}</p>
           ) : null}
           {!aberto && (
-            <p className="mt-0.5 text-[12px] text-slate-500">
+            <p className="mt-0.5 text-[12px] text-at-muted">
               {total === 0
                 ? emptyLabel
                 : `${total} ${total === 1 ? "registro" : "registros"} · toque para expandir`}
@@ -103,16 +103,16 @@ function HistoricoCollapse({
           )}
         </div>
         {aberto ? (
-          <ChevronUp className="h-4 w-4 shrink-0 text-slate-500" />
+          <ChevronUp className="h-4 w-4 shrink-0 text-at-muted" />
         ) : (
-          <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+          <ChevronDown className="h-4 w-4 shrink-0 text-at-muted" />
         )}
       </button>
 
       {aberto && (
-        <div className="space-y-2 border-t border-white/[0.06] px-5 pb-5 pt-4 sm:px-6">
+        <div className="space-y-2 border-t border-at px-5 pb-5 pt-4 sm:px-6">
           {total === 0 ? (
-            <p className="text-sm text-slate-400">{emptyLabel}</p>
+            <p className="text-sm text-at-muted">{emptyLabel}</p>
           ) : (
             children
           )}
@@ -290,7 +290,7 @@ export function PontoHistoricoNicho(props: Props) {
             key={c.id}
             className="flex justify-between border-b border-slate-800 py-2 last:border-0"
           >
-            <span className="text-sm text-slate-400">{formatDate(c.created_at)}</span>
+            <span className="text-sm text-at-muted">{formatDate(c.created_at)}</span>
             <span className="text-sm font-medium text-green-400">
               {formatCurrency(Number(c.valor_liquido))}
             </span>

@@ -194,7 +194,7 @@ export function DadosOperacaoForm({
         resetFromProps();
         setEditing(false);
       }}
-      className="text-[12px] text-slate-500 hover:text-slate-300 transition"
+      className="text-[12px] text-at-muted hover:text-at-primary/85 transition"
     >
       Cancelar
     </button>
@@ -217,7 +217,7 @@ export function DadosOperacaoForm({
             highlight
           />
           <div className="flex items-start justify-between gap-6 py-3.5">
-            <span className="text-slate-500 shrink-0">Nichos ativos</span>
+            <span className="text-at-muted shrink-0">Nichos ativos</span>
             <ConfigNichoPills labels={nichoLabels} />
           </div>
           <ConfigDataRow
@@ -256,7 +256,7 @@ export function DadosOperacaoForm({
             placeholder="CPF, CNPJ, e-mail, telefone ou chave aleatória"
           />
 
-          <div className="overflow-hidden rounded-xl border border-white/[0.06] bg-black/25 p-3">
+          <div className="overflow-hidden rounded-xl border border-at bg-black/25 p-3">
             <NichoCardsCarousel
               key={editing ? "edit-nichos" : "view-nichos"}
               values={nichos}
@@ -271,7 +271,7 @@ export function DadosOperacaoForm({
             />
           </div>
 
-          <p className="text-[12px] text-slate-500 leading-relaxed">
+          <p className="text-[12px] text-at-muted leading-relaxed">
             Cada nicho escolhido é definitivo: não dá para trocar depois. Para
             alterar, fale com o{" "}
             <Link href="/suporte" className={champagneLink}>
@@ -288,7 +288,7 @@ export function DadosOperacaoForm({
             <p className="text-sm text-rose-400" role="alert">{error}</p>
           )}
           {success && (
-            <p className="text-sm text-[#c4a574]" role="status">{success}</p>
+            <p className="text-sm text-at-link" role="status">{success}</p>
           )}
 
           <button

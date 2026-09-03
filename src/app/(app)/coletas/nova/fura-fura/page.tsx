@@ -14,7 +14,7 @@ export default async function NovaColetaFuraFuraPage() {
   }
 
   return (
-    <Suspense fallback={<div className="text-slate-500 p-8">Carregando...</div>}>
+    <Suspense fallback={<div className="text-at-muted p-8">Carregando...</div>}>
       <NovaColetaFuraFuraForm />
     </Suspense>
   );

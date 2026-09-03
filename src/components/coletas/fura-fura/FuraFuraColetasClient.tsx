@@ -51,9 +51,9 @@ function FuraFuraPendentesPanel({ coletas }: { coletas: ColetaFuraListItem[] }) 
   const totalGeral = resumo.reduce((s, r) => s + r.total, 0);
 
   return (
-    <aside className="h-fit space-y-4 overflow-hidden rounded-2xl border border-white/[0.06] bg-gradient-to-b from-amber-500/[0.06] to-white/[0.01] p-5 lg:sticky lg:top-6">
+    <aside className="h-fit space-y-4 overflow-hidden rounded-2xl border border-at bg-gradient-to-b from-amber-500/[0.06] to-white/[0.01] p-5 lg:sticky lg:top-6">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+        <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-at-muted">
           Pendências
         </h2>
         {totalGeral > 0.009 && (
@@ -64,7 +64,7 @@ function FuraFuraPendentesPanel({ coletas }: { coletas: ColetaFuraListItem[] }) 
       </div>
 
       {resumo.length === 0 ? (
-        <p className="text-sm text-slate-500">Nenhuma coleta em aberto.</p>
+        <p className="text-sm text-at-muted">Nenhuma coleta em aberto.</p>
       ) : (
         <ul className="space-y-2">
           {resumo.map((item) => (
@@ -75,7 +75,7 @@ function FuraFuraPendentesPanel({ coletas }: { coletas: ColetaFuraListItem[] }) 
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-medium text-white">{item.pontoNome}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-at-muted">
                     {item.coletasAbertas} em aberto
                   </p>
                 </div>
@@ -115,10 +115,10 @@ function FuraFuraColetasLista({ coletas }: { coletas: ColetaFuraListItem[] }) {
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between px-0.5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-at-muted">
           Histórico
         </p>
-        <p className="text-xs tabular-nums text-slate-600">
+        <p className="text-xs tabular-nums text-at-soft">
           {coletas.length} coleta{coletas.length !== 1 ? "s" : ""}
         </p>
       </div>
@@ -135,7 +135,7 @@ function FuraFuraColetasLista({ coletas }: { coletas: ColetaFuraListItem[] }) {
               <Link
                 href={`/coletas/fura-fura/${coleta.id}`}
                 className={cn(
-                  "group relative flex items-stretch overflow-hidden rounded-2xl border border-white/[0.07]",
+                  "group relative flex items-stretch overflow-hidden rounded-2xl border border-at",
                   "bg-gradient-to-br from-slate-900/90 via-slate-950/80 to-slate-950/60",
                   "transition duration-200 hover:-translate-y-0.5 hover:border-cyan-400/25 hover:shadow-[0_18px_40px_-28px_rgba(34,211,238,0.55)]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
@@ -161,12 +161,12 @@ function FuraFuraColetasLista({ coletas }: { coletas: ColetaFuraListItem[] }) {
                         </span>
                       )}
                     </div>
-                    <p className="text-[13px] text-slate-400">{formatDateTime(coleta.created_at)}</p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[13px] text-at-muted">{formatDateTime(coleta.created_at)}</p>
+                    <p className="text-[11px] text-at-muted">
                       {coleta.quantidade_furos ?? 0} furos
-                      <span className="mx-1.5 text-slate-700">·</span>
+                      <span className="mx-1.5 text-at-soft">·</span>
                       <span className="capitalize">{coleta.forma_pagamento ?? "—"}</span>
-                      <span className="mx-1.5 text-slate-700">·</span>
+                      <span className="mx-1.5 text-at-soft">·</span>
                       Bruto {formatCurrency(Number(coleta.valor_bruto ?? 0))}
                     </p>
                   </div>
@@ -176,7 +176,7 @@ function FuraFuraColetasLista({ coletas }: { coletas: ColetaFuraListItem[] }) {
                       <p className="text-lg font-semibold tabular-nums tracking-tight text-emerald-300 sm:text-xl">
                         {formatCurrency(lucro)}
                       </p>
-                      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-at-muted">
                         lucro real
                       </p>
                       {aReceber > 0.009 && (
@@ -185,7 +185,7 @@ function FuraFuraColetasLista({ coletas }: { coletas: ColetaFuraListItem[] }) {
                         </p>
                       )}
                     </div>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] text-slate-500 transition group-hover:bg-cyan-400/10 group-hover:text-cyan-300">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-at-card-soft text-at-muted transition group-hover:bg-cyan-400/10 group-hover:text-cyan-300">
                       <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                     </div>
                   </div>

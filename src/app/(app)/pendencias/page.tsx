@@ -1,5 +1,6 @@
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { PendenciasClient } from "@/components/pendencias/PendenciasClient";
+import { PremiumPageHeader } from "@/components/layout/PremiumPageHeader";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 
@@ -17,22 +18,21 @@ export default async function PendenciasPage() {
     : { data: [] };
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Pendências</h1>
-          <p className="text-slate-400 mt-1 text-sm">
-            Débitos e pagamentos em aberto por ponto
-          </p>
-        </div>
-        <Link
-          href="/pendencias/nova"
-          className="inline-flex items-center gap-2 rounded-lg border border-blue-500/30 px-4 py-2.5 text-sm font-medium text-primary-neon hover:bg-blue-500/10"
-        >
-          <Plus className="h-4 w-4" />
-          Nova pendência
-        </Link>
-      </div>
+    <div className="mx-auto max-w-6xl space-y-8 pt-6 sm:pt-10">
+      <PremiumPageHeader
+        eyebrow="Financeiro · OperaRoute"
+        title="Pendências"
+        subtitle="Débitos e pagamentos em aberto por ponto"
+        action={
+          <Link
+            href="/pendencias/nova"
+            className="inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/10 px-4 py-2.5 text-sm font-medium text-at-link transition hover:bg-[#c4a574]/20"
+          >
+            <Plus className="h-4 w-4" />
+            Nova pendência
+          </Link>
+        }
+      />
       <PendenciasClient pendencias={pendencias ?? []} />
     </div>
   );

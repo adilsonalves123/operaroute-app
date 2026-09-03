@@ -57,10 +57,10 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
   return (
     <section className="space-y-3">
       <div className="flex items-baseline justify-between px-0.5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-at-muted">
           Histórico
         </p>
-        <p className="text-xs tabular-nums text-slate-600">
+        <p className="text-xs tabular-nums text-at-soft">
           {visitas.length} visita{visitas.length !== 1 ? "s" : ""}
         </p>
       </div>
@@ -76,7 +76,7 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
               <Link
                 href={`/coletas/visita/${visita.id}`}
                 className={cn(
-                  "group relative flex items-stretch overflow-hidden rounded-2xl border border-white/[0.07]",
+                  "group relative flex items-stretch overflow-hidden rounded-2xl border border-at",
                   "bg-[#0c1018]/90",
                   "transition duration-200 hover:-translate-y-0.5 hover:border-[#c4a574]/25 hover:shadow-[0_18px_40px_-28px_rgba(196,165,116,0.45)]",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4a574]/40"
@@ -99,15 +99,15 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
                       {negativo && <StatusChip tone="danger">Negativo</StatusChip>}
                       {pendente && <StatusChip tone="warning">Pendente</StatusChip>}
                     </div>
-                    <p className="text-[13px] text-slate-400">{formatDateTime(visita.created_at)}</p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-[13px] text-at-muted">{formatDateTime(visita.created_at)}</p>
+                    <p className="text-[11px] text-at-muted">
                       {visita.maquinas_count} máquina
                       {visita.maquinas_count !== 1 ? "s" : ""}
-                      <span className="mx-1.5 text-slate-700">·</span>
+                      <span className="mx-1.5 text-at-soft">·</span>
                       <span className="capitalize">{visita.forma_pagamento}</span>
                       {visita.pontos?.cidade ? (
                         <>
-                          <span className="mx-1.5 text-slate-700">·</span>
+                          <span className="mx-1.5 text-at-soft">·</span>
                           {visita.pontos.cidade}
                         </>
                       ) : null}
@@ -124,7 +124,7 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
                       >
                         {formatCurrency(lucro)}
                       </p>
-                      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-at-muted">
                         lucro bruto
                       </p>
                       {!negativo && (
@@ -133,7 +133,7 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
                         </p>
                       )}
                     </div>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white/[0.04] text-slate-500 transition group-hover:bg-cyan-400/10 group-hover:text-cyan-300">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-at-card-soft text-at-muted transition group-hover:bg-cyan-400/10 group-hover:text-cyan-300">
                       <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                     </div>
                   </div>

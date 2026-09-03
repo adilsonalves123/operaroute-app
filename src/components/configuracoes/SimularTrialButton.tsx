@@ -81,7 +81,7 @@ export function SimularTrialButton() {
         <RotateCcw className="h-5 w-5 text-primary-neon shrink-0 mt-0.5" />
         <div className="min-w-0">
           <p className="font-medium text-white">Banner de 7 dias não aparece?</p>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-at-muted mt-1">
             Contas antigas ficaram marcadas como “assinatura ativa” por engano.
             Isso esconde o banner e impede o bloqueio ao fim do teste. Use o botão
             abaixo para corrigir e recomeçar os 7 dias.
@@ -97,11 +97,11 @@ export function SimularTrialButton() {
         </div>
       </div>
 
-      <div className="border-t border-white/10 pt-4 flex items-start gap-3">
+      <div className="border-t border-at-soft pt-4 flex items-start gap-3">
         <FlaskConical className="h-5 w-5 text-amber-300 shrink-0 mt-0.5" />
         <div className="min-w-0">
           <p className="font-medium text-white">Simular fim do teste grátis</p>
-          <p className="text-sm text-slate-400 mt-1">
+          <p className="text-sm text-at-muted mt-1">
             Mostra a tela de bloqueio como se os 7 dias tivessem acabado — sem
             alterar o banco. Barra amarela no topo para sair.
           </p>

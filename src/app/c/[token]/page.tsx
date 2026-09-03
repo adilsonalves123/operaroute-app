@@ -31,10 +31,10 @@ export default async function ComprovantePublicPage({ params }: Props) {
 
   if (!isAdminConfigured()) {
     return (
-      <main className="min-h-screen bg-[#070b14] text-slate-200">
+      <main className="min-h-screen bg-[#070b14] text-at-primary/90">
         <div className="mx-auto max-w-md px-4 py-16 text-center">
           <h1 className="text-xl font-semibold text-white">Comprovante indisponível</h1>
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-at-muted">
             Configure SUPABASE_SERVICE_ROLE_KEY para liberar links públicos.
           </p>
         </div>

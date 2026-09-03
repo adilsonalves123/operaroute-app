@@ -75,7 +75,7 @@ export function MinhaRotaPainel({
     if (!hero) return null;
     return (
       <div className="space-y-4">
-        <header className="relative overflow-hidden rounded-2xl border border-white/[0.08] px-5 py-8">
+        <header className="relative overflow-hidden rounded-2xl border border-at-soft px-5 py-8">
           <div
             className="pointer-events-none absolute inset-0"
             style={{
@@ -86,15 +86,15 @@ export function MinhaRotaPainel({
           <div className="relative">
             <p className="text-[11px] uppercase tracking-[0.22em] text-cyan-400/80">Campo</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-white">Minha rota</h1>
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-at-muted">
               Quando o gestor enviar uma rota, ela aparece aqui para você executar.
             </p>
           </div>
         </header>
         <div className="rounded-2xl border border-dashed border-slate-700/80 px-6 py-12 text-center">
-          <Route className="mx-auto h-9 w-9 text-slate-600 mb-3" />
-          <p className="text-sm font-medium text-slate-300">Nenhuma rota atribuída</p>
-          <p className="mt-1 text-xs text-slate-500 max-w-xs mx-auto">
+          <Route className="mx-auto h-9 w-9 text-at-soft mb-3" />
+          <p className="text-sm font-medium text-at-primary/85">Nenhuma rota atribuída</p>
+          <p className="mt-1 text-xs text-at-muted max-w-xs mx-auto">
             Peça ao gerente para montar a rota e atribuir a você no app — ela aparece aqui para
             executar (próximo ponto → Coletar).
           </p>
@@ -106,7 +106,7 @@ export function MinhaRotaPainel({
   return (
     <div className="space-y-5">
       {hero && (
-        <header className="relative overflow-hidden rounded-2xl border border-white/[0.08] px-5 py-7">
+        <header className="relative overflow-hidden rounded-2xl border border-at-soft px-5 py-7">
           <div
             className="pointer-events-none absolute inset-0"
             style={{
@@ -125,13 +125,13 @@ export function MinhaRotaPainel({
                     {progressoRota(rotaEmAndamento).pendentes}
                   </p>
                 </div>
-                <p className="text-sm text-slate-400 max-w-sm">
+                <p className="text-sm text-at-muted max-w-sm">
                   Continue de onde parou. Ao coletar um ponto, ele entra como feito
                   automaticamente.
                 </p>
               </div>
             ) : (
-              <p className="mt-1.5 text-sm text-slate-400">
+              <p className="mt-1.5 text-sm text-at-muted">
                 {rotasPendentes.length} rota(s) aguardando início.
               </p>
             )}
@@ -160,12 +160,12 @@ export function MinhaRotaPainel({
       {rotasPendentes.length > 0 && (
         <section className="space-y-3">
           {!rotaEmAndamento && (
-            <h2 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+            <h2 className="text-xs font-medium uppercase tracking-wider text-at-muted">
               Aguardando início
             </h2>
           )}
           {rotaEmAndamento && (
-            <h2 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+            <h2 className="text-xs font-medium uppercase tracking-wider text-at-muted">
               Próximas na fila
             </h2>
           )}
@@ -185,7 +185,7 @@ export function MinhaRotaPainel({
 
       {concluidas.length > 0 && (
         <section className="space-y-3">
-          <h2 className="text-xs font-medium uppercase tracking-wider text-slate-500">
+          <h2 className="text-xs font-medium uppercase tracking-wider text-at-muted">
             Concluídas
           </h2>
           {concluidas.map((rota) => (
@@ -233,16 +233,16 @@ function RotaOperadorCard({
         "rounded-2xl border p-5 space-y-4",
         destaque
           ? "border-primary-neon/40 bg-gradient-to-br from-cyan-500/10 via-slate-900/80 to-slate-950"
-          : "border-white/[0.07] bg-slate-900/40",
+          : "border-at bg-slate-900/40",
         ativa && "ring-1 ring-primary-neon/50"
       )}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-lg font-semibold tracking-tight text-white">{rota.nome}</p>
-          <p className="text-xs text-slate-500 mt-0.5">{formatDate(rota.created_at)}</p>
+          <p className="text-xs text-at-muted mt-0.5">{formatDate(rota.created_at)}</p>
           {rota.cidade && (
-            <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+            <p className="text-xs text-at-muted mt-1.5 flex items-center gap-1">
               <MapPin className="h-3 w-3" />
               {rota.cidade}
             </p>
@@ -262,7 +262,7 @@ function RotaOperadorCard({
                 ? "bg-green-500/20 text-green-400"
                 : rota.status === "em_andamento"
                   ? "bg-cyan-500/20 text-cyan-300"
-                  : "bg-slate-500/20 text-slate-400"
+                  : "bg-slate-500/20 text-at-muted"
             )}
           >
             {statusRotaLabel(rota.status)}
@@ -271,7 +271,7 @@ function RotaOperadorCard({
       </div>
 
       <div className="space-y-2">
-        <div className="flex justify-between text-xs text-slate-400">
+        <div className="flex justify-between text-xs text-at-muted">
           <span>
             {prog.concluidas} de {prog.total} paradas
           </span>
@@ -294,13 +294,13 @@ function RotaOperadorCard({
             "rounded-xl border px-4 py-3",
             destaque
               ? "border-primary-neon/25 bg-slate-950/50"
-              : "border-white/10 bg-slate-900/50"
+              : "border-at-soft bg-slate-900/50"
           )}
         >
-          <p className="text-[10px] uppercase tracking-[0.15em] text-slate-500">Próxima parada</p>
+          <p className="text-[10px] uppercase tracking-[0.15em] text-at-muted">Próxima parada</p>
           <p className="text-base font-semibold text-white mt-1">{proximoPonto.nome}</p>
           {(proximoPonto.endereco || proximoPonto.cidade) && (
-            <p className="text-xs text-slate-400 mt-0.5 truncate">
+            <p className="text-xs text-at-muted mt-0.5 truncate">
               {[proximoPonto.endereco, proximoPonto.cidade].filter(Boolean).join(" — ")}
             </p>
           )}

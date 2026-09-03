@@ -49,17 +49,17 @@ export function ColetasClient({
   }
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/[0.07] bg-[#0c1018]/90">
-      <div className="flex items-center justify-between border-b border-white/[0.05] px-4 py-3 sm:px-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+    <div className="overflow-hidden rounded-sm border border-at bg-at-card">
+      <div className="flex items-center justify-between border-b border-at-soft px-4 py-3 sm:px-5">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-at-muted">
           Histórico
         </p>
-        <p className="text-xs tabular-nums text-slate-600">
+        <p className="text-xs tabular-nums text-at-soft">
           {coletas.length} coleta{coletas.length !== 1 ? "s" : ""}
         </p>
       </div>
 
-      <ul className="divide-y divide-white/[0.04]">
+      <ul className="divide-y divide-[var(--at-border-soft)]">
         {coletas.map((coleta) => {
           const isUrsinho = coleta.nicho_modulo === NICHO_MODULO_URSINHO;
           const isDiversao = coleta.nicho_modulo === NICHO_MODULO_DIVERSAO;
@@ -96,12 +96,12 @@ export function ColetasClient({
                     </span>
                   )}
                 </div>
-                <p className="text-[13px] text-slate-400">{formatDateTime(coleta.created_at)}</p>
-                <p className="text-[11px] text-slate-600">
+                <p className="text-[13px] text-at-muted">{formatDateTime(coleta.created_at)}</p>
+                <p className="text-[11px] text-at-soft">
                   {formaPagamento !== "—" ? formaPagamento : "Sem forma"}
                   {coleta.observacao ? (
                     <>
-                      <span className="mx-1.5 text-slate-700">·</span>
+                      <span className="mx-1.5 text-at-soft">·</span>
                       <span className="truncate">{coleta.observacao}</span>
                     </>
                   ) : null}
@@ -113,12 +113,12 @@ export function ColetasClient({
                   <p className="text-base font-semibold tabular-nums tracking-tight text-emerald-300 sm:text-lg">
                     {formatCurrency(valor)}
                   </p>
-                  <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-slate-600">
+                  <p className="mt-0.5 text-[10px] font-medium uppercase tracking-[0.12em] text-at-soft">
                     lucro
                   </p>
                 </div>
                 {href ? (
-                  <ChevronRight className="h-4 w-4 text-slate-700 transition duration-200 group-hover:translate-x-0.5 group-hover:text-[#c4a574]/90" />
+                  <ChevronRight className="h-4 w-4 text-at-soft transition duration-200 group-hover:translate-x-0.5 group-hover:text-at-link/90" />
                 ) : (
                   <span className="h-4 w-4" />
                 )}
@@ -128,7 +128,7 @@ export function ColetasClient({
 
           const rowClass = cn(
             "group relative flex items-center gap-3 px-4 py-3.5 transition duration-200 sm:gap-4 sm:px-5 sm:py-4",
-            "hover:bg-white/[0.03]",
+            "hover:bg-at-card-soft",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#c4a574]/35 focus-visible:ring-inset"
           );
 

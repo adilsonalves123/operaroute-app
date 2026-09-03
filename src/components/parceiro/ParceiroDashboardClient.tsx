@@ -71,7 +71,7 @@ export function ParceiroDashboardClient() {
   if (!data && !erro) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <Loader2 className="h-5 w-5 animate-spin text-slate-500" />
+        <Loader2 className="h-5 w-5 animate-spin text-at-muted" />
       </div>
     );
   }
@@ -88,11 +88,11 @@ export function ParceiroDashboardClient() {
     <div className="mx-auto max-w-3xl space-y-8 px-4 py-10">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+          <p className="text-[11px] uppercase tracking-[0.18em] text-at-muted">
             Parceiro OperaRoute
           </p>
           <h1 className="mt-1 text-3xl font-semibold text-white">{afiliado.nome}</h1>
-          <p className="mt-1 text-[13px] text-slate-500">
+          <p className="mt-1 text-[13px] text-at-muted">
             @{afiliado.codigo} · comissão{" "}
             {afiliado.comissao_tipo === "fixo"
               ? moneyC(Math.round(afiliado.comissao_valor * 100))
@@ -102,7 +102,7 @@ export function ParceiroDashboardClient() {
         <button
           type="button"
           onClick={() => void sair()}
-          className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-[12px] text-slate-400"
+          className="inline-flex items-center gap-2 rounded-xl border border-at-soft px-3 py-2 text-[12px] text-at-muted"
         >
           <LogOut className="h-3.5 w-3.5" />
           Sair
@@ -115,11 +115,11 @@ export function ParceiroDashboardClient() {
         </p>
       )}
 
-      <section className="rounded-2xl border border-white/[0.08] p-5 space-y-3">
-        <p className="text-[11px] uppercase tracking-wider text-slate-500">
+      <section className="rounded-2xl border border-at-soft p-5 space-y-3">
+        <p className="text-[11px] uppercase tracking-wider text-at-muted">
           Seu link
         </p>
-        <code className="block break-all rounded-xl bg-white/[0.04] px-3 py-2 text-[12px] text-slate-300">
+        <code className="block break-all rounded-xl bg-at-card-soft px-3 py-2 text-[12px] text-at-primary/85">
           {afiliado.link}
         </code>
         <button
@@ -128,7 +128,7 @@ export function ParceiroDashboardClient() {
             void navigator.clipboard.writeText(afiliado.link);
             setOk("Link copiado.");
           }}
-          className="inline-flex items-center gap-2 rounded-xl border border-white/10 px-3 py-2 text-[12px]"
+          className="inline-flex items-center gap-2 rounded-xl border border-at-soft px-3 py-2 text-[12px]"
         >
           <Copy className="h-3.5 w-3.5" />
           Copiar link
@@ -144,9 +144,9 @@ export function ParceiroDashboardClient() {
         ].map((x) => (
           <div
             key={x.l}
-            className="rounded-2xl border border-white/[0.07] bg-white/[0.02] p-4"
+            className="rounded-2xl border border-at bg-white/[0.02] p-4"
           >
-            <p className="text-[10px] uppercase tracking-wider text-slate-500">
+            <p className="text-[10px] uppercase tracking-wider text-at-muted">
               {x.l}
             </p>
             <p className="mt-2 text-[20px] font-medium tabular-nums text-white">
@@ -157,12 +157,12 @@ export function ParceiroDashboardClient() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-[11px] uppercase tracking-wider text-slate-500">
+        <h2 className="text-[11px] uppercase tracking-wider text-at-muted">
           Indicações
         </h2>
-        <ul className="divide-y divide-white/[0.05] rounded-2xl border border-white/[0.07]">
+        <ul className="divide-y divide-white/[0.05] rounded-2xl border border-at">
           {data.empresas.length === 0 && (
-            <li className="px-4 py-6 text-center text-[13px] text-slate-500">
+            <li className="px-4 py-6 text-center text-[13px] text-at-muted">
               Ainda sem clientes pelo seu link.
             </li>
           )}
@@ -173,11 +173,11 @@ export function ParceiroDashboardClient() {
             >
               <div>
                 <p className="text-white">{e.nome_operacao}</p>
-                <p className="text-[11px] text-slate-600">
+                <p className="text-[11px] text-at-soft">
                   Cliente {e.ciclo_cobranca === "anual" ? "anual" : "mensal"}
                 </p>
               </div>
-              <span className="shrink-0 text-slate-600">
+              <span className="shrink-0 text-at-soft">
                 {formatWhen(e.created_at)}
               </span>
             </li>
@@ -186,12 +186,12 @@ export function ParceiroDashboardClient() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-[11px] uppercase tracking-wider text-slate-500">
+        <h2 className="text-[11px] uppercase tracking-wider text-at-muted">
           Comissões
         </h2>
-        <ul className="divide-y divide-white/[0.05] rounded-2xl border border-white/[0.07]">
+        <ul className="divide-y divide-white/[0.05] rounded-2xl border border-at">
           {data.comissoes.length === 0 && (
-            <li className="px-4 py-6 text-center text-[13px] text-slate-500">
+            <li className="px-4 py-6 text-center text-[13px] text-at-muted">
               Comissões aparecem quando o pagamento do cliente for registrado.
             </li>
           )}
@@ -202,11 +202,11 @@ export function ParceiroDashboardClient() {
             >
               <div>
                 <p className="text-white">{c.empresa_nome ?? "Cliente"}</p>
-                <p className="text-[11px] text-slate-600">
+                <p className="text-[11px] text-at-soft">
                   {formatWhen(c.created_at)} · {c.status}
                 </p>
               </div>
-              <span className="tabular-nums text-[#e8d5b0]">
+              <span className="tabular-nums text-at-link">
                 {moneyC(c.valor_centavos)}
               </span>
             </li>

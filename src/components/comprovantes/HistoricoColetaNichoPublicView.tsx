@@ -86,7 +86,7 @@ function MetricBox({
 }) {
   return (
     <div className="space-y-1.5 rounded-xl bg-slate-900/70 p-3 text-xs">
-      <p className="font-medium text-slate-300">{title}</p>
+      <p className="font-medium text-at-primary/85">{title}</p>
       {rows.map((r) => (
         <div
           key={r.label}
@@ -95,7 +95,7 @@ function MetricBox({
               ? "border-t border-slate-800 pt-1.5 text-emerald-400"
               : r.tone === "rose"
                 ? "border-t border-slate-800 pt-1.5 text-rose-400"
-                : "text-slate-400"
+                : "text-at-muted"
           }`}
         >
           <span>{r.label}</span>
@@ -126,28 +126,28 @@ function ResumoFinanceiroNicho({
         <p className="mt-1 text-3xl font-bold tabular-nums tracking-tight text-white">
           {formatCurrency(aReceber)}
         </p>
-        <p className="mt-1 text-xs text-slate-400">Valor a receber nesta coleta</p>
+        <p className="mt-1 text-xs text-at-muted">Valor a receber nesta coleta</p>
       </div>
       <div className="space-y-2 px-4 py-3 text-sm">
         {c.quantidadeFuros != null && (
-          <div className="flex justify-between gap-3 text-slate-400">
+          <div className="flex justify-between gap-3 text-at-muted">
             <span>
               Furos
               {c.precoFuro != null ? ` × ${formatCurrency(c.precoFuro)}` : ""}
             </span>
-            <span className="tabular-nums text-slate-200">{c.quantidadeFuros}</span>
+            <span className="tabular-nums text-at-primary/90">{c.quantidadeFuros}</span>
           </div>
         )}
         {Number(c.valorBruto ?? 0) > 0.009 && (
-          <div className="flex justify-between gap-3 text-slate-400">
+          <div className="flex justify-between gap-3 text-at-muted">
             <span>Arrecadação bruta</span>
-            <span className="tabular-nums text-slate-200">
+            <span className="tabular-nums text-at-primary/90">
               {formatCurrency(Number(c.valorBruto))}
             </span>
           </div>
         )}
         {Number(c.valorComissao ?? 0) > 0.009 && (
-          <div className="flex justify-between gap-3 text-slate-400">
+          <div className="flex justify-between gap-3 text-at-muted">
             <span>
               {c.modoComissao === "tabela"
                 ? "Repasse ao cliente"
@@ -159,7 +159,7 @@ function ResumoFinanceiroNicho({
           </div>
         )}
         {Number(c.desconto ?? 0) > 0.009 && (
-          <div className="flex justify-between gap-3 text-slate-400">
+          <div className="flex justify-between gap-3 text-at-muted">
             <span>Desconto</span>
             <span className="tabular-nums text-orange-300">
               − {formatCurrency(Number(c.desconto))}
@@ -167,15 +167,15 @@ function ResumoFinanceiroNicho({
           </div>
         )}
         {Number(c.custoBrindes ?? 0) > 0.009 && (
-          <div className="flex justify-between gap-3 text-slate-400">
+          <div className="flex justify-between gap-3 text-at-muted">
             <span>Custo brindes</span>
-            <span className="tabular-nums text-slate-200">
+            <span className="tabular-nums text-at-primary/90">
               {formatCurrency(Number(c.custoBrindes))}
             </span>
           </div>
         )}
         {Number(c.lucroReal ?? 0) > 0.009 && (
-          <div className="flex justify-between gap-3 border-t border-white/[0.06] pt-2 text-slate-400">
+          <div className="flex justify-between gap-3 border-t border-at pt-2 text-at-muted">
             <span>Lucro</span>
             <span className="tabular-nums font-semibold text-emerald-400">
               {formatCurrency(Number(c.lucroReal))}
@@ -183,7 +183,7 @@ function ResumoFinanceiroNicho({
           </div>
         )}
         {recebido > 0.009 && (
-          <div className="flex justify-between gap-3 text-slate-400">
+          <div className="flex justify-between gap-3 text-at-muted">
             <span>Recebido agora</span>
             <span className="tabular-nums text-green-400">{formatCurrency(recebido)}</span>
           </div>
@@ -250,9 +250,9 @@ export function HistoricoColetaNichoPublicView({
           {quitada && <AlertBadge variant="success">Quitada</AlertBadge>}
           {raw.previa && <AlertBadge variant="info">Prévia</AlertBadge>}
         </div>
-        <p className="text-sm text-slate-400">{formatDateTime(dataIso)}</p>
+        <p className="text-sm text-at-muted">{formatDateTime(dataIso)}</p>
         {raw.kitNome && (
-          <p className="text-xs text-slate-500">Kit: {raw.kitNome}</p>
+          <p className="text-xs text-at-muted">Kit: {raw.kitNome}</p>
         )}
       </div>
 
@@ -319,7 +319,7 @@ export function HistoricoColetaNichoPublicView({
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-white">
               Máquinas{" "}
-              <span className="font-normal text-slate-500">
+              <span className="font-normal text-at-muted">
                 ({raw.maquinas.length})
               </span>
             </h2>
@@ -402,7 +402,7 @@ export function HistoricoColetaNichoPublicView({
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-white">
               Máquinas{" "}
-              <span className="font-normal text-slate-500">
+              <span className="font-normal text-at-muted">
                 ({raw.maquinas.length})
               </span>
             </h2>
@@ -481,7 +481,7 @@ export function HistoricoColetaNichoPublicView({
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-white">
               Expositores{" "}
-              <span className="font-normal text-slate-500">
+              <span className="font-normal text-at-muted">
                 ({raw.expositores.length})
               </span>
             </h2>
@@ -504,7 +504,7 @@ export function HistoricoColetaNichoPublicView({
                         key={`${l.nome}-${j}`}
                         className="flex justify-between gap-3 rounded-lg bg-slate-900/60 px-3 py-2"
                       >
-                        <span className="text-slate-300">
+                        <span className="text-at-primary/85">
                           {l.vendido} × {l.nome}
                           {l.codigo ? ` (${l.codigo})` : ""}
                         </span>
@@ -530,14 +530,14 @@ export function HistoricoColetaNichoPublicView({
 
       {raw.observacao && (
         <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-at-muted">
             Observação
           </p>
-          <p className="mt-1 text-sm text-slate-300">{raw.observacao}</p>
+          <p className="mt-1 text-sm text-at-primary/85">{raw.observacao}</p>
         </div>
       )}
 
-      <p className="pt-2 text-center text-[11px] text-slate-600">OperaRout</p>
+      <p className="pt-2 text-center text-[11px] text-at-soft">OperaRout</p>
     </div>
   );
 }

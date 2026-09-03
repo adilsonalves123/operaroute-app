@@ -31,11 +31,11 @@ export function VisitaPontoStickyBar({
         <div className="rounded-2xl border border-primary-neon/35 bg-[#0b1220]/95 px-3 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-md">
           <div className="mb-2 flex items-baseline justify-between gap-2 px-1">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-at-muted">
                 Ainda não pago
               </p>
               {nichosFeitosLabel ? (
-                <p className="truncate text-xs text-slate-400">{nichosFeitosLabel}</p>
+                <p className="truncate text-xs text-at-muted">{nichosFeitosLabel}</p>
               ) : null}
             </div>
             <p className="shrink-0 text-lg font-bold tabular-nums text-white">
@@ -46,7 +46,7 @@ export function VisitaPontoStickyBar({
             {outroNichoHref ? (
               <Link
                 href={outroNichoHref}
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-3 py-3 text-sm font-semibold text-slate-100 hover:border-white/25"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-at-soft bg-at-card-soft px-3 py-3 text-sm font-semibold text-slate-100 hover:border-white/25"
               >
                 Outro nicho
                 <ArrowRight className="h-3.5 w-3.5 opacity-70" />
@@ -54,7 +54,7 @@ export function VisitaPontoStickyBar({
             ) : (
               <Link
                 href="#nichos-visita"
-                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] px-3 py-3 text-sm font-semibold text-slate-100 hover:border-white/25"
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-at-soft bg-at-card-soft px-3 py-3 text-sm font-semibold text-slate-100 hover:border-white/25"
               >
                 Outro nicho
                 <ArrowRight className="h-3.5 w-3.5 opacity-70" />

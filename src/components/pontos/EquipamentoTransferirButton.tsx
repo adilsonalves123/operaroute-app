@@ -94,7 +94,7 @@ export function EquipamentoTransferirButton({
           setErro("");
           setDestinoId("");
         }}
-        className="rounded-md p-2 text-slate-500 transition hover:bg-white/[0.04] hover:text-[#c4a574]"
+        className="rounded-md p-2 text-at-muted transition hover:bg-at-card-soft hover:text-at-link"
         title="Transferir para outro ponto"
       >
         <ArrowRightLeft className="h-4 w-4" />
@@ -113,34 +113,34 @@ export function EquipamentoTransferirButton({
                 <h3 id="transferir-titulo" className="font-semibold text-white">
                   Transferir equipamento
                 </h3>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm text-at-muted mt-1">
                   {getEquipamentoDisplayNome(equipamento)}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setAberto(false)}
-                className="rounded p-1 text-slate-500 hover:text-white"
+                className="rounded p-1 text-at-muted hover:text-white"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
 
-            <p className="text-xs text-slate-400 leading-relaxed">
-              A máquina vai com as <strong className="text-slate-300">mesmas leituras</strong>{" "}
+            <p className="text-xs text-at-muted leading-relaxed">
+              A máquina vai com as <strong className="text-at-primary/85">mesmas leituras</strong>{" "}
               (entrada/saída atual). Não cria pendência na transferência. Débitos e pendências do
-              ponto de origem <strong className="text-slate-300">permanecem lá</strong>.
+              ponto de origem <strong className="text-at-primary/85">permanecem lá</strong>.
             </p>
 
             <div className="space-y-1.5">
               <label
                 htmlFor={`destino-${equipamento.id}`}
-                className="block text-sm font-medium text-slate-300"
+                className="block text-sm font-medium text-at-primary/85"
               >
                 Ponto de destino *
               </label>
               {carregandoPontos ? (
-                <div className="flex items-center gap-2 text-sm text-slate-400 py-2">
+                <div className="flex items-center gap-2 text-sm text-at-muted py-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Carregando pontos...
                 </div>

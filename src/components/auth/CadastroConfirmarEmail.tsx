@@ -55,7 +55,7 @@ export function CadastroConfirmarEmail({ email }: Props) {
         </p>
       </header>
 
-      <div className="space-y-3 rounded-xl border border-white/[0.08] bg-white/[0.03] px-4 py-3 text-[13px] text-[#8b93a3]">
+      <div className="space-y-3 rounded-xl border border-at-soft bg-at-card-soft px-4 py-3 text-[13px] text-[#8b93a3]">
         <p>Não encontrou? Olhe em spam / promoções.</p>
         <p>Depois de confirmar, volte e faça login.</p>
       </div>

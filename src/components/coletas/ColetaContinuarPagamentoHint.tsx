@@ -5,7 +5,7 @@ export function ColetaContinuarPagamentoHint({ className }: { className?: string
   return (
     <div
       className={cn(
-        "rounded-lg border border-primary-neon/25 bg-primary-neon/5 px-3 py-3 text-xs leading-relaxed text-slate-400",
+        "rounded-lg border border-primary-neon/25 bg-primary-neon/5 px-3 py-3 text-xs leading-relaxed text-at-muted",
         className
       )}
     >

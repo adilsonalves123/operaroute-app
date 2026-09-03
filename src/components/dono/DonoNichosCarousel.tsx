@@ -34,18 +34,18 @@ export function DonoNichosCarousel({
           <p
             className={cn(
               "text-[13px] font-medium",
-              light ? "text-slate-900" : "text-[#f4efe6]"
+              light ? "text-slate-900" : "text-at-primary"
             )}
           >
             Nichos da plataforma
           </p>
-          <p className="mt-0.5 text-[12px] text-slate-500">
+          <p className="mt-0.5 text-[12px] text-at-muted">
             Mesmas fotos do app — pause em Fotos nichos para esconder no app
           </p>
         </div>
         <Link
           href="/dono/nichos"
-          className="shrink-0 text-[12px] text-slate-500 hover:underline"
+          className="shrink-0 text-[12px] text-at-muted hover:underline"
         >
           Editar / pausar
         </Link>
@@ -72,7 +72,7 @@ export function DonoNichosCarousel({
                 "group relative flex shrink-0 snap-start flex-col overflow-hidden rounded-xl border text-left transition",
                 light
                   ? "border-stone-200 bg-white hover:border-stone-300"
-                  : "border-white/[0.08] bg-white/[0.02] hover:border-white/20",
+                  : "border-at-soft bg-white/[0.02] hover:border-at",
                 pausado && "opacity-60"
               )}
               style={{ width: CARD_W }}
@@ -105,7 +105,7 @@ export function DonoNichosCarousel({
                     "absolute bottom-2 right-2 rounded-md px-2 py-0.5 text-[11px] font-medium tabular-nums backdrop-blur-sm",
                     light
                       ? "bg-white/90 text-slate-900"
-                      : "bg-black/55 text-[#f4efe6]"
+                      : "bg-black/55 text-at-primary"
                   )}
                 >
                   {count} cliente{count === 1 ? "" : "s"}
@@ -115,12 +115,12 @@ export function DonoNichosCarousel({
                 <p
                   className={cn(
                     "text-[13px] font-semibold leading-tight",
-                    light ? "text-slate-900" : "text-[#f4efe6]"
+                    light ? "text-slate-900" : "text-at-primary"
                   )}
                 >
                   {label}
                 </p>
-                <p className="line-clamp-2 text-[11px] leading-snug text-slate-500">
+                <p className="line-clamp-2 text-[11px] leading-snug text-at-muted">
                   {descNichoCatalog(catalog, id as Nicho)}
                 </p>
               </div>

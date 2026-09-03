@@ -81,7 +81,7 @@ export function PushNotificacoesCard({ embedded }: { embedded?: boolean }) {
 
   if (loading) {
     return (
-      <div className={cn("flex items-center gap-2 text-sm text-slate-500", !embedded && "p-5")}>
+      <div className={cn("flex items-center gap-2 text-sm text-at-muted", !embedded && "p-5")}>
         <Loader2 className="h-4 w-4 animate-spin" />
         Verificando notificações…
       </div>
@@ -100,7 +100,7 @@ export function PushNotificacoesCard({ embedded }: { embedded?: boolean }) {
           <p className="font-medium text-white">
             {native ? "Alertas push no app Android" : "Alertas push no celular/PC"}
           </p>
-          <p className="mt-1 text-sm text-slate-400 leading-relaxed">
+          <p className="mt-1 text-sm text-at-muted leading-relaxed">
             Receba aviso quando o operador registrar coleta (com valor), abrir manutenção,
             marcar equipamento arrumado ou enviar mensagem no suporte.
           </p>
@@ -137,7 +137,7 @@ export function PushNotificacoesCard({ embedded }: { embedded?: boolean }) {
             type="button"
             disabled={busy || !supported}
             onClick={() => void desativar()}
-            className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm font-medium text-at-primary/90 hover:bg-slate-800 disabled:opacity-50"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <BellOff className="h-4 w-4" />}
             Desativar neste aparelho

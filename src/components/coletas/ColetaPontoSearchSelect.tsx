@@ -78,12 +78,12 @@ export function ColetaPontoSearchSelect({
   return (
     <div ref={rootRef} className={cn("relative space-y-1.5", className)}>
       {label && (
-        <label htmlFor="coleta-ponto-busca" className="block text-sm font-medium text-slate-300">
+        <label htmlFor="coleta-ponto-busca" className="block text-sm font-medium text-at-primary/85">
           {label}
         </label>
       )}
       <div className="relative">
-        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-at-muted" />
         <input
           ref={inputRef}
           id="coleta-ponto-busca"
@@ -102,7 +102,7 @@ export function ColetaPontoSearchSelect({
             if (value) onChange("");
           }}
           className={cn(
-            "w-full rounded-lg border border-slate-700 bg-slate-900 py-2.5 text-sm text-white placeholder:text-slate-500",
+            "w-full rounded-lg border border-slate-700 bg-slate-900 py-2.5 text-sm text-white placeholder:text-at-muted",
             error && "border-red-500",
             inputClassName,
             // pl/pr depois do inputClassName — evita px-3 sobrescrever e misturar ícone com o texto
@@ -113,7 +113,7 @@ export function ColetaPontoSearchSelect({
           <button
             type="button"
             onClick={limpar}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-500 hover:bg-slate-800 hover:text-white"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-at-muted hover:bg-slate-800 hover:text-white"
             aria-label="Limpar ponto"
           >
             <X className="h-4 w-4" />
@@ -127,7 +127,7 @@ export function ColetaPontoSearchSelect({
           role="listbox"
         >
           {filtrados.length === 0 ? (
-            <li className="px-3 py-2.5 text-sm text-slate-500">Nenhum ponto encontrado</li>
+            <li className="px-3 py-2.5 text-sm text-at-muted">Nenhum ponto encontrado</li>
           ) : (
             filtrados.map((opt) => (
               <li key={opt.value}>
@@ -138,7 +138,7 @@ export function ColetaPontoSearchSelect({
                   onMouseDown={(e) => e.preventDefault()}
                   onClick={() => escolher(opt)}
                   className={cn(
-                    "flex w-full px-3 py-2.5 text-left text-sm text-slate-200 hover:bg-slate-800",
+                    "flex w-full px-3 py-2.5 text-left text-sm text-at-primary/90 hover:bg-slate-800",
                     opt.value === value && "bg-slate-800/80 text-white"
                   )}
                 >

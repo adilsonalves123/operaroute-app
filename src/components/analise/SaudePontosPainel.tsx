@@ -46,7 +46,7 @@ function CardPonto({ item }: { item: PontoSaudeItem }) {
     <Link
       href={`/pontos/${item.pontoId}`}
       className={cn(
-        "block rounded-lg border p-3 transition hover:bg-white/[0.03]",
+        "block rounded-lg border p-3 transition hover:bg-at-card-soft",
         cfg.borda,
         cfg.fundo
       )}
@@ -54,7 +54,7 @@ function CardPonto({ item }: { item: PontoSaudeItem }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-white">{item.nome}</p>
-          <p className="mt-0.5 text-[11px] text-slate-500">
+          <p className="mt-0.5 text-[11px] text-at-muted">
             {item.visitas} {item.visitas === 1 ? "visita" : "visitas"} ·{" "}
             {item.impulsos} impulso{item.impulsos === 1 ? "" : "s"} · {item.pressoes} pressão
             {item.pressoes === 1 ? "" : "ões"}
@@ -64,7 +64,7 @@ function CardPonto({ item }: { item: PontoSaudeItem }) {
       </div>
       <div className="mt-2 flex items-center justify-between gap-2 text-xs">
         <span className={cn("font-medium", cfg.cor)}>{labelSaude(item.classe)}</span>
-        <div className="flex items-center gap-2 tabular-nums text-slate-500">
+        <div className="flex items-center gap-2 tabular-nums text-at-muted">
           {item.indice !== null && <span title="Percentil de lucro">{item.indice.toFixed(0)}º</span>}
           <span className={item.lucroMes >= 0 ? "text-green-400/80" : "text-red-400/80"}>
             {formatCurrency(item.lucroMes)}
@@ -94,7 +94,7 @@ function ColunaClasse({
             <Icon className={cn("h-4 w-4", cfg.cor)} />
             <h3 className={cn("text-sm font-semibold", cfg.cor)}>{cfg.titulo}</h3>
           </div>
-          <p className="mt-1 text-[11px] text-slate-500">{cfg.descricao}</p>
+          <p className="mt-1 text-[11px] text-at-muted">{cfg.descricao}</p>
         </div>
         <span className={cn("text-2xl font-bold tabular-nums", cfg.cor)}>
           {filtrados.length}
@@ -102,7 +102,7 @@ function ColunaClasse({
       </div>
 
       {filtrados.length === 0 ? (
-        <p className="text-xs italic text-slate-600">Nenhum ponto nesta faixa.</p>
+        <p className="text-xs italic text-at-soft">Nenhum ponto nesta faixa.</p>
       ) : (
         <div className="space-y-2">
           {filtrados.map((item) => (
@@ -130,11 +130,11 @@ export function SaudePontosPainel({
     <section className="space-y-4">
       <div>
         <h2 className="text-lg font-semibold text-white">{titulo}</h2>
-        <p className="mt-1 text-sm text-slate-500">{subtitulo}</p>
+        <p className="mt-1 text-sm text-at-muted">{subtitulo}</p>
       </div>
 
       {classificados.length === 0 ? (
-        <div className="bank-card p-6 text-sm text-slate-500">
+        <div className="bank-card p-6 text-sm text-at-muted">
           Registre coletas este mês para classificar seus pontos em forte, razoável ou fraco.
         </div>
       ) : (
@@ -147,10 +147,10 @@ export function SaudePontosPainel({
 
       {semDados.length > 0 && (
         <div className="bank-card p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-slate-600">
+          <p className="text-xs font-medium uppercase tracking-wide text-at-soft">
             Sem leitura no mês ({semDados.length})
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-at-muted">
             {semDados.map((p) => p.nome).join(" · ")}
           </p>
         </div>

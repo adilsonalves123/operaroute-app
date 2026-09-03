@@ -56,8 +56,8 @@ export function DashboardCommandBar({ actions }: { actions: QuickAction[] }) {
             href={action.href}
             className={cn(
               "inline-flex items-center gap-2 rounded-lg px-4 py-2.5",
-              "text-sm text-slate-400 border border-blue-500/20",
-              "transition hover:border-primary-neon/30 hover:text-slate-200 hover:bg-blue-500/5"
+              "text-sm text-at-muted border border-blue-500/20",
+              "transition hover:border-primary-neon/30 hover:text-at-primary/90 hover:bg-blue-500/5"
             )}
           >
             <Icon className="h-3.5 w-3.5 opacity-70" />

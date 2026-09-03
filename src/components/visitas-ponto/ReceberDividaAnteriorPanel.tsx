@@ -63,11 +63,11 @@ export function ReceberDividaAnteriorPanel({
             {formatCurrency(dividaSaldo)}
           </p>
           {dividaRecebidaInicio > 0.009 && (
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-at-muted">
               Já recebido no início desta visita: {formatCurrency(dividaRecebidaInicio)}
             </p>
           )}
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-at-muted">
             Inclua no Cobrar no final, ou receba só a dívida agora (sem fechar a visita).
           </p>
         </div>
@@ -83,7 +83,7 @@ export function ReceberDividaAnteriorPanel({
           >
             Receber agora
           </button>
-          <p className="text-xs text-slate-500 self-center">ou marque no Cobrar</p>
+          <p className="text-xs text-at-muted self-center">ou marque no Cobrar</p>
         </div>
       ) : (
         <div className="space-y-3 border-t border-amber-500/20 pt-3">
@@ -109,7 +109,7 @@ export function ReceberDividaAnteriorPanel({
             <button
               type="button"
               onClick={() => setAberto(false)}
-              className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-slate-400"
+              className="rounded-lg border border-slate-700 px-3 py-2 text-xs text-at-muted"
             >
               Cancelar
             </button>

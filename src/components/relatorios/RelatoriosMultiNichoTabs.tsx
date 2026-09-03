@@ -80,7 +80,7 @@ export function RelatoriosMultiNichoTabs({
               "-mb-px border-b-2 pb-2.5 text-sm font-medium transition",
               tab === id
                 ? "border-primary-neon text-white"
-                : "border-transparent text-slate-500 hover:text-slate-300"
+                : "border-transparent text-at-muted hover:text-at-primary/85"
             )}
           >
             {TAB_LABELS[id]}
@@ -229,13 +229,13 @@ function ColetasFotoRelatoriosLista({
                 className="h-40 w-full bg-slate-900 object-cover"
               />
             ) : (
-              <div className="flex h-40 w-full items-center justify-center bg-slate-900 text-slate-600">
+              <div className="flex h-40 w-full items-center justify-center bg-slate-900 text-at-soft">
                 <FileImage className="h-10 w-10" />
               </div>
             )}
             <div className="space-y-2 p-4">
               <p className="text-sm font-medium text-white">{c.pontos?.nome ?? "Ponto"}</p>
-              <p className="text-xs text-slate-400">{formatDateTime(c.created_at)}</p>
+              <p className="text-xs text-at-muted">{formatDateTime(c.created_at)}</p>
               <p className="text-xs text-green-400">
                 Lucro {formatCurrency(lucro)}
                 {extraLine ? ` · ${extraLine(c)}` : ""}
@@ -269,7 +269,7 @@ function ColetasFotoRelatoriosLista({
                     <a
                       href={c.foto_url}
                       download
-                      className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                      className="inline-flex items-center gap-1 text-xs text-at-muted hover:text-white"
                     >
                       <Download className="h-3 w-3" />
                       Baixar
@@ -293,7 +293,7 @@ function ColetasFotoRelatoriosLista({
                 )}
                 <Link
                   href={detalheHref(c.id)}
-                  className="ml-auto inline-flex items-center gap-1 text-xs text-slate-400 hover:text-white"
+                  className="ml-auto inline-flex items-center gap-1 text-xs text-at-muted hover:text-white"
                 >
                   Ver coleta
                 </Link>
