@@ -72,6 +72,7 @@ export function OperaRouteLoader({
           className="absolute inset-0"
           style={{ background: analisePageBackground(visualTema) }}
         />
+        <div className="or-loader-ambient absolute inset-0" />
       </div>
 
       <div className="relative z-10 flex w-full max-w-2xl flex-col items-center text-center">
@@ -86,22 +87,28 @@ export function OperaRouteLoader({
 
           <svg
             viewBox="0 0 100 100"
-            className="absolute inset-[36px] text-at-link sm:inset-[44px]"
+            className="absolute inset-[36px] sm:inset-[44px]"
           >
             <path
               d="M22 68 C 38 34, 52 78, 78 42"
               fill="none"
-              stroke="currentColor"
+              stroke="var(--loader-route)"
               strokeWidth="2.2"
               strokeLinecap="round"
               className="or-premium-route"
             />
-            <circle cx="22" cy="68" r="3.4" fill="var(--at-accent)" className="or-premium-node" />
+            <circle
+              cx="22"
+              cy="68"
+              r="3.4"
+              fill="var(--loader-node-start)"
+              className="or-premium-node"
+            />
             <circle
               cx="78"
               cy="42"
               r="3.4"
-              fill="var(--at-link)"
+              fill="var(--loader-node-end)"
               className="or-premium-node or-premium-node-delay"
             />
           </svg>
@@ -128,7 +135,7 @@ export function OperaRouteLoader({
         </p>
 
         <div className="or-premium-progress mt-10 h-[3px] w-full max-w-[320px] overflow-hidden rounded-full bg-at-track sm:mt-12 sm:max-w-[380px]">
-          <span className="or-premium-progress-bar block h-full w-1/2 rounded-full bg-gradient-to-r from-[var(--at-accent)]/40 via-[var(--at-accent)] to-[var(--at-accent)]/40" />
+          <span className="or-premium-progress-bar block h-full w-1/2 rounded-full" />
         </div>
 
         <p

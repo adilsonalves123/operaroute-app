@@ -31,6 +31,25 @@
   --shell-nav-active-bg: rgba(196, 165, 116, 0.15);
   --shell-nav-active-text: #e8d5b0;
   --shell-main-bg: transparent;
+
+  --loader-node-start: #e8d5b0;
+  --loader-node-end: #00d4ff;
+  --loader-route: #c4a574;
+  --loader-arc-top: rgba(232, 213, 176, 0.92);
+  --loader-arc-side: rgba(52, 211, 153, 0.42);
+  --loader-ring: rgba(196, 165, 116, 0.24);
+  --loader-ring-mid: rgba(196, 165, 116, 0.14);
+  --loader-glow-gold: rgba(196, 165, 116, 0.18);
+  --loader-glow-green: rgba(16, 185, 129, 0.08);
+  --loader-glow-cyan: rgba(0, 212, 255, 0.14);
+  --loader-progress: linear-gradient(
+    90deg,
+    rgba(196, 165, 116, 0.35),
+    #e8d5b0,
+    rgba(52, 211, 153, 0.75),
+    #e8d5b0,
+    rgba(196, 165, 116, 0.35)
+  );
 }
 
 html[data-app-theme="light"] {
@@ -62,6 +81,25 @@ html[data-app-theme="light"] {
   --shell-nav-active-bg: rgba(28, 25, 23, 0.08);
   --shell-nav-active-text: #1c1917;
   --shell-main-bg: transparent;
+
+  --loader-node-start: #92662a;
+  --loader-node-end: #0e7490;
+  --loader-route: #92662a;
+  --loader-arc-top: rgba(146, 102, 42, 0.95);
+  --loader-arc-side: rgba(4, 120, 87, 0.55);
+  --loader-ring: rgba(146, 102, 42, 0.32);
+  --loader-ring-mid: rgba(4, 120, 87, 0.2);
+  --loader-glow-gold: rgba(196, 165, 116, 0.28);
+  --loader-glow-green: rgba(4, 120, 87, 0.12);
+  --loader-glow-cyan: rgba(14, 116, 144, 0.18);
+  --loader-progress: linear-gradient(
+    90deg,
+    rgba(146, 102, 42, 0.25),
+    #c4a574,
+    rgba(4, 120, 87, 0.85),
+    #c4a574,
+    rgba(146, 102, 42, 0.25)
+  );
 }
 
 @theme inline {
@@ -315,11 +353,11 @@ input::placeholder, textarea::placeholder {
 
 .or-premium-ring {
   border-radius: 9999px;
-  border: 1px solid color-mix(in srgb, var(--at-accent, #c4a574) 25%, transparent);
+  border: 1px solid var(--loader-ring, rgba(196, 165, 116, 0.24));
 }
 
 .or-premium-ring-mid {
-  border-color: color-mix(in srgb, var(--at-accent, #c4a574) 14%, transparent);
+  border-color: var(--loader-ring-mid, rgba(196, 165, 116, 0.14));
   border-style: dashed;
   animation: or-premium-spin 18s linear infinite;
 }
@@ -327,9 +365,24 @@ input::placeholder, textarea::placeholder {
 .or-premium-arc {
   border-radius: 9999px;
   border: 1.5px solid transparent;
-  border-top-color: color-mix(in srgb, var(--at-accent, #c4a574) 90%, transparent);
-  border-right-color: color-mix(in srgb, var(--at-accent, #c4a574) 35%, transparent);
+  border-top-color: var(--loader-arc-top, rgba(232, 213, 176, 0.92));
+  border-right-color: var(--loader-arc-side, rgba(52, 211, 153, 0.42));
   animation: or-premium-spin 1.8s linear infinite;
+}
+
+.or-loader-ambient {
+  background:
+    radial-gradient(ellipse 80% 55% at 50% 30%, var(--loader-glow-gold), transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 75%, var(--loader-glow-cyan), transparent 55%),
+    radial-gradient(ellipse 45% 35% at 10% 80%, var(--loader-glow-green), transparent 50%);
+}
+
+.or-premium-progress-bar {
+  animation: or-premium-bar 1.7s ease-in-out infinite;
+  background: var(
+    --loader-progress,
+    linear-gradient(90deg, rgba(196, 165, 116, 0.35), #e8d5b0, rgba(196, 165, 116, 0.35))
+  );
 }
 
 .or-premium-route {
@@ -345,10 +398,6 @@ input::placeholder, textarea::placeholder {
 
 .or-premium-node-delay {
   animation-delay: 0.55s;
-}
-
-.or-premium-progress-bar {
-  animation: or-premium-bar 1.7s ease-in-out infinite;
 }
 
 .or-loader-message {
@@ -371,18 +420,14 @@ input::placeholder, textarea::placeholder {
 .or-loader-glow-1 {
   top: 10%;
   left: 15%;
-  background: color-mix(in srgb, var(--accent-gold, #c4a574) 28%, transparent);
+  background: var(--loader-glow-gold, rgba(196, 165, 116, 0.28));
 }
 
 .or-loader-glow-2 {
   bottom: 15%;
   right: 10%;
-  background: color-mix(in srgb, var(--at-accent, #c4a574) 16%, transparent);
+  background: var(--loader-glow-cyan, rgba(0, 212, 255, 0.16));
   animation-delay: 1.5s;
-}
-
-html[data-app-theme="light"] .or-loader-glow-2 {
-  background: color-mix(in srgb, var(--at-accent, #92662a) 12%, transparent);
 }
 
 /* Leaflet — altura explícita evita mapa cinza sem tiles */
@@ -990,6 +1035,24 @@ html[data-app-theme="light"] .or-loader-glow-2 {
   --at-divider: rgba(255, 255, 255, 0.06);
   --at-track: rgba(255, 255, 255, 0.04);
   --at-grid: rgba(255, 255, 255, 0.06);
+  --loader-node-start: #e8d5b0;
+  --loader-node-end: #00d4ff;
+  --loader-route: #c4a574;
+  --loader-arc-top: rgba(232, 213, 176, 0.92);
+  --loader-arc-side: rgba(52, 211, 153, 0.42);
+  --loader-ring: rgba(196, 165, 116, 0.24);
+  --loader-ring-mid: rgba(196, 165, 116, 0.14);
+  --loader-glow-gold: rgba(196, 165, 116, 0.18);
+  --loader-glow-green: rgba(16, 185, 129, 0.08);
+  --loader-glow-cyan: rgba(0, 212, 255, 0.14);
+  --loader-progress: linear-gradient(
+    90deg,
+    rgba(196, 165, 116, 0.35),
+    #e8d5b0,
+    rgba(52, 211, 153, 0.75),
+    #e8d5b0,
+    rgba(196, 165, 116, 0.35)
+  );
 }
 
 .premium-desk-root[data-analise-visual="claro"],
@@ -1014,6 +1077,24 @@ html[data-app-theme="light"] .analise-premium-root {
   --at-divider: rgba(28, 25, 23, 0.08);
   --at-track: rgba(28, 25, 23, 0.06);
   --at-grid: rgba(28, 25, 23, 0.08);
+  --loader-node-start: #92662a;
+  --loader-node-end: #0e7490;
+  --loader-route: #92662a;
+  --loader-arc-top: rgba(146, 102, 42, 0.95);
+  --loader-arc-side: rgba(4, 120, 87, 0.55);
+  --loader-ring: rgba(146, 102, 42, 0.32);
+  --loader-ring-mid: rgba(4, 120, 87, 0.2);
+  --loader-glow-gold: rgba(196, 165, 116, 0.28);
+  --loader-glow-green: rgba(4, 120, 87, 0.12);
+  --loader-glow-cyan: rgba(14, 116, 144, 0.18);
+  --loader-progress: linear-gradient(
+    90deg,
+    rgba(146, 102, 42, 0.25),
+    #c4a574,
+    rgba(4, 120, 87, 0.85),
+    #c4a574,
+    rgba(146, 102, 42, 0.25)
+  );
 }
 
 .text-at-primary { color: var(--at-primary); }
