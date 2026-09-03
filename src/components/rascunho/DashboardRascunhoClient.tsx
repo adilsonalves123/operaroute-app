@@ -9,6 +9,11 @@ import {
   type ResumoRascunhoSnapshot,
 } from "@/lib/rascunho/compartilhar";
 import { cn, formatCurrency, parseMoneyInput } from "@/lib/utils";
+import { useAppTheme } from "@/components/layout/AppTheme";
+import {
+  analisePageBackground,
+  appThemeToAnaliseVisual,
+} from "@/lib/analise/analise-visual-theme";
 
 const display = Instrument_Serif({
   weight: "400",
@@ -140,6 +145,12 @@ function dataLabel(iso: string): string {
   });
 }
 
+function dataCurta(iso: string): string {
+  const d = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("pt-BR");
+}
+
 function numberToMoneyInput(n: number): string {
   if (!Number.isFinite(n) || Math.abs(n) < 0.0001) return "";
   const formatted = new Intl.NumberFormat("pt-BR", {
@@ -158,6 +169,8 @@ function sanitizarMoney(raw: string): string {
 
 /** Digita valores → Salvar → lista some e ficam só os números. */
 export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
+  const { theme: appTheme } = useAppTheme();
+  const visualTema = appThemeToAnaliseVisual(appTheme);
   const [dataSelecionada, setDataSelecionada] = useState(hojeISO);
   const [valores, setValores] = useState<Record<string, string>>({});
   const [metaPorPonto, setMetaPorPonto] = useState<Record<string, PontoMetaRascunho>>({});
@@ -406,76 +419,108 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
 
   return (
     <div
+      data-analise-visual={visualTema}
       className={cn(
         display.variable,
         sans.variable,
-        "relative -mx-4 min-h-[60vh] px-4 pb-8 sm:mx-0 sm:px-0",
+        "premium-desk-root relative -mx-4 min-h-[60vh] px-4 pb-8 sm:mx-0 sm:px-0",
         !salvo && "pb-28",
         "font-[family-name:var(--font-rasc-sans)]"
       )}
     >
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-[380px] opacity-90"
-        style={{
-          background:
-            "radial-gradient(ellipse 75% 55% at 15% -5%, rgba(196,165,116,0.16), transparent 55%), radial-gradient(ellipse 45% 35% at 95% 5%, rgba(148,163,184,0.08), transparent 50%)",
-        }}
-      />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[380px]" aria-hidden>
+        <div
+          className="absolute inset-0"
+          style={{ background: analisePageBackground(visualTema) }}
+        />
+      </div>
 
       <div className="relative mx-auto max-w-2xl space-y-10">
         {!salvo ? (
           <>
             <header className="space-y-4 pt-2">
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#c4a574]/90">
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-at-link">
                 OperaRoute
               </p>
               <h1
-                className="text-[clamp(2.4rem,8vw,3.4rem)] font-normal leading-[0.95] tracking-tight text-[#f4efe6]"
+                className="text-[clamp(2.4rem,8vw,3.4rem)] font-normal leading-[0.95] tracking-tight text-at-primary"
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
                 Resumo
               </h1>
-              <p className="max-w-md text-[14px] leading-relaxed text-slate-400">
+              <p className="max-w-md text-[14px] leading-relaxed text-at-muted">
                 Escolha o dia — puxa quanto cada ponto mandou (Pix e Dinheiro).
                 Os totais batem: soma dos pontos = Pix + Dinheiro.
               </p>
 
               <label className="block space-y-2">
-                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                <span
+                  className={cn(
+                    "text-[11px] font-semibold uppercase tracking-[0.18em]",
+                    visualTema === "claro" ? "text-stone-700" : "text-at-primary/80"
+                  )}
+                >
                   Dia da rota
                 </span>
                 <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative">
-                    <CalendarDays className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#c4a574]/80" />
+                  <div className="relative w-fit">
+                    <div
+                      className={cn(
+                        "rascunho-date-field flex items-center justify-center gap-2.5 rounded-xl border px-8 py-3",
+                        visualTema === "claro"
+                          ? "border-stone-300 bg-white shadow-[0_1px_3px_rgba(28,25,23,0.1)]"
+                          : "border-at bg-at-card"
+                      )}
+                    >
+                      <CalendarDays
+                        className={cn(
+                          "h-[18px] w-[18px] shrink-0",
+                          visualTema === "claro" ? "text-[#78520a]" : "text-[#c4a574]"
+                        )}
+                        aria-hidden
+                      />
+                      <span
+                        className={cn(
+                          "text-[15px] font-semibold tabular-nums tracking-wide",
+                          visualTema === "claro" ? "text-stone-900" : "text-at-primary"
+                        )}
+                      >
+                        {dataCurta(dataSelecionada)}
+                      </span>
+                    </div>
                     <input
                       type="date"
                       value={dataSelecionada}
                       onChange={(e) => {
                         if (e.target.value) setDataSelecionada(e.target.value);
                       }}
-                      className="w-full min-w-[11rem] border-0 border-b border-white/15 bg-transparent py-2 pl-6 pr-1 text-[15px] text-[#f4efe6] [color-scheme:dark] focus:border-[#c4a574]/50 focus:outline-none"
+                      aria-label="Dia da rota"
+                      className={cn(
+                        "rascunho-date-overlay absolute inset-0 z-10 cursor-pointer opacity-0",
+                        visualTema === "claro" ? "[color-scheme:light]" : "[color-scheme:dark]"
+                      )}
                     />
                   </div>
                   {carregandoDia ? (
-                    <span className="inline-flex items-center gap-1.5 text-[12px] text-slate-500">
+                    <span className="inline-flex items-center gap-1.5 text-[12px] text-at-muted">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       Carregando…
                     </span>
                   ) : (
                     <>
                       {puxouDia ? (
-                        <span className="text-[12px] text-[#c4a574]/90">
+                        <span className="text-[12px] text-at-link/90">
                           Coletas do dia importadas
                         </span>
                       ) : (
-                        <span className="text-[12px] text-slate-600">
+                        <span className="text-[12px] text-at-soft">
                           Nenhuma coleta neste dia
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={() => void puxarDia(dataSelecionada)}
-                        className="text-[12px] text-slate-500 underline-offset-2 transition hover:text-slate-300 hover:underline"
+                        className="text-[12px] text-at-muted underline-offset-2 transition hover:text-at-primary/85 hover:underline"
                       >
                         Atualizar
                       </button>
@@ -484,18 +529,18 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                 </div>
               </label>
 
-              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-white/[0.08] pt-4 text-[12px] text-slate-500">
-                <span className="capitalize text-slate-400">
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-at pt-4 text-[12px] text-at-muted">
+                <span className="capitalize text-at-muted">
                   {dataLabel(dataSelecionada)}
                 </span>
-                <span className="text-slate-700">·</span>
+                <span className="text-at-soft">·</span>
                 <span>
                   {lista.length} ponto{lista.length === 1 ? "" : "s"} na folha
                 </span>
                 {preenchidos > 0 ? (
                   <>
-                    <span className="text-slate-700">·</span>
-                    <span className="tabular-nums text-[#c4a574]">
+                    <span className="text-at-soft">·</span>
+                    <span className="tabular-nums text-at-link">
                       {preenchidos} preenchido{preenchidos === 1 ? "" : "s"}
                     </span>
                   </>
@@ -506,7 +551,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Nome do fechamento (opcional)"
-                className="w-full border-0 border-b border-white/15 bg-transparent px-0 py-2 text-[15px] text-[#f4efe6] placeholder:text-slate-600 focus:border-[#c4a574]/50 focus:outline-none"
+                className="w-full border-0 border-b border-at-soft bg-transparent px-0 py-2 text-[15px] text-at-primary placeholder:text-at-soft focus:border-at-link/50 focus:outline-none"
               />
             </header>
 
@@ -514,7 +559,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
               <button
                 type="button"
                 onClick={limpar}
-                className="inline-flex items-center gap-1.5 text-[12px] text-slate-500 transition hover:text-slate-300"
+                className="inline-flex items-center gap-1.5 text-[12px] text-at-muted transition hover:text-at-primary/85"
               >
                 <Eraser className="h-3.5 w-3.5" />
                 Limpar folha
@@ -523,7 +568,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
 
             <section>
               {!lista.length ? (
-                <p className="text-[13px] text-slate-500">Nenhum ponto cadastrado.</p>
+                <p className="text-[13px] text-at-muted">Nenhum ponto cadastrado.</p>
               ) : (
                 <ol className="relative space-y-0 border-l border-[#c4a574]/25 pl-5">
                   {lista.map((p, idx) => {
@@ -542,7 +587,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                           )}
                         />
                         <div className="flex items-center gap-3">
-                          <span className="w-5 shrink-0 text-[11px] tabular-nums text-slate-600">
+                          <span className="w-5 shrink-0 text-[11px] tabular-nums text-at-soft">
                             {String(idx + 1).padStart(2, "0")}
                           </span>
                           <div className="relative w-[7.75rem] shrink-0">
@@ -553,22 +598,22 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                               value={valores[p.id] ?? ""}
                               onChange={(e) => setValor(p.id, e.target.value)}
                               className={cn(
-                                "w-full border-b bg-transparent py-2 pr-1 text-right text-[15px] tabular-nums placeholder:text-slate-700 focus:outline-none",
+                                "w-full border-b bg-transparent py-2 pr-1 text-right text-[15px] tabular-nums placeholder:text-at-soft focus:outline-none",
                                 preenchido
                                   ? v < 0
                                     ? "border-rose-400/40 text-rose-300"
-                                    : "border-[#c4a574]/40 text-[#f4efe6]"
-                                  : "border-white/10 text-slate-300 focus:border-[#c4a574]/40"
+                                    : "border-[#c4a574]/40 text-at-primary"
+                                  : "border-at-soft text-at-primary/85 focus:border-[#c4a574]/40"
                               )}
                             />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[14px] text-slate-200">
+                            <p className="truncate text-[14px] text-at-primary/90">
                               {p.nome}
                             </p>
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                               {p.status !== "ativo" ? (
-                                <p className="text-[11px] capitalize text-slate-600">
+                                <p className="text-[11px] capitalize text-at-soft">
                                   {p.status}
                                 </p>
                               ) : null}
@@ -597,28 +642,28 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
             </section>
 
             {/* Pix / Dinheiro — depois da lista, antes de salvar */}
-            <section className="space-y-5 border-t border-white/[0.08] pt-8">
-              <div className="space-y-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-4">
+            <section className="space-y-5 border-t border-at pt-8">
+              <div className="space-y-3 rounded-lg border border-at bg-at-card-soft px-4 py-4">
                 <div className="flex items-baseline justify-between gap-3 text-[13px]">
-                  <span className="text-slate-500">Recebido</span>
-                  <span className="tabular-nums text-[#f4efe6]">
+                  <span className="text-at-muted">Recebido</span>
+                  <span className="tabular-nums text-at-primary">
                     {formatCurrency(resumoCaixa.recebido)}
                   </span>
                 </div>
                 {resumoCaixa.deixado > 0.009 ? (
                   <div className="flex items-baseline justify-between gap-3 text-[13px]">
-                    <span className="text-slate-500">Deixado no ponto</span>
+                    <span className="text-at-muted">Deixado no ponto</span>
                     <span className="tabular-nums text-rose-300">
                       − {formatCurrency(resumoCaixa.deixado)}
                     </span>
                   </div>
                 ) : null}
-                <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3">
-                  <span className="text-[12px] uppercase tracking-[0.16em] text-slate-500">
+                <div className="flex items-baseline justify-between gap-3 border-t border-at pt-3">
+                  <span className="text-[12px] uppercase tracking-[0.16em] text-at-muted">
                     Total líquido
                   </span>
                   <span
-                    className="text-[1.35rem] tabular-nums text-[#c4a574]"
+                    className="text-[1.35rem] tabular-nums text-at-link"
                     style={{
                       fontFamily: "var(--font-rasc-display), Georgia, serif",
                     }}
@@ -630,7 +675,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="block space-y-2">
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-at-muted">
                     Pix
                   </span>
                   <input
@@ -642,11 +687,11 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                       setPixEditadoManual(true);
                       setPixStr(sanitizarMoney(e.target.value));
                     }}
-                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[#f4efe6] placeholder:text-slate-700 focus:border-[#c4a574]/50 focus:outline-none"
+                    className="w-full border-0 border-b border-at-soft bg-transparent py-2 text-[18px] tabular-nums text-at-primary placeholder:text-at-soft focus:border-at-link/50 focus:outline-none"
                   />
                 </label>
                 <label className="block space-y-2">
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <span className="text-[11px] uppercase tracking-[0.18em] text-at-muted">
                     Dinheiro
                   </span>
                   <input
@@ -658,16 +703,16 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                       setDinheiroEditadoManual(true);
                       setDinheiroStr(sanitizarMoney(e.target.value));
                     }}
-                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[#f4efe6] placeholder:text-slate-700 focus:border-[#c4a574]/50 focus:outline-none"
+                    className="w-full border-0 border-b border-at-soft bg-transparent py-2 text-[18px] tabular-nums text-at-primary placeholder:text-at-soft focus:border-at-link/50 focus:outline-none"
                   />
                 </label>
               </div>
-              <p className="text-[13px] text-slate-500">
+              <p className="text-[13px] text-at-muted">
                 {preenchidos === 0 ? (
                   "Nenhum ponto com valor ainda"
                 ) : (
                   <>
-                    <span className="tabular-nums text-[#f4efe6]">
+                    <span className="tabular-nums text-at-primary">
                       {formatCurrency(resumoCaixa.liquido)}
                     </span>
                     {" · "}
@@ -680,12 +725,17 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
               ) : null}
             </section>
 
-            <div className="fixed inset-x-0 bottom-16 z-30 border-t border-[#c4a574]/20 bg-[#0a0e16]/92 px-4 py-3 backdrop-blur-md lg:bottom-0">
+            <div className="fixed inset-x-0 bottom-16 z-30 border-t border-at bg-at-sticky/95 px-4 py-3 backdrop-blur-md lg:bottom-0">
               <div className="mx-auto max-w-2xl">
                 <button
                   type="button"
                   onClick={salvar}
-                  className="flex w-full items-center justify-center rounded-lg bg-[#c4a574] px-4 py-3.5 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:brightness-110"
+                  className={cn(
+                    "flex w-full items-center justify-center rounded-lg px-4 py-3.5 text-[14px] font-semibold tracking-wide transition hover:brightness-110",
+                    visualTema === "claro"
+                      ? "bg-at-primary text-at-card"
+                      : "bg-[#c4a574] text-[#0a0e16]"
+                  )}
                 >
                   Fechar resumo
                 </button>
@@ -709,16 +759,16 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
             `}</style>
 
             <header className="space-y-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#c4a574]/90">
+              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-at-link/90">
                 OperaRoute · fechamento
               </p>
               <h1
-                className="text-[clamp(2.2rem,7vw,3rem)] font-normal leading-[0.95] tracking-tight text-[#f4efe6]"
+                className="text-[clamp(2.2rem,7vw,3rem)] font-normal leading-[0.95] tracking-tight text-at-primary"
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
                 {titulo.trim() || TITULO_PADRAO}
               </h1>
-              <p className="capitalize text-[13px] text-slate-500">
+              <p className="capitalize text-[13px] text-at-muted">
                 {dataLabel(dataSelecionada)}
               </p>
               <div
@@ -728,14 +778,14 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
             </header>
 
             <section className="space-y-3">
-              <div className="flex justify-between text-[13px] text-slate-500">
+              <div className="flex justify-between text-[13px] text-at-muted">
                 <span>Recebido</span>
-                <span className="tabular-nums text-slate-300">
+                <span className="tabular-nums text-at-primary/85">
                   {formatCurrency(resumoCaixa.recebido)}
                 </span>
               </div>
               {resumoCaixa.deixado > 0.009 ? (
-                <div className="flex justify-between text-[13px] text-slate-500">
+                <div className="flex justify-between text-[13px] text-at-muted">
                   <span>Deixado no ponto</span>
                   <span className="tabular-nums text-rose-300">
                     − {formatCurrency(resumoCaixa.deixado)}
@@ -745,25 +795,25 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
             </section>
 
             <section className="space-y-2">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-at-muted">
                 Total líquido
               </p>
               <p
                 className={cn(
                   "text-[clamp(2.8rem,10vw,4rem)] font-normal leading-none tracking-tight tabular-nums",
-                  resumoCaixa.liquido < 0 ? "text-rose-300" : "text-[#f4efe6]"
+                  resumoCaixa.liquido < 0 ? "text-rose-300" : "text-at-primary"
                 )}
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
                 {formatCurrency(resumoCaixa.liquido)}
               </p>
-              <p className="text-[13px] text-slate-500">
+              <p className="text-[13px] text-at-muted">
                 {preenchidos} ponto{preenchidos === 1 ? "" : "s"}
                 {preenchidos > 0 ? (
                   <>
                     {" "}
                     · média{" "}
-                    <span className="tabular-nums text-slate-400">
+                    <span className="tabular-nums text-at-muted">
                       {formatCurrency(media)}
                     </span>
                   </>
@@ -771,13 +821,13 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
               </p>
             </section>
 
-            <section className="grid gap-6 border-y border-white/[0.08] py-6 sm:grid-cols-2">
+            <section className="grid gap-6 border-y border-at py-6 sm:grid-cols-2">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-at-muted">
                   Pix
                 </p>
                 <p
-                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[#f4efe6]"
+                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-at-primary"
                   style={{
                     fontFamily: "var(--font-rasc-display), Georgia, serif",
                   }}
@@ -786,11 +836,11 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                 </p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-[11px] uppercase tracking-[0.2em] text-at-muted">
                   Dinheiro
                 </p>
                 <p
-                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[#f4efe6]"
+                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-at-primary"
                   style={{
                     fontFamily: "var(--font-rasc-display), Georgia, serif",
                   }}
@@ -801,7 +851,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
             </section>
 
             <section className="space-y-5">
-              <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
+              <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-at-muted">
                 Por ponto
               </h2>
               <ol className="space-y-4">
@@ -810,13 +860,13 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                   return (
                     <li key={r.id} className="space-y-1.5">
                       <div className="flex items-baseline justify-between gap-3">
-                        <p className="min-w-0 truncate text-[14px] text-slate-300">
-                          <span className="mr-2 tabular-nums text-slate-600">
+                        <p className="min-w-0 truncate text-[14px] text-at-primary/85">
+                          <span className="mr-2 tabular-nums text-at-soft">
                             {String(i + 1).padStart(2, "0")}
                           </span>
                           {r.nome}
                           {r.forma ? (
-                            <span className="ml-2 text-[10px] uppercase tracking-[0.12em] text-slate-500">
+                            <span className="ml-2 text-[10px] uppercase tracking-[0.12em] text-at-muted">
                               {r.forma}
                             </span>
                           ) : null}
@@ -824,7 +874,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                         <p
                           className={cn(
                             "shrink-0 text-[15px] tabular-nums",
-                            r.valor < 0 ? "text-rose-300" : "text-[#f4efe6]"
+                            r.valor < 0 ? "text-rose-300" : "text-at-primary"
                           )}
                           style={{
                             fontFamily:
@@ -849,25 +899,25 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
               </ol>
             </section>
 
-            <div className="flex flex-wrap gap-x-5 gap-y-3 border-t border-white/[0.08] pt-6 text-[13px]">
+            <div className="flex flex-wrap gap-x-5 gap-y-3 border-t border-at pt-6 text-[13px]">
               <div className="w-full space-y-3">
-                <p className="text-[11px] text-slate-600">
+                <p className="text-[11px] text-at-soft">
                   WhatsApp e compartilhar enviam só o link da página web.
                 </p>
                 {compartilhandoLink && !linkCompartilhamento ? (
-                  <p className="inline-flex items-center gap-2 text-[12px] text-slate-500">
+                  <p className="inline-flex items-center gap-2 text-[12px] text-at-muted">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Gerando link…
                   </p>
                 ) : linkCompartilhamento ? (
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-                    <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2">
-                      <Link2 className="h-3.5 w-3.5 shrink-0 text-[#c4a574]/80" />
+                    <div className="flex min-w-0 flex-1 items-center gap-2 rounded-lg border border-at-soft bg-white/[0.03] px-3 py-2">
+                      <Link2 className="h-3.5 w-3.5 shrink-0 text-at-link/80" />
                       <a
                         href={linkCompartilhamento}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="min-w-0 truncate text-[12px] text-[#c4a574] underline-offset-2 hover:underline"
+                        className="min-w-0 truncate text-[12px] text-at-link underline-offset-2 hover:underline"
                       >
                         {linkCompartilhamento}
                       </a>
@@ -876,7 +926,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                       type="button"
                       onClick={() => void copiarLink()}
                       disabled={compartilhandoLink}
-                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-[12px] text-slate-300 transition hover:border-white/20 hover:text-white disabled:opacity-50"
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-at-soft px-3 py-2 text-[12px] text-at-primary/85 transition hover:border-white/20 hover:text-white disabled:opacity-50"
                     >
                       <Copy className="h-3.5 w-3.5" />
                       Copiar link
@@ -888,7 +938,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                 type="button"
                 onClick={() => void enviarWhatsApp()}
                 disabled={compartilhandoLink}
-                className="inline-flex items-center gap-2 text-[#c4a574] transition hover:text-[#e8d5b0] disabled:opacity-50"
+                className="inline-flex items-center gap-2 text-at-link transition hover:text-[#e8d5b0] disabled:opacity-50"
               >
                 {compartilhandoLink ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -901,7 +951,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                 type="button"
                 onClick={() => void compartilhar()}
                 disabled={compartilhandoLink}
-                className="inline-flex items-center gap-2 text-slate-400 transition hover:text-slate-200 disabled:opacity-50"
+                className="inline-flex items-center gap-2 text-at-muted transition hover:text-at-primary/90 disabled:opacity-50"
               >
                 <Share2 className="h-3.5 w-3.5" />
                 Compartilhar link
@@ -913,7 +963,7 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
                   setLinkCompartilhamento(null);
                   setFeedback(null);
                 }}
-                className="inline-flex items-center gap-2 text-slate-400 transition hover:text-slate-200"
+                className="inline-flex items-center gap-2 text-at-muted transition hover:text-at-primary/90"
               >
                 <Pencil className="h-3.5 w-3.5" />
                 Editar folha
@@ -921,14 +971,14 @@ export function DashboardRascunhoClient({ pontos, empresaNome }: Props) {
               <button
                 type="button"
                 onClick={limpar}
-                className="inline-flex items-center gap-2 text-slate-500 transition hover:text-slate-300"
+                className="inline-flex items-center gap-2 text-at-muted transition hover:text-at-primary/85"
               >
                 <Eraser className="h-3.5 w-3.5" />
                 Limpar
               </button>
             </div>
             {feedback ? (
-              <p className="text-[12px] text-slate-400">{feedback}</p>
+              <p className="text-[12px] text-at-muted">{feedback}</p>
             ) : null}
           </div>
         )}
