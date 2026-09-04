@@ -6,7 +6,7 @@ import { ImprimirRelatorioColetaButton } from "@/components/coletas/ImprimirRela
 import { snapshotFromRelatorioFuraFura } from "@/lib/comprovantes/from-relatorio-nicho";
 import { montarSnapshotRelatorio } from "@/lib/comprovantes/previa-relatorio";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
-import { abrirImpressaoRelatorioTextoGenerico } from "@/lib/coletas/imprimir-relatorio-texto";
+import type { RelatorioImpressaoOpts } from "@/lib/coletas/imprimir-relatorio-texto";
 import { ColetaCobrarPixBar } from "@/components/coletas/ColetaCobrarPixBar";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import type { ComprovanteSnapshot } from "@/lib/comprovantes/types";
@@ -62,8 +62,8 @@ export function PreviaRelatorioFuraFuraPanel({
     });
   }
 
-  function handlePrint(formato: "termica" | "a4") {
-    return abrirImpressaoRelatorioTextoGenerico({
+  function getImpressaoOpts(): RelatorioImpressaoOpts {
+    return {
       titulo: "COLETA — FURA-FURA",
       empresaNome: data.empresaNome,
       pontoNome: data.pontoNome,
@@ -90,8 +90,7 @@ export function PreviaRelatorioFuraFuraPanel({
         { label: "A receber", valor: formatCurrency(c.valorAReceber), destaque: true },
         { label: "Lucro", valor: formatCurrency(c.lucroReal) },
       ],
-      formato,
-    });
+    };
   }
 
   const content = (
@@ -130,7 +129,7 @@ export function PreviaRelatorioFuraFuraPanel({
           whatsappLabel="WhatsApp"
           shareLabel="Compartilhar"
         />
-        <ImprimirRelatorioColetaButton disabled={disabled} onImprimir={handlePrint} />
+        <ImprimirRelatorioColetaButton disabled={disabled} getImpressaoOpts={getImpressaoOpts} />
       </div>
     </div>
   );

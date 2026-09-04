@@ -2,7 +2,7 @@
 
 import { ImprimirRelatorioColetaButton } from "@/components/coletas/ImprimirRelatorioColetaButton";
 import {
-  abrirImpressaoRelatorioTexto,
+  montarImpressaoOptsCassino,
   type RelatorioColetaData,
 } from "@/lib/nichos/cassino/relatorio";
 
@@ -17,7 +17,7 @@ export function ImprimirColetaCassinoButton({
   return (
     <ImprimirRelatorioColetaButton
       className={className}
-      onImprimir={(formato) => abrirImpressaoRelatorioTexto({ ...data, previa: false }, formato)}
+      getImpressaoOpts={() => montarImpressaoOptsCassino({ ...data, previa: false })}
     />
   );
 }

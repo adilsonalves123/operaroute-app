@@ -6,7 +6,7 @@ import type { RelatorioConsignadoData } from "@/lib/nichos/consignado/relatorio"
 import { snapshotFromRelatorioConsignado } from "@/lib/comprovantes/from-relatorio-nicho";
 import { montarSnapshotRelatorio } from "@/lib/comprovantes/previa-relatorio";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
-import { abrirImpressaoRelatorioTextoGenerico } from "@/lib/coletas/imprimir-relatorio-texto";
+import type { RelatorioImpressaoOpts } from "@/lib/coletas/imprimir-relatorio-texto";
 import { ColetaCobrarPixBar } from "@/components/coletas/ColetaCobrarPixBar";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import type { ComprovanteSnapshot } from "@/lib/comprovantes/types";
@@ -55,8 +55,8 @@ export function PreviaRelatorioConsignadoPanel({
     });
   }
 
-  function handlePrint(formato: "termica" | "a4") {
-    return abrirImpressaoRelatorioTextoGenerico({
+  function getImpressaoOpts(): RelatorioImpressaoOpts {
+    return {
       titulo: "COLETA — CONSIGNADO",
       empresaNome: data.empresaNome,
       pontoNome: data.pontoNome,
@@ -88,8 +88,7 @@ export function PreviaRelatorioConsignadoPanel({
         { label: "A receber", valor: formatCurrency(c.valorAReceber), destaque: true },
         { label: "Lucro", valor: formatCurrency(c.lucroReal) },
       ],
-      formato,
-    });
+    };
   }
 
   const content = (
@@ -120,7 +119,7 @@ export function PreviaRelatorioConsignadoPanel({
           whatsappLabel="WhatsApp"
           shareLabel="Compartilhar"
         />
-        <ImprimirRelatorioColetaButton disabled={disabled} onImprimir={handlePrint} />
+        <ImprimirRelatorioColetaButton disabled={disabled} getImpressaoOpts={getImpressaoOpts} />
       </div>
     </div>
   );

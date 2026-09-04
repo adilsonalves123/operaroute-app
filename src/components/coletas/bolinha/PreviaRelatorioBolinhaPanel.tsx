@@ -6,7 +6,7 @@ import type { RelatorioBolinhaData } from "@/lib/nichos/bolinha/relatorio";
 import { snapshotFromRelatorioBolinha } from "@/lib/comprovantes/from-relatorio-nicho";
 import { montarSnapshotRelatorio } from "@/lib/comprovantes/previa-relatorio";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
-import { abrirImpressaoRelatorioTextoGenerico } from "@/lib/coletas/imprimir-relatorio-texto";
+import type { RelatorioImpressaoOpts } from "@/lib/coletas/imprimir-relatorio-texto";
 import { ColetaCobrarPixBar } from "@/components/coletas/ColetaCobrarPixBar";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import type { ComprovanteSnapshot } from "@/lib/comprovantes/types";
@@ -55,8 +55,8 @@ export function PreviaRelatorioBolinhaPanel({
     });
   }
 
-  function handlePrint(formato: "termica" | "a4") {
-    return abrirImpressaoRelatorioTextoGenerico({
+  function getImpressaoOpts(): RelatorioImpressaoOpts {
+    return {
       titulo: "COLETA — BOLINHA",
       empresaNome: data.empresaNome,
       pontoNome: data.pontoNome,
@@ -81,8 +81,7 @@ export function PreviaRelatorioBolinhaPanel({
         { label: "A receber", valor: formatCurrency(c.valorAReceber), destaque: true },
         { label: "Lucro real", valor: formatCurrency(c.lucroReal) },
       ],
-      formato,
-    });
+    };
   }
 
   const content = (
@@ -113,7 +112,7 @@ export function PreviaRelatorioBolinhaPanel({
           whatsappLabel="WhatsApp"
           shareLabel="Compartilhar"
         />
-        <ImprimirRelatorioColetaButton disabled={disabled} onImprimir={handlePrint} />
+        <ImprimirRelatorioColetaButton disabled={disabled} getImpressaoOpts={getImpressaoOpts} />
       </div>
 
       {disabled && (

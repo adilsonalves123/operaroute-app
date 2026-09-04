@@ -5,7 +5,7 @@ import { ColetaCobrarPixBar } from "@/components/coletas/ColetaCobrarPixBar";
 import { ImprimirRelatorioColetaButton } from "@/components/coletas/ImprimirRelatorioColetaButton";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
 import {
-  abrirImpressaoRelatorioTexto,
+  montarImpressaoOptsCassino,
   type RelatorioColetaData,
 } from "@/lib/nichos/cassino/relatorio";
 import { snapshotFromRelatorioColetaData } from "@/lib/comprovantes/from-relatorio-nicho";
@@ -86,8 +86,8 @@ export function PreviaRelatorioPanel({
     };
   }
 
-  function handlePrint(formato: "termica" | "a4") {
-    return abrirImpressaoRelatorioTexto({ ...data, previa: false }, formato);
+  function getImpressaoOpts() {
+    return montarImpressaoOptsCassino({ ...data, previa: false });
   }
 
   return (
@@ -117,7 +117,7 @@ export function PreviaRelatorioPanel({
           whatsappLabel="WhatsApp"
           shareLabel="Compartilhar"
         />
-        <ImprimirRelatorioColetaButton disabled={disabled} onImprimir={handlePrint} />
+        <ImprimirRelatorioColetaButton disabled={disabled} getImpressaoOpts={getImpressaoOpts} />
       </div>
     </div>
   );
