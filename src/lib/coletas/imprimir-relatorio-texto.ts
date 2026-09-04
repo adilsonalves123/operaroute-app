@@ -1,7 +1,137 @@
-/** Abre HTML de impressão (só texto) de forma confiável — iframe evita página em branco / pop-up bloqueado. */
-export function abrirJanelaImpressaoHtml(html: string): boolean {
+export type FormatoImpressao = "termica" | "a4";
+
+const PRINT_ROOT_ID = "or-print-root";
+const PRINT_STYLE_ID = "or-print-style";
+
+export const ESTILO_IMPRESSAO_TERMICA = `
+  @page { size: 80mm auto; margin: 2mm; }
+  * { box-sizing: border-box; }
+  .or-print-body {
+    margin: 0;
+    padding: 8px 6px;
+    background: #fff;
+    color: #000;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 12px;
+    line-height: 1.35;
+    max-width: 80mm;
+  }
+  .or-print-body h1 { font-size: 14px; margin: 0 0 4px; text-align: center; font-weight: 700; }
+  .or-print-body .meta { text-align: center; margin-bottom: 10px; }
+  .or-print-body .meta p { margin: 0; }
+  .or-print-body .sep { border: none; border-top: 1px dashed #000; margin: 8px 0; }
+  .or-print-body .maq { margin-bottom: 8px; }
+  .or-print-body .maq-nome { font-weight: 700; margin-bottom: 2px; }
+  .or-print-body .row { display: flex; justify-content: space-between; gap: 8px; }
+  .or-print-body .row span:last-child { text-align: right; white-space: nowrap; }
+  .or-print-body .sec { font-weight: 700; text-transform: uppercase; margin: 6px 0 2px; font-size: 11px; }
+  .or-print-body .destaque { font-weight: 700; font-size: 13px; }
+  .or-print-body .hint { font-size: 10px; text-align: right; color: #333; }
+  .or-print-body .foot { text-align: center; margin-top: 10px; font-size: 10px; }
+`;
+
+export const ESTILO_IMPRESSAO_A4 = `
+  @page { size: A4; margin: 14mm; }
+  * { box-sizing: border-box; }
+  .or-print-body {
+    margin: 0 auto;
+    padding: 0;
+    background: #fff;
+    color: #111;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 13px;
+    line-height: 1.55;
+    max-width: 180mm;
+  }
+  .or-print-body h1 { font-size: 22px; margin: 0 0 10px; text-align: center; font-weight: 700; letter-spacing: 0.02em; }
+  .or-print-body .meta { text-align: center; margin-bottom: 16px; color: #444; }
+  .or-print-body .meta p { margin: 0 0 2px; }
+  .or-print-body .sep { border: none; border-top: 1px solid #ccc; margin: 12px 0; }
+  .or-print-body .maq { margin-bottom: 14px; page-break-inside: avoid; }
+  .or-print-body .maq-nome { font-weight: 700; margin-bottom: 6px; font-size: 14px; }
+  .or-print-body .row { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; border-bottom: 1px dotted #eee; }
+  .or-print-body .row span:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .or-print-body .sec { font-weight: 700; text-transform: uppercase; margin: 14px 0 6px; font-size: 11px; letter-spacing: 0.08em; color: #555; }
+  .or-print-body .destaque { font-weight: 700; font-size: 15px; }
+  .or-print-body .hint { font-size: 11px; text-align: right; color: #666; margin-top: 2px; }
+  .or-print-body .foot { text-align: center; margin-top: 20px; font-size: 11px; color: #888; }
+`;
+
+/** @deprecated use ESTILO_IMPRESSAO_TERMICA */
+export const ESTILO_IMPRESSAO_TEXTO = ESTILO_IMPRESSAO_TERMICA;
+
+function estiloPorFormato(formato: FormatoImpressao): string {
+  return formato === "a4" ? ESTILO_IMPRESSAO_A4 : ESTILO_IMPRESSAO_TERMICA;
+}
+
+function limparImpressaoOverlay() {
+  document.getElementById(PRINT_ROOT_ID)?.remove();
+  document.getElementById(PRINT_STYLE_ID)?.remove();
+}
+
+/** Impressão via documento principal — funciona em iPad/Android (iframe oculto falha). */
+function imprimirViaOverlay(bodyHtml: string, formato: FormatoImpressao): boolean {
   if (typeof document === "undefined") return false;
 
+  limparImpressaoOverlay();
+
+  const root = document.createElement("div");
+  root.id = PRINT_ROOT_ID;
+  root.className = "or-print-body";
+  root.innerHTML = bodyHtml;
+
+  const style = document.createElement("style");
+  style.id = PRINT_STYLE_ID;
+  style.textContent = `
+    @media screen {
+      #${PRINT_ROOT_ID} { display: none !important; }
+    }
+    @media print {
+      html, body {
+        height: auto !important;
+        overflow: visible !important;
+        background: #fff !important;
+      }
+      body * { visibility: hidden !important; }
+      #${PRINT_ROOT_ID}, #${PRINT_ROOT_ID} * {
+        visibility: visible !important;
+      }
+      #${PRINT_ROOT_ID} {
+        display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        ${formato === "termica" ? "max-width: 80mm;" : ""}
+      }
+    }
+    ${estiloPorFormato(formato)}
+  `;
+
+  document.head.appendChild(style);
+  document.body.appendChild(root);
+
+  const cleanup = () => limparImpressaoOverlay();
+
+  window.addEventListener("afterprint", cleanup, { once: true });
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      try {
+        window.print();
+      } catch {
+        cleanup();
+        return;
+      }
+      window.setTimeout(cleanup, 4000);
+    });
+  });
+
+  return true;
+}
+
+/** Fallback desktop — janela/iframe auxiliar. */
+function imprimirViaIframe(html: string): boolean {
   const iframe = document.createElement("iframe");
   iframe.setAttribute("aria-hidden", "true");
   iframe.style.cssText =
@@ -42,40 +172,32 @@ export function abrirJanelaImpressaoHtml(html: string): boolean {
     limpar();
   };
 
-  // Aguarda o layout do documento no iframe.
-  window.setTimeout(disparar, 250);
+  window.setTimeout(disparar, 300);
   return true;
 }
 
-export const ESTILO_IMPRESSAO_TEXTO = `
-  @page { margin: 8mm; }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    padding: 12px;
-    background: #fff;
-    color: #000;
-    font-family: "Courier New", Courier, monospace;
-    font-size: 12px;
-    line-height: 1.35;
-    max-width: 80mm;
-  }
-  h1 { font-size: 14px; margin: 0 0 4px; text-align: center; font-weight: 700; }
-  .meta { text-align: center; margin-bottom: 10px; }
-  .meta p { margin: 0; }
-  .sep { border: none; border-top: 1px dashed #000; margin: 8px 0; }
-  .maq { margin-bottom: 8px; }
-  .maq-nome { font-weight: 700; margin-bottom: 2px; }
-  .row { display: flex; justify-content: space-between; gap: 8px; }
-  .row span:last-child { text-align: right; white-space: nowrap; }
-  .sec { font-weight: 700; text-transform: uppercase; margin: 6px 0 2px; font-size: 11px; }
-  .destaque { font-weight: 700; font-size: 13px; }
-  .hint { font-size: 10px; text-align: right; color: #333; }
-  .foot { text-align: center; margin-top: 10px; font-size: 10px; }
-  @media print {
-    body { padding: 0; max-width: none; }
-  }
-`;
+function extrairCorpoHtml(html: string): string {
+  const bodyMatch = html.match(/<body[^>]*>([\s\S]*)<\/body>/i);
+  return bodyMatch ? bodyMatch[1] : html;
+}
+
+function montarDocumentoHtml(bodyHtml: string, titulo: string, formato: FormatoImpressao): string {
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${titulo}</title><style>${estiloPorFormato(formato)}</style></head><body class="or-print-body">${bodyHtml}</body></html>`;
+}
+
+/** Abre diálogo de impressão — overlay no tablet, iframe como reserva. */
+export function abrirJanelaImpressaoHtml(
+  html: string,
+  formato: FormatoImpressao = "termica"
+): boolean {
+  if (typeof document === "undefined") return false;
+
+  const bodyHtml = extrairCorpoHtml(html);
+  const ok = imprimirViaOverlay(bodyHtml, formato);
+  if (ok) return true;
+
+  return imprimirViaIframe(montarDocumentoHtml(bodyHtml, "Impressão", formato));
+}
 
 function esc(s: string): string {
   return s
@@ -89,8 +211,7 @@ function rowHtml(label: string, valor: string, destaque?: boolean): string {
   return `<div class="row${destaque ? " destaque" : ""}"><span>${esc(label)}</span><span>${esc(valor)}</span></div>`;
 }
 
-/** Impressão térmica / papel — mesmo padrão do Cassino, genérico por nicho. */
-export function abrirImpressaoRelatorioTextoGenerico(opts: {
+export type RelatorioImpressaoOpts = {
   titulo: string;
   empresaNome: string;
   pontoNome: string;
@@ -103,7 +224,9 @@ export function abrirImpressaoRelatorioTextoGenerico(opts: {
     hint?: string;
     destaque?: boolean;
   }[];
-}): boolean {
+};
+
+export function montarCorpoImpressaoRelatorio(opts: RelatorioImpressaoOpts): string {
   const partes: string[] = [];
   partes.push(`<h1>${esc(opts.titulo)}</h1>`);
   partes.push(`<div class="meta">`);
@@ -136,7 +259,15 @@ export function abrirImpressaoRelatorioTextoGenerico(opts: {
   }
 
   partes.push(`<hr class="sep" /><div class="foot">OperaRout</div>`);
+  return partes.join("");
+}
 
-  const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/><title>${esc(opts.titulo)} — ${esc(opts.pontoNome)}</title><style>${ESTILO_IMPRESSAO_TEXTO}</style></head><body>${partes.join("")}</body></html>`;
-  return abrirJanelaImpressaoHtml(html);
+/** Impressão térmica ou A4 — comprovante só texto/números (sem foto). */
+export function abrirImpressaoRelatorioTextoGenerico(
+  opts: RelatorioImpressaoOpts & { formato?: FormatoImpressao }
+): boolean {
+  const formato = opts.formato ?? "termica";
+  const bodyHtml = montarCorpoImpressaoRelatorio(opts);
+  const titulo = `${opts.titulo} — ${opts.pontoNome}`;
+  return abrirJanelaImpressaoHtml(montarDocumentoHtml(bodyHtml, titulo, formato), formato);
 }

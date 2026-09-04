@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Printer } from "lucide-react";
+import { ImprimirRelatorioColetaButton } from "@/components/coletas/ImprimirRelatorioColetaButton";
 import type { RelatorioBolinhaData } from "@/lib/nichos/bolinha/relatorio";
 import { snapshotFromRelatorioBolinha } from "@/lib/comprovantes/from-relatorio-nicho";
 import { montarSnapshotRelatorio } from "@/lib/comprovantes/previa-relatorio";
@@ -55,8 +55,8 @@ export function PreviaRelatorioBolinhaPanel({
     });
   }
 
-  function handlePrint() {
-    const ok = abrirImpressaoRelatorioTextoGenerico({
+  function handlePrint(formato: "termica" | "a4") {
+    return abrirImpressaoRelatorioTextoGenerico({
       titulo: "COLETA — BOLINHA",
       empresaNome: data.empresaNome,
       pontoNome: data.pontoNome,
@@ -81,8 +81,8 @@ export function PreviaRelatorioBolinhaPanel({
         { label: "A receber", valor: formatCurrency(c.valorAReceber), destaque: true },
         { label: "Lucro real", valor: formatCurrency(c.lucroReal) },
       ],
+      formato,
     });
-    if (!ok) window.alert("Permita pop-ups neste site para imprimir.");
   }
 
   const content = (
@@ -113,15 +113,7 @@ export function PreviaRelatorioBolinhaPanel({
           whatsappLabel="WhatsApp"
           shareLabel="Compartilhar"
         />
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={handlePrint}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
-        >
-          <Printer className="h-4 w-4" />
-          Imprimir
-        </button>
+        <ImprimirRelatorioColetaButton disabled={disabled} onImprimir={handlePrint} />
       </div>
 
       {disabled && (

@@ -1,14 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { Printer } from "lucide-react";
 import type { RelatorioFuraFuraData } from "@/lib/nichos/fura-fura/relatorio";
+import { ImprimirRelatorioColetaButton } from "@/components/coletas/ImprimirRelatorioColetaButton";
 import { snapshotFromRelatorioFuraFura } from "@/lib/comprovantes/from-relatorio-nicho";
 import { montarSnapshotRelatorio } from "@/lib/comprovantes/previa-relatorio";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
 import { abrirImpressaoRelatorioTextoGenerico } from "@/lib/coletas/imprimir-relatorio-texto";
 import { ColetaCobrarPixBar } from "@/components/coletas/ColetaCobrarPixBar";
-import { coletaBtnSecondaryClass } from "@/components/coletas/layout/coleta-form-styles";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import type { ComprovanteSnapshot } from "@/lib/comprovantes/types";
 
@@ -63,8 +62,8 @@ export function PreviaRelatorioFuraFuraPanel({
     });
   }
 
-  function handlePrint() {
-    const ok = abrirImpressaoRelatorioTextoGenerico({
+  function handlePrint(formato: "termica" | "a4") {
+    return abrirImpressaoRelatorioTextoGenerico({
       titulo: "COLETA — FURA-FURA",
       empresaNome: data.empresaNome,
       pontoNome: data.pontoNome,
@@ -91,10 +90,8 @@ export function PreviaRelatorioFuraFuraPanel({
         { label: "A receber", valor: formatCurrency(c.valorAReceber), destaque: true },
         { label: "Lucro", valor: formatCurrency(c.lucroReal) },
       ],
+      formato,
     });
-    if (!ok) {
-      window.alert("Permita pop-ups neste site para imprimir.");
-    }
   }
 
   const content = (
@@ -133,15 +130,7 @@ export function PreviaRelatorioFuraFuraPanel({
           whatsappLabel="WhatsApp"
           shareLabel="Compartilhar"
         />
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={handlePrint}
-          className={coletaBtnSecondaryClass()}
-        >
-          <Printer className="h-4 w-4" />
-          Imprimir
-        </button>
+        <ImprimirRelatorioColetaButton disabled={disabled} onImprimir={handlePrint} />
       </div>
     </div>
   );

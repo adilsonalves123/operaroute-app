@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo } from "react";
-import { Printer } from "lucide-react";
 import { ColetaCobrarPixBar } from "@/components/coletas/ColetaCobrarPixBar";
+import { ImprimirRelatorioColetaButton } from "@/components/coletas/ImprimirRelatorioColetaButton";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
 import {
   abrirImpressaoRelatorioTexto,
@@ -86,11 +86,8 @@ export function PreviaRelatorioPanel({
     };
   }
 
-  function handlePrint() {
-    const ok = abrirImpressaoRelatorioTexto({ ...data, previa: false });
-    if (!ok) {
-      window.alert("Permita pop-ups neste site para imprimir.");
-    }
+  function handlePrint(formato: "termica" | "a4") {
+    return abrirImpressaoRelatorioTexto({ ...data, previa: false }, formato);
   }
 
   return (
@@ -120,15 +117,7 @@ export function PreviaRelatorioPanel({
           whatsappLabel="WhatsApp"
           shareLabel="Compartilhar"
         />
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={handlePrint}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
-        >
-          <Printer className="h-4 w-4" />
-          Imprimir
-        </button>
+        <ImprimirRelatorioColetaButton disabled={disabled} onImprimir={handlePrint} />
       </div>
     </div>
   );

@@ -4,7 +4,7 @@ import { hintMovimentoCaixa, valorMovimentoCaixa, type MovimentoCaixaDetalhe } f
 import { displayOperacaoNegativa } from "./resumo-visita";
 import { resumoTotalVisita, negativoFicaProximaColetaReais } from "./resumo-visita";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
-import { abrirImpressaoRelatorioTextoGenerico } from "@/lib/coletas/imprimir-relatorio-texto";
+import { abrirImpressaoRelatorioTextoGenerico, type FormatoImpressao } from "@/lib/coletas/imprimir-relatorio-texto";
 import type { CalculoVisitaResult } from "./types";
 
 export interface RelatorioMaquinaLinha {
@@ -711,8 +711,11 @@ export function downloadBlob(blob: Blob, filename: string) {
   URL.revokeObjectURL(url);
 }
 
-/** Comprovante só texto/números — impressão térmica / papel comum (sem foto). */
-export function abrirImpressaoRelatorioTexto(data: RelatorioColetaData): boolean {
+/** Comprovante só texto/números — impressão térmica ou A4 (sem foto). */
+export function abrirImpressaoRelatorioTexto(
+  data: RelatorioColetaData,
+  formato: FormatoImpressao = "termica"
+): boolean {
   const { calculo: c, pontoNome, empresaNome, comissaoPercentual } = data;
   const operacao =
     c.valorOperacaoEfetivoReais > 0.009
@@ -821,5 +824,6 @@ export function abrirImpressaoRelatorioTexto(data: RelatorioColetaData): boolean
       ],
     })),
     resumo,
+    formato,
   });
 }
