@@ -6,6 +6,7 @@ import type { RelatorioFuraFuraData } from "@/lib/nichos/fura-fura/relatorio";
 import { snapshotFromRelatorioFuraFura } from "@/lib/comprovantes/from-relatorio-nicho";
 import { montarSnapshotRelatorio } from "@/lib/comprovantes/previa-relatorio";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
+import { coletaBtnSubmitClass } from "@/components/coletas/layout/coleta-form-styles";
 
 type Props = {
   open: boolean;
@@ -42,26 +43,30 @@ export function ColetaFuraFuraSucessoModal({
   });
 
   return (
-    <div className="fixed inset-0 z-[210] flex items-end justify-center bg-black/70 p-4 sm:items-center">
-      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-700 bg-slate-950 shadow-2xl">
-        <div className="flex items-start justify-between gap-3 border-b border-slate-800 px-5 py-4">
+    <div className="fixed inset-0 z-[210] flex items-end justify-center bg-black/40 p-4 sm:items-center">
+      <div className="flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-at bg-at-card shadow-xl">
+        <div className="flex items-start justify-between gap-3 border-b border-at px-5 py-4">
           <div className="flex items-center gap-2">
-            <CheckCircle className="h-6 w-6 shrink-0 text-green-400" />
+            <CheckCircle className="h-6 w-6 shrink-0 text-emerald-700" />
             <div>
-              <h2 className="text-lg font-bold text-white">Coleta registrada!</h2>
+              <h2 className="text-lg font-bold text-at-primary">Coleta registrada!</h2>
               <p className="text-sm text-at-muted">
                 Compartilhe o comprovante ou envie no WhatsApp
               </p>
             </div>
           </div>
-          <button type="button" onClick={onClose} className="p-1 text-at-muted hover:text-white">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 text-at-muted hover:text-at-primary"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">
-          <div className="overflow-x-auto rounded-xl border border-slate-800 bg-slate-950/60 p-2">
-            <RelatorioFuraFuraView data={relatorio} />
+          <div className="overflow-x-auto rounded-xl border border-at bg-[#faf8f4] p-2">
+            <RelatorioFuraFuraView data={relatorio} theme="light" />
           </div>
 
           <CompartilharComprovanteLinkActions
@@ -72,20 +77,16 @@ export function ColetaFuraFuraSucessoModal({
                 nichoModulo: "fura_fura",
                 relatorio,
                 previa: false,
-                layout: "historico",
+                layout: "relatorio",
               })
             }
             telefone={data.pontoWhatsapp}
             visitaPontoId={visitaPontoId}
             whatsappLabel="Enviar link no WhatsApp"
-            shareLabel="Compartilhar"
+            shareLabel="Compartilhar link"
           />
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full rounded-lg bg-primary-neon py-3 text-sm font-semibold text-slate-900 hover:bg-cyan-300"
-          >
+          <button type="button" onClick={onClose} className={coletaBtnSubmitClass("w-full")}>
             Concluir
           </button>
         </div>

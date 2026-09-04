@@ -4,6 +4,7 @@ import { forwardRef } from "react";
 import { formatCurrency } from "@/lib/utils";
 import type { RelatorioFuraFuraData } from "@/lib/nichos/fura-fura/relatorio";
 import type { RelatorioLinhaComprovante } from "@/lib/coletas/relatorio-comprovante-theme";
+import type { RelatorioThemeMode } from "@/lib/coletas/relatorio-comprovante-theme";
 import { appendLinhasCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 import {
   RelatorioBadgePrevia,
@@ -11,9 +12,11 @@ import {
   RelatorioCardSoft,
   RelatorioFotoPainel,
   RelatorioResumoFinanceiro,
-  RELATORIO_COLORS as colors,
-  RELATORIO_SHELL_STYLE,
 } from "@/components/coletas/relatorio/RelatorioComprovanteShell";
+import {
+  RelatorioThemeProvider,
+  useRelatorioTheme,
+} from "@/components/coletas/relatorio/RelatorioThemeContext";
 
 function buildLinhas(data: RelatorioFuraFuraData): RelatorioLinhaComprovante[] {
   const c = data.calculo;
@@ -76,12 +79,24 @@ function buildLinhas(data: RelatorioFuraFuraData): RelatorioLinhaComprovante[] {
   return comCobranca;
 }
 
-export const RelatorioFuraFuraView = forwardRef<HTMLDivElement, { data: RelatorioFuraFuraData }>(
-  function RelatorioFuraFuraView({ data }, ref) {
+export const RelatorioFuraFuraView = forwardRef<
+  HTMLDivElement,
+  { data: RelatorioFuraFuraData; theme?: RelatorioThemeMode; fullWidth?: boolean }
+>(function RelatorioFuraFuraView({ data, theme = "light", fullWidth }, ref) {
+  return (
+    <RelatorioThemeProvider theme={theme} fullWidth={fullWidth}>
+      <RelatorioFuraFuraBody ref={ref} data={data} />
+    </RelatorioThemeProvider>
+  );
+});
+
+const RelatorioFuraFuraBody = forwardRef<HTMLDivElement, { data: RelatorioFuraFuraData }>(
+  function RelatorioFuraFuraBody({ data }, ref) {
+    const { colors, shellStyle } = useRelatorioTheme();
     const c = data.calculo;
 
     return (
-      <div ref={ref} style={RELATORIO_SHELL_STYLE}>
+      <div ref={ref} style={shellStyle}>
         {data.previa && <RelatorioBadgePrevia />}
 
         <RelatorioCabecalho

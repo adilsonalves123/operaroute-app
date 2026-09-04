@@ -57,7 +57,7 @@ export function PreviaRelatorioPublicView({
       data: asDate(raw.data),
       previa,
     };
-    body = <RelatorioFuraFuraView data={data} />;
+    body = <RelatorioFuraFuraView data={data} theme="light" fullWidth />;
   } else if (nicho === "ursinho") {
     const data: RelatorioUrsinhoData = {
       ...(raw as unknown as RelatorioUrsinhoData),
@@ -91,8 +91,8 @@ export function PreviaRelatorioPublicView({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-md justify-center px-4 py-8">
-      {body}
+    <div className="flex min-h-screen w-full flex-col items-center bg-[#faf8f4] px-4 py-6 sm:py-10">
+      <div className="flex w-full max-w-[420px] justify-center">{body}</div>
     </div>
   );
 }

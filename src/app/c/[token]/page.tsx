@@ -56,21 +56,33 @@ export default async function ComprovantePublicPage({ params }: Props) {
     snap.layout === "historico" &&
     snap.nichoModulo === "cassino" &&
     !!snap.relatorio;
+  const usarRelatorioFuraFura =
+    snap.nichoModulo === "fura_fura" && !!snap.relatorio;
   const usarHistoricoNicho =
     snap.layout === "historico" &&
     !!snap.nichoModulo &&
     snap.nichoModulo !== "cassino" &&
+    snap.nichoModulo !== "fura_fura" &&
     !!snap.relatorio;
-  const usarRelatorio = snap.layout === "relatorio" && !!snap.relatorio;
+  const usarRelatorio = (snap.layout === "relatorio" || usarRelatorioFuraFura) && !!snap.relatorio;
+
+  const relatorioSnap =
+    usarRelatorioFuraFura && snap.layout !== "relatorio"
+      ? { ...snap, layout: "relatorio" as const }
+      : snap;
+
+  const mainClass = usarRelatorio
+    ? "min-h-screen bg-[#faf8f4]"
+    : "min-h-screen bg-[#070b14]";
 
   return (
-    <main className="min-h-screen bg-[#070b14]">
+    <main className={mainClass}>
       {usarHistoricoCassino ? (
         <HistoricoVisitaCassinoPublicView snapshot={snap} />
       ) : usarHistoricoNicho ? (
         <HistoricoColetaNichoPublicView snapshot={snap} />
       ) : usarRelatorio ? (
-        <PreviaRelatorioPublicView snapshot={snap} />
+        <PreviaRelatorioPublicView snapshot={relatorioSnap} />
       ) : (
         <ComprovantePublicView snapshot={snap} />
       )}

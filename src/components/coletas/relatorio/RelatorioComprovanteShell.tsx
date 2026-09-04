@@ -3,28 +3,30 @@
 import type { ReactNode } from "react";
 import { formatDateTime } from "@/lib/utils";
 import {
-  RELATORIO_COLORS as colors,
   RELATORIO_VALUE_STYLES,
   type RelatorioLinhaComprovante,
 } from "@/lib/coletas/relatorio-comprovante-theme";
+import { useRelatorioTheme } from "./RelatorioThemeContext";
 
 export function RelatorioBadgePrevia({
   negativa = false,
 }: {
   negativa?: boolean;
 }) {
+  const { colors, mode } = useRelatorioTheme();
+  const isLight = mode === "light";
   return (
     <div
       style={{
         marginBottom: 16,
         borderRadius: 8,
-        backgroundColor: "rgba(245, 158, 11, 0.2)",
-        border: "1px solid rgba(245, 158, 11, 0.4)",
+        backgroundColor: isLight ? "rgba(180, 83, 9, 0.1)" : "rgba(245, 158, 11, 0.2)",
+        border: isLight ? "1px solid rgba(180, 83, 9, 0.25)" : "1px solid rgba(245, 158, 11, 0.4)",
         padding: "8px 12px",
         textAlign: "center",
         fontSize: 12,
         fontWeight: 700,
-        color: "#fcd34d",
+        color: isLight ? colors.amber : "#fcd34d",
         letterSpacing: 0.5,
       }}
     >
@@ -45,6 +47,7 @@ export function RelatorioCabecalho({
   /** Linha extra sob o ponto (ex.: Kit). */
   subtitulo?: string | null;
 }) {
+  const { colors } = useRelatorioTheme();
   return (
     <div
       style={{
@@ -65,7 +68,9 @@ export function RelatorioCabecalho({
       >
         OperaRoute
       </p>
-      <h2 style={{ margin: "4px 0 0", fontSize: 18, fontWeight: 700 }}>{empresaNome}</h2>
+      <h2 style={{ margin: "4px 0 0", fontSize: 18, fontWeight: 700, color: colors.text }}>
+        {empresaNome}
+      </h2>
       <p style={{ margin: 0, fontSize: 14, color: colors.slate400 }}>{pontoNome}</p>
       {subtitulo ? (
         <p style={{ margin: "4px 0 0", fontSize: 12, color: colors.slate500 }}>{subtitulo}</p>
@@ -86,6 +91,7 @@ export function RelatorioFotoPainel({
   alt: string;
   label?: string;
 }) {
+  const { colors } = useRelatorioTheme();
   if (!fotoUrl || !(fotoUrl.startsWith("blob:") || fotoUrl.startsWith("http"))) {
     return null;
   }
@@ -96,7 +102,7 @@ export function RelatorioFotoPainel({
         borderRadius: 10,
         overflow: "hidden",
         border: `1px solid ${colors.border}`,
-        backgroundColor: colors.bg,
+        backgroundColor: colors.card,
       }}
     >
       <p
@@ -130,6 +136,7 @@ export function RelatorioFotoPainel({
 }
 
 export function RelatorioCardSoft({ children }: { children: ReactNode }) {
+  const { colors } = useRelatorioTheme();
   return (
     <div
       style={{
@@ -149,6 +156,7 @@ export function RelatorioResumoFinanceiro({
 }: {
   linhas: RelatorioLinhaComprovante[];
 }) {
+  const { colors, valueStyles } = useRelatorioTheme();
   return (
     <div
       style={{
@@ -159,6 +167,7 @@ export function RelatorioResumoFinanceiro({
         flexDirection: "column",
         gap: 6,
         fontSize: 12,
+        border: `1px solid ${colors.border}`,
       }}
     >
       {linhas.map((linha, i) => (
@@ -187,7 +196,7 @@ export function RelatorioResumoFinanceiro({
                   style={{
                     textAlign: "right",
                     fontSize: linha.destaque ? 14 : 12,
-                    ...RELATORIO_VALUE_STYLES[linha.variant ?? "default"],
+                    ...valueStyles[linha.variant ?? "default"],
                   }}
                 >
                   {linha.valor}
@@ -213,4 +222,8 @@ export function RelatorioResumoFinanceiro({
   );
 }
 
-export { RELATORIO_COLORS, RELATORIO_SHELL_STYLE } from "@/lib/coletas/relatorio-comprovante-theme";
+export {
+  RELATORIO_COLORS,
+  RELATORIO_SHELL_STYLE,
+  RELATORIO_VALUE_STYLES,
+} from "@/lib/coletas/relatorio-comprovante-theme";
