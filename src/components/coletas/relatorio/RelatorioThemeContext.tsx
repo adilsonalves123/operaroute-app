@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, type CSSProperties, type ReactNode } from "react";
+import { createContext, forwardRef, useContext, type CSSProperties, type ReactNode } from "react";
 import {
   getRelatorioColors,
   getRelatorioShellStyle,
@@ -52,3 +52,25 @@ export function RelatorioThemeProvider({
 export function useRelatorioTheme(): RelatorioThemeValue {
   return useContext(RelatorioThemeContext) ?? DEFAULT_THEME;
 }
+
+export const RelatorioViewRoot = forwardRef<
+  HTMLDivElement,
+  { theme?: RelatorioThemeMode; fullWidth?: boolean; children: ReactNode }
+>(function RelatorioViewRoot({ theme = "light", fullWidth, children }, ref) {
+  return (
+    <RelatorioThemeProvider theme={theme} fullWidth={fullWidth}>
+      <RelatorioViewRootInner ref={ref}>{children}</RelatorioViewRootInner>
+    </RelatorioThemeProvider>
+  );
+});
+
+const RelatorioViewRootInner = forwardRef<HTMLDivElement, { children: ReactNode }>(
+  function RelatorioViewRootInner({ children }, ref) {
+    const { shellStyle } = useRelatorioTheme();
+    return (
+      <div ref={ref} style={shellStyle}>
+        {children}
+      </div>
+    );
+  }
+);

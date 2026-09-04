@@ -101,7 +101,7 @@ export default async function ColetaBolinhaDetalhePage({
         },
       ],
     }),
-    layout: "historico" as const,
+    layout: "relatorio" as const,
     nichoModulo: "bolinha" as const,
     relatorio: {
       empresaNome: empresa?.nome_operacao ?? "Operação",

@@ -51,7 +51,7 @@ export function PreviaRelatorioBolinhaPanel({
       nichoModulo: "bolinha",
       relatorio: { ...data, previa: false },
       previa: false,
-      layout: "historico",
+      layout: "relatorio",
     });
   }
 

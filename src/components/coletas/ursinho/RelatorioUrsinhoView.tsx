@@ -4,7 +4,10 @@ import { forwardRef } from "react";
 import { formatContador } from "@/lib/nichos/cassino";
 import { formatCurrency } from "@/lib/utils";
 import type { RelatorioUrsinhoData } from "@/lib/nichos/ursinho/relatorio";
-import type { RelatorioLinhaComprovante } from "@/lib/coletas/relatorio-comprovante-theme";
+import type {
+  RelatorioLinhaComprovante,
+  RelatorioThemeMode,
+} from "@/lib/coletas/relatorio-comprovante-theme";
 import { appendLinhasCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 import {
   RelatorioBadgePrevia,
@@ -12,9 +15,11 @@ import {
   RelatorioCardSoft,
   RelatorioFotoPainel,
   RelatorioResumoFinanceiro,
-  RELATORIO_COLORS as colors,
-  RELATORIO_SHELL_STYLE,
 } from "@/components/coletas/relatorio/RelatorioComprovanteShell";
+import {
+  RelatorioViewRoot,
+  useRelatorioTheme,
+} from "@/components/coletas/relatorio/RelatorioThemeContext";
 
 function buildLinhasResumo(data: RelatorioUrsinhoData): RelatorioLinhaComprovante[] {
   const c = data.calculo;
@@ -76,73 +81,84 @@ function buildLinhasResumo(data: RelatorioUrsinhoData): RelatorioLinhaComprovant
   return comCobranca;
 }
 
-export const RelatorioUrsinhoView = forwardRef<HTMLDivElement, { data: RelatorioUrsinhoData }>(
-  function RelatorioUrsinhoView({ data }, ref) {
-    return (
-      <div ref={ref} style={RELATORIO_SHELL_STYLE}>
-        {data.previa && <RelatorioBadgePrevia />}
-        <RelatorioCabecalho
-          empresaNome={data.empresaNome}
-          pontoNome={data.pontoNome}
-          data={data.data}
-        />
+function RelatorioUrsinhoBody({ data }: { data: RelatorioUrsinhoData }) {
+  const { colors } = useRelatorioTheme();
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
-          {data.maquinas.map((m) => (
-            <RelatorioCardSoft key={m.nome}>
-              <p style={{ margin: "0 0 8px", fontWeight: 600, color: colors.text }}>{m.nome}</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Entrada anterior</p>
-                  <p style={{ margin: "2px 0 0", color: colors.slate300 }}>
-                    {formatContador(m.entradaAnterior)}
-                  </p>
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Entrada atual</p>
-                  <p style={{ margin: "2px 0 0", color: colors.green, fontWeight: 500 }}>
-                    {formatContador(m.entradaAtual)}
-                  </p>
-                </div>
+  return (
+    <>
+      {data.previa && <RelatorioBadgePrevia />}
+      <RelatorioCabecalho
+        empresaNome={data.empresaNome}
+        pontoNome={data.pontoNome}
+        data={data.data}
+      />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+        {data.maquinas.map((m) => (
+          <RelatorioCardSoft key={m.nome}>
+            <p style={{ margin: "0 0 8px", fontWeight: 600, color: colors.text }}>{m.nome}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Entrada anterior</p>
+                <p style={{ margin: "2px 0 0", color: colors.slate300 }}>
+                  {formatContador(m.entradaAnterior)}
+                </p>
               </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Entrada atual</p>
+                <p style={{ margin: "2px 0 0", color: colors.green, fontWeight: 500 }}>
+                  {formatContador(m.entradaAtual)}
+                </p>
+              </div>
+            </div>
+            <div
+              style={{
+                marginTop: 10,
+                paddingTop: 8,
+                borderTop: `1px solid ${colors.border}`,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span style={{ color: colors.slate400 }}>Operação</span>
+              <span style={{ fontWeight: 700, color: colors.cyan }}>
+                {formatCurrency(m.lucroReal)}
+              </span>
+            </div>
+            {m.custoBrindes > 0.009 && (
               <div
                 style={{
-                  marginTop: 10,
-                  paddingTop: 8,
-                  borderTop: `1px solid ${colors.border}`,
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center",
                   gap: 8,
+                  marginTop: 4,
                 }}
               >
-                <span style={{ color: colors.slate400 }}>Operação</span>
-                <span style={{ fontWeight: 700, color: colors.cyan }}>
-                  {formatCurrency(m.lucroReal)}
+                <span style={{ color: colors.slate400 }}>Brindes</span>
+                <span style={{ color: colors.rose, fontWeight: 500 }}>
+                  {formatCurrency(m.custoBrindes)}
                 </span>
               </div>
-              {m.custoBrindes > 0.009 && (
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 8,
-                    marginTop: 4,
-                  }}
-                >
-                  <span style={{ color: colors.slate400 }}>Brindes</span>
-                  <span style={{ color: colors.rose, fontWeight: 500 }}>
-                    {formatCurrency(m.custoBrindes)}
-                  </span>
-                </div>
-              )}
-              <RelatorioFotoPainel fotoUrl={m.fotoUrl} alt={`Foto ${m.nome}`} />
-            </RelatorioCardSoft>
-          ))}
-        </div>
-
-        <RelatorioResumoFinanceiro linhas={buildLinhasResumo(data)} />
+            )}
+            <RelatorioFotoPainel fotoUrl={m.fotoUrl} alt={`Foto ${m.nome}`} />
+          </RelatorioCardSoft>
+        ))}
       </div>
-    );
-  }
-);
+
+      <RelatorioResumoFinanceiro linhas={buildLinhasResumo(data)} />
+    </>
+  );
+}
+
+export const RelatorioUrsinhoView = forwardRef<
+  HTMLDivElement,
+  { data: RelatorioUrsinhoData; theme?: RelatorioThemeMode; fullWidth?: boolean }
+>(function RelatorioUrsinhoView({ data, theme = "light", fullWidth }, ref) {
+  return (
+    <RelatorioViewRoot ref={ref} theme={theme} fullWidth={fullWidth}>
+      <RelatorioUrsinhoBody data={data} />
+    </RelatorioViewRoot>
+  );
+});

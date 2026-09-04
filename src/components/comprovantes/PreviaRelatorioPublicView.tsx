@@ -64,28 +64,28 @@ export function PreviaRelatorioPublicView({
       data: asDate(raw.data),
       previa,
     };
-    body = <RelatorioUrsinhoView data={data} />;
+    body = <RelatorioUrsinhoView data={data} theme="light" fullWidth />;
   } else if (nicho === "diversao") {
     const data: RelatorioDiversaoData = {
       ...(raw as unknown as RelatorioDiversaoData),
       data: asDate(raw.data),
       previa,
     };
-    body = <RelatorioDiversaoView data={data} />;
+    body = <RelatorioDiversaoView data={data} theme="light" fullWidth />;
   } else if (nicho === "bolinha") {
     const data: RelatorioBolinhaData = {
       ...(raw as unknown as RelatorioBolinhaData),
       data: asDate(raw.data),
       previa,
     };
-    body = <RelatorioBolinhaView data={data} />;
+    body = <RelatorioBolinhaView data={data} theme="light" fullWidth />;
   } else if (nicho === "consignado") {
     const data: RelatorioConsignadoData = {
       ...(raw as unknown as RelatorioConsignadoData),
       data: asDate(raw.data),
       previa,
     };
-    body = <RelatorioConsignadoView data={data} />;
+    body = <RelatorioConsignadoView data={data} theme="light" fullWidth />;
   } else {
     return <ComprovantePublicView snapshot={snapshot} />;
   }

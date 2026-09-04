@@ -51,7 +51,7 @@ export function PreviaRelatorioConsignadoPanel({
       nichoModulo: "consignado",
       relatorio: { ...data, previa: false },
       previa: false,
-      layout: "historico",
+      layout: "relatorio",
     });
   }
 

@@ -58,7 +58,7 @@ export function PreviaRelatorioFuraFuraPanel({
       nichoModulo: "fura_fura",
       relatorio: { ...data, previa: false },
       previa: false,
-      layout: "historico",
+      layout: "relatorio",
     });
   }
 

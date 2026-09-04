@@ -7,6 +7,14 @@ import { PreviaRelatorioPublicView } from "@/components/comprovantes/PreviaRelat
 import { HistoricoVisitaCassinoPublicView } from "@/components/comprovantes/HistoricoVisitaCassinoPublicView";
 import { HistoricoColetaNichoPublicView } from "@/components/comprovantes/HistoricoColetaNichoPublicView";
 
+const NICHOS_COMPROVANTE_RELATORIO = new Set([
+  "fura_fura",
+  "ursinho",
+  "diversao",
+  "bolinha",
+  "consignado",
+]);
+
 type Props = { params: Promise<{ token: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -56,18 +64,20 @@ export default async function ComprovantePublicPage({ params }: Props) {
     snap.layout === "historico" &&
     snap.nichoModulo === "cassino" &&
     !!snap.relatorio;
-  const usarRelatorioFuraFura =
-    snap.nichoModulo === "fura_fura" && !!snap.relatorio;
+  const usarRelatorioNicho =
+    !!snap.nichoModulo &&
+    NICHOS_COMPROVANTE_RELATORIO.has(snap.nichoModulo) &&
+    !!snap.relatorio;
   const usarHistoricoNicho =
     snap.layout === "historico" &&
     !!snap.nichoModulo &&
     snap.nichoModulo !== "cassino" &&
-    snap.nichoModulo !== "fura_fura" &&
+    !NICHOS_COMPROVANTE_RELATORIO.has(snap.nichoModulo) &&
     !!snap.relatorio;
-  const usarRelatorio = (snap.layout === "relatorio" || usarRelatorioFuraFura) && !!snap.relatorio;
+  const usarRelatorio = (snap.layout === "relatorio" || usarRelatorioNicho) && !!snap.relatorio;
 
   const relatorioSnap =
-    usarRelatorioFuraFura && snap.layout !== "relatorio"
+    usarRelatorioNicho && snap.layout !== "relatorio"
       ? { ...snap, layout: "relatorio" as const }
       : snap;
 

@@ -107,7 +107,7 @@ export default async function ColetaConsignadoDetalhePage({
         },
       ],
     }),
-    layout: "historico" as const,
+    layout: "relatorio" as const,
     nichoModulo: "consignado" as const,
     relatorio: {
       empresaNome: empresa?.nome_operacao ?? "Operação",

@@ -103,7 +103,7 @@ export default async function ColetaFuraFuraDetailPage({
       haverGerado: calculo.haver,
       notas: [`Furos: ${calculo.quantidadeFuros} × ${calculo.precoFuro}`],
     }),
-    layout: "historico" as const,
+    layout: "relatorio" as const,
     nichoModulo: "fura_fura" as const,
     relatorio: {
       empresaNome: empresa?.nome_operacao ?? "Operação",

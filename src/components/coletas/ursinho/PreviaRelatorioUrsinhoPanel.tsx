@@ -52,7 +52,7 @@ export function PreviaRelatorioUrsinhoPanel({
       nichoModulo: "ursinho",
       relatorio: { ...data, previa: false },
       previa: false,
-      layout: "historico",
+      layout: "relatorio",
     });
   }
 

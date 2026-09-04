@@ -3,7 +3,10 @@
 import { forwardRef } from "react";
 import { formatCurrency } from "@/lib/utils";
 import type { RelatorioBolinhaData } from "@/lib/nichos/bolinha/relatorio";
-import type { RelatorioLinhaComprovante } from "@/lib/coletas/relatorio-comprovante-theme";
+import type {
+  RelatorioLinhaComprovante,
+  RelatorioThemeMode,
+} from "@/lib/coletas/relatorio-comprovante-theme";
 import { appendLinhasCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 import {
   RelatorioBadgePrevia,
@@ -11,9 +14,11 @@ import {
   RelatorioCardSoft,
   RelatorioFotoPainel,
   RelatorioResumoFinanceiro,
-  RELATORIO_COLORS as colors,
-  RELATORIO_SHELL_STYLE,
 } from "@/components/coletas/relatorio/RelatorioComprovanteShell";
+import {
+  RelatorioViewRoot,
+  useRelatorioTheme,
+} from "@/components/coletas/relatorio/RelatorioThemeContext";
 
 function buildLinhasResumo(data: RelatorioBolinhaData): RelatorioLinhaComprovante[] {
   const c = data.calculo;
@@ -75,59 +80,70 @@ function buildLinhasResumo(data: RelatorioBolinhaData): RelatorioLinhaComprovant
   return comCobranca;
 }
 
-export const RelatorioBolinhaView = forwardRef<HTMLDivElement, { data: RelatorioBolinhaData }>(
-  function RelatorioBolinhaView({ data }, ref) {
-    return (
-      <div ref={ref} style={RELATORIO_SHELL_STYLE}>
-        {data.previa && <RelatorioBadgePrevia />}
-        <RelatorioCabecalho
-          empresaNome={data.empresaNome}
-          pontoNome={data.pontoNome}
-          data={data.data}
-        />
+function RelatorioBolinhaBody({ data }: { data: RelatorioBolinhaData }) {
+  const { colors } = useRelatorioTheme();
 
-        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
-          {data.maquinas.map((m) => (
-            <RelatorioCardSoft key={m.nome}>
-              <p style={{ margin: "0 0 8px", fontWeight: 600, color: colors.text }}>{m.nome}</p>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                <div>
-                  <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Contado</p>
-                  <p style={{ margin: "2px 0 0", color: colors.green, fontWeight: 500 }}>
-                    {formatCurrency(m.valorContado)}
-                  </p>
-                </div>
-                <div>
-                  <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Saiu</p>
-                  <p style={{ margin: "2px 0 0", color: colors.slate300 }}>{m.unidadesSaiu}</p>
-                </div>
-              </div>
-              <p style={{ margin: "8px 0 0", fontSize: 11, color: colors.slate400 }}>
-                Jogada {formatCurrency(m.precoJogada)}
-              </p>
-              <div
-                style={{
-                  marginTop: 10,
-                  paddingTop: 8,
-                  borderTop: `1px solid ${colors.border}`,
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: 8,
-                }}
-              >
-                <span style={{ color: colors.slate400 }}>Operação</span>
-                <span style={{ fontWeight: 700, color: colors.cyan }}>
-                  {formatCurrency(m.valorBruto)}
-                </span>
-              </div>
-              <RelatorioFotoPainel fotoUrl={m.fotoUrl} alt={`Foto ${m.nome}`} />
-            </RelatorioCardSoft>
-          ))}
-        </div>
+  return (
+    <>
+      {data.previa && <RelatorioBadgePrevia />}
+      <RelatorioCabecalho
+        empresaNome={data.empresaNome}
+        pontoNome={data.pontoNome}
+        data={data.data}
+      />
 
-        <RelatorioResumoFinanceiro linhas={buildLinhasResumo(data)} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+        {data.maquinas.map((m) => (
+          <RelatorioCardSoft key={m.nome}>
+            <p style={{ margin: "0 0 8px", fontWeight: 600, color: colors.text }}>{m.nome}</p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <div>
+                <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Contado</p>
+                <p style={{ margin: "2px 0 0", color: colors.green, fontWeight: 500 }}>
+                  {formatCurrency(m.valorContado)}
+                </p>
+              </div>
+              <div>
+                <p style={{ margin: 0, fontSize: 10, color: colors.slate500 }}>Saiu</p>
+                <p style={{ margin: "2px 0 0", color: colors.slate300 }}>{m.unidadesSaiu}</p>
+              </div>
+            </div>
+            <p style={{ margin: "8px 0 0", fontSize: 11, color: colors.slate400 }}>
+              Jogada {formatCurrency(m.precoJogada)}
+            </p>
+            <div
+              style={{
+                marginTop: 10,
+                paddingTop: 8,
+                borderTop: `1px solid ${colors.border}`,
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <span style={{ color: colors.slate400 }}>Operação</span>
+              <span style={{ fontWeight: 700, color: colors.cyan }}>
+                {formatCurrency(m.valorBruto)}
+              </span>
+            </div>
+            <RelatorioFotoPainel fotoUrl={m.fotoUrl} alt={`Foto ${m.nome}`} />
+          </RelatorioCardSoft>
+        ))}
       </div>
-    );
-  }
-);
+
+      <RelatorioResumoFinanceiro linhas={buildLinhasResumo(data)} />
+    </>
+  );
+}
+
+export const RelatorioBolinhaView = forwardRef<
+  HTMLDivElement,
+  { data: RelatorioBolinhaData; theme?: RelatorioThemeMode; fullWidth?: boolean }
+>(function RelatorioBolinhaView({ data, theme = "light", fullWidth }, ref) {
+  return (
+    <RelatorioViewRoot ref={ref} theme={theme} fullWidth={fullWidth}>
+      <RelatorioBolinhaBody data={data} />
+    </RelatorioViewRoot>
+  );
+});

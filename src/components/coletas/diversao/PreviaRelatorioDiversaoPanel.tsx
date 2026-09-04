@@ -52,7 +52,7 @@ export function PreviaRelatorioDiversaoPanel({
       nichoModulo: "diversao",
       relatorio: { ...data, previa: false },
       previa: false,
-      layout: "historico",
+      layout: "relatorio",
     });
   }
 

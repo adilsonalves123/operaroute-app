@@ -100,7 +100,7 @@ export default async function ColetaUrsinhoDetalhePage({
         },
       ],
     }),
-    layout: "historico" as const,
+    layout: "relatorio" as const,
     nichoModulo: "ursinho" as const,
     relatorio: {
       empresaNome: empresa?.nome_operacao ?? "Operação",

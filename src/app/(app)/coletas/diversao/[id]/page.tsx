@@ -96,7 +96,7 @@ export default async function ColetaDiversaoDetalhePage({
         },
       ],
     }),
-    layout: "historico" as const,
+    layout: "relatorio" as const,
     nichoModulo: "diversao" as const,
     relatorio: {
       empresaNome: empresa?.nome_operacao ?? "Operação",

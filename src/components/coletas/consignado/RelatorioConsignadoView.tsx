@@ -3,16 +3,21 @@
 import { forwardRef } from "react";
 import { formatCurrency } from "@/lib/utils";
 import type { RelatorioConsignadoData } from "@/lib/nichos/consignado/relatorio";
-import type { RelatorioLinhaComprovante } from "@/lib/coletas/relatorio-comprovante-theme";
+import type {
+  RelatorioLinhaComprovante,
+  RelatorioThemeMode,
+} from "@/lib/coletas/relatorio-comprovante-theme";
 import { appendLinhasCobrancaDetalhe } from "@/lib/coletas/relatorio-cobranca-detalhe";
 import {
   RelatorioBadgePrevia,
   RelatorioCabecalho,
   RelatorioCardSoft,
   RelatorioResumoFinanceiro,
-  RELATORIO_COLORS as colors,
-  RELATORIO_SHELL_STYLE,
 } from "@/components/coletas/relatorio/RelatorioComprovanteShell";
+import {
+  RelatorioViewRoot,
+  useRelatorioTheme,
+} from "@/components/coletas/relatorio/RelatorioThemeContext";
 
 function buildLinhasResumo(data: RelatorioConsignadoData): RelatorioLinhaComprovante[] {
   const c = data.calculo;
@@ -75,12 +80,11 @@ function buildLinhasResumo(data: RelatorioConsignadoData): RelatorioLinhaComprov
   return comCobranca;
 }
 
-export const RelatorioConsignadoView = forwardRef<
-  HTMLDivElement,
-  { data: RelatorioConsignadoData }
->(function RelatorioConsignadoView({ data }, ref) {
+function RelatorioConsignadoBody({ data }: { data: RelatorioConsignadoData }) {
+  const { colors } = useRelatorioTheme();
+
   return (
-    <div ref={ref} style={RELATORIO_SHELL_STYLE}>
+    <>
       {data.previa && <RelatorioBadgePrevia />}
       <RelatorioCabecalho
         empresaNome={data.empresaNome}
@@ -159,6 +163,17 @@ export const RelatorioConsignadoView = forwardRef<
       </div>
 
       <RelatorioResumoFinanceiro linhas={buildLinhasResumo(data)} />
-    </div>
+    </>
+  );
+}
+
+export const RelatorioConsignadoView = forwardRef<
+  HTMLDivElement,
+  { data: RelatorioConsignadoData; theme?: RelatorioThemeMode; fullWidth?: boolean }
+>(function RelatorioConsignadoView({ data, theme = "light", fullWidth }, ref) {
+  return (
+    <RelatorioViewRoot ref={ref} theme={theme} fullWidth={fullWidth}>
+      <RelatorioConsignadoBody data={data} />
+    </RelatorioViewRoot>
   );
 });
