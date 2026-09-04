@@ -10,6 +10,7 @@ import { Package, ChevronRight } from "lucide-react";
 import { NICHO_MODULO_URSINHO } from "@/lib/nichos/ursinho";
 import { NICHO_MODULO_DIVERSAO } from "@/lib/nichos/diversao";
 import { NICHO_MODULO_BOLINHA } from "@/lib/nichos/bolinha";
+import { NICHO_MODULO_CONSIGNADO } from "@/lib/nichos/consignado";
 
 type ColetaWithPonto = Coleta & {
   pontos?: { nome: string; cidade: string | null } | null;
@@ -19,6 +20,9 @@ function hrefForColeta(coleta: ColetaWithPonto): string | null {
   if (coleta.nicho_modulo === NICHO_MODULO_URSINHO) return `/coletas/ursinho/${coleta.id}`;
   if (coleta.nicho_modulo === NICHO_MODULO_DIVERSAO) return `/coletas/diversao/${coleta.id}`;
   if (coleta.nicho_modulo === NICHO_MODULO_BOLINHA) return `/coletas/bolinha/${coleta.id}`;
+  if (coleta.nicho_modulo === NICHO_MODULO_CONSIGNADO) {
+    return `/coletas/consignado/${coleta.id}`;
+  }
   return null;
 }
 
@@ -26,6 +30,7 @@ function accentForColeta(coleta: ColetaWithPonto, pendente: boolean): string {
   if (pendente) return "bg-amber-400";
   if (coleta.nicho_modulo === NICHO_MODULO_URSINHO) return "bg-pink-400";
   if (coleta.nicho_modulo === NICHO_MODULO_BOLINHA) return "bg-orange-400";
+  if (coleta.nicho_modulo === NICHO_MODULO_CONSIGNADO) return "bg-amber-300";
   return "bg-emerald-400/80";
 }
 
@@ -64,9 +69,12 @@ export function ColetasClient({
           const isUrsinho = coleta.nicho_modulo === NICHO_MODULO_URSINHO;
           const isDiversao = coleta.nicho_modulo === NICHO_MODULO_DIVERSAO;
           const isBolinha = coleta.nicho_modulo === NICHO_MODULO_BOLINHA;
+          const isConsignado = coleta.nicho_modulo === NICHO_MODULO_CONSIGNADO;
           const valor = Number(coleta.lucro_real ?? coleta.valor_liquido ?? 0);
           const saldoPendente =
-            isUrsinho || isDiversao || isBolinha ? saldoPendenteColeta(coleta) : 0;
+            isUrsinho || isDiversao || isBolinha || isConsignado
+              ? saldoPendenteColeta(coleta)
+              : 0;
           const pendente = saldoPendente > 0.009;
           const formaPagamento = labelFormaPagamento(
             coleta.forma_pagamento,
