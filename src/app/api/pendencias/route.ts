@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { parseMoneyInput } from "@/lib/utils";
 
 const TIPOS_OK = new Set([
-  "negativo",
   "pagamento_pendente",
   "parcial",
   "haver",
@@ -21,7 +20,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ponto, tipo e valor são obrigatórios." }, { status: 400 });
   }
 
-  const tipo = String(body.tipo);
+  let tipo = String(body.tipo);
+  // Legado: "negativo" manual virava débito que somava errado — trata como operação.
+  if (tipo === "negativo") {
+    tipo = "pagamento_pendente";
+  }
   if (!TIPOS_OK.has(tipo)) {
     return NextResponse.json({ error: "Tipo de pendência inválido." }, { status: 400 });
   }
@@ -35,7 +38,7 @@ export async function POST(request: Request) {
     tipo === "haver"
       ? "Haver do ponto"
       : tipo === "pagamento_pendente"
-        ? "Pagamento pendente"
+        ? "Deixei no ponto (sem leitura)"
         : tipo === "parcial"
           ? "Pagamento parcial"
           : "Pendência manual";

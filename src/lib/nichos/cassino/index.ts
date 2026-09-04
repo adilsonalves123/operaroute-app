@@ -14,6 +14,8 @@ export {
   saldoHaverReais,
   saldoPendenciaCobravel,
   isPendenciaOperacao,
+  isNegativoManualSemLeitura,
+  partitionPendenciasNegativasCassino,
   isHaverDeNegativoCliente,
   isHaverCreditoComum,
   TIPOS_PENDENCIA_OPERACAO,

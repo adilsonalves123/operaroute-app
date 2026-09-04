@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AlertBadge } from "@/components/ui/AlertBadge";
 import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput, cn } from "@/lib/utils";
-import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
+import { saldoPendenciaReais, isNegativoManualSemLeitura } from "@/lib/nichos/cassino/pendencias";
 import { whatsAppUrl } from "@/lib/nichos/cassino/relatorio";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { AlertTriangle, CheckCircle, ChevronDown, MessageCircle, Pencil, Trash2, X } from "lucide-react";
@@ -35,6 +35,9 @@ function isFuraFuraPendencia(p: PendenciaItem): boolean {
 }
 
 function valorPendenciaAberta(p: PendenciaItem): number {
+  if (isNegativoManualSemLeitura({ tipo: p.tipo, visita_id: p.visita_id })) {
+    return Number(p.valor ?? 0);
+  }
   if (p.tipo === "negativo") {
     return saldoPendenciaReais({
       id: p.id,

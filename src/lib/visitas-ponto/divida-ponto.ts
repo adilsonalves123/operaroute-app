@@ -26,6 +26,9 @@ export type DividaPontoOpts = {
 
 function valorCobravelPendencia(p: PendenciaCobravel): number {
   if (p.tipo === "haver") return 0;
+  if (p.tipo === "negativo" && !p.visita_id) {
+    return Math.max(0, Number(p.valor ?? 0));
+  }
   if (p.tipo === "negativo") {
     return saldoPendenciaReais({
       id: p.id,
@@ -121,7 +124,7 @@ export function agregarDividaCobravelPorPonto(
       titulo: p.titulo ?? "",
       valor: Number(p.valor ?? 0),
       coleta_id: null,
-      visita_id: null,
+      visita_id: (p as { visita_id?: string | null }).visita_id ?? null,
       visita_ponto_id: null,
       descricao: p.descricao ?? null,
       created_at: "",
@@ -146,7 +149,7 @@ export async function fetchAgregadoDividaCobravelEmpresa(
 ): Promise<Map<string, { totalPendente: number; coletasAbertas: number }>> {
   const { data } = await supabase
     .from("pendencias")
-    .select("ponto_id, tipo, titulo, valor, descricao")
+    .select("ponto_id, tipo, titulo, valor, descricao, visita_id")
     .eq("empresa_id", empresaId)
     .eq("status", "aberta");
 

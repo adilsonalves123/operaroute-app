@@ -37,7 +37,7 @@ import {
   type VisitaColetaModoFechar,
 } from "@/components/visitas-ponto/VisitaColetaModoPagamento";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { calcularVisitaCassino, centesimosToReais, formatContador, parseComissaoPercentual, baseComissaoReais, comissaoBloqueada } from "@/lib/nichos/cassino";
+import { calcularVisitaCassino, centesimosToReais, formatContador, parseComissaoPercentual, baseComissaoReais, comissaoBloqueada, partitionPendenciasNegativasCassino } from "@/lib/nichos/cassino";
 import {
   temErrosLeitura,
   validarLeiturasMaquina,
@@ -77,6 +77,7 @@ interface PendenciaNegativa {
   descricao: string | null;
   tipo?: string | null;
   titulo?: string | null;
+  visita_id?: string | null;
 }
 
 interface SucessoState {
@@ -370,7 +371,7 @@ export function NovaColetaCassinoForm() {
             .order("nome"),
           supabase
             .from("pendencias")
-            .select("id, valor, descricao, tipo, titulo")
+            .select("id, valor, descricao, tipo, titulo, visita_id")
             .eq("ponto_id", pontoId)
             .eq("status", "aberta")
             .ilike("tipo", "negativo"),
@@ -390,11 +391,15 @@ export function NovaColetaCassinoForm() {
 
       if (cancelled) return;
 
+      const { negativosCassino, operacaoSemLeitura } = partitionPendenciasNegativasCassino(
+        pendenciasData
+      );
+
       setPonto(pontoData);
       setComissaoVisita(String(getComissaoPercentualNicho(pontoData, "maquinas_cassino")));
-      setPendencias(pendenciasData ?? []);
+      setPendencias(negativosCassino);
       setHavers(haverData ?? []);
-      setPendenciasOperacao(operacaoData ?? []);
+      setPendenciasOperacao([...(operacaoData ?? []), ...operacaoSemLeitura]);
       setIncluirPendenciaOperacao(false);
       setAbaterPendenciaOperacaoNegativa(true);
       setDescontarHaverNaCobranca(false);
@@ -512,13 +517,13 @@ export function NovaColetaCassinoForm() {
           ] = await Promise.all([
             supabase
               .from("pendencias")
-              .select("id, valor, descricao, tipo, titulo, status")
+              .select("id, valor, descricao, tipo, titulo, status, visita_id")
               .eq("ponto_id", pontoId)
               .eq("status", "aberta")
               .ilike("tipo", "negativo"),
             supabase
               .from("pendencias")
-              .select("id, valor, descricao, tipo, titulo, status")
+              .select("id, valor, descricao, tipo, titulo, status, visita_id")
               .eq("ponto_id", pontoId)
               .ilike("tipo", "negativo")
               .ilike("descricao", tagLike),
@@ -555,18 +560,20 @@ export function NovaColetaCassinoForm() {
             return [...map.values()];
           };
 
-          const negEdit = pendenciasParaEdicaoVisita(
+          const negEditRaw = pendenciasParaEdicaoVisita(
             mergeById(negAbertas, negDesta),
             visitaParaEditar
           );
+          const { negativosCassino: negEdit, operacaoSemLeitura: negComoOperacao } =
+            partitionPendenciasNegativasCassino(negEditRaw);
           const haverEdit = pendenciasParaEdicaoVisita(
             mergeById(haverAbertas, haverDesta),
             visitaParaEditar
           );
-          const opEdit = pendenciasParaEdicaoVisita(
-            mergeById(opAbertas, opDesta),
-            visitaParaEditar
-          );
+          const opEdit = [
+            ...pendenciasParaEdicaoVisita(mergeById(opAbertas, opDesta), visitaParaEditar),
+            ...negComoOperacao,
+          ];
           setPendencias(negEdit);
           setHavers(haverEdit);
           setPendenciasOperacao(opEdit);

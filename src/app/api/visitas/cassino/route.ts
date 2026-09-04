@@ -202,6 +202,12 @@ export async function POST(request: Request) {
     .eq("status", "aberta")
     .ilike("tipo", "negativo");
 
+  const { partitionPendenciasNegativasCassino } = await import(
+    "@/lib/nichos/cassino/pendencias"
+  );
+  const { negativosCassino, operacaoSemLeitura } =
+    partitionPendenciasNegativasCassino(pendenciasRaw);
+
   const { data: haverRaw } = await supabase
     .from("pendencias")
     .select("*")
@@ -221,6 +227,10 @@ export async function POST(request: Request) {
         .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"])
     ).data
   );
+  operacaoPendencias = [
+    ...operacaoPendencias,
+    ...mapPendenciasOperacao(operacaoSemLeitura),
+  ];
 
   const descontoManual = parseMoneyInput(body.desconto_manual);
   const descontoRecebimento = parseMoneyInput(body.desconto_recebimento);
@@ -256,19 +266,29 @@ export async function POST(request: Request) {
   if (visitaNegativa && abaterPendenciaOperacaoNegativa) {
     const { data: operacaoFresh } = await supabase
       .from("pendencias")
-      .select("id, valor, descricao")
+      .select("id, valor, descricao, visita_id, tipo")
       .eq("ponto_id", body.ponto_id)
       .eq("empresa_id", profile.empresa_id)
       .eq("status", "aberta")
-      .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"]);
-    operacaoPendencias = mapPendenciasOperacao(operacaoFresh);
+      .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada", "negativo"]);
+    const { operacaoSemLeitura: operacaoManual } = partitionPendenciasNegativasCassino(
+      operacaoFresh
+    );
+    operacaoPendencias = [
+      ...mapPendenciasOperacao(
+        (operacaoFresh ?? []).filter(
+          (p) => (p.tipo ?? "").toLowerCase() !== "negativo"
+        )
+      ),
+      ...mapPendenciasOperacao(operacaoManual),
+    ];
   }
 
   let calculo;
   try {
     calculo = calcularVisitaCassino({
       leituras: leiturasPayload,
-      pendenciasNegativas: (pendenciasRaw ?? []).map((p) => ({
+      pendenciasNegativas: negativosCassino.map((p) => ({
         id: p.id,
         valor: Number(p.valor ?? 0),
         observacao: p.descricao,

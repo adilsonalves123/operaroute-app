@@ -13,8 +13,7 @@ import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
 
 const TITULOS_PADRAO: Record<string, string> = {
-  negativo: "Deixei no ponto (sem leitura)",
-  pagamento_pendente: "Ponto me deve (sem leitura)",
+  pagamento_pendente: "Deixei no ponto (sem leitura)",
   parcial: "Pagamento parcial",
   haver: "Haver do ponto",
 };
@@ -130,11 +129,7 @@ export default function NovaPendenciaPage() {
           options={[
             {
               value: "pagamento_pendente",
-              label: "Ponto me deve — vou receber na coleta",
-            },
-            {
-              value: "negativo",
-              label: "Deixei no ponto — recupero nas positivas",
+              label: "Deixei no ponto (sem leitura)",
             },
             { value: "parcial", label: "Pagamento parcial" },
             { value: "haver", label: "Haver (crédito do ponto)" },
@@ -142,14 +137,9 @@ export default function NovaPendenciaPage() {
         />
         {form.tipo === "pagamento_pendente" && (
           <p className="text-xs text-amber-300/90">
-            Use quando repôs o ponto sem leitura (ex.: cliente ganhou e você deixou o dinheiro). Na
-            próxima coleta negativa, o valor abate o prejuízo e você informa quanto recebeu do ponto.
-          </p>
-        )}
-        {form.tipo === "negativo" && (
-          <p className="text-xs text-amber-300/90">
-            Use quando você adiantou dinheiro no ponto e quer recuperar nas próximas coletas
-            positivas (abatimento automático no lucro).
+            Use quando repôs o ponto sem leitura (ex.: mandou dinheiro após coleta negativa). Na
+            próxima coleta, se o prejuízo da leitura for menor, o sistema abate automaticamente e
+            você cobra a diferença do ponto — não soma como débito negativo.
           </p>
         )}
         {form.tipo === "haver" && (
