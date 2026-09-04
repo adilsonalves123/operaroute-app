@@ -377,17 +377,34 @@ async function postColetaFuraFura(request: Request) {
 
   // Pendência nova só fora da visita (na visita o Cobrar consolida).
   if (!modoVisitaPonto && recebimentoRateado.saldoPendenteColeta > 0.009) {
-    await supabase.from("pendencias").insert({
-      empresa_id: profile.empresa_id,
-      ponto_id: pontoId,
-      coleta_id: coleta.id,
-      tipo: recebimentoRateado.aplicadoColetaAtual > 0.009 ? "parcial" : "pagamento_pendente",
-      titulo: "Coleta fura-fura pendente",
-      descricao: `Saldo da coleta de ${new Date().toLocaleDateString("pt-BR")} — ${ponto.nome}`,
-      valor: recebimentoRateado.saldoPendenteColeta,
-      prioridade: "media",
-      status: "aberta",
-    });
+    const { data: pendNova } = await supabase
+      .from("pendencias")
+      .insert({
+        empresa_id: profile.empresa_id,
+        ponto_id: pontoId,
+        coleta_id: coleta.id,
+        tipo: recebimentoRateado.aplicadoColetaAtual > 0.009 ? "parcial" : "pagamento_pendente",
+        titulo: "Coleta fura-fura pendente",
+        descricao: `Saldo da coleta de ${new Date().toLocaleDateString("pt-BR")} — ${ponto.nome}`,
+        valor: recebimentoRateado.saldoPendenteColeta,
+        prioridade: "media",
+        status: "aberta",
+      })
+      .select("id, tipo, titulo, valor")
+      .maybeSingle();
+    if (pendNova) {
+      const { pushPendenciaCriada } = await import("@/lib/push/events");
+      pushPendenciaCriada({
+        empresaId: profile.empresa_id!,
+        autorUserId: profile.user_id,
+        autorNome: profile.nome,
+        pontoNome: ponto.nome,
+        pendenciaId: pendNova.id,
+        tipo: pendNova.tipo,
+        titulo: pendNova.titulo,
+        valor: Number(pendNova.valor) || 0,
+      });
+    }
   }
 
   // Abate dívida universal do ponto + haver também ao "Receber" na visita-ponto.
@@ -476,8 +493,8 @@ async function postColetaFuraFura(request: Request) {
     request,
   });
 
-  const { pushColetaRegistrada } = await import("@/lib/push/events");
-  pushColetaRegistrada({
+  const { pushColetaSalva, bodyEditandoColeta } = await import("@/lib/push/events");
+  pushColetaSalva({
     empresaId: profile.empresa_id!,
     autorUserId: profile.user_id,
     autorNome: profile.nome,
@@ -485,6 +502,8 @@ async function postColetaFuraFura(request: Request) {
     nichoLabel: "Fura-Fura",
     valor: Number(calculo.valorAReceber) || 0,
     url: "/coletas",
+    coletaId: coleta.id,
+    editando: bodyEditandoColeta(body as Record<string, unknown>),
   });
 
   return NextResponse.json({

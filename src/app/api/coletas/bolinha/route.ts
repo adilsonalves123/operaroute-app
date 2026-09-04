@@ -287,17 +287,34 @@ export async function POST(request: Request) {
     }
 
     if (!modoVisitaPonto && recebimentoRateado.saldoPendenteColeta > 0.009 && primeiraColetaId) {
-      await supabase.from("pendencias").insert({
-        empresa_id: profile.empresa_id,
-        ponto_id: pontoId,
-        coleta_id: primeiraColetaId,
-        tipo: recebimentoRateado.aplicadoColetaAtual > 0.009 ? "parcial" : "pagamento_pendente",
-        titulo: "Coleta Bolinha pendente",
-        descricao: `Saldo da coleta de ${new Date().toLocaleDateString("pt-BR")} — ${ponto.nome}`,
-        valor: recebimentoRateado.saldoPendenteColeta,
-        prioridade: "media",
-        status: "aberta",
-      });
+      const { data: pendNova } = await supabase
+        .from("pendencias")
+        .insert({
+          empresa_id: profile.empresa_id,
+          ponto_id: pontoId,
+          coleta_id: primeiraColetaId,
+          tipo: recebimentoRateado.aplicadoColetaAtual > 0.009 ? "parcial" : "pagamento_pendente",
+          titulo: "Coleta Bolinha pendente",
+          descricao: `Saldo da coleta de ${new Date().toLocaleDateString("pt-BR")} — ${ponto.nome}`,
+          valor: recebimentoRateado.saldoPendenteColeta,
+          prioridade: "media",
+          status: "aberta",
+        })
+        .select("id, tipo, titulo, valor")
+        .maybeSingle();
+      if (pendNova) {
+        const { pushPendenciaCriada } = await import("@/lib/push/events");
+        pushPendenciaCriada({
+          empresaId: profile.empresa_id!,
+          autorUserId: profile.user_id,
+          autorNome: profile.nome,
+          pontoNome: ponto.nome,
+          pendenciaId: pendNova.id,
+          tipo: pendNova.tipo,
+          titulo: pendNova.titulo,
+          valor: Number(pendNova.valor) || 0,
+        });
+      }
     }
 
     let haverGerado = 0;
@@ -414,14 +431,16 @@ export async function POST(request: Request) {
       request,
     });
 
-    const { pushColetaRegistrada } = await import("@/lib/push/events");
-    pushColetaRegistrada({
+    const { pushColetaSalva, bodyEditandoColeta } = await import("@/lib/push/events");
+    pushColetaSalva({
       empresaId: profile.empresa_id!,
       autorUserId: profile.user_id,
       autorNome: profile.nome,
       pontoNome: ponto.nome,
       nichoLabel: "Bolinha",
       valor: Number(calculo.valorAReceber) || 0,
+      coletaId: coletasCriadasIds[0],
+      editando: bodyEditandoColeta(body as Record<string, unknown>),
     });
 
     return NextResponse.json({

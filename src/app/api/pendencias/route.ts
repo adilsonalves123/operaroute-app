@@ -60,5 +60,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
+  const { data: ponto } = await supabase
+    .from("pontos")
+    .select("nome")
+    .eq("id", body.ponto_id)
+    .maybeSingle();
+
+  const { pushPendenciaCriada } = await import("@/lib/push/events");
+  pushPendenciaCriada({
+    empresaId: profile.empresa_id!,
+    autorUserId: profile.user_id,
+    autorNome: profile.nome,
+    pontoNome: ponto?.nome ?? null,
+    pendenciaId: data?.id,
+    tipo,
+    titulo: body.titulo ?? tituloPadrao,
+    valor,
+  });
+
   return NextResponse.json({ success: true, id: data?.id });
 }

@@ -508,6 +508,7 @@ export function NovaColetaDiversaoForm() {
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
           religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
+          editando_coleta: Boolean(editarColetaId),
         }),
       });
 

@@ -1,7 +1,12 @@
 import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
+import { isFcmConfigured } from "@/lib/push/fcm";
 import { sendPushToUserIds } from "@/lib/push/send";
 import { isPushConfigured } from "@/lib/push/vapid";
 import type { PushPayload } from "@/lib/push/types";
+
+function pushEnvioDisponivel(): boolean {
+  return isPushConfigured() || isFcmConfigured();
+}
 
 /**
  * Notifica dono + admin + gerente da empresa (exceto o próprio autor, se informado).
@@ -12,7 +17,7 @@ export async function notifyEmpresaAdmins(
   payload: PushPayload,
   opts?: { excludeUserId?: string | null }
 ): Promise<void> {
-  if (!empresaId || !isPushConfigured() || !isAdminConfigured()) return;
+  if (!empresaId || !isAdminConfigured() || !pushEnvioDisponivel()) return;
 
   try {
     const admin = createAdminClient();

@@ -282,6 +282,16 @@ export async function POST(request: Request) {
     insertedEquipamentos = insertedEquipamentosData ?? [];
   }
 
+  const { pushPontoCriado } = await import("@/lib/push/events");
+  pushPontoCriado({
+    empresaId,
+    autorUserId: profile?.user_id ?? auth.profile.user_id,
+    autorNome: profile?.nome ?? auth.profile.nome,
+    pontoNome: ponto.nome,
+    pontoId: ponto.id,
+    equipamentos: (insertedEquipamentos ?? []).length,
+  });
+
   const { auditarAcao } = await import("@/lib/auditoria/auditar");
   if (profile) {
     await auditarAcao(supabase, profile, {

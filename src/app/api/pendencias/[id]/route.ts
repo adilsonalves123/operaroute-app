@@ -102,6 +102,17 @@ export async function PATCH(
           request,
         });
 
+        const { pushPendenciaQuitada } = await import("@/lib/push/events");
+        pushPendenciaQuitada({
+          empresaId: profile.empresa_id,
+          autorUserId: profile.user_id,
+          autorNome: profile.nome,
+          pontoNome: ponto?.nome ?? null,
+          pendenciaId: id,
+          titulo: pendencia.titulo,
+          valor: valorPago,
+        });
+
         return NextResponse.json({ success: true, ...resultado });
       } catch (err) {
         return NextResponse.json(
@@ -295,6 +306,24 @@ export async function PATCH(
     request,
   });
 
+  if (updates.status === "resolvida" && pendencia.status !== "resolvida") {
+    const { data: ponto } = await supabase
+      .from("pontos")
+      .select("nome")
+      .eq("id", pendencia.ponto_id ?? "")
+      .maybeSingle();
+    const { pushPendenciaQuitada } = await import("@/lib/push/events");
+    pushPendenciaQuitada({
+      empresaId: profile.empresa_id,
+      autorUserId: profile.user_id,
+      autorNome: profile.nome,
+      pontoNome: ponto?.nome ?? null,
+      pendenciaId: id,
+      titulo: pendencia.titulo,
+      valor: baixaFinanceira?.valor ?? valorAtual,
+    });
+  }
+
   return NextResponse.json({ success: true });
 }
 
@@ -309,6 +338,21 @@ export async function DELETE(
   }
 
   const supabase = await createClient();
+
+  const { data: pendencia } = await supabase
+    .from("pendencias")
+    .select("id, titulo, valor, tipo, ponto_id, pontos(nome)")
+    .eq("id", id)
+    .eq("empresa_id", profile.empresa_id)
+    .maybeSingle();
+
+  if (!pendencia) {
+    return NextResponse.json({ error: "Pendência não encontrada" }, { status: 404 });
+  }
+
+  const pontoNome =
+    (pendencia.pontos as { nome?: string } | null)?.nome ?? null;
+
   const { error } = await supabase
     .from("pendencias")
     .delete()
@@ -318,6 +362,17 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  const { pushPendenciaExcluida } = await import("@/lib/push/events");
+  pushPendenciaExcluida({
+    empresaId: profile.empresa_id,
+    autorUserId: profile.user_id,
+    autorNome: profile.nome,
+    pontoNome,
+    pendenciaId: id,
+    titulo: pendencia.titulo,
+    valor: Number(pendencia.valor) || 0,
+  });
 
   const { auditarAcao } = await import("@/lib/auditoria/auditar");
   await auditarAcao(supabase, profile, {

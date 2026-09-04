@@ -68,6 +68,18 @@ export async function PATCH(
     /* ignore */
   }
 
+  const { pushColetaEditada } = await import("@/lib/push/events");
+  pushColetaEditada({
+    empresaId: profile.empresa_id,
+    autorUserId: profile.user_id,
+    autorNome: profile.nome,
+    pontoNome,
+    nichoLabel: "Coleta",
+    valor: result.valorPago,
+    coletaId: id,
+    url: "/coletas",
+  });
+
   return NextResponse.json({
     success: true,
     valor_pago: result.valorPago,
