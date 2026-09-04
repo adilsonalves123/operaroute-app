@@ -68,6 +68,8 @@ export function VisitaPontoCheckoutForm({
 
   const temHaver = haverSaldo > 0.009;
   const temDivida = dividaSaldo > 0.009;
+  const semRecebimentoAgora =
+    calculo.valorPago <= 0.009 && calculo.haverAbatido <= 0.009;
   const dividaRestante = incluirDivida
     ? Math.max(0, dividaSaldo - calculo.aplicadoDivida)
     : dividaSaldo;
@@ -340,8 +342,13 @@ export function VisitaPontoCheckoutForm({
         )}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Confirmar recebimento
+        {semRecebimentoAgora ? "Concluir" : "Confirmar recebimento"}
       </button>
+      {semRecebimentoAgora && (
+        <p className="text-center text-xs text-at-muted">
+          Sem pix/dinheiro o cassino não é marcado como quitado. O valor fica em aberto.
+        </p>
+      )}
 
       {erro && <p className="text-sm text-red-400">{erro}</p>}
     </section>

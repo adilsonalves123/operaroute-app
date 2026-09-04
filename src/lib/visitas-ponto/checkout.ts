@@ -422,22 +422,18 @@ async function absorverSaldosItensVisitaNaConsolidada(
     if (saldo <= 0.009) continue;
 
     if (item.kind === "coleta") {
-      // Dívida da visita migrou para pendência universal do ponto — zera saldo da coleta.
-      await supabase
-        .from("coletas")
-        .update({ valor_pago_recebido: item.valorCobravel })
-        .eq("id", item.id)
-        .eq("empresa_id", opts.empresaId);
-
+      // Não marca a coleta como recebida. O saldo em aberto fica na consolidada
+      // da visita; o histórico continua mostrando o que realmente entrou no caixa.
       await sincronizarPendenciaDaColeta(supabase, {
         empresaId: opts.empresaId,
         coletaId: item.id,
       });
     } else {
+      // Dívida migrou para a consolidada: zera cobrável (restante) sem fingir
+      // recebimento. valor_pago só muda quando entra pix/dinheiro de verdade.
       await supabase
         .from("visitas")
         .update({
-          valor_pago: item.valorCobravel,
           restante: 0,
         })
         .eq("id", item.id)
@@ -848,10 +844,15 @@ export async function finalizarVisitaPontoComCheckout(
       .single();
     pendenciaId = pend?.id ?? null;
 
-    await absorverSaldosItensVisitaNaConsolidada(supabase, {
-      empresaId: opts.empresaId,
-      visitaPontoId: opts.visitaPontoId,
-    });
+    // Só absorve saldo dos itens quando houve dinheiro/haver nesta cobrança.
+    // Sem recebimento, gravar valor_pago = cobrável faz o cassino parecer quitado
+    // sem o operador ter informado pix/dinheiro.
+    if (calculo.aplicadoVisita > 0.009) {
+      await absorverSaldosItensVisitaNaConsolidada(supabase, {
+        empresaId: opts.empresaId,
+        visitaPontoId: opts.visitaPontoId,
+      });
+    }
   }
 
   if (calculo.haver > 0.009) {
