@@ -400,12 +400,18 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
   );
   const filtroAtivoEhExtra = filtrosExtras.some((f) => f.id === filtroTipo);
 
+  const chipClass = (ativo: boolean) =>
+    cn(
+      "shrink-0 whitespace-nowrap rounded-sm px-3 py-1.5 text-xs font-medium transition",
+      ativo ? "analise-tab-active" : "analise-tab-idle border"
+    );
+
   return (
     <>
     <div className="space-y-4">
       <div className="rounded-sm border border-at bg-at-card p-3 sm:p-4 space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-at-muted">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className="min-w-0 text-sm leading-snug text-at-muted">
             <span className="font-medium text-at-primary/90">{abertasCount}</span>{" "}
             {abertasCount === 1 ? "aberta" : "abertas"}
             {totalAberto > 0.009 ? (
@@ -419,54 +425,15 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
           <button
             type="button"
             onClick={() => setMostrarTodas((v) => !v)}
-            className="text-xs text-at-muted hover:text-at-primary/85 underline-offset-2 hover:underline"
+            className="self-start shrink-0 text-xs text-at-muted hover:text-at-primary/85 underline-offset-2 hover:underline sm:self-auto"
           >
             {mostrarTodas ? "Só abertas" : "Incluir resolvidas"}
           </button>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
-          {filtrosComItens.map((f) => (
-            <button
-              key={f.id}
-              type="button"
-              onClick={() => {
-                setFiltroTipo(f.id);
-                setExpandedId(null);
-              }}
-              className={cn(
-                "rounded-sm px-3 py-1 text-xs font-medium transition",
-                filtroTipo === f.id ? "analise-tab-active" : "analise-tab-idle border"
-              )}
-            >
-              {f.label}
-              {f.id !== "todos" ? (
-                <span className="ml-1 tabular-nums opacity-80">({countTipo(f.id)})</span>
-              ) : null}
-            </button>
-          ))}
-          {filtrosExtras.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => setMostrarFiltrosExtras((v) => !v)}
-              className={cn(
-                "rounded-sm border px-3 py-1 text-xs font-medium transition",
-                mostrarFiltrosExtras || filtroAtivoEhExtra
-                  ? "analise-tab-active"
-                  : "analise-tab-idle"
-              )}
-            >
-              Outros tipos
-              {!mostrarFiltrosExtras && !filtroAtivoEhExtra ? (
-                <span className="ml-1 opacity-70">({filtrosExtras.length})</span>
-              ) : null}
-            </button>
-          ) : null}
-        </div>
-
-        {(mostrarFiltrosExtras || filtroAtivoEhExtra) && filtrosExtras.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5 border-t border-at pt-3">
-            {filtrosExtras.map((f) => (
+        <div className="-mx-1 overflow-x-auto pb-1 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex w-max min-w-full gap-1.5 px-1">
+            {filtrosComItens.map((f) => (
               <button
                 key={f.id}
                 type="button"
@@ -474,15 +441,47 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                   setFiltroTipo(f.id);
                   setExpandedId(null);
                 }}
-                className={cn(
-                  "rounded-sm px-3 py-1 text-xs font-medium transition",
-                  filtroTipo === f.id ? "analise-tab-active" : "analise-tab-idle border"
-                )}
+                className={chipClass(filtroTipo === f.id)}
               >
                 {f.label}
-                <span className="ml-1 opacity-60">(0)</span>
+                {f.id !== "todos" ? (
+                  <span className="ml-1 tabular-nums opacity-80">({countTipo(f.id)})</span>
+                ) : null}
               </button>
             ))}
+            {filtrosExtras.length > 0 ? (
+              <button
+                type="button"
+                onClick={() => setMostrarFiltrosExtras((v) => !v)}
+                className={chipClass(mostrarFiltrosExtras || filtroAtivoEhExtra)}
+              >
+                Outros tipos
+                {!mostrarFiltrosExtras && !filtroAtivoEhExtra ? (
+                  <span className="ml-1 opacity-70">({filtrosExtras.length})</span>
+                ) : null}
+              </button>
+            ) : null}
+          </div>
+        </div>
+
+        {(mostrarFiltrosExtras || filtroAtivoEhExtra) && filtrosExtras.length > 0 ? (
+          <div className="-mx-1 overflow-x-auto border-t border-at pt-3 pb-1 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-max min-w-full gap-1.5 px-1">
+              {filtrosExtras.map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => {
+                    setFiltroTipo(f.id);
+                    setExpandedId(null);
+                  }}
+                  className={chipClass(filtroTipo === f.id)}
+                >
+                  {f.label}
+                  <span className="ml-1 opacity-60">(0)</span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
