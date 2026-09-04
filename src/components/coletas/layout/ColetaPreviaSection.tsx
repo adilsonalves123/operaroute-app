@@ -7,7 +7,7 @@ export function ColetaPreviaSection({
 }) {
   return (
     <div>
-      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-amber-400/90">
+      <p className="mb-3 text-[11px] font-semibold uppercase tracking-wider text-at-link/90">
         {title}
       </p>
       {children}

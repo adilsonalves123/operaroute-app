@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { coletaInputClass } from "./coleta-form-styles";
+import { coletaInputClass, coletaBtnPrimaryClass } from "./coleta-form-styles";
 
 export function FecharColetaPanel({
   empty,
@@ -57,10 +57,7 @@ export function FecharColetaPanel({
             ? "border-[#c4a574]/25"
             : "border-primary-neon/20";
 
-  const btnAccent =
-    accent === "red"
-      ? "bg-red-400 text-slate-950 hover:bg-red-300"
-      : "bg-[#c4a574] text-[#0a0e16] hover:bg-[#d4b584]";
+  const btnAccent = accent === "red" ? "bg-red-500 text-white hover:bg-red-600" : coletaBtnPrimaryClass("w-full rounded-xl py-3.5");
 
   return (
     <aside className={cn("xl:sticky xl:top-20", className)}>
@@ -121,8 +118,8 @@ export function FecharColetaPanel({
               }
             }}
             className={cn(
-              "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold transition disabled:opacity-50",
-              btnAccent
+              btnAccent,
+              "inline-flex items-center justify-center gap-2 text-sm font-semibold transition disabled:opacity-50"
             )}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}

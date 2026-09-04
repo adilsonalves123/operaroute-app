@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDateTime, cn } from "@/lib/utils";
 import { saldoPendenteColeta } from "@/lib/nichos/fura-fura";
 import type { Coleta } from "@/lib/types/database";
+import { coletaBtnOutlineClass } from "@/components/coletas/layout/coleta-form-styles";
 import { Package, AlertTriangle, ChevronRight } from "lucide-react";
 
 export type ColetaFuraListItem = Coleta & {
@@ -51,13 +52,13 @@ function FuraFuraPendentesPanel({ coletas }: { coletas: ColetaFuraListItem[] }) 
   const totalGeral = resumo.reduce((s, r) => s + r.total, 0);
 
   return (
-    <aside className="h-fit space-y-4 overflow-hidden rounded-2xl border border-at bg-gradient-to-b from-amber-500/[0.06] to-white/[0.01] p-5 lg:sticky lg:top-6">
+    <aside className="h-fit space-y-4 overflow-hidden rounded-2xl border border-at bg-at-card p-5 lg:sticky lg:top-6">
       <div className="flex items-center justify-between gap-2">
         <h2 className="text-[11px] font-semibold uppercase tracking-[0.16em] text-at-muted">
           Pendências
         </h2>
         {totalGeral > 0.009 && (
-          <span className="text-sm font-semibold tabular-nums text-amber-300">
+          <span className="text-sm font-semibold tabular-nums text-at-link">
             {formatCurrency(totalGeral)}
           </span>
         )}
@@ -71,15 +72,15 @@ function FuraFuraPendentesPanel({ coletas }: { coletas: ColetaFuraListItem[] }) 
             <li key={item.pontoId}>
               <Link
                 href={`/coletas/pendentes?ponto=${item.pontoId}`}
-                className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.05] bg-white/[0.02] px-3 py-2.5 transition hover:border-amber-500/25 hover:bg-amber-500/[0.04]"
+                className="flex items-center justify-between gap-3 rounded-xl border border-at bg-at-card-soft px-3 py-2.5 transition hover:border-[var(--at-tab-active-border)] hover:bg-at-card"
               >
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-white">{item.pontoNome}</p>
+                  <p className="truncate text-sm font-medium text-at-primary">{item.pontoNome}</p>
                   <p className="text-xs text-at-muted">
                     {item.coletasAbertas} em aberto
                   </p>
                 </div>
-                <p className="shrink-0 text-sm font-semibold tabular-nums text-amber-300">
+                <p className="shrink-0 text-sm font-semibold tabular-nums text-at-link">
                   {formatCurrency(item.total)}
                 </p>
               </Link>
@@ -90,9 +91,9 @@ function FuraFuraPendentesPanel({ coletas }: { coletas: ColetaFuraListItem[] }) 
 
       <Link
         href="/coletas/pendentes"
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-amber-500/20 bg-amber-500/[0.06] py-2.5 text-sm font-medium text-amber-100 transition hover:bg-amber-500/10"
+        className={coletaBtnOutlineClass("w-full py-2.5")}
       >
-        <AlertTriangle className="h-4 w-4 text-amber-400" />
+        <AlertTriangle className="h-4 w-4" />
         Cobrar pendências
       </Link>
     </aside>
@@ -135,10 +136,9 @@ function FuraFuraColetasLista({ coletas }: { coletas: ColetaFuraListItem[] }) {
               <Link
                 href={`/coletas/fura-fura/${coleta.id}`}
                 className={cn(
-                  "group relative flex items-stretch overflow-hidden rounded-2xl border border-at",
-                  "bg-gradient-to-br from-slate-900/90 via-slate-950/80 to-slate-950/60",
-                  "transition duration-200 hover:-translate-y-0.5 hover:border-cyan-400/25 hover:shadow-[0_18px_40px_-28px_rgba(34,211,238,0.55)]",
-                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400/50"
+                  "group relative flex items-stretch overflow-hidden rounded-2xl border border-at bg-at-card",
+                  "transition duration-200 hover:-translate-y-0.5 hover:border-[var(--at-tab-active-border)] hover:shadow-sm",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--at-tab-active-border)]"
                 )}
               >
                 <span
@@ -152,11 +152,11 @@ function FuraFuraColetasLista({ coletas }: { coletas: ColetaFuraListItem[] }) {
                 <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-4 sm:gap-5 sm:px-5">
                   <div className="min-w-0 flex-1 space-y-1.5">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="truncate text-base font-semibold tracking-tight text-white">
+                      <p className="truncate text-base font-semibold tracking-tight text-at-primary">
                         {coleta.pontos?.nome ?? "Ponto"}
                       </p>
                       {pendente > 0.009 && (
-                        <span className="inline-flex items-center rounded-lg bg-amber-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-amber-200 ring-1 ring-inset ring-amber-300/30">
+                        <span className="inline-flex items-center rounded-lg border border-at bg-at-card-soft px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] text-at-link">
                           Pendente
                         </span>
                       )}
@@ -173,19 +173,19 @@ function FuraFuraColetasLista({ coletas }: { coletas: ColetaFuraListItem[] }) {
 
                   <div className="flex shrink-0 items-center gap-2 sm:gap-3">
                     <div className="text-right">
-                      <p className="text-lg font-semibold tabular-nums tracking-tight text-emerald-300 sm:text-xl">
+                      <p className="text-lg font-semibold tabular-nums tracking-tight text-at-money-pos sm:text-xl">
                         {formatCurrency(lucro)}
                       </p>
                       <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-at-muted">
                         lucro real
                       </p>
                       {aReceber > 0.009 && (
-                        <p className="mt-1.5 text-xs font-medium tabular-nums text-cyan-300">
+                        <p className="mt-1.5 text-xs font-medium tabular-nums text-at-muted">
                           cobrado {formatCurrency(cobrado)}
                         </p>
                       )}
                     </div>
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-at-card-soft text-at-muted transition group-hover:bg-cyan-400/10 group-hover:text-cyan-300">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full border border-at bg-at-card-soft text-at-muted transition group-hover:border-[var(--at-tab-active-border)] group-hover:text-at-link">
                       <ChevronRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
                     </div>
                   </div>

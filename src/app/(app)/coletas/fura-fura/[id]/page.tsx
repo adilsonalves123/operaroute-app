@@ -20,6 +20,7 @@ import {
 } from "@/lib/coletas/cobranca-coleta-salva";
 import { formatCurrency, formatDateTime } from "@/lib/utils";
 import { labelFormaPagamento } from "@/lib/financeiro/forma-pagamento";
+import { coletaBtnOutlineClass } from "@/components/coletas/layout/coleta-form-styles";
 
 export default async function ColetaFuraFuraDetailPage({
   params,
@@ -120,12 +121,12 @@ export default async function ColetaFuraFuraDetailPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/coletas" className="rounded-lg p-2 text-at-muted hover:bg-slate-800">
+        <Link href="/coletas" className="rounded-lg p-2 text-at-muted transition hover:bg-at-card-soft">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-2xl font-bold text-white truncate">
+            <h1 className="text-2xl font-bold text-at-primary truncate">
               {ponto?.nome ?? "Coleta fura-fura"}
             </h1>
             {pendente > 0.009 ? (
@@ -147,13 +148,13 @@ export default async function ColetaFuraFuraDetailPage({
       <div className="glass-card p-6 grid gap-4 sm:grid-cols-2 text-sm">
         <div>
           <p className="text-at-muted">Furos</p>
-          <p className="font-medium text-white">
+          <p className="font-medium text-at-primary">
             {coleta.quantidade_furos ?? 0} × {formatCurrency(Number(coleta.preco_furo ?? 0))}
           </p>
         </div>
         <div>
           <p className="text-at-muted">Pagamento desta coleta</p>
-          <p className="font-medium text-white">
+          <p className="font-medium text-at-primary">
             {labelFormaPagamento(
               pagamentoColeta?.forma_pagamento ?? coleta.forma_pagamento,
               pagamentoColeta?.valor_pix ?? coleta.valor_pix,
@@ -164,20 +165,20 @@ export default async function ColetaFuraFuraDetailPage({
         {Number(coleta.desconto ?? 0) > 0.009 && (
           <div>
             <p className="text-at-muted">Desconto</p>
-            <p className="font-medium text-white">{formatCurrency(Number(coleta.desconto))}</p>
+            <p className="font-medium text-at-primary">{formatCurrency(Number(coleta.desconto))}</p>
           </div>
         )}
         {coleta.brindes_repostos != null && (
           <div>
             <p className="text-at-muted">Brindes repostos</p>
-            <p className="font-medium text-white">{coleta.brindes_repostos}</p>
+            <p className="font-medium text-at-primary">{coleta.brindes_repostos}</p>
           </div>
         )}
       </div>
 
       {brindes.length > 0 && (
         <div className="glass-card p-6 space-y-3">
-          <h2 className="font-semibold text-white text-sm">Brindes entregues</h2>
+          <h2 className="font-semibold text-at-primary text-sm">Brindes entregues</h2>
           {brindes.map((b, i) => (
             <div
               key={i}
@@ -196,7 +197,7 @@ export default async function ColetaFuraFuraDetailPage({
 
       {coleta.foto_url && (
         <div className="glass-card p-6 space-y-2">
-          <h2 className="font-semibold text-white text-sm">Foto da máquina</h2>
+          <h2 className="font-semibold text-at-primary text-sm">Foto da máquina</h2>
           <ExpandableImage src={coleta.foto_url} alt="Foto da coleta" className="h-48" />
         </div>
       )}
@@ -210,7 +211,7 @@ export default async function ColetaFuraFuraDetailPage({
 
       {(pagamentos ?? []).length > 0 && (
         <div className="glass-card p-6 space-y-2">
-          <h2 className="font-semibold text-white text-sm">Pagamentos registrados</h2>
+          <h2 className="font-semibold text-at-primary text-sm">Pagamentos registrados</h2>
           {pagamentos!.map((p) => (
             <div key={p.id} className="flex justify-between gap-4 text-sm">
               <div>
@@ -221,7 +222,7 @@ export default async function ColetaFuraFuraDetailPage({
                   </p>
                 )}
               </div>
-              <span className="text-green-400 tabular-nums shrink-0">
+              <span className="text-at-money-pos tabular-nums shrink-0">
                 {formatCurrency(Number(p.valor))}
               </span>
             </div>
@@ -232,7 +233,7 @@ export default async function ColetaFuraFuraDetailPage({
       <div className="flex flex-wrap gap-3">
         <Link
           href={editarHref}
-          className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 hover:bg-amber-500/20"
+          className={coletaBtnOutlineClass()}
         >
           Editar coleta completa
         </Link>

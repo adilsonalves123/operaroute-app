@@ -14,6 +14,7 @@ import {
   getDashboardNichosAtivos,
   isDashboardMultiNicho,
 } from "@/lib/dashboard-nichos-ativos";
+import { coletaBtnPrimaryClass } from "@/components/coletas/layout/coleta-form-styles";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getNichoConfig } from "@/lib/nicho";
@@ -166,7 +167,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/cassino"
-            className="group relative inline-flex shrink-0 items-center justify-center gap-2 overflow-hidden rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] shadow-[0_10px_30px_-12px_rgba(196,165,116,0.55)] transition duration-200 hover:bg-[#d4b584]"
+            className={coletaBtnPrimaryClass("shrink-0 rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4 transition group-hover:rotate-90" />
             Nova leitura
@@ -195,7 +196,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/fura-fura"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
+            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -224,7 +225,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/ursinho"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
+            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -253,7 +254,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/diversao"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
+            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -285,7 +286,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/bolinha"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
+            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -317,7 +318,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/consignado"
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#c4a574] px-5 py-3 text-sm font-semibold text-[#0a0e16] hover:bg-[#d4b584]"
+            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Novo recolhe

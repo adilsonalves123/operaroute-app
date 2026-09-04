@@ -8,6 +8,7 @@ import { montarSnapshotRelatorio } from "@/lib/comprovantes/previa-relatorio";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
 import { abrirImpressaoRelatorioTextoGenerico } from "@/lib/coletas/imprimir-relatorio-texto";
 import { ColetaCobrarPixBar } from "@/components/coletas/ColetaCobrarPixBar";
+import { coletaBtnSecondaryClass } from "@/components/coletas/layout/coleta-form-styles";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import type { ComprovanteSnapshot } from "@/lib/comprovantes/types";
 
@@ -136,7 +137,7 @@ export function PreviaRelatorioFuraFuraPanel({
           type="button"
           disabled={disabled}
           onClick={handlePrint}
-          className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
+          className={coletaBtnSecondaryClass()}
         >
           <Printer className="h-4 w-4" />
           Imprimir
@@ -148,8 +149,8 @@ export function PreviaRelatorioFuraFuraPanel({
   if (embedded) return content;
 
   return (
-    <div className="glass-card space-y-3 border border-amber-500/20 p-4">
-      <p className="text-sm font-medium text-amber-300">Prévia para o cliente</p>
+    <div className="rounded-2xl border border-at bg-at-card p-4 space-y-3">
+      <p className="text-sm font-medium text-at-link">Prévia para o cliente</p>
       {content}
     </div>
   );

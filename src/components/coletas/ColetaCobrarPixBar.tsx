@@ -7,6 +7,10 @@ import {
   mensagemCobrancaColetaNicho,
   type CobrancaColetaNichoOpts,
 } from "@/lib/coletas/cobranca-whatsapp-nicho";
+import {
+  coletaBtnPrimaryClass,
+  coletaCobrarBoxClass,
+} from "@/components/coletas/layout/coleta-form-styles";
 import { cn, formatCurrency } from "@/lib/utils";
 
 type Props = {
@@ -65,29 +69,22 @@ export function ColetaCobrarPixBar({
   }
 
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-cyan-500/25 bg-cyan-500/[0.05] p-3 space-y-2",
-        className
-      )}
-    >
+    <div className={coletaCobrarBoxClass(className)}>
       <div>
-        <p className="text-sm font-medium text-cyan-200">Cobrar / mandar chave Pix</p>
+        <p className="text-sm font-medium text-at-primary">Cobrar / mandar chave Pix</p>
         <p className="mt-0.5 text-[11px] leading-snug text-at-muted">
           Abre o WhatsApp com o resumo e{" "}
           {chavePix?.trim() ? (
             <>
               a chave Pix{" "}
-              <span className="font-mono text-cyan-300/90">
+              <span className="font-mono text-at-link">
                 {chavePix.trim().length > 28
                   ? `${chavePix.trim().slice(0, 28)}…`
                   : chavePix.trim()}
               </span>
             </>
           ) : (
-            <span className="text-amber-400/90">
-              (cadastre a chave em Configurações)
-            </span>
+            <span className="text-at-link">(cadastre a chave em Configurações)</span>
           )}
           .
         </p>
@@ -96,10 +93,7 @@ export function ColetaCobrarPixBar({
         type="button"
         disabled={disabled}
         onClick={handleCobrar}
-        className={cn(
-          "inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-50",
-          embedded && "py-2.5"
-        )}
+        className={cn(coletaBtnPrimaryClass("w-full"), embedded && "py-2.5")}
       >
         <Banknote className="h-4 w-4" />
         Cobrar {formatCurrency(valorAPagar)}
