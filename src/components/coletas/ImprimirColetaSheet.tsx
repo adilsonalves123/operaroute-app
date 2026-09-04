@@ -10,7 +10,7 @@ import {
   limparImpressaoOverlay,
   prepararOverlayImpressao,
 } from "@/lib/coletas/imprimir-relatorio-texto";
-import { coletaBtnPrimaryClass } from "@/components/coletas/layout/coleta-form-styles";
+import { coletaBtnSubmitClass } from "@/components/coletas/layout/coleta-form-styles";
 import { cn } from "@/lib/utils";
 
 /** Estilos só para a prévia na tela — fundo branco opaco, texto preto. */
@@ -192,7 +192,7 @@ export function ImprimirColetaSheet({
             <button
               type="button"
               onClick={confirmarImpressao}
-              className={coletaBtnPrimaryClass("w-full touch-manipulation py-3.5")}
+              className={coletaBtnSubmitClass("w-full touch-manipulation")}
             >
               <Printer className="h-4 w-4" />
               Imprimir agora

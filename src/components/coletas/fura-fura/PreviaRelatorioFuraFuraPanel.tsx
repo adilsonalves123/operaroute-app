@@ -138,7 +138,7 @@ export function PreviaRelatorioFuraFuraPanel({
 
   return (
     <div className="rounded-2xl border border-at bg-at-card p-4 space-y-3">
-      <p className="text-sm font-medium text-at-link">Prévia para o cliente</p>
+      <p className="text-sm font-medium text-at-muted">Prévia para o cliente</p>
       {content}
     </div>
   );

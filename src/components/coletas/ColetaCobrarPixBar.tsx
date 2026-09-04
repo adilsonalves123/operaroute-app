@@ -8,7 +8,7 @@ import {
   type CobrancaColetaNichoOpts,
 } from "@/lib/coletas/cobranca-whatsapp-nicho";
 import {
-  coletaBtnPrimaryClass,
+  coletaBtnOutlineClass,
   coletaCobrarBoxClass,
 } from "@/components/coletas/layout/coleta-form-styles";
 import { cn, formatCurrency } from "@/lib/utils";
@@ -77,14 +77,14 @@ export function ColetaCobrarPixBar({
           {chavePix?.trim() ? (
             <>
               a chave Pix{" "}
-              <span className="font-mono text-at-link">
+              <span className="font-mono text-at-primary/80">
                 {chavePix.trim().length > 28
                   ? `${chavePix.trim().slice(0, 28)}…`
                   : chavePix.trim()}
               </span>
             </>
           ) : (
-            <span className="text-at-link">(cadastre a chave em Configurações)</span>
+            <span className="text-at-muted">(cadastre a chave em Configurações)</span>
           )}
           .
         </p>
@@ -93,7 +93,7 @@ export function ColetaCobrarPixBar({
         type="button"
         disabled={disabled}
         onClick={handleCobrar}
-        className={cn(coletaBtnPrimaryClass("w-full"), embedded && "py-2.5")}
+        className={cn(coletaBtnOutlineClass("w-full font-semibold"), embedded && "py-2.5")}
       >
         <Banknote className="h-4 w-4" />
         Cobrar {formatCurrency(valorAPagar)}

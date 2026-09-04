@@ -54,10 +54,11 @@ export function FecharColetaPanel({
           : accent === "red"
             ? "border-red-500/25"
             : accent === "gold"
-            ? "border-[#c4a574]/25"
+            ? "border-at"
             : "border-primary-neon/20";
 
-  const btnAccent = accent === "red" ? "bg-red-500 text-white hover:bg-red-600" : coletaBtnPrimaryClass("w-full rounded-xl py-3.5");
+  const btnAccent =
+    accent === "red" ? "bg-red-500 text-white hover:bg-red-600" : coletaBtnPrimaryClass("w-full rounded-xl py-3.5");
 
   return (
     <aside className={cn("xl:sticky xl:top-20", className)}>

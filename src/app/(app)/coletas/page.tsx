@@ -14,7 +14,7 @@ import {
   getDashboardNichosAtivos,
   isDashboardMultiNicho,
 } from "@/lib/dashboard-nichos-ativos";
-import { coletaBtnPrimaryClass } from "@/components/coletas/layout/coleta-form-styles";
+import { coletaBtnSubmitClass } from "@/components/coletas/layout/coleta-form-styles";
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getNichoConfig } from "@/lib/nicho";
@@ -167,7 +167,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/cassino"
-            className={coletaBtnPrimaryClass("shrink-0 rounded-2xl px-5 py-3")}
+            className={coletaBtnSubmitClass("shrink-0 rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4 transition group-hover:rotate-90" />
             Nova leitura
@@ -196,7 +196,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/fura-fura"
-            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
+            className={coletaBtnSubmitClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -225,7 +225,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/ursinho"
-            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
+            className={coletaBtnSubmitClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -254,7 +254,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/diversao"
-            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
+            className={coletaBtnSubmitClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -286,7 +286,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/bolinha"
-            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
+            className={coletaBtnSubmitClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Nova coleta
@@ -318,7 +318,7 @@ export default async function ColetasPage() {
           </div>
           <Link
             href="/coletas/nova/consignado"
-            className={coletaBtnPrimaryClass("rounded-2xl px-5 py-3")}
+            className={coletaBtnSubmitClass("rounded-2xl px-5 py-3")}
           >
             <Plus className="h-4 w-4" />
             Novo recolhe
