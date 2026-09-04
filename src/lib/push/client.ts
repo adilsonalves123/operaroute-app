@@ -38,6 +38,7 @@ export async function registerPushServiceWorker(): Promise<ServiceWorkerRegistra
 async function saveFcmToken(token: string): Promise<{ ok: true } | { ok: false; error: string }> {
   const res = await fetch("/api/push/subscribe", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       platform: "android",
@@ -145,7 +146,7 @@ export async function subscribeWebPush(): Promise<{ ok: true } | { ok: false; er
     return { ok: false, error: "Permissão de notificação negada." };
   }
 
-  const keyRes = await fetch("/api/push/vapid-public");
+  const keyRes = await fetch("/api/push/vapid-public", { credentials: "include" });
   const keyData = await keyRes.json().catch(() => ({}));
   if (!keyRes.ok || !keyData.publicKey) {
     return {
@@ -168,6 +169,7 @@ export async function subscribeWebPush(): Promise<{ ok: true } | { ok: false; er
   const json = sub.toJSON();
   const res = await fetch("/api/push/subscribe", {
     method: "POST",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       endpoint: json.endpoint,
@@ -192,6 +194,7 @@ export async function unsubscribeWebPush(): Promise<void> {
     }
     await fetch("/api/push/subscribe", {
       method: "DELETE",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(token ? { fcm_token: token } : {}),
     });
@@ -216,6 +219,7 @@ export async function unsubscribeWebPush(): Promise<void> {
   if (sub) await sub.unsubscribe();
   await fetch("/api/push/subscribe", {
     method: "DELETE",
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ endpoint }),
   });

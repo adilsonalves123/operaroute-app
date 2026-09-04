@@ -28,7 +28,7 @@ export function PushNotificacoesCard({ embedded }: { embedded?: boolean }) {
 
   async function refresh() {
     try {
-      const res = await fetch("/api/push/subscribe");
+      const res = await fetch("/api/push/subscribe", { credentials: "include" });
       const data = await res.json();
       if (res.ok) {
         setStatus({

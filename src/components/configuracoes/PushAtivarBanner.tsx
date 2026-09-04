@@ -15,7 +15,7 @@ export function PushAtivarBanner() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/push/subscribe");
+        const res = await fetch("/api/push/subscribe", { credentials: "include" });
         const data = await res.json().catch(() => ({}));
         if (cancelled || !res.ok) return;
         const pode =

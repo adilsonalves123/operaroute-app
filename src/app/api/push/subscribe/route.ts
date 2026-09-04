@@ -1,8 +1,31 @@
 import { NextResponse } from "next/server";
-import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
+import { createClient, getEmpresa, getProfile, getSession } from "@/lib/supabase/server";
+import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import { isPushConfigured } from "@/lib/push/vapid";
 import { fcmEndpointFromToken, isFcmConfigured } from "@/lib/push/fcm";
+
+function isMissingPushSubscriptionsTable(message: string, code?: string): boolean {
+  if (code === "42P01") return true;
+  return (
+    /could not find the table/i.test(message) ||
+    /relation ["']?public\.?push_subscriptions["']? does not exist/i.test(message) ||
+    (/push_subscriptions/i.test(message) && /schema cache/i.test(message)) ||
+    (/PGRST205/i.test(message) && /push_subscriptions/i.test(message))
+  );
+}
+
+function pushSubscribeErrorMessage(error: { message?: string; code?: string }): string {
+  const detail = error.message || error.code || "erro desconhecido";
+  if (isMissingPushSubscriptionsTable(detail, error.code)) {
+    return (
+      "Tabela push_subscriptions não encontrada (ou cache do Supabase desatualizado). " +
+      "No Supabase → SQL Editor, rode supabase/push-subscriptions.sql (inclui NOTIFY no final). " +
+      "Se já rodou, execute só: NOTIFY pgrst, 'reload schema';"
+    );
+  }
+  return detail;
+}
 
 function podeReceberPush(role: string | undefined, isOwner: boolean): boolean {
   if (isOwner) return true;
@@ -13,9 +36,58 @@ function pushConfiguredAny(): boolean {
   return isPushConfigured() || isFcmConfigured();
 }
 
+type PushSubscriptionRow = {
+  empresa_id: string;
+  user_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  updated_at: string;
+};
+
+/** Grava inscrição com service role (auth já validada na rota) — evita falso erro no app Android. */
+async function upsertPushSubscription(row: PushSubscriptionRow) {
+  if (isAdminConfigured()) {
+    const admin = createAdminClient();
+    return admin.from("push_subscriptions").upsert(row, { onConflict: "endpoint" });
+  }
+  const supabase = await createClient();
+  return supabase.from("push_subscriptions").upsert(row, { onConflict: "endpoint" });
+}
+
+async function deletePushSubscriptions(userId: string, endpoint?: string) {
+  if (isAdminConfigured()) {
+    const admin = createAdminClient();
+    let q = admin.from("push_subscriptions").delete().eq("user_id", userId);
+    if (endpoint) q = q.eq("endpoint", endpoint);
+    return q;
+  }
+  const supabase = await createClient();
+  let q = supabase.from("push_subscriptions").delete().eq("user_id", userId);
+  if (endpoint) q = q.eq("endpoint", endpoint);
+  return q;
+}
+
+async function countPushSubscriptions(userId: string) {
+  if (isAdminConfigured()) {
+    const admin = createAdminClient();
+    return admin
+      .from("push_subscriptions")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", userId);
+  }
+  const supabase = await createClient();
+  return supabase
+    .from("push_subscriptions")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId);
+}
+
 export async function POST(request: Request) {
   const profile = await getProfile();
-  if (!profile?.empresa_id || !profile.user_id) {
+  const user = await getSession();
+  if (!profile?.empresa_id || !user?.id) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
@@ -40,6 +112,12 @@ export async function POST(request: Request) {
       ? body.user_agent.slice(0, 300)
       : request.headers.get("user-agent")?.slice(0, 300) ?? null;
 
+  const baseRow = {
+    empresa_id: profile.empresa_id,
+    user_id: user.id,
+    updated_at: new Date().toISOString(),
+  };
+
   // Capacitor / Android FCM — salva token mesmo antes da service account (envio exige depois)
   if (platform === "android" || fcmToken) {
     if (!fcmToken || fcmToken.length < 20) {
@@ -47,29 +125,16 @@ export async function POST(request: Request) {
     }
 
     const endpoint = fcmEndpointFromToken(fcmToken);
-    const { error } = await supabase.from("push_subscriptions").upsert(
-      {
-        empresa_id: profile.empresa_id,
-        user_id: profile.user_id,
-        endpoint,
-        p256dh: "fcm",
-        auth: "fcm",
-        user_agent: userAgent ? `android|${userAgent}` : "android",
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "endpoint" }
-    );
+    const { error } = await upsertPushSubscription({
+      ...baseRow,
+      endpoint,
+      p256dh: "fcm",
+      auth: "fcm",
+      user_agent: userAgent ? `android|${userAgent}` : "android",
+    });
 
     if (error) {
-      return NextResponse.json(
-        {
-          error:
-            error.message.includes("push_subscriptions") || error.code === "42P01"
-              ? "Tabela push_subscriptions não existe. Rode o SQL supabase/push-subscriptions.sql no Supabase."
-              : error.message,
-        },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: pushSubscribeErrorMessage(error) }, { status: 500 });
     }
 
     return NextResponse.json({
@@ -92,37 +157,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Subscription inválida." }, { status: 400 });
   }
 
-  const { error } = await supabase.from("push_subscriptions").upsert(
-    {
-      empresa_id: profile.empresa_id,
-      user_id: profile.user_id,
-      endpoint,
-      p256dh,
-      auth,
-      user_agent: userAgent,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: "endpoint" }
-  );
+  const { error } = await upsertPushSubscription({
+    ...baseRow,
+    endpoint,
+    p256dh,
+    auth,
+    user_agent: userAgent,
+  });
 
   if (error) {
-    return NextResponse.json(
-      {
-        error:
-          error.message.includes("push_subscriptions") || error.code === "42P01"
-            ? "Tabela push_subscriptions não existe. Rode o SQL supabase/push-subscriptions.sql no Supabase."
-            : error.message,
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: pushSubscribeErrorMessage(error) }, { status: 500 });
   }
 
   return NextResponse.json({ success: true, platform: "web" });
 }
 
 export async function DELETE(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.user_id) {
+  const user = await getSession();
+  if (!user?.id) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
@@ -130,22 +182,13 @@ export async function DELETE(request: Request) {
   const endpoint = typeof body.endpoint === "string" ? body.endpoint.trim() : "";
   const fcmToken =
     typeof body.fcm_token === "string" ? body.fcm_token.trim() : "";
-  const supabase = await createClient();
 
   if (fcmToken) {
-    await supabase
-      .from("push_subscriptions")
-      .delete()
-      .eq("user_id", profile.user_id)
-      .eq("endpoint", fcmEndpointFromToken(fcmToken));
+    await deletePushSubscriptions(user.id, fcmEndpointFromToken(fcmToken));
   } else if (endpoint) {
-    await supabase
-      .from("push_subscriptions")
-      .delete()
-      .eq("user_id", profile.user_id)
-      .eq("endpoint", endpoint);
+    await deletePushSubscriptions(user.id, endpoint);
   } else {
-    await supabase.from("push_subscriptions").delete().eq("user_id", profile.user_id);
+    await deletePushSubscriptions(user.id);
   }
 
   return NextResponse.json({ success: true });
@@ -153,7 +196,8 @@ export async function DELETE(request: Request) {
 
 export async function GET() {
   const profile = await getProfile();
-  if (!profile?.user_id || !profile.empresa_id) {
+  const user = await getSession();
+  if (!user?.id || !profile?.empresa_id) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
@@ -162,10 +206,7 @@ export async function GET() {
   const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
   const allowed = podeReceberPush(acesso?.role, Boolean(acesso?.isOwner));
 
-  const { count } = await supabase
-    .from("push_subscriptions")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", profile.user_id);
+  const { count } = await countPushSubscriptions(user.id);
 
   return NextResponse.json({
     configured: pushConfiguredAny(),

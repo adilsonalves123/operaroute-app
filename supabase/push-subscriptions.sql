@@ -44,3 +44,11 @@ CREATE POLICY "push_subscriptions_delete_own" ON push_subscriptions
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON push_subscriptions TO authenticated;
 GRANT ALL ON push_subscriptions TO service_role;
+
+-- Força o PostgREST a enxergar a tabela nova (evita falso "rode o SQL").
+NOTIFY pgrst, 'reload schema';
+
+-- Confirmação: deve retornar 1 linha com cols >= 9.
+SELECT 'push_subscriptions ok' AS status, COUNT(*) AS cols
+FROM information_schema.columns
+WHERE table_schema = 'public' AND table_name = 'push_subscriptions';
