@@ -279,6 +279,22 @@ html[data-app-theme="light"] textarea::placeholder {
   color: #a8a29e;
 }
 
+/* Login do dono: fundo sempre escuro; tokens do app claro não podem herdar aqui. */
+.dono-login-screen {
+  --at-primary: #f4efe6;
+  --at-muted: #c4b8a8;
+  --at-link: #c4a574;
+  --at-card-soft: #f8fafc;
+  color: #f4efe6;
+}
+
+.dono-login-screen input,
+html[data-app-theme="light"] .dono-login-screen input {
+  background: #f8fafc !important;
+  border-color: rgba(255, 255, 255, 0.25) !important;
+  color: #111827 !important;
+}
+
 .dashboard-hero {
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
 }
