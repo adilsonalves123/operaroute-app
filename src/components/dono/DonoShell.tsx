@@ -223,7 +223,7 @@ function DonoShellInner({
       className={cn(
         display.variable,
         sans.variable,
-        "min-h-dvh transition-colors",
+        "dono-root min-h-dvh transition-colors",
         shellBg
       )}
       style={{ fontFamily: "var(--font-dono-sans), system-ui, sans-serif" }}

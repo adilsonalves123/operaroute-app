@@ -1165,6 +1165,67 @@ html[data-app-theme="light"] .analise-premium-root {
 .text-at-soft { color: var(--at-soft); }
 .text-at-accent { color: var(--at-accent); }
 .text-at-link { color: var(--at-link); }
+
+/* Painel do dono: tokens próprios. Sem isso, o tema claro do app dos
+   clientes deixa --at-primary indefinido e o texto herda marrom-escuro
+   em cima do fundo preto do login. */
+.dono-root[data-dono-theme="dark"] {
+  --at-primary: #f4efe6;
+  --at-muted: #cbd5e1;
+  --at-soft: #94a3b8;
+  --at-accent: rgba(196, 165, 116, 0.95);
+  --at-card: rgba(10, 14, 22, 0.95);
+  --at-card-soft: rgba(255, 255, 255, 0.08);
+  --at-border: rgba(255, 255, 255, 0.14);
+  --at-border-soft: rgba(255, 255, 255, 0.08);
+  --at-tab-active-bg: rgba(196, 165, 116, 0.15);
+  --at-tab-active-border: rgba(196, 165, 116, 0.4);
+  --at-tab-active-text: #e8d5b0;
+  --at-sticky: rgba(6, 8, 14, 0.92);
+  --at-money-pos: rgba(52, 211, 153, 0.95);
+  --at-money-neg: rgba(251, 113, 133, 0.95);
+  --at-link: #e8d5b0;
+  --at-divider: rgba(255, 255, 255, 0.08);
+  --at-track: rgba(255, 255, 255, 0.06);
+  --at-grid: rgba(255, 255, 255, 0.08);
+  color: #f4efe6;
+}
+
+.dono-root[data-dono-theme="light"] {
+  --at-primary: #1c1917;
+  --at-muted: #44403c;
+  --at-soft: #57534e;
+  --at-accent: rgba(120, 83, 32, 0.95);
+  --at-card: #ffffff;
+  --at-card-soft: #faf8f4;
+  --at-border: rgba(28, 25, 23, 0.14);
+  --at-border-soft: rgba(28, 25, 23, 0.08);
+  --at-tab-active-bg: #1c1917;
+  --at-tab-active-border: #1c1917;
+  --at-tab-active-text: #faf8f4;
+  --at-sticky: rgba(250, 248, 244, 0.96);
+  --at-money-pos: #047857;
+  --at-money-neg: #be123c;
+  --at-link: #78520a;
+  --at-divider: rgba(28, 25, 23, 0.1);
+  --at-track: rgba(28, 25, 23, 0.06);
+  --at-grid: rgba(28, 25, 23, 0.08);
+  color: #1c1917;
+}
+
+html[data-app-theme="light"] .dono-root[data-dono-theme="dark"] input,
+html[data-app-theme="light"] .dono-root[data-dono-theme="dark"] select,
+html[data-app-theme="light"] .dono-root[data-dono-theme="dark"] textarea {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f4efe6;
+}
+
+html[data-app-theme="light"] .dono-root[data-dono-theme="dark"] input::placeholder,
+html[data-app-theme="light"] .dono-root[data-dono-theme="dark"] textarea::placeholder {
+  color: #94a3b8;
+}
+
 .text-at-money-pos { color: var(--at-money-pos); }
 .text-at-money-neg { color: var(--at-money-neg); }
 .bg-at-card { background-color: var(--at-card); }
