@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDateTime, cn } from "@/lib/utils";
-import { centesimosToReais } from "@/lib/nichos/cassino";
+import { centesimosToReais, valorPagoCaixaVisita } from "@/lib/nichos/cassino";
 import { Package, ChevronRight } from "lucide-react";
 
 export interface VisitaListItem {
@@ -13,6 +13,8 @@ export interface VisitaListItem {
   total_lucro_centavos: number;
   valor_operacao_efetivo: number;
   valor_pago: number;
+  valor_pix?: number | null;
+  valor_dinheiro?: number | null;
   restante: number;
   saldo_negativo: boolean;
   forma_pagamento: string;
@@ -68,15 +70,13 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
       <ul className="space-y-2.5">
         {visitas.map((visita) => {
           const negativo = visita.saldo_negativo;
-          const pago = Number(visita.valor_pago ?? 0);
+          const pago = valorPagoCaixaVisita(visita);
           const efetivo = Number(visita.valor_operacao_efetivo ?? 0);
           const restanteAberto = Number(visita.restante ?? 0);
           const aReceber =
-            restanteAberto > 0.009
+            restanteAberto > 0.009 && pago > 0.009
               ? restanteAberto
-              : pago <= 0.009
-                ? Math.max(0, efetivo - pago)
-                : 0;
+              : Math.max(0, efetivo - pago, restanteAberto);
           const pendente = aReceber > 0.009 && !negativo;
           const lucro = centesimosToReais(Number(visita.total_lucro_centavos));
 

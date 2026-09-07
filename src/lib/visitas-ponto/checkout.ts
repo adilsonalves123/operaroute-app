@@ -5,6 +5,7 @@ import { ratearValorProporcional } from "@/lib/nichos/ursinho";
 import { splitExcedentePagamento } from "@/lib/nichos/fura-fura/haver-ponto";
 import { registrarHaverFuraFura } from "@/lib/nichos/fura-fura";
 import { fetchVisitaPontoResumo, cobravelCassinoVisita } from "@/lib/visitas-ponto/resumo";
+import { valorPagoCaixaVisita } from "@/lib/nichos/cassino/pagamento-caixa";
 import {
   fetchCassinoVisitaIdsVisitaPonto,
   listarPendenciasCobraveisPonto,
@@ -114,7 +115,7 @@ async function carregarItensCobraveis(
   if (cassinoIds.length > 0) {
     const { data: visitas } = await supabase
       .from("visitas")
-      .select("id, saldo_negativo, valor_operacao_efetivo, valor_pago, restante, debito_abatido")
+      .select("id, saldo_negativo, valor_operacao_efetivo, valor_pago, valor_pix, valor_dinheiro, restante, debito_abatido")
       .in("id", cassinoIds)
       .eq("empresa_id", empresaId);
 
@@ -122,7 +123,7 @@ async function carregarItensCobraveis(
       if (v.saldo_negativo) continue;
       const saldo = cobravelCassinoVisita(v);
       if (saldo <= 0.009) continue;
-      const pago = Number(v.valor_pago ?? 0);
+      const pago = valorPagoCaixaVisita(v);
       itensCobraveis.push({
         kind: "cassino_visita",
         id: v.id,
@@ -234,7 +235,7 @@ export async function aplicarPagamentoDividaAnterior(
       const { data: visita } = await supabase
         .from("visitas")
         .select(
-          "id, valor_operacao_efetivo, valor_pago, restante, debito_abatido, saldo_negativo"
+          "id, valor_operacao_efetivo, valor_pago, valor_pix, valor_dinheiro, restante, debito_abatido, saldo_negativo"
         )
         .eq("id", pend.visita_id)
         .maybeSingle();

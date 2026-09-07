@@ -1,4 +1,4 @@
-export { calcularVisitaCassino } from "./calculo-visita";
+export { valorPagoCaixaVisita } from "./pagamento-caixa";
 export { calcularMaquina, calcularTotaisVisita } from "./calculo-maquina";
 export {
   centesimosToReais,

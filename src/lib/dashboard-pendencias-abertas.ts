@@ -215,7 +215,7 @@ export async function filtrarPendenciasJaQuitadas(
     const { data } = await supabase
       .from("visitas")
       .select(
-        "id, valor_operacao_efetivo, valor_operacao, valor_pago, restante, debito_abatido, saldo_negativo"
+        "id, valor_operacao_efetivo, valor_operacao, valor_pago, valor_pix, valor_dinheiro, restante, debito_abatido, saldo_negativo"
       )
       .eq("empresa_id", empresaId)
       .in("id", visitaIds);
