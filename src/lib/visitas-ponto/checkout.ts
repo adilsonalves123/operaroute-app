@@ -422,38 +422,37 @@ async function absorverSaldosItensVisitaNaConsolidada(
     if (saldo <= 0.009) continue;
 
     if (item.kind === "coleta") {
-      // Dívida da visita migrou para pendência universal do ponto — zera saldo da coleta.
-      await supabase
-        .from("coletas")
-        .update({ valor_pago_recebido: item.valorCobravel })
-        .eq("id", item.id)
-        .eq("empresa_id", opts.empresaId);
-
+      // Não marca a coleta como recebida. O saldo em aberto fica na consolidada
+      // da visita; o histórico continua mostrando o que realmente entrou no caixa.
       await sincronizarPendenciaDaColeta(supabase, {
         empresaId: opts.empresaId,
         coletaId: item.id,
       });
     } else {
+      // Dívida migrou para a consolidada sem fingir recebimento.
+      // valor_pago só muda quando entra pix/dinheiro de verdade.
+      const novoRestante = round2(Math.max(0, item.valorCobravel - item.valorPago));
       await supabase
         .from("visitas")
         .update({
-          valor_pago: item.valorCobravel,
-          restante: 0,
+          restante: novoRestante,
         })
         .eq("id", item.id)
         .eq("empresa_id", opts.empresaId);
 
-      await supabase
-        .from("pendencias")
-        .update({
-          valor: 0,
-          status: "resolvida",
-          resolvido_em: agora,
-        })
-        .eq("empresa_id", opts.empresaId)
-        .eq("visita_id", item.id)
-        .eq("status", "aberta")
-        .in("tipo", ["pagamento_pendente", "parcial"]);
+      if (item.valorPago > 0.009 && novoRestante <= 0.009) {
+        await supabase
+          .from("pendencias")
+          .update({
+            valor: 0,
+            status: "resolvida",
+            resolvido_em: agora,
+          })
+          .eq("empresa_id", opts.empresaId)
+          .eq("visita_id", item.id)
+          .eq("status", "aberta")
+          .in("tipo", ["pagamento_pendente", "parcial"]);
+      }
     }
   }
 }
@@ -848,10 +847,14 @@ export async function finalizarVisitaPontoComCheckout(
       .single();
     pendenciaId = pend?.id ?? null;
 
-    await absorverSaldosItensVisitaNaConsolidada(supabase, {
-      empresaId: opts.empresaId,
-      visitaPontoId: opts.visitaPontoId,
-    });
+    // Sem pix/dinheiro/haver nesta cobrança, não absorve: gravar valor_pago =
+    // cobrável faz cassino e os outros nichos parecerem quitados.
+    if (calculo.aplicadoVisita > 0.009) {
+      await absorverSaldosItensVisitaNaConsolidada(supabase, {
+        empresaId: opts.empresaId,
+        visitaPontoId: opts.visitaPontoId,
+      });
+    }
   }
 
   if (calculo.haver > 0.009) {

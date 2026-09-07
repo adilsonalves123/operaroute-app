@@ -68,7 +68,16 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
       <ul className="space-y-2.5">
         {visitas.map((visita) => {
           const negativo = visita.saldo_negativo;
-          const pendente = visita.restante > 0.009 && !negativo;
+          const pago = Number(visita.valor_pago ?? 0);
+          const efetivo = Number(visita.valor_operacao_efetivo ?? 0);
+          const restanteAberto = Number(visita.restante ?? 0);
+          const aReceber =
+            restanteAberto > 0.009
+              ? restanteAberto
+              : pago <= 0.009
+                ? Math.max(0, efetivo - pago)
+                : 0;
+          const pendente = aReceber > 0.009 && !negativo;
           const lucro = centesimosToReais(Number(visita.total_lucro_centavos));
 
           return (
@@ -104,7 +113,9 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
                       {visita.maquinas_count} máquina
                       {visita.maquinas_count !== 1 ? "s" : ""}
                       <span className="mx-1.5 text-at-soft">·</span>
-                      <span className="capitalize">{visita.forma_pagamento}</span>
+                      <span className="capitalize">
+                        {pago > 0.009 ? visita.forma_pagamento : "sem recebimento"}
+                      </span>
                       {visita.pontos?.cidade ? (
                         <>
                           <span className="mx-1.5 text-at-soft">·</span>
@@ -127,9 +138,14 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
                       <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-at-muted">
                         lucro bruto
                       </p>
-                      {!negativo && (
+                      {!negativo && pago > 0.009 && (
                         <p className="mt-1.5 text-xs font-medium tabular-nums text-cyan-300">
-                          cobrado {formatCurrency(Number(visita.valor_pago))}
+                          cobrado {formatCurrency(pago)}
+                        </p>
+                      )}
+                      {!negativo && pendente && (
+                        <p className="mt-1.5 text-xs font-medium tabular-nums text-amber-300">
+                          a receber {formatCurrency(aReceber)}
                         </p>
                       )}
                     </div>

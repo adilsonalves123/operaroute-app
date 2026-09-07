@@ -60,7 +60,13 @@ export function PontoHistoricoVisitas({ visitas }: { visitas: VisitaPontoHistori
                 const data = v.finalizada_em ?? v.created_at;
                 const totalVisita = Number(v.total_cobrado ?? v.subtotal_cobravel ?? 0);
                 const recebido = Number(v.valor_pago ?? 0);
-                const pendente = Number(v.restante ?? 0);
+                const restanteCampo = Number(v.restante ?? 0);
+                const pendente =
+                  restanteCampo > 0.009
+                    ? restanteCampo
+                    : recebido <= 0.009
+                      ? totalVisita
+                      : 0;
                 return (
                   <li key={v.id} className="relative pb-6 last:pb-0">
                     <span className="absolute -left-[1.4rem] top-1.5 h-2.5 w-2.5 rounded-full border border-slate-950 bg-slate-400" />

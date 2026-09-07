@@ -357,7 +357,12 @@ export function reconstructCalculoPositivoFromVisita(
     0,
     valorOperacaoEfetivo - haverCompensadoReais - valorPagoParaOperacao
   );
-  const restanteReais = Math.max(0, restanteVisita);
+  const restanteReais = Math.max(
+    0,
+    restanteVisita > 0.009
+      ? restanteVisita
+      : Math.max(0, totalACobrar - valorPago)
+  );
   const haverReais = Math.max(0, valorPago - totalACobrar);
 
   return {
