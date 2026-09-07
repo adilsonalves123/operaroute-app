@@ -347,7 +347,10 @@ export function resumoCobrancaCliente(c: CalculoVisitaResult): ResumoCobrancaCli
   }
 
   const faltaReceberReais = Math.max(0, valorReceberHoje - c.valorPagoReais);
-  const quitado = faltaReceberReais <= 0.009 && valorReceberHoje > 0.009;
+  const quitado =
+    faltaReceberReais <= 0.009 &&
+    valorReceberHoje > 0.009 &&
+    c.valorPagoReais > 0.009;
 
   return {
     totalACobrarReais: valorReceberHoje,

@@ -25,7 +25,7 @@ type ColetaUrsinhoListItem = Coleta & {
 };
 
 const VISITA_LIST_SELECT =
-  "id, created_at, total_lucro_centavos, valor_operacao_efetivo, valor_pago, restante, saldo_negativo, forma_pagamento, relatorio_url, pontos(nome, cidade)";
+  "id, created_at, total_lucro_centavos, valor_operacao_efetivo, valor_pago, valor_pix, valor_dinheiro, restante, saldo_negativo, forma_pagamento, relatorio_url, pontos(nome, cidade)";
 
 const COLETA_FURA_LIST_SELECT =
   "id, ponto_id, created_at, lucro_real, valor_liquido, valor_pago_recebido, valor_a_receber, quantidade_furos, forma_pagamento, valor_bruto, nicho_modulo, pontos(nome, cidade, whatsapp)";

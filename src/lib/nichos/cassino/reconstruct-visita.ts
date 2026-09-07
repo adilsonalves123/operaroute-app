@@ -1,6 +1,7 @@
 import { centesimosToReais } from "./contadores";
 import { isPendenciaOperacao } from "./pendencias";
 import type { CalculoVisitaResult } from "./types";
+import { valorPagoCaixaVisita } from "./pagamento-caixa";
 
 const BAIXA_LINE_REGEX = /Baixa de R\$ ([\d.,]+)/;
 const ABATIDO_LINE_REGEX = /Abatido R\$ ([\d.,]+)/;
@@ -264,8 +265,13 @@ export function reconstructCalculoPositivoFromVisita(
   const valorCliente = Number(visita.valor_cliente ?? 0);
   const valorOperacao = Number(visita.valor_operacao ?? 0);
   const valorOperacaoEfetivo = Number(visita.valor_operacao_efetivo ?? 0);
-  const valorPago = Number(visita.valor_pago ?? 0);
-  const restanteVisita = Math.max(0, Number(visita.restante ?? 0));
+  const valorPago = valorPagoCaixaVisita(visita);
+  const restanteVisita = Math.max(
+    0,
+    valorPago <= 0.009 && Number(visita.restante ?? 0) <= 0.009
+      ? 0
+      : Number(visita.restante ?? 0)
+  );
   const descontoRaw = Number(visita.desconto ?? 0);
   const descontoRecebimento = Number(visita.desconto_recebimento ?? 0);
   const debitoAbatido = Number(visita.debito_abatido ?? 0);
@@ -357,7 +363,12 @@ export function reconstructCalculoPositivoFromVisita(
     0,
     valorOperacaoEfetivo - haverCompensadoReais - valorPagoParaOperacao
   );
-  const restanteReais = Math.max(0, restanteVisita);
+  const restanteReais = Math.max(
+    0,
+    restanteVisita > 0.009
+      ? restanteVisita
+      : Math.max(0, totalACobrar - valorPago)
+  );
   const haverReais = Math.max(0, valorPago - totalACobrar);
 
   return {

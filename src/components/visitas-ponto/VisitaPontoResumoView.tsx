@@ -50,7 +50,10 @@ export function VisitaPontoResumoView({
     ? totaisComprovanteVisita(resumo, { dividaSaldo })
     : null;
   const visitaQuitada =
-    Boolean(totaisFinal) && (totaisFinal?.restante ?? 1) <= 0.009;
+    Boolean(totaisFinal) &&
+    (totaisFinal?.restante ?? 1) <= 0.009 &&
+    ((totaisFinal?.valorPago ?? 0) > 0.009 ||
+      (totaisFinal?.haverAbatido ?? 0) > 0.009);
 
   if (!emRascunho && totaisFinal) {
     return (

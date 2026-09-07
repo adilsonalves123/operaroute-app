@@ -778,8 +778,12 @@ export function NovaColetaCassinoForm() {
       observacao: p.descricao,
     }));
 
-    const valorPix = parseMoneyInput(pagamento.valor_pix);
-    const valorDinheiro = parseMoneyInput(pagamento.valor_dinheiro);
+    const valorPix = receberAgora || editandoVisitaFinalizada
+      ? parseMoneyInput(pagamento.valor_pix)
+      : 0;
+    const valorDinheiro = receberAgora || editandoVisitaFinalizada
+      ? parseMoneyInput(pagamento.valor_dinheiro)
+      : 0;
     const adiantamentoPix = parseMoneyInput(pagamento.adiantamento_pix);
     const adiantamentoDinheiro = parseMoneyInput(pagamento.adiantamento_dinheiro);
     const adiantamentoTotal = adiantamentoPix + adiantamentoDinheiro;
@@ -824,7 +828,7 @@ export function NovaColetaCassinoForm() {
     } catch {
       return null;
     }
-  }, [leituras, pendencias, havers, pendenciasOperacao, incluirPendenciaOperacao, abaterPendenciaOperacaoNegativa, descontarHaverNaCobranca, pagarHaverRestante, abaterNegativoAnterior, ponto, pagamento, errosMaquinas, comissaoPercentual]);
+  }, [leituras, pendencias, havers, pendenciasOperacao, incluirPendenciaOperacao, abaterPendenciaOperacaoNegativa, descontarHaverNaCobranca, pagarHaverRestante, abaterNegativoAnterior, ponto, pagamento, errosMaquinas, comissaoPercentual, receberAgora, editandoVisitaFinalizada]);
 
   const adiantamentoDetalhe = useMemo(() => {
     const pixReais = parseMoneyInput(pagamento.adiantamento_pix);
@@ -1107,8 +1111,14 @@ export function NovaColetaCassinoForm() {
           recebimento_dinheiro_do_caixa:
             recebimentoDinheiroReais > 0.009 || pagamento.recebimento_dinheiro_do_caixa,
           desconto_recebimento: pagamento.desconto_recebimento,
-          valor_pix: finalizarVisitaSemPagar ? "" : pagamento.valor_pix,
-          valor_dinheiro: finalizarVisitaSemPagar ? "" : pagamento.valor_dinheiro,
+          valor_pix:
+            finalizarVisitaSemPagar || !(receberAgora || editandoVisitaFinalizada)
+              ? ""
+              : pagamento.valor_pix,
+          valor_dinheiro:
+            finalizarVisitaSemPagar || !(receberAgora || editandoVisitaFinalizada)
+              ? ""
+              : pagamento.valor_dinheiro,
           incluir_pendencia_operacao: incluirPendenciaOperacao,
           abater_pendencia_operacao_negativa: abaterPendenciaOperacaoNegativa,
           incluir_usar_haver_negativo: false,

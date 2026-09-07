@@ -61,12 +61,8 @@ export function ColetasClient({
 
       <ul className="divide-y divide-[var(--at-border-soft)]">
         {coletas.map((coleta) => {
-          const isUrsinho = coleta.nicho_modulo === NICHO_MODULO_URSINHO;
-          const isDiversao = coleta.nicho_modulo === NICHO_MODULO_DIVERSAO;
-          const isBolinha = coleta.nicho_modulo === NICHO_MODULO_BOLINHA;
           const valor = Number(coleta.lucro_real ?? coleta.valor_liquido ?? 0);
-          const saldoPendente =
-            isUrsinho || isDiversao || isBolinha ? saldoPendenteColeta(coleta) : 0;
+          const saldoPendente = saldoPendenteColeta(coleta);
           const pendente = saldoPendente > 0.009;
           const formaPagamento = labelFormaPagamento(
             coleta.forma_pagamento,

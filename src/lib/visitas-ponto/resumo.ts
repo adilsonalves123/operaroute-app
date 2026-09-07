@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { centesimosToReais } from "@/lib/nichos/cassino/contadores";
+import { valorPagoCaixaVisita } from "@/lib/nichos/cassino/pagamento-caixa";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
 import type {
   CassinoNegativoResumo,
@@ -19,6 +20,8 @@ type CassinoVisitaRow = {
   valor_operacao: number | null;
   valor_cliente: number | null;
   valor_pago: number | null;
+  valor_pix?: number | null;
+  valor_dinheiro?: number | null;
   restante: number | null;
   /** Negativo recuperado pelo lucro nesta visita (vira dívida se o cliente não pagar). */
   debito_abatido?: number | null;
@@ -37,11 +40,16 @@ type CassinoVisitaRow = {
 export function cobravelCassinoVisita(
   v: Pick<
     CassinoVisitaRow,
-    "valor_operacao_efetivo" | "valor_pago" | "restante" | "debito_abatido"
+    | "valor_operacao_efetivo"
+    | "valor_pago"
+    | "valor_pix"
+    | "valor_dinheiro"
+    | "restante"
+    | "debito_abatido"
   >
 ): number {
   const efetivo = Number(v.valor_operacao_efetivo ?? 0);
-  const pago = Number(v.valor_pago ?? 0);
+  const pago = valorPagoCaixaVisita(v);
   const restanteCampo = Number(v.restante ?? NaN);
   const debitoAbatido = Math.max(0, Number(v.debito_abatido ?? 0));
 
@@ -59,6 +67,18 @@ export function cobravelCassinoVisita(
   }
 
   const restante = round2(Math.max(0, restanteCampo));
+  const pagoGravado = Math.max(0, Number(v.valor_pago ?? 0));
+  const temSplit = v.valor_pix !== undefined || v.valor_dinheiro !== undefined;
+  // Checkout multi-nicho sem caixa gravava valor_pago = cobrável e restante = 0.
+  if (
+    temSplit &&
+    pago <= 0.009 &&
+    pagoGravado > 0.009 &&
+    restante <= 0.009 &&
+    porOperacao > 0.009
+  ) {
+    return porOperacao;
+  }
 
   // Haver / parcial: restante ≤ operação efetiva − pago
   if (restante <= porOperacao + 0.009) {
@@ -130,7 +150,7 @@ function buildCassinoNicho(
     }
 
     const cobravel = cobravelCassinoVisita(v);
-    const recebido = Number(v.valor_pago ?? 0);
+    const recebido = valorPagoCaixaVisita(v);
     totalCobravel += cobravel;
     totalRecebido += recebido;
     totalLucro += lucro;
@@ -428,7 +448,7 @@ export async function fetchVisitaPontoResumo(
       ? supabase
           .from("visitas")
           .select(
-            "id, saldo_negativo, valor_operacao_efetivo, valor_operacao, valor_cliente, valor_pago, restante, debito_abatido, total_lucro_centavos, created_at"
+            "id, saldo_negativo, valor_operacao_efetivo, valor_operacao, valor_cliente, valor_pago, valor_pix, valor_dinheiro, restante, debito_abatido, total_lucro_centavos, created_at"
           )
           .in("id", cassinoVisitaIds)
       : Promise.resolve({ data: [] as CassinoVisitaRow[] }),

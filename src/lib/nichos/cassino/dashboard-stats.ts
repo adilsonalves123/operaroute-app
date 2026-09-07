@@ -99,7 +99,7 @@ export async function getCassinoDashboardStats(
     supabase
       .from("visitas")
       .select(
-        "id, ponto_id, total_lucro_centavos, valor_operacao, valor_operacao_efetivo, valor_pago, restante, debito_abatido, saldo_negativo, desconto, adiantamento_pix, adiantamento_dinheiro, created_at, pontos(nome)"
+        "id, ponto_id, total_lucro_centavos, valor_operacao, valor_operacao_efetivo, valor_pago, valor_pix, valor_dinheiro, restante, debito_abatido, saldo_negativo, desconto, adiantamento_pix, adiantamento_dinheiro, created_at, pontos(nome)"
       )
       .eq("empresa_id", empresaId)
       .gte("created_at", lookbackISO)

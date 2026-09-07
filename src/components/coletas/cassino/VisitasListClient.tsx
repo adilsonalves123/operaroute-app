@@ -4,7 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatCurrency, formatDateTime, cn } from "@/lib/utils";
-import { centesimosToReais } from "@/lib/nichos/cassino";
+import { centesimosToReais, valorPagoCaixaVisita } from "@/lib/nichos/cassino";
 import { Package, ChevronRight } from "lucide-react";
 
 export interface VisitaListItem {
@@ -13,6 +13,8 @@ export interface VisitaListItem {
   total_lucro_centavos: number;
   valor_operacao_efetivo: number;
   valor_pago: number;
+  valor_pix?: number | null;
+  valor_dinheiro?: number | null;
   restante: number;
   saldo_negativo: boolean;
   forma_pagamento: string;
@@ -68,7 +70,14 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
       <ul className="space-y-2.5">
         {visitas.map((visita) => {
           const negativo = visita.saldo_negativo;
-          const pendente = visita.restante > 0.009 && !negativo;
+          const pago = valorPagoCaixaVisita(visita);
+          const efetivo = Number(visita.valor_operacao_efetivo ?? 0);
+          const restanteAberto = Number(visita.restante ?? 0);
+          const aReceber =
+            restanteAberto > 0.009 && pago > 0.009
+              ? restanteAberto
+              : Math.max(0, efetivo - pago, restanteAberto);
+          const pendente = aReceber > 0.009 && !negativo;
           const lucro = centesimosToReais(Number(visita.total_lucro_centavos));
 
           return (
@@ -104,7 +113,9 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
                       {visita.maquinas_count} máquina
                       {visita.maquinas_count !== 1 ? "s" : ""}
                       <span className="mx-1.5 text-at-soft">·</span>
-                      <span className="capitalize">{visita.forma_pagamento}</span>
+                      <span className="capitalize">
+                        {pago > 0.009 ? visita.forma_pagamento : "sem recebimento"}
+                      </span>
                       {visita.pontos?.cidade ? (
                         <>
                           <span className="mx-1.5 text-at-soft">·</span>
@@ -127,9 +138,14 @@ export function VisitasListClient({ visitas }: { visitas: VisitaListItem[] }) {
                       <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-at-muted">
                         lucro bruto
                       </p>
-                      {!negativo && (
+                      {!negativo && pago > 0.009 && (
                         <p className="mt-1.5 text-xs font-medium tabular-nums text-cyan-300">
-                          cobrado {formatCurrency(Number(visita.valor_pago))}
+                          cobrado {formatCurrency(pago)}
+                        </p>
+                      )}
+                      {!negativo && pendente && (
+                        <p className="mt-1.5 text-xs font-medium tabular-nums text-amber-300">
+                          a receber {formatCurrency(aReceber)}
                         </p>
                       )}
                     </div>

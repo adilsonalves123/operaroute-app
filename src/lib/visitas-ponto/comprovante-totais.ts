@@ -92,6 +92,12 @@ export function totaisComprovanteVisita(
     const restante = round2(
       checkout.restante ?? Math.max(0, totalACobrar - valorPago)
     );
+    const restanteEfetivo =
+      haverAbatido > 0.009 && valorPago <= 0.009
+        ? 0
+        : valorPago <= 0.009
+          ? round2(Math.max(restante, Math.max(0, totalACobrar - valorPago)))
+          : restante;
 
     return {
       subtotal,
@@ -100,10 +106,7 @@ export function totaisComprovanteVisita(
           ? round2(Math.max(0, totalBruto - haverAbatido))
           : totalACobrar,
       valorPago,
-      restante:
-        haverAbatido > 0.009 && valorPago <= 0.009
-          ? 0
-          : restante,
+      restante: restanteEfetivo,
       desconto: round2(checkout.desconto ?? desconto),
       dividaSaldo: round2(dividaSaldo),
       haverAbatido,

@@ -76,7 +76,7 @@ export async function reconciliarPendenciasCobraveisPonto(
     const { data: visita } = await supabase
       .from("visitas")
       .select(
-        "id, valor_operacao_efetivo, valor_operacao, valor_pago, restante, debito_abatido, saldo_negativo"
+        "id, valor_operacao_efetivo, valor_operacao, valor_pago, valor_pix, valor_dinheiro, restante, debito_abatido, saldo_negativo"
       )
       .eq("id", p.visita_id)
       .eq("empresa_id", empresaId)
@@ -127,7 +127,7 @@ export async function reconciliarPendenciasCobraveisPonto(
     const { data: visitasAbertas } = await supabase
       .from("visitas")
       .select(
-        "id, valor_operacao_efetivo, valor_operacao, valor_pago, restante, debito_abatido, saldo_negativo"
+        "id, valor_operacao_efetivo, valor_operacao, valor_pago, valor_pix, valor_dinheiro, restante, debito_abatido, saldo_negativo"
       )
       .eq("empresa_id", empresaId)
       .eq("ponto_id", pontoId)

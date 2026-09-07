@@ -116,7 +116,10 @@ export function WhatsappVisitaPontoPanel({
   const valorCobrar = totais.restante;
   const mostrarCobrar = valorCobrar > 0.009;
   const visitaQuitada =
-    !previa && resumo.status === "finalizada" && !mostrarCobrar;
+    !previa &&
+    resumo.status === "finalizada" &&
+    !mostrarCobrar &&
+    ((totais.valorPago ?? 0) > 0.009 || (totais.haverAbatido ?? 0) > 0.009);
 
   if (resumo.itensConcluidos === 0) return null;
 
