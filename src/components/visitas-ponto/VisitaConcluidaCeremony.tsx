@@ -13,6 +13,7 @@ import {
   ToyBrick,
 } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
+import { useAppTheme } from "@/components/layout/AppTheme";
 import type { VisitaPontoNicho, VisitaPontoResumo } from "@/lib/visitas-ponto/types";
 import type { TotaisComprovanteVisita } from "@/lib/visitas-ponto/comprovante-totais";
 import { valorNichoComprovante } from "@/lib/visitas-ponto/comprovante-totais";
@@ -66,6 +67,8 @@ export function VisitaConcluidaCeremony({
   nomeOperacao = null,
   comissaoStaffPercentual,
 }: Props) {
+  const { theme } = useAppTheme();
+  const isLight = theme === "light";
   const [ativo, setAtivo] = useState(false);
   /** Só no cliente — evita mismatch SSR/UTC na hidratação. */
   const [dataStr, setDataStr] = useState("");
@@ -91,9 +94,13 @@ export function VisitaConcluidaCeremony({
         <div
           className="absolute inset-0"
           style={{
-            background: quitada
-              ? "radial-gradient(ellipse 90% 55% at 50% -12%, rgba(196,165,116,0.18), transparent 58%), radial-gradient(ellipse 50% 40% at 100% 30%, rgba(196,165,116,0.06), transparent 50%), radial-gradient(ellipse 40% 35% at 0% 80%, rgba(80,60,30,0.14), transparent 45%), linear-gradient(180deg, #05070c 0%, #0a0c12 48%, #06080e 100%)"
-              : "radial-gradient(ellipse 90% 55% at 50% -12%, rgba(251,191,36,0.12), transparent 58%), radial-gradient(ellipse 40% 35% at 0% 80%, rgba(120,70,20,0.12), transparent 45%), linear-gradient(180deg, #05070c 0%, #0a0c12 48%, #06080e 100%)",
+            background: isLight
+              ? quitada
+                ? "radial-gradient(ellipse 90% 55% at 50% -12%, rgba(196,165,116,0.16), transparent 58%), linear-gradient(180deg, var(--background) 0%, var(--background-secondary) 52%, var(--background) 100%)"
+                : "radial-gradient(ellipse 90% 55% at 50% -12%, rgba(251,191,36,0.1), transparent 58%), linear-gradient(180deg, var(--background) 0%, var(--background-secondary) 52%, var(--background) 100%)"
+              : quitada
+                ? "radial-gradient(ellipse 90% 55% at 50% -12%, rgba(196,165,116,0.18), transparent 58%), radial-gradient(ellipse 50% 40% at 100% 30%, rgba(196,165,116,0.06), transparent 50%), radial-gradient(ellipse 40% 35% at 0% 80%, rgba(80,60,30,0.14), transparent 45%), linear-gradient(180deg, #05070c 0%, #0a0c12 48%, #06080e 100%)"
+                : "radial-gradient(ellipse 90% 55% at 50% -12%, rgba(251,191,36,0.12), transparent 58%), radial-gradient(ellipse 40% 35% at 0% 80%, rgba(120,70,20,0.12), transparent 45%), linear-gradient(180deg, #05070c 0%, #0a0c12 48%, #06080e 100%)",
           }}
         />
       </div>
@@ -156,7 +163,7 @@ export function VisitaConcluidaCeremony({
           <div className="mt-5 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
             <p className="text-at-muted">
               Recebido{" "}
-              <span className="tabular-nums text-[#e8dcc8]">{formatCurrency(totais.valorPago)}</span>
+              <span className="tabular-nums text-at-primary">{formatCurrency(totais.valorPago)}</span>
             </p>
             <span className="hidden text-at-soft sm:inline" aria-hidden>
               ·
@@ -164,7 +171,7 @@ export function VisitaConcluidaCeremony({
             {quitada ? (
               <p className="font-medium tracking-wide text-at-link">Quitado</p>
             ) : (
-              <p className="tabular-nums text-amber-300/90">
+              <p className="tabular-nums text-at-link">
                 Em aberto {formatCurrency(totais.restante)}
               </p>
             )}
@@ -193,14 +200,14 @@ export function VisitaConcluidaCeremony({
         >
           <Link
             href={`/pontos/${resumo.pontoId}`}
-            className="group inline-flex items-center gap-2 bg-[#c4a574] px-6 py-3.5 text-[13px] font-semibold tracking-wide text-[#1a140c] transition hover:bg-[#d4b888]"
+            className="group inline-flex items-center gap-2 bg-[var(--at-link)] px-6 py-3.5 text-[13px] font-semibold tracking-wide text-[var(--at-tab-active-text)] transition hover:opacity-90"
           >
-            Voltar ao ponto
+            Concluir
             <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
           <Link
             href="/coletas"
-            className="text-[13px] text-at-muted underline-offset-4 transition hover:text-[#e8dcc8] hover:underline"
+            className="text-[13px] text-at-muted underline-offset-4 transition hover:text-at-primary hover:underline"
           >
             Nova coleta
           </Link>
@@ -294,7 +301,7 @@ export function VisitaConcluidaCeremony({
                         )}
                       </div>
                       <p
-                        className="shrink-0 text-right text-2xl tabular-nums text-[#e8dcc8]"
+                        className="shrink-0 text-right text-2xl tabular-nums text-at-primary"
                         style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
                       >
                         {formatCurrency(valor)}
@@ -308,8 +315,8 @@ export function VisitaConcluidaCeremony({
         )}
 
         {resumo.cassinoNegativo && (
-          <section className="mt-10 border-l-2 border-red-400/40 pl-4">
-            <p className="text-sm text-red-300/90">Cassino negativo — fora da cobrança</p>
+          <section className="mt-10 border-l-2 border-at-money-neg/40 pl-4">
+            <p className="text-sm text-at-money-neg">Cassino negativo — fora da cobrança</p>
             <p className="mt-1 text-sm text-at-muted">
               Operação {formatCurrency(resumo.cassinoNegativo.valorOperacao)} · lucro{" "}
               {formatCurrency(resumo.cassinoNegativo.lucroReais)}

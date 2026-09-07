@@ -213,7 +213,8 @@ export function VisitaPontoHub({
             </Link>
           </div>
           <p className="text-center text-xs text-at-muted">
-            Pix, dinheiro, desconto e WhatsApp abrem na tela Cobrar.
+            Pix e dinheiro na tela Cobrar. Sem receber agora: abra Cobrar e toque em Concluir —
+            o saldo fica em aberto.
           </p>
 
           {resumo.cassinoNegativo && (

@@ -848,10 +848,17 @@ export async function finalizarVisitaPontoComCheckout(
       .single();
     pendenciaId = pend?.id ?? null;
 
-    await absorverSaldosItensVisitaNaConsolidada(supabase, {
-      empresaId: opts.empresaId,
-      visitaPontoId: opts.visitaPontoId,
-    });
+    // Só absorve saldos nos itens quando houve crédito real (pix/dinheiro/haver).
+    // Sem recebimento: a dívida fica na consolidada E nos itens — cassino não vira "quitado"
+    // e os outros nichos continuam visíveis no histórico.
+    const recebeuNestaCobranca =
+      calculo.valorPago > 0.009 || calculo.haverAbatido > 0.009;
+    if (recebeuNestaCobranca && calculo.aplicadoVisita > 0.009) {
+      await absorverSaldosItensVisitaNaConsolidada(supabase, {
+        empresaId: opts.empresaId,
+        visitaPontoId: opts.visitaPontoId,
+      });
+    }
   }
 
   if (calculo.haver > 0.009) {

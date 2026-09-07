@@ -14,6 +14,7 @@ import type { VisitaPontoResumo } from "@/lib/visitas-ponto/types";
 import { RelatorioVisitaPontoView } from "@/components/visitas-ponto/RelatorioVisitaPontoView";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { formatCurrency } from "@/lib/utils";
+import { useAppTheme } from "@/components/layout/AppTheme";
 import {
   abrirWhatsAppComComprovante,
   criarLinkComprovante,
@@ -50,6 +51,8 @@ export function WhatsappVisitaPontoPanel({
   descontarHaver = false,
   variante = "default",
 }: Props) {
+  const { theme } = useAppTheme();
+  const isLight = theme === "light";
   const reportRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(false);
   const [expandido, setExpandido] = useState(false);
@@ -279,7 +282,7 @@ export function WhatsappVisitaPontoPanel({
               onClick={handleCobrar}
               className={
                 ceremony
-                  ? "inline-flex items-center justify-center gap-2 bg-[#c4a574] px-5 py-3 text-[13px] font-semibold tracking-wide text-[#1a140c] transition hover:bg-[#d4b888] disabled:opacity-50"
+                  ? "inline-flex items-center justify-center gap-2 bg-[var(--at-link)] px-5 py-3 text-[13px] font-semibold tracking-wide text-[var(--at-tab-active-text)] transition hover:opacity-90 disabled:opacity-50"
                   : "inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-50"
               }
             >
@@ -293,7 +296,9 @@ export function WhatsappVisitaPontoPanel({
             onClick={handleWhatsApp}
             className={
               ceremony
-                ? "inline-flex items-center justify-center gap-2 border border-[#c4a574]/35 bg-[#c4a574]/10 px-5 py-3 text-[13px] font-medium text-[#e8dcc8] transition hover:bg-[#c4a574]/15 disabled:opacity-50"
+                ? isLight
+                  ? "inline-flex items-center justify-center gap-2 border border-at bg-at-card-soft px-5 py-3 text-[13px] font-medium text-at-primary transition hover:bg-at-track disabled:opacity-50"
+                  : "inline-flex items-center justify-center gap-2 border border-[#c4a574]/35 bg-[#c4a574]/10 px-5 py-3 text-[13px] font-medium text-[#e8dcc8] transition hover:bg-[#c4a574]/15 disabled:opacity-50"
                 : visitaQuitada
                   ? "inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-emerald-400 disabled:opacity-50"
                   : "inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-2.5 text-sm font-medium text-green-400 hover:bg-green-500/20 disabled:opacity-50"
@@ -316,7 +321,7 @@ export function WhatsappVisitaPontoPanel({
             onClick={handleDownloadPng}
             className={
               ceremony
-                ? "inline-flex items-center justify-center gap-2 px-3 py-3 text-[13px] text-at-muted underline-offset-4 transition hover:text-[#e8dcc8] hover:underline disabled:opacity-50"
+                ? "inline-flex items-center justify-center gap-2 px-3 py-3 text-[13px] text-at-muted underline-offset-4 transition hover:text-at-primary hover:underline disabled:opacity-50"
                 : "inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 px-4 py-2.5 text-sm text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
             }
           >
@@ -325,14 +330,16 @@ export function WhatsappVisitaPontoPanel({
           </button>
         </div>
 
-        {erro && <p className="text-xs text-amber-300/90">{erro}</p>}
+        {erro && <p className="text-xs text-at-link">{erro}</p>}
 
         <button
           type="button"
           onClick={() => setExpandido(true)}
           className={
             ceremony
-              ? "group relative w-full overflow-x-auto border border-[#c4a574]/20 bg-black/40 p-3 text-left transition hover:border-[#c4a574]/45"
+              ? isLight
+                ? "group relative w-full overflow-x-auto border border-at bg-at-card-soft p-3 text-left transition hover:border-at-link/35"
+                : "group relative w-full overflow-x-auto border border-[#c4a574]/20 bg-black/40 p-3 text-left transition hover:border-[#c4a574]/45"
               : "group relative w-full overflow-x-auto rounded-lg border border-slate-800 bg-slate-950/50 p-2 text-left transition hover:border-primary-neon/40"
           }
           aria-label="Ampliar relatório"
@@ -341,7 +348,9 @@ export function WhatsappVisitaPontoPanel({
           <span
             className={
               ceremony
-                ? "pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/75 px-2.5 py-1.5 text-[11px] tracking-wide text-[#e8dcc8] opacity-90 sm:opacity-0 sm:transition sm:group-hover:opacity-100"
+                ? isLight
+                  ? "pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 bg-at-card px-2.5 py-1.5 text-[11px] tracking-wide text-at-primary opacity-90 shadow-sm sm:opacity-0 sm:transition sm:group-hover:opacity-100"
+                  : "pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/75 px-2.5 py-1.5 text-[11px] tracking-wide text-[#e8dcc8] opacity-90 sm:opacity-0 sm:transition sm:group-hover:opacity-100"
                 : "pointer-events-none absolute bottom-3 right-3 flex items-center gap-1.5 rounded-md bg-black/70 px-2.5 py-1.5 text-xs text-white opacity-90 shadow-lg sm:opacity-0 sm:transition sm:group-hover:opacity-100"
             }
           >

@@ -68,6 +68,8 @@ export function VisitaPontoCheckoutForm({
 
   const temHaver = haverSaldo > 0.009;
   const temDivida = dividaSaldo > 0.009;
+  const semRecebimentoAgora =
+    calculo.valorPago <= 0.009 && calculo.haverAbatido <= 0.009;
   const dividaRestante = incluirDivida
     ? Math.max(0, dividaSaldo - calculo.aplicadoDivida)
     : dividaSaldo;
@@ -95,7 +97,7 @@ export function VisitaPontoCheckoutForm({
         return;
       }
       concluido = true;
-      router.push(`/visitas-ponto/${resumo.visitaPontoId}/resumo`);
+      router.replace(`/visitas-ponto/${resumo.visitaPontoId}/resumo`);
       router.refresh();
     } catch (err) {
       setErro(err instanceof Error ? err.message : "Erro de conexão.");
@@ -340,8 +342,14 @@ export function VisitaPontoCheckoutForm({
         )}
       >
         {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-        Confirmar recebimento
+        {semRecebimentoAgora ? "Concluir" : "Confirmar recebimento"}
       </button>
+      {semRecebimentoAgora && (
+        <p className="text-center text-xs text-at-muted">
+          Sem pix/dinheiro: a visita fecha e o valor fica em aberto — nenhum nicho é marcado
+          como quitado.
+        </p>
+      )}
 
       {erro && <p className="text-sm text-red-400">{erro}</p>}
     </section>
