@@ -20,6 +20,7 @@ import {
 } from "@/lib/nichos/cassino/reconstruct-visita";
 import { snapshotFromRelatorioCassino } from "@/lib/comprovantes/types";
 import type { RelatorioColetaData } from "@/lib/nichos/cassino/relatorio";
+import { redirectSeVisaoRestrita } from "@/lib/visao/bloquear-historico";
 
 export default async function VisitaDetailPage({
   params,
@@ -27,6 +28,7 @@ export default async function VisitaDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  await redirectSeVisaoRestrita("/coletas");
   const profile = await getProfile();
   if (!profile?.empresa_id) notFound();
 
@@ -273,7 +275,7 @@ export default async function VisitaDetailPage({
         <div className="flex items-start gap-3">
           <Link
             href="/coletas"
-            className="mt-0.5 rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 text-at-muted transition hover:border-slate-600 hover:bg-slate-800 hover:text-white"
+            className="mt-0.5 rounded-xl border border-slate-800 bg-slate-900/60 p-2.5 text-slate-400 transition hover:border-slate-600 hover:bg-slate-800 hover:text-white"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
@@ -292,9 +294,9 @@ export default async function VisitaDetailPage({
                   <AlertBadge variant="success">Quitada</AlertBadge>
                 )}
             </div>
-            <p className="mt-1 text-sm text-at-muted">{formatDateTime(visita.created_at)}</p>
+            <p className="mt-1 text-sm text-slate-400">{formatDateTime(visita.created_at)}</p>
             {visita.latitude && visita.longitude && (
-              <p className="mt-1 inline-flex items-center gap-1 text-xs text-at-muted">
+              <p className="mt-1 inline-flex items-center gap-1 text-xs text-slate-500">
                 <MapPin className="h-3.5 w-3.5" />
                 GPS registrado
               </p>
@@ -333,7 +335,7 @@ export default async function VisitaDetailPage({
             <a
               href={visita.relatorio_url}
               download
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-at-primary/90 hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
             >
               <Download className="h-4 w-4" />
               Relatório PNG
@@ -342,7 +344,7 @@ export default async function VisitaDetailPage({
           {dadosImpressao ? (
             <ImprimirColetaCassinoButton
               data={dadosImpressao}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-at-primary/90 hover:bg-slate-800"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
             />
           ) : null}
           <ExcluirVisitaButton visitaId={id} />
@@ -364,17 +366,17 @@ export default async function VisitaDetailPage({
       ) : (
         <div className="glass-card grid gap-3 p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <p className="text-at-muted">Lucro da visita</p>
+            <p className="text-slate-500">Lucro da visita</p>
             <p className="font-semibold text-white">
               {formatContador(Number(visita.total_lucro_centavos))}
             </p>
           </div>
           <div>
-            <p className="text-at-muted">Comissão cliente</p>
+            <p className="text-slate-500">Comissão cliente</p>
             <p className="font-semibold text-amber-400">{formatCurrency(valorCliente)}</p>
           </div>
           <div>
-            <p className="text-at-muted">Valor operação</p>
+            <p className="text-slate-500">Valor operação</p>
             <p className="font-semibold text-green-400">{formatCurrency(valorOperacao)}</p>
           </div>
         </div>
@@ -384,7 +386,7 @@ export default async function VisitaDetailPage({
         <div className="flex items-end justify-between gap-3 px-0.5">
           <h2 className="text-sm font-semibold text-white">
             Máquinas{" "}
-            <span className="font-normal text-at-muted">({coletas?.length ?? 0})</span>
+            <span className="font-normal text-slate-500">({coletas?.length ?? 0})</span>
           </h2>
         </div>
         {(coletas ?? []).map((c) => {
@@ -398,7 +400,7 @@ export default async function VisitaDetailPage({
                 <div>
                   <p className="font-medium text-white">{eq?.nome ?? "Máquina"}</p>
                   {eq?.tipo && (
-                    <p className="text-xs text-at-muted">
+                    <p className="text-xs text-slate-500">
                       {getEquipamentoTipoLabel(eq.tipo as never)}
                     </p>
                   )}
@@ -409,12 +411,12 @@ export default async function VisitaDetailPage({
               </div>
               <div className="grid gap-3 p-4 sm:grid-cols-2">
                 <div className="rounded-xl bg-slate-900/70 p-3 text-xs space-y-1.5">
-                  <p className="font-medium text-at-primary/85">Entrada</p>
-                  <div className="flex justify-between gap-2 text-at-muted">
+                  <p className="font-medium text-slate-300">Entrada</p>
+                  <div className="flex justify-between gap-2 text-slate-400">
                     <span>Anterior</span>
                     <span className="tabular-nums">{formatContador(Number(c.entrada_anterior ?? 0))}</span>
                   </div>
-                  <div className="flex justify-between gap-2 text-at-muted">
+                  <div className="flex justify-between gap-2 text-slate-400">
                     <span>Atual</span>
                     <span className="tabular-nums">{formatContador(Number(c.entrada_atual ?? 0))}</span>
                   </div>
@@ -426,12 +428,12 @@ export default async function VisitaDetailPage({
                   </div>
                 </div>
                 <div className="rounded-xl bg-slate-900/70 p-3 text-xs space-y-1.5">
-                  <p className="font-medium text-at-primary/85">Saída</p>
-                  <div className="flex justify-between gap-2 text-at-muted">
+                  <p className="font-medium text-slate-300">Saída</p>
+                  <div className="flex justify-between gap-2 text-slate-400">
                     <span>Anterior</span>
                     <span className="tabular-nums">{formatContador(Number(c.saida_anterior ?? 0))}</span>
                   </div>
-                  <div className="flex justify-between gap-2 text-at-muted">
+                  <div className="flex justify-between gap-2 text-slate-400">
                     <span>Atual</span>
                     <span className="tabular-nums">{formatContador(Number(c.saida_atual ?? 0))}</span>
                   </div>
@@ -459,10 +461,10 @@ export default async function VisitaDetailPage({
 
       {visita.observacao && (
         <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-at-muted">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
             Observação
           </p>
-          <p className="mt-1 text-sm text-at-primary/85">{visita.observacao}</p>
+          <p className="mt-1 text-sm text-slate-300">{visita.observacao}</p>
         </div>
       )}
     </div>

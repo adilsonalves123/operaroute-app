@@ -9,6 +9,10 @@ export async function GET(request: Request) {
 
   const { profile, supabase, empresa } = auth;
 
+  if (auth.acesso.visaoRestrita) {
+    return NextResponse.json({ error: "Menu Rascunho desativado." }, { status: 403 });
+  }
+
   if (!empresa?.rascunho_dashboard_ativo) {
     return NextResponse.json({ error: "Menu Rascunho desativado." }, { status: 403 });
   }

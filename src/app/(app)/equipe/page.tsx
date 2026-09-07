@@ -23,17 +23,37 @@ export default async function EquipePage() {
     );
   }
 
-  const [empresa, { data: membros }] = await Promise.all([
+  const [empresa, membrosRes, pontosRes, visaoRes] = await Promise.all([
     getEmpresa(profile.empresa_id),
     supabase
       .from("equipe")
       .select("*")
       .eq("empresa_id", profile.empresa_id)
       .order("nome"),
+    supabase
+      .from("pontos")
+      .select("id, nome")
+      .eq("empresa_id", profile.empresa_id)
+      .order("nome"),
+    supabase
+      .from("visao_pontos")
+      .select("equipe_id, ponto_id")
+      .eq("empresa_id", profile.empresa_id),
   ]);
+
+  const membros = membrosRes.data;
+  const pontos = pontosRes.data;
+  const visaoRows = visaoRes.error ? [] : visaoRes.data;
 
   const limiteUsuarios = getLimiteUsuariosEquipe(empresa?.limite_usuarios);
   const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
+
+  const visaoPontosPorEquipe: Record<string, string[]> = {};
+  for (const row of visaoRows ?? []) {
+    const list = visaoPontosPorEquipe[row.equipe_id] ?? [];
+    list.push(row.ponto_id);
+    visaoPontosPorEquipe[row.equipe_id] = list;
+  }
 
   return (
     <div className="mx-auto max-w-5xl space-y-8 pt-6 sm:pt-10">
@@ -46,6 +66,8 @@ export default async function EquipePage() {
         limiteUsuarios={limiteUsuarios}
         loginDisponivel={isAdminConfigured()}
         podeGerenciarEquipe={acesso.podeGerenciarEquipe}
+        pontos={pontos ?? []}
+        visaoPontosPorEquipe={visaoPontosPorEquipe}
       />
     </div>
   );

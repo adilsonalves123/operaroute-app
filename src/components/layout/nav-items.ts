@@ -29,7 +29,14 @@ export type AppNavItem = {
   modulo: PermissaoModulo;
 };
 
-/** Menu principal — igual ao painel dono (lista contínua). */
+export const APP_NAV_HREF_OCULTOS_VISAO = new Set([
+  "/rascunho",
+  "/analise",
+  "/financeiro",
+  "/equipe",
+  "/auditoria",
+  "/relatorios",
+]);
 export const APP_NAV_MAIN: AppNavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, modulo: "dashboard" },
   { href: "/rascunho", label: "Rascunho", icon: ClipboardPen, modulo: "dashboard" },
@@ -76,7 +83,7 @@ export const MOBILE_TAB_ITEMS: AppNavItem[] = [
   { href: "/dashboard", label: "Início", icon: Home, modulo: "dashboard" },
   { href: "/pontos", label: "Pontos", icon: MapPin, modulo: "pontos" },
   { href: "/coletas", label: "Coleta", icon: Package, modulo: "coletas" },
-  { href: "/analise", label: "Análise", icon: LineChart, modulo: "analise" },
+  { href: "/financeiro", label: "Financeiro", icon: Wallet, modulo: "financeiro" },
 ];
 
 export const SIDEBAR_COLLAPSED_KEY = "or_sidebar_collapsed";

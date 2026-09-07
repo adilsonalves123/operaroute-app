@@ -4,6 +4,7 @@ import { fetchInteligenciaOperacional } from "@/lib/analise/inteligencia-operaci
 import { resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
 import { AnalisePremiumClient } from "@/components/analise/AnalisePremiumClient";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
+import { redirectSeVisaoRestrita } from "@/lib/visao/bloquear-historico";
 import {
   fetchComissaoStaffPeriodo,
   filtrarComissaoStaffParaViewer,
@@ -14,6 +15,7 @@ export default async function AnalisePage({
 }: {
   searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
 }) {
+  await redirectSeVisaoRestrita("/dashboard");
   const { periodo: periodoRaw, de, ate } = await searchParams;
   const periodo = resolverPeriodoAnalise({ periodo: periodoRaw, de, ate });
   const profile = await getProfile();
@@ -86,17 +88,11 @@ export default async function AnalisePage({
 
   if (!data) {
     return (
-      <p className="px-4 py-16 text-center text-sm text-at-muted">
+      <p className="px-4 py-16 text-center text-sm text-slate-500">
         Faça login para ver a análise.
       </p>
     );
   }
 
-  return (
-    <AnalisePremiumClient
-      data={data}
-      periodo={periodo}
-      comissaoStaff={comissaoStaff}
-    />
-  );
+  return <AnalisePremiumClient data={data} periodo={periodo} comissaoStaff={comissaoStaff} />;
 }

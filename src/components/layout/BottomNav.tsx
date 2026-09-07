@@ -5,15 +5,19 @@ import { usePathname } from "next/navigation";
 import { MoreHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { usePermissoes } from "@/components/layout/PermissoesProvider";
-import { MOBILE_TAB_ITEMS } from "@/components/layout/nav-items";
+import { APP_NAV_HREF_OCULTOS_VISAO, MOBILE_TAB_ITEMS } from "@/components/layout/nav-items";
 import { useMobileMenu } from "@/components/layout/MobileMenuContext";
 
 export function BottomNav() {
   const pathname = usePathname();
-  const { podeVer } = usePermissoes();
+  const { podeVer, visaoRestrita } = usePermissoes();
   const { open, openMenu, closeMenu } = useMobileMenu();
 
-  const visiveis = MOBILE_TAB_ITEMS.filter((item) => podeVer(item.modulo));
+  const visiveis = MOBILE_TAB_ITEMS.filter((item) => {
+    if (!podeVer(item.modulo)) return false;
+    if (visaoRestrita && APP_NAV_HREF_OCULTOS_VISAO.has(item.href)) return false;
+    return true;
+  });
 
   return (
     <nav className="app-shell-bottom-nav lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t backdrop-blur-xl pb-[env(safe-area-inset-bottom,0px)]">

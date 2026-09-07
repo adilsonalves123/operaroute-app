@@ -4,6 +4,8 @@ import { EquipamentosGlobalClient } from "@/components/equipamentos/Equipamentos
 import { fetchChamadosAbertosResumo } from "@/lib/chamados/fetch-resumo";
 import type { ChamadoResumoEquipamento } from "@/lib/chamados/types";
 import type { Equipamento } from "@/lib/types/database";
+import { getAcessoUsuario } from "@/lib/equipe/acesso";
+import { resolverVisaoOperador } from "@/lib/visao/resolver";
 
 export default async function EquipamentosPage() {
   const profile = await getProfile();
@@ -11,8 +13,14 @@ export default async function EquipamentosPage() {
   const empresaId = profile?.empresa_id;
   const empresa = empresaId ? await getEmpresa(empresaId) : null;
   const nichosAtivos = resolveNichosAtivos(empresa?.nichos_ativos, empresa?.nicho);
+  const acessoEq = empresaId
+    ? await getAcessoUsuario(supabase, profile!, empresa?.owner_id)
+    : null;
+  const visaoEq = acessoEq
+    ? await resolverVisaoOperador(supabase, acessoEq)
+    : { restrita: false, pontoIds: [] as string[], equipeId: null };
 
-  const [{ data: equipamentos, error }, { data: pontos }, chamadosResumo] = empresaId
+  const [{ data: equipamentosRaw, error }, { data: pontosRaw }, chamadosResumo] = empresaId
     ? await Promise.all([
         supabase
           .from("equipamentos")
@@ -28,6 +36,15 @@ export default async function EquipamentosPage() {
         fetchChamadosAbertosResumo(empresaId),
       ])
     : [{ data: [], error: null }, { data: [] }, { total: 0, porPonto: new Map(), lista: [] }];
+
+  const pontos = visaoEq.restrita
+    ? (pontosRaw ?? []).filter((p) => visaoEq.pontoIds.includes(p.id))
+    : pontosRaw ?? [];
+  const equipamentos = visaoEq.restrita
+    ? ((equipamentosRaw ?? []) as { ponto_id?: string | null }[]).filter(
+        (e) => e.ponto_id && visaoEq.pontoIds.includes(e.ponto_id)
+      )
+    : equipamentosRaw ?? [];
 
   const chamadosAbertos: ChamadoResumoEquipamento[] = chamadosResumo.lista
     .filter((c) => c.equipamento_id)

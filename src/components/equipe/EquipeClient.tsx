@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -29,6 +29,7 @@ import {
   type PermissoesResolvidas,
 } from "@/lib/equipe/permissions";
 import { PermissoesMatrix } from "@/components/equipe/PermissoesMatrix";
+import { VisaoEquipePainel } from "@/components/equipe/VisaoEquipePainel";
 import {
   canAddMembroEquipe,
   contarMembrosEquipeAtivos,
@@ -49,6 +50,8 @@ type FormState = {
   criar_login: boolean;
   modo_login: ModoLogin;
   senha: string;
+  visao_restrita: boolean;
+  visao_ponto_ids: string[];
 };
 
 const emptyForm = (): FormState => ({
@@ -61,18 +64,20 @@ const emptyForm = (): FormState => ({
   criar_login: true,
   modo_login: "senha",
   senha: "",
+  visao_restrita: false,
+  visao_ponto_ids: [],
 });
 
 function roleBadgeClass(role: UserRole) {
   switch (role) {
     case "admin":
-      return "border border-at bg-at-card-soft text-at-primary";
+      return "bg-purple-500/20 text-purple-300 border-purple-500/30";
     case "gerente":
-      return "border border-[#c4a574]/30 bg-[#c4a574]/08 text-at-link";
+      return "bg-cyan-500/20 text-cyan-300 border-cyan-500/30";
     case "operador":
-      return "border border-at bg-at-card-soft text-at-muted";
+      return "bg-amber-500/20 text-amber-300 border-amber-500/30";
     default:
-      return "border border-at bg-at-card-soft text-at-muted";
+      return "bg-slate-500/20 text-slate-300 border-slate-500/30";
   }
 }
 
@@ -165,11 +170,15 @@ export function EquipeClient({
   limiteUsuarios,
   loginDisponivel,
   podeGerenciarEquipe,
+  pontos = [],
+  visaoPontosPorEquipe = {},
 }: {
   membros: EquipeMember[];
   limiteUsuarios: number;
   loginDisponivel: boolean;
   podeGerenciarEquipe: boolean;
+  pontos?: { id: string; nome: string }[];
+  visaoPontosPorEquipe?: Record<string, string[]>;
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
@@ -188,6 +197,13 @@ export function EquipeClient({
     permissoesPadraoRole("operador")
   );
   const [permissoesPersonalizado, setPermissoesPersonalizado] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function scrollToForm() {
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
 
   const colaboradoresAtivos = contarMembrosEquipeAtivos(initialMembros);
   const limiteColaboradores = getLimiteUsuariosEquipe(limiteUsuarios);
@@ -201,6 +217,7 @@ export function EquipeClient({
     setShowForm(true);
     setMsg("");
     setSucessoLogin(null);
+    scrollToForm();
   }
 
   function openEdit(membro: EquipeMember) {
@@ -215,6 +232,8 @@ export function EquipeClient({
       criar_login: false,
       modo_login: "senha",
       senha: "",
+      visao_restrita: Boolean(membro.visao_restrita),
+      visao_ponto_ids: visaoPontosPorEquipe[membro.id] ?? [],
     });
     const overrides = normalizarOverrides(membro.permissoes);
     setPermissoesMatriz(mesclarPermissoes(membro.role, overrides));
@@ -222,6 +241,7 @@ export function EquipeClient({
     setShowForm(true);
     setMsg("");
     setSucessoLogin(null);
+    scrollToForm();
   }
 
   function openLoginModal(membro: EquipeMember) {
@@ -306,6 +326,8 @@ export function EquipeClient({
       payload.permissoes = permissoesPersonalizado
         ? overridesDaMatriz(form.role, permissoesMatriz)
         : null;
+      payload.visao_restrita = form.visao_restrita;
+      payload.visao_ponto_ids = form.visao_restrita ? form.visao_ponto_ids : [];
     }
 
     if (!editingId && form.criar_login && loginDisponivel) {
@@ -465,13 +487,13 @@ export function EquipeClient({
       )}
 
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-at-muted">
-          <Users className="h-4 w-4 shrink-0 text-at-link" />
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-400">
+          <Users className="h-4 w-4 text-primary-neon shrink-0" />
           <span>
             {colaboradoresAtivos} de {limiteColaboradores} colaboradores
           </span>
-          <span className="text-at-soft hidden sm:inline">·</span>
-          <span className="text-xs text-at-muted">Admin não conta no limite</span>
+          <span className="text-slate-600 hidden sm:inline">·</span>
+          <span className="text-xs text-slate-500">Admin não conta no limite</span>
           {!podeAdicionar && (
             <Link href="/planos" className="text-primary-neon hover:underline text-xs">
               Upgrade
@@ -488,6 +510,14 @@ export function EquipeClient({
           Adicionar membro
         </button>
       </div>
+
+      {podeGerenciarEquipe && (
+        <VisaoEquipePainel
+          membros={initialMembros}
+          pontos={pontos}
+          visaoPontosPorEquipe={visaoPontosPorEquipe}
+        />
+      )}
 
       {!podeAdicionar && (
         <p className="text-sm text-amber-400/90">
@@ -568,7 +598,7 @@ export function EquipeClient({
             <button
               type="button"
               onClick={closeLoginModal}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85"
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300"
             >
               Cancelar
             </button>
@@ -577,10 +607,73 @@ export function EquipeClient({
       )}
 
       {showForm && podeGerenciarEquipe && (
-        <form onSubmit={handleSubmit} className="glass-card p-5 space-y-4">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="glass-card scroll-mt-20 space-y-4 p-5"
+        >
           <h2 className="text-lg font-semibold text-white">
             {editingId ? "Editar membro" : "Novo membro da equipe"}
           </h2>
+
+          {!editingAdmin && (
+            <div className="space-y-3 rounded-lg border border-amber-400/40 bg-amber-500/10 p-4">
+              <label className="flex cursor-pointer items-start gap-3 text-sm text-slate-200">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4"
+                  checked={form.visao_restrita}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, visao_restrita: e.target.checked }))
+                  }
+                />
+                <span>
+                  <span className="font-semibold text-amber-100">Painel restrito</span>
+                  <span className="mt-1 block text-xs leading-relaxed text-slate-300">
+                    Marque para ele coletar normal, mas no painel e em Coletas ver só os
+                    pontos e os valores que você publicar no Rascunho.
+                  </span>
+                </span>
+              </label>
+              {form.visao_restrita && (
+                <div className="space-y-2 border-t border-amber-400/20 pt-3">
+                  <p className="text-xs font-medium text-slate-300">
+                    Pontos que ele pode ver
+                  </p>
+                  {pontos.length === 0 ? (
+                    <p className="text-xs text-slate-500">Cadastre pontos primeiro.</p>
+                  ) : (
+                    <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-lg border border-white/10 bg-slate-950/40 p-2">
+                      {pontos.map((p) => {
+                        const checked = form.visao_ponto_ids.includes(p.id);
+                        return (
+                          <label
+                            key={p.id}
+                            className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                const on = e.target.checked;
+                                setForm((f) => ({
+                                  ...f,
+                                  visao_ponto_ids: on
+                                    ? [...f.visao_ponto_ids, p.id]
+                                    : f.visao_ponto_ids.filter((id) => id !== p.id),
+                                }));
+                              }}
+                            />
+                            {p.nome}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <FormInput
@@ -665,8 +758,8 @@ export function EquipeClient({
           )}
 
           {!editingId && loginDisponivel && !editingAdmin && (
-            <div className="rounded-lg border border-at-soft bg-slate-900/50 p-4 space-y-3">
-              <label className="flex items-center gap-2 text-sm text-at-primary/85 cursor-pointer">
+            <div className="rounded-lg border border-white/10 bg-slate-900/50 p-4 space-y-3">
+              <label className="flex items-center gap-2 text-sm text-slate-300 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={form.criar_login}
@@ -749,7 +842,7 @@ export function EquipeClient({
             <button
               type="button"
               onClick={closeForm}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800"
+              className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
             >
               Cancelar
             </button>
@@ -784,13 +877,16 @@ export function EquipeClient({
                     <RoleIcon role={membro.role} />
                     {labelRole(membro.role)}
                   </span>
+                  {membro.visao_restrita && (
+                    <p className="mt-1 text-[11px] text-amber-300/80">Painel restrito</p>
+                  )}
                 </div>
                 {membro.role !== "admin" && podeGerenciarEquipe ? (
                   <div className="flex shrink-0 gap-1">
                     <button
                       type="button"
                       onClick={() => openEdit(membro)}
-                      className="rounded-lg p-2 text-at-muted hover:bg-slate-800 hover:text-white"
+                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
                       title="Editar"
                     >
                       <Pencil className="h-4 w-4" />
@@ -798,7 +894,7 @@ export function EquipeClient({
                     <button
                       type="button"
                       onClick={() => handleDelete(membro)}
-                      className="rounded-lg p-2 text-at-muted hover:bg-red-500/10 hover:text-red-400"
+                      className="rounded-lg p-2 text-slate-400 hover:bg-red-500/10 hover:text-red-400"
                       title="Remover"
                     >
                       <Trash2 className="h-4 w-4" />
@@ -808,7 +904,7 @@ export function EquipeClient({
                   <button
                     type="button"
                     onClick={() => openEdit(membro)}
-                    className="rounded-lg p-2 text-at-muted hover:bg-slate-800 hover:text-white shrink-0"
+                    className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white shrink-0"
                     title="Editar contato"
                   >
                     <Pencil className="h-4 w-4" />
@@ -816,29 +912,29 @@ export function EquipeClient({
                 ) : null}
               </div>
 
-              <div className="space-y-1.5 text-sm text-at-muted">
+              <div className="space-y-1.5 text-sm text-slate-400">
                 {membro.whatsapp && (
                   <p className="flex items-center gap-2 truncate">
-                    <MessageCircle className="h-3.5 w-3.5 shrink-0 text-at-muted" />
+                    <MessageCircle className="h-3.5 w-3.5 shrink-0 text-green-400" />
                     {membro.whatsapp}
                   </p>
                 )}
                 {membro.email && (
                   <p className="flex items-center gap-2 truncate">
-                    <Mail className="h-3.5 w-3.5 shrink-0 text-at-muted" />
+                    <Mail className="h-3.5 w-3.5 shrink-0 text-slate-500" />
                     {membro.email}
                   </p>
                 )}
                 {membro.comissao_percentual > 0 && (
-                  <p className="text-xs text-at-muted">
+                  <p className="text-xs text-slate-500">
                     Comissão: {membro.comissao_percentual}% após brindes
                   </p>
                 )}
                 {membro.status === "inativo" && (
-                  <p className="text-xs text-at-muted">Inativo</p>
+                  <p className="text-xs text-slate-500">Inativo</p>
                 )}
                 {membro.user_id ? (
-                  <p className="text-xs text-at-money-pos flex items-center gap-1">
+                  <p className="text-xs text-green-400/90 flex items-center gap-1">
                     <LogIn className="h-3 w-3" />
                     Login ativo
                   </p>
@@ -863,7 +959,7 @@ export function EquipeClient({
                     <button
                       type="button"
                       onClick={() => handleRedefinirSenha(membro)}
-                      className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-at-muted hover:text-white"
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs text-slate-400 hover:text-white"
                     >
                       <KeyRound className="h-3.5 w-3.5" />
                       Nova senha

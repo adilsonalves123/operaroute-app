@@ -110,20 +110,39 @@ export async function PATCH(
     updates.permissoes = normalizarOverrides(body.permissoes);
   }
 
-  if (Object.keys(updates).length === 0) {
+  if (body.visao_restrita !== undefined && existente.role !== "admin") {
+    updates.visao_restrita = Boolean(body.visao_restrita);
+  }
+
+  const temPontosVisao = Array.isArray(body.visao_ponto_ids);
+
+  if (Object.keys(updates).length === 0 && !temPontosVisao) {
     return NextResponse.json({ success: true });
   }
 
-  const { data, error } = await supabase
-    .from("equipe")
-    .update(updates)
-    .eq("id", id)
-    .eq("empresa_id", profile.empresa_id)
-    .select("*")
-    .maybeSingle();
+  let data = existente;
+  if (Object.keys(updates).length > 0) {
+    const upd = await supabase
+      .from("equipe")
+      .update(updates)
+      .eq("id", id)
+      .eq("empresa_id", profile.empresa_id)
+      .select("*")
+      .maybeSingle();
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (upd.error) {
+      return NextResponse.json({ error: upd.error.message }, { status: 500 });
+    }
+    data = upd.data ?? existente;
+  }
+
+  if (temPontosVisao && existente.role !== "admin") {
+    const { substituirVisaoPontos } = await import("@/lib/visao/sync-pontos");
+    const ids = (body.visao_ponto_ids as unknown[]).map((x) => String(x));
+    const sync = await substituirVisaoPontos(supabase, profile.empresa_id, id, ids);
+    if (sync.error) {
+      return NextResponse.json({ error: sync.error }, { status: 500 });
+    }
   }
 
   const { registrarAuditoria } = await import("@/lib/auditoria/registrar");

@@ -13,6 +13,9 @@ type PermissoesContextValue = {
   comissaoPercentual: number;
   /** Menu Rascunho ligado nas configurações da empresa. */
   rascunhoDashboardAtivo: boolean;
+  /** Operador vê só pontos/valores publicados; coleta real continua. */
+  visaoRestrita: boolean;
+  visaoPontoIds: string[];
   pode: (modulo: PermissaoModulo, acao: PermissaoAcao) => boolean;
   podeVer: (modulo: PermissaoModulo) => boolean;
 };
@@ -25,6 +28,8 @@ export function PermissoesProvider({
   permissoes,
   comissaoPercentual = 0,
   rascunhoDashboardAtivo = false,
+  visaoRestrita = false,
+  visaoPontoIds = [],
   children,
 }: {
   role: UserRole;
@@ -32,6 +37,8 @@ export function PermissoesProvider({
   permissoes: PermissoesResolvidas;
   comissaoPercentual?: number;
   rascunhoDashboardAtivo?: boolean;
+  visaoRestrita?: boolean;
+  visaoPontoIds?: string[];
   children: React.ReactNode;
 }) {
   const value: PermissoesContextValue = {
@@ -40,6 +47,8 @@ export function PermissoesProvider({
     permissoes,
     comissaoPercentual,
     rascunhoDashboardAtivo,
+    visaoRestrita,
+    visaoPontoIds,
     pode: (modulo, acao) => isOwner || pode(permissoes, modulo, acao),
     podeVer: (modulo) => isOwner || podeVer(permissoes, modulo),
   };

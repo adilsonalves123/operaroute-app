@@ -8,6 +8,7 @@ import {
 import { periodoLabels, type PeriodoFiltro } from "@/lib/financeiro/periodo";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { redirectSeVisaoRestrita } from "@/lib/visao/bloquear-historico";
 
 const periodos: PeriodoFiltro[] = ["hoje", "7d", "30d", "tudo"];
 
@@ -16,6 +17,7 @@ export default async function NegativosRecuperadosPage({
 }: {
   searchParams: Promise<{ periodo?: string }>;
 }) {
+  await redirectSeVisaoRestrita("/dashboard");
   const { periodo: periodoRaw } = await searchParams;
   const periodo = parsePeriodoFiltro(periodoRaw);
   const profile = await getProfile();

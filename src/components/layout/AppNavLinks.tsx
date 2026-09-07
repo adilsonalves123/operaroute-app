@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePermissoes } from "@/components/layout/PermissoesProvider";
 import {
   APP_NAV_BOTTOM,
+  APP_NAV_HREF_OCULTOS_VISAO,
   APP_NAV_MAIN,
   type AppNavItem,
 } from "@/components/layout/nav-items";
@@ -72,10 +73,10 @@ function NavLinkRow({
           "bg-orange-500/25 font-medium text-orange-200 ring-1 ring-orange-500/40",
         !temAlertas &&
           active &&
-          "bg-[var(--shell-nav-active-bg)] font-medium text-[var(--shell-nav-active-text)]",
+          "bg-[#c4a574]/15 font-medium text-[#e8d5b0]",
         !temAlertas &&
           !active &&
-          "text-[var(--shell-text-muted)] hover:bg-[var(--shell-hover)] hover:text-[var(--shell-text)]"
+          "text-slate-400 hover:bg-white/[0.04] hover:text-[#f4efe6]"
       )}
     >
       <span className="relative shrink-0">
@@ -114,13 +115,14 @@ export function AppNavLinks({
   onNavigate,
 }: Props) {
   const pathname = usePathname();
-  const { podeVer, rascunhoDashboardAtivo } = usePermissoes();
+  const { podeVer, rascunhoDashboardAtivo, visaoRestrita } = usePermissoes();
   const badgeCount =
     chamadosAbertos > 99 ? "99+" : chamadosAbertos > 0 ? String(chamadosAbertos) : null;
 
   const main = APP_NAV_MAIN.filter((item) => {
     if (!podeVer(item.modulo)) return false;
     if (item.href === "/rascunho" && !rascunhoDashboardAtivo) return false;
+    if (visaoRestrita && APP_NAV_HREF_OCULTOS_VISAO.has(item.href)) return false;
     return true;
   });
   const bottom = APP_NAV_BOTTOM.filter((item) => podeVer(item.modulo));
@@ -149,7 +151,7 @@ export function AppNavLinks({
       {bottom.length > 0 && (
         <div
           className={cn(
-            "mt-6 space-y-0.5 border-t border-at pt-4",
+            "mt-6 space-y-0.5 border-t border-white/[0.06] pt-4",
             collapsed && "mt-4 pt-3"
           )}
         >

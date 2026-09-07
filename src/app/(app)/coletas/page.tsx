@@ -19,6 +19,10 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { getNichoConfig } from "@/lib/nicho";
 import type { Coleta, Nicho } from "@/lib/types/database";
+import { getAcessoUsuario } from "@/lib/equipe/acesso";
+import { resolverVisaoOperador } from "@/lib/visao/resolver";
+import { listarValoresVisao } from "@/lib/visao/valores";
+import { VisaoColetasClient } from "@/components/visao/VisaoColetasClient";
 
 type ColetaUrsinhoListItem = Coleta & {
   pontos?: { nome: string; cidade: string | null } | null;
@@ -80,6 +84,29 @@ export default async function ColetasPage() {
         <h1 className="mt-3 text-[clamp(2rem,4vw,2.75rem)] leading-[0.95] tracking-tight text-at-primary" style={{ fontFamily: "Georgia, serif" }}>{config.labels.coleta}s</h1>
         <ColetasClient coletas={[]} />
       </div>
+    );
+  }
+
+  const acessoColetas = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
+  const visaoColetas = await resolverVisaoOperador(supabase, acessoColetas);
+  if (visaoColetas.restrita && visaoColetas.equipeId) {
+    const valores = await listarValoresVisao(
+      supabase,
+      profile.empresa_id,
+      visaoColetas.equipeId,
+      { limit: 80 }
+    );
+    const novaHref = isCassino ? "/coletas/nova/cassino" : "/coletas/nova";
+    return (
+      <VisaoColetasClient
+        novaHref={novaHref}
+        linhas={valores.map((v) => ({
+          ponto_id: v.ponto_id,
+          pontoNome: v.pontos?.nome ?? "Ponto",
+          data: v.data,
+          valor_exibido: Number(v.valor_exibido),
+        }))}
+      />
     );
   }
 

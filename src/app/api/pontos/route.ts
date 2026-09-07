@@ -47,11 +47,25 @@ export async function GET(request: Request) {
   const excluir = searchParams.get("excluir");
 
   const supabase = await createClient();
-  let query = supabase
-    .from("pontos")
-    .select("id, nome, cidade, status")
-    .eq("empresa_id", empresaId)
-    .order("nome");
+  const profile = await getProfile();
+  const empresa = profile?.empresa_id ? await getEmpresa(profile.empresa_id) : null;
+  const { getAcessoUsuario } = await import("@/lib/equipe/acesso");
+  const { aplicarFiltroIdsPontos, resolverVisaoOperador } = await import("@/lib/visao/resolver");
+  const acesso = profile?.empresa_id
+    ? await getAcessoUsuario(supabase, profile, empresa?.owner_id)
+    : null;
+  const visao = acesso
+    ? await resolverVisaoOperador(supabase, acesso)
+    : { restrita: false, equipeId: null, pontoIds: [] as string[] };
+
+  let query = aplicarFiltroIdsPontos(
+    supabase
+      .from("pontos")
+      .select("id, nome, cidade, status")
+      .eq("empresa_id", empresaId)
+      .order("nome"),
+    visao
+  );
 
   if (excluir) {
     query = query.neq("id", excluir);
@@ -281,16 +295,6 @@ export async function POST(request: Request) {
     }
     insertedEquipamentos = insertedEquipamentosData ?? [];
   }
-
-  const { pushPontoCriado } = await import("@/lib/push/events");
-  pushPontoCriado({
-    empresaId,
-    autorUserId: profile?.user_id ?? auth.profile.user_id,
-    autorNome: profile?.nome ?? auth.profile.nome,
-    pontoNome: ponto.nome,
-    pontoId: ponto.id,
-    equipamentos: (insertedEquipamentos ?? []).length,
-  });
 
   const { auditarAcao } = await import("@/lib/auditoria/auditar");
   if (profile) {

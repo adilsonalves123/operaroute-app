@@ -19,6 +19,9 @@ import { resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
 import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
 import { fetchChamadosAbertosResumo } from "@/lib/chamados/fetch-resumo";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
+import { resolverVisaoOperador } from "@/lib/visao/resolver";
+import { valoresVisaoDoDia } from "@/lib/visao/valores";
+import { VisaoPainelClient } from "@/components/visao/VisaoPainelClient";
 import {
   fetchComissaoStaffPeriodo,
   filtrarComissaoStaffParaViewer,
@@ -394,6 +397,35 @@ export default async function DashboardPage({
   const configDiversao = getNichoConfig("diversao");
   const configBolinha = getNichoConfig("bolinha");
   const configConsignado = getNichoConfig("consignado");
+
+  if (profile?.empresa_id) {
+    const acessoVisao = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
+    const visao = await resolverVisaoOperador(supabase, acessoVisao);
+    if (visao.restrita && visao.equipeId) {
+      const dataISO = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "America/Sao_Paulo",
+      }).format(new Date());
+      const [{ data: pontosRaw }, valores] = await Promise.all([
+        visao.pontoIds.length
+          ? supabase
+              .from("pontos")
+              .select("id, nome")
+              .eq("empresa_id", profile.empresa_id)
+              .in("id", visao.pontoIds)
+              .order("nome")
+          : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
+        valoresVisaoDoDia(supabase, profile.empresa_id, visao.equipeId, dataISO),
+      ]);
+      const valorPorPonto = new Map(valores.map((v) => [v.ponto_id, Number(v.valor_exibido)]));
+      const pontosPainel = (pontosRaw ?? []).map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        valor: valorPorPonto.has(p.id) ? (valorPorPonto.get(p.id) as number) : null,
+      }));
+      const total = pontosPainel.reduce((s, p) => s + (p.valor ?? 0), 0);
+      return <VisaoPainelClient dataISO={dataISO} pontos={pontosPainel} total={total} />;
+    }
+  }
 
   const emptyPulso = computePulsoOperacao([]);
   const emptyCartela = computeCartelaPontos([], []);

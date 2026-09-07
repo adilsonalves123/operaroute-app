@@ -23,6 +23,9 @@ export type AcessoUsuario = {
   podeGerenciarRotas: boolean;
   /** % da Equipe sobre lucro após brindes (0 se dono sem linha em equipe). */
   comissaoPercentual: number;
+  equipeId: string | null;
+  /** Painel/lista/pontos só com o que o admin publicar. Coleta real continua. */
+  visaoRestrita: boolean;
 };
 
 export const getAcessoUsuario = cache(async (
@@ -35,7 +38,7 @@ export const getAcessoUsuario = cache(async (
   if (isOwner) {
     const { data: membroOwner } = await supabase
       .from("equipe")
-      .select("comissao_percentual")
+      .select("id, comissao_percentual")
       .eq("empresa_id", profile.empresa_id!)
       .eq("user_id", profile.user_id)
       .maybeSingle();
@@ -48,15 +51,29 @@ export const getAcessoUsuario = cache(async (
       podeGerenciarEquipe: true,
       podeGerenciarRotas: true,
       comissaoPercentual: clampComissaoPercentual(membroOwner?.comissao_percentual),
+      equipeId: membroOwner?.id ?? null,
+      visaoRestrita: false,
     };
   }
 
-  const { data: membro } = await supabase
+  let { data: membro, error: membroErr } = await supabase
     .from("equipe")
-    .select("role, permissoes, comissao_percentual")
+    .select("id, role, permissoes, comissao_percentual, visao_restrita")
     .eq("empresa_id", profile.empresa_id!)
     .eq("user_id", profile.user_id)
     .maybeSingle();
+
+  if (membroErr) {
+    const fallback = await supabase
+      .from("equipe")
+      .select("id, role, permissoes, comissao_percentual")
+      .eq("empresa_id", profile.empresa_id!)
+      .eq("user_id", profile.user_id)
+      .maybeSingle();
+    membro = fallback.data
+      ? { ...fallback.data, visao_restrita: false }
+      : null;
+  }
 
   const role = (membro?.role as UserRole) ?? "operador";
   const overrides = normalizarOverrides(membro?.permissoes);
@@ -70,6 +87,8 @@ export const getAcessoUsuario = cache(async (
     podeGerenciarEquipe: role === "admin" || role === "gerente",
     podeGerenciarRotas: podeGerenciarRotasPermissao(permissoes),
     comissaoPercentual: clampComissaoPercentual(membro?.comissao_percentual),
+    equipeId: membro?.id ?? null,
+    visaoRestrita: Boolean(membro?.visao_restrita),
   };
 });
 

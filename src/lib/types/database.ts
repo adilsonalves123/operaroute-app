@@ -350,6 +350,7 @@ export interface EquipeMember {
   comissao_percentual: number;
   status: string;
   permissoes?: Record<string, unknown> | null;
+  visao_restrita?: boolean;
   created_at: string;
 }
 

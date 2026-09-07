@@ -19,9 +19,11 @@ import { PontoHistoricoVisitas } from "@/components/pontos/PontoHistoricoVisitas
 import { PontoComissaoPeriodo } from "@/components/pontos/PontoComissaoPeriodo";
 import { resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
 import { fetchComissaoPontoPeriodo } from "@/lib/pontos/comissao-periodo";
+import { getAcessoUsuario } from "@/lib/equipe/acesso";
+import { resolverVisaoOperador } from "@/lib/visao/resolver";
 
 const ACAO_COLETA =
-  "inline-flex w-full items-center justify-center rounded-full border border-at-soft bg-at-card-soft px-4 py-3 text-[13px] font-medium text-white transition hover:border-white/25 hover:bg-white/[0.08]";
+  "inline-flex w-full items-center justify-center rounded-full border border-white/15 bg-white/[0.04] px-4 py-3 text-[13px] font-medium text-white transition hover:border-white/25 hover:bg-white/[0.08]";
 
 export default async function PontoDetailPage({
   params,
@@ -64,6 +66,17 @@ export default async function PontoDetailPage({
     .single();
 
   if (!ponto) notFound();
+
+  const acessoPonto = profile?.empresa_id
+    ? await getAcessoUsuario(supabase, profile, empresa?.owner_id)
+    : null;
+  const visaoPonto = acessoPonto
+    ? await resolverVisaoOperador(supabase, acessoPonto)
+    : { restrita: false, pontoIds: [] as string[], equipeId: null };
+  if (visaoPonto.restrita && !visaoPonto.pontoIds.includes(id)) {
+    notFound();
+  }
+  const ocultarHistoricoReal = visaoPonto.restrita;
 
   const [
     kitAtivoResult,
@@ -384,7 +397,7 @@ export default async function PontoDetailPage({
         cidade={ponto.cidade}
         fotoUrl={ponto.foto_url}
         whatsapp={ponto.whatsapp}
-        totalCobravel={totalCobravel}
+        totalCobravel={ocultarHistoricoReal ? 0 : totalCobravel}
         cobrarUrl={cobrarUrl}
         pendenciasCount={pendenciasAbertas?.length ?? 0}
         chamadosCount={chamadosResumo.length}
@@ -397,19 +410,21 @@ export default async function PontoDetailPage({
         }
       />
 
-      <PontoComissaoPeriodo
-        pontoId={id}
-        pontoNome={ponto.nome}
-        whatsapp={ponto.whatsapp}
-        preset={periodoComissao.preset}
-        label={periodoComissao.label}
-        inicioISO={periodoComissao.inicioISO}
-        fimISO={periodoComissao.fimISO}
-        total={comissaoPeriodo.total}
-        porNicho={comissaoPeriodo.porNicho}
-      />
+      {!ocultarHistoricoReal && (
+        <PontoComissaoPeriodo
+          pontoId={id}
+          pontoNome={ponto.nome}
+          whatsapp={ponto.whatsapp}
+          preset={periodoComissao.preset}
+          label={periodoComissao.label}
+          inicioISO={periodoComissao.inicioISO}
+          fimISO={periodoComissao.fimISO}
+          total={comissaoPeriodo.total}
+          porNicho={comissaoPeriodo.porNicho}
+        />
+      )}
 
-      {mostraVisitaUnificada && (
+      {mostraVisitaUnificada && !ocultarHistoricoReal && (
         <PontoHistoricoVisitas visitas={visitasPontoHistorico} />
       )}
 
@@ -551,9 +566,9 @@ export default async function PontoDetailPage({
             </>
           ) : undefined,
           bolinha: (
-            <div className="space-y-2 border-t border-at pt-4">
+            <div className="space-y-2 border-t border-white/[0.06] pt-4">
               <h2 className="text-[15px] text-white">Estoque por máquina</h2>
-              <p className="text-[13px] leading-relaxed text-at-muted">
+              <p className="text-[13px] leading-relaxed text-slate-500">
                 Diferente do fura-fura, bolinha e cápsula guardam o estoque em cada
                 máquina. No cadastro ou em Equipamentos → detalhes → Brindes, escolha o
                 que vai em cada uma.
@@ -561,9 +576,9 @@ export default async function PontoDetailPage({
             </div>
           ),
           consignado: isConsignado ? (
-            <div className="space-y-2 border-t border-at pt-4">
+            <div className="space-y-2 border-t border-white/[0.06] pt-4">
               <h2 className="text-[15px] text-white">Consignado por expositor</h2>
-              <p className="text-[13px] leading-relaxed text-at-muted">
+              <p className="text-[13px] leading-relaxed text-slate-500">
                 Cadastre os produtos em Produtos consignados. Cada expositor guarda o
                 estoque na máquina — no recolhe o sistema calcula o vendido e a comissão.
               </p>
@@ -571,35 +586,36 @@ export default async function PontoDetailPage({
           ) : undefined,
         }}
         historicos={{
-          maquinas_cassino: isCassino ? (
+          maquinas_cassino:
+            isCassino && !ocultarHistoricoReal ? (
             <PontoHistoricoNicho nicho="maquinas_cassino" visitas={visitas} />
           ) : undefined,
-          ursinho: isUrsinho ? (
+          ursinho: isUrsinho && !ocultarHistoricoReal ? (
             <PontoHistoricoNicho nicho="ursinho" coletas={coletasUrsinho} />
           ) : undefined,
-          vending_ursinho: isVending && !isUrsinho ? (
+          vending_ursinho: isVending && !isUrsinho && !ocultarHistoricoReal ? (
             <PontoHistoricoNicho nicho="vending_ursinho" />
           ) : undefined,
-          fura_fura: isFuraFura ? (
+          fura_fura: isFuraFura && !ocultarHistoricoReal ? (
             <PontoHistoricoNicho nicho="fura_fura" coletas={coletasFura} />
           ) : undefined,
-          diversao: (
+          diversao: !ocultarHistoricoReal ? (
             <PontoHistoricoNicho nicho="diversao" coletas={coletasDiversao} />
-          ),
-          bolinha: (
+          ) : undefined,
+          bolinha: !ocultarHistoricoReal ? (
             <PontoHistoricoNicho nicho="bolinha" coletas={coletasBolinha} />
-          ),
-          consignado: isConsignado ? (
+          ) : undefined,
+          consignado: isConsignado && !ocultarHistoricoReal ? (
             <PontoHistoricoNicho nicho="consignado" coletas={coletasConsignado} />
           ) : undefined,
-          outros: isOutros ? (
+          outros: isOutros && !ocultarHistoricoReal ? (
             <PontoHistoricoNicho nicho="outros" coletas={coletas} />
           ) : undefined,
         }}
       />
 
-      <section className="space-y-3 border-t border-at pt-8">
-        <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-at-muted">
+      <section className="space-y-3 border-t border-white/[0.06] pt-8">
+        <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-500">
           Ficha
         </h2>
         <PontoDadosCard
@@ -620,11 +636,11 @@ export default async function PontoDetailPage({
         />
       </section>
 
-      <section className="space-y-3 border-t border-at pt-8">
+      <section className="space-y-3 border-t border-white/[0.06] pt-8">
         <h2 className="text-[11px] font-medium uppercase tracking-[0.18em] text-rose-400/80">
           Zona de perigo
         </h2>
-        <p className="text-[13px] leading-relaxed text-at-muted">
+        <p className="text-[13px] leading-relaxed text-slate-500">
           Excluir remove o ponto, equipamentos e histórico vinculados. Pendências em
           aberto impedem a exclusão.
         </p>

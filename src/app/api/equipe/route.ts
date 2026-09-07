@@ -216,12 +216,22 @@ export async function POST(request: Request) {
       comissao_percentual: comissao,
       status,
       permissoes: normalizarOverrides(body.permissoes),
+      visao_restrita: Boolean(body.visao_restrita) && role !== "admin",
     })
     .select("*")
     .maybeSingle();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  if (data?.id && Array.isArray(body.visao_ponto_ids) && role !== "admin") {
+    const { substituirVisaoPontos } = await import("@/lib/visao/sync-pontos");
+    const ids = (body.visao_ponto_ids as unknown[]).map((x) => String(x));
+    const sync = await substituirVisaoPontos(supabase, profile.empresa_id, data.id, ids);
+    if (sync.error) {
+      return NextResponse.json({ error: sync.error }, { status: 500 });
+    }
   }
 
   const { auditarAcao } = await import("@/lib/auditoria/auditar");
