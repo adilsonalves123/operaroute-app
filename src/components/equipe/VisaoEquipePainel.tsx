@@ -13,13 +13,11 @@ type Props = {
 
 export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Props) {
   const router = useRouter();
-  const operadores = membros.filter((m) => m.role !== "admin" && m.status !== "inativo");
+  const operadores = membros.filter((m) => m.role !== "admin");
   const [abertoId, setAbertoId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState("");
-
-  if (operadores.length === 0) return null;
 
   async function salvar(
     membro: EquipeMember,
@@ -50,7 +48,10 @@ export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Pro
   }
 
   return (
-    <section className="space-y-3 rounded-xl border-2 border-amber-400/50 bg-amber-500/10 p-4">
+    <section
+      id="painel-restrito"
+      className="space-y-3 rounded-xl border-2 border-amber-400/50 bg-amber-500/10 p-4"
+    >
       <div className="flex items-start gap-2">
         <EyeOff className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
         <div>
@@ -65,7 +66,14 @@ export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Pro
       {erro && <p className="text-sm text-red-300">{erro}</p>}
       {ok && <p className="text-sm text-emerald-300">{ok}</p>}
 
-      <ul className="space-y-2">
+      {operadores.length === 0 ? (
+        <p className="rounded-lg border border-amber-400/30 bg-slate-950/40 p-3 text-sm text-slate-200">
+          Ainda não tem operador na equipe. Clique em <strong>Adicionar membro</strong>{" "}
+          acima, crie um login de <strong>operador</strong> e volte aqui para marcar o
+          checkbox.
+        </p>
+      ) : (
+        <ul className="space-y-2">
         {operadores.map((membro) => {
           const restrita = Boolean(membro.visao_restrita);
           const pontoIds = visaoPontosPorEquipe[membro.id] ?? [];
@@ -141,6 +149,7 @@ export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Pro
           );
         })}
       </ul>
+      )}
     </section>
   );
 }

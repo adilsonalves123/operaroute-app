@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, LifeBuoy, Users } from "lucide-react";
+import { ArrowUpRight, EyeOff, LifeBuoy, Users } from "lucide-react";
 import { ConfigPanelBody } from "@/components/configuracoes/configuracoes-ui";
 
 const links = [
@@ -8,6 +8,12 @@ const links = [
     icon: Users,
     title: "Equipe e permissões",
     desc: "Convites, cargos e o que cada colaborador pode acessar",
+  },
+  {
+    href: "/equipe#painel-restrito",
+    icon: EyeOff,
+    title: "Painel restrito",
+    desc: "O que o operador vê no painel e em Coletas (valores publicados)",
   },
   {
     href: "/suporte",
