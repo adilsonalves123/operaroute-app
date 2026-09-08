@@ -498,6 +498,43 @@ html[data-app-theme="light"] .relatorios-retencao-limpar {
   border-color: #be123c !important;
 }
 
+/* Auditoria — selos e metadados claros demais no creme */
+html[data-app-theme="light"] .auditoria-pagina {
+  --at-primary: #141210;
+  --at-muted: #3d3833;
+  --at-soft: #3d3833;
+  --at-link: #5c3d0a;
+  --at-card: #ffffff;
+  --at-card-soft: #f3efe6;
+}
+html[data-app-theme="light"] .auditoria-pagina .text-at-muted,
+html[data-app-theme="light"] .auditoria-pagina .text-at-soft {
+  color: #3d3833 !important;
+}
+html[data-app-theme="light"] .auditoria-pagina .text-at-primary,
+html[data-app-theme="light"] .auditoria-pagina [class*="group-hover:text-white"]:hover {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .auditoria-pagina [class*="text-amber-"] {
+  color: #5c3d0a !important;
+}
+html[data-app-theme="light"] .auditoria-pagina [class*="text-rose-"] {
+  color: #9f1239 !important;
+}
+html[data-app-theme="light"] .auditoria-pagina [class*="text-at-link"] {
+  color: #5c3d0a !important;
+}
+html[data-app-theme="light"] .auditoria-pagina [class*="bg-amber-500"] {
+  background-color: #f0d9a8 !important;
+}
+html[data-app-theme="light"] .auditoria-pagina [class*="bg-rose-500"] {
+  background-color: #fecdd3 !important;
+}
+html[data-app-theme="light"] .auditoria-pagina pre {
+  background: #f3efe6 !important;
+  color: #141210 !important;
+}
+
 /* Só o detalhe da coleta cassino — cards escuros + letra remapeada para preto */
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-slate-9"],
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-gradient-to"] {

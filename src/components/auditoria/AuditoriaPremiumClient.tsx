@@ -136,7 +136,7 @@ export function AuditoriaPremiumClient() {
 
   return (
     <div
-      className={cn(display.variable, sans.variable)}
+      className={cn("auditoria-pagina", display.variable, sans.variable)}
       style={{ fontFamily: "var(--font-audit-sans), system-ui, sans-serif" }}
     >
       <div
