@@ -20,7 +20,7 @@ import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
 import { fetchChamadosAbertosResumo } from "@/lib/chamados/fetch-resumo";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import { resolverVisaoOperador } from "@/lib/visao/resolver";
-import { valoresVisaoDoDia } from "@/lib/visao/valores";
+import { valoresVisaoDoDia, datasComValoresVisao } from "@/lib/visao/valores";
 import { VisaoPainelClient } from "@/components/visao/VisaoPainelClient";
 import {
   fetchComissaoStaffPeriodo,
@@ -356,9 +356,9 @@ function round2(n: number): number {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
+  searchParams: Promise<{ periodo?: string; de?: string; ate?: string; data?: string }>;
 }) {
-  const { periodo: periodoRaw, de, ate } = await searchParams;
+  const { periodo: periodoRaw, de, ate, data: dataVisaoRaw } = await searchParams;
   const periodoRange = resolverPeriodoAnalise({ periodo: periodoRaw, de, ate });
   const periodoFiltro: DashboardPeriodoFiltro = {
     inicioISO: periodoRange.inicioISO,
@@ -402,10 +402,16 @@ export default async function DashboardPage({
     const acessoVisao = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
     const visao = await resolverVisaoOperador(supabase, acessoVisao);
     if (visao.restrita && visao.equipeId) {
-      const dataISO = new Intl.DateTimeFormat("en-CA", {
+      const hojeISO = new Intl.DateTimeFormat("en-CA", {
         timeZone: "America/Sao_Paulo",
       }).format(new Date());
-      const [{ data: pontosRaw }, valores] = await Promise.all([
+      const dataISO =
+        dataVisaoRaw &&
+        /^\d{4}-\d{2}-\d{2}$/.test(dataVisaoRaw) &&
+        dataVisaoRaw <= hojeISO
+          ? dataVisaoRaw
+          : hojeISO;
+      const [{ data: pontosRaw }, valores, datasComValor] = await Promise.all([
         visao.pontoIds.length
           ? supabase
               .from("pontos")
@@ -415,6 +421,7 @@ export default async function DashboardPage({
               .order("nome")
           : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
         valoresVisaoDoDia(supabase, profile.empresa_id, visao.equipeId, dataISO),
+        datasComValoresVisao(supabase, profile.empresa_id, visao.equipeId),
       ]);
       const valorPorPonto = new Map(valores.map((v) => [v.ponto_id, Number(v.valor_exibido)]));
       const pontosPainel = (pontosRaw ?? []).map((p) => ({
@@ -426,9 +433,11 @@ export default async function DashboardPage({
       return (
         <VisaoPainelClient
           dataISO={dataISO}
+          hojeISO={hojeISO}
           pontos={pontosPainel}
           total={total}
           nomeOperador={profile.nome}
+          datasComValor={datasComValor}
         />
       );
     }

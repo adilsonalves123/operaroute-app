@@ -94,7 +94,7 @@ export default async function ColetasPage() {
       supabase,
       profile.empresa_id,
       visaoColetas.equipeId,
-      { limit: 80 }
+      { limit: 400 }
     );
     const novaHref = isCassino ? "/coletas/nova/cassino" : "/coletas/nova";
     return (
