@@ -16,6 +16,10 @@
   --gradient-start: #040508;
   --gradient-end: #080b12;
   --accent-gold: #c4a574;
+  --pendencia-pay-bg: rgba(15, 23, 42, 0.55);
+  --pendencia-pay-border: rgba(148, 163, 184, 0.45);
+  --pendencia-baixa: #f0d48a;
+  --pendencia-baixa-bg: transparent;
 
   /* Shell chrome (sidebar, header, bottom nav) */
   --shell-bg: rgba(10, 14, 22, 0.92);
@@ -67,6 +71,10 @@ html[data-app-theme="light"] {
   --gradient-start: #faf8f4;
   --gradient-end: #ebe6dc;
   --accent-gold: #92662a;
+  --pendencia-pay-bg: #b7ab95;
+  --pendencia-pay-border: #4a453e;
+  --pendencia-baixa: #3d2200;
+  --pendencia-baixa-bg: #e4c98a;
 
   --shell-bg: rgba(250, 248, 244, 0.97);
   --shell-surface-soft: rgba(28, 25, 23, 0.04);
