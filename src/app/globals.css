@@ -473,6 +473,31 @@ html[data-app-theme="light"] .equipe-pagina .text-at-primary {
   color: #141210 !important;
 }
 
+/* Relatórios — card Guardar fotos ainda cinza no claro */
+html[data-app-theme="light"] .relatorios-retencao-painel {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
+  --at-primary: #141210;
+  --at-muted: #3d3833;
+}
+html[data-app-theme="light"] .relatorios-retencao-painel .text-white {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .relatorios-retencao-painel .text-at-muted {
+  color: #3d3833 !important;
+}
+html[data-app-theme="light"] .relatorios-retencao-painel [class*="border-slate-"] {
+  border-color: rgba(28, 25, 23, 0.22) !important;
+}
+html[data-app-theme="light"] .relatorios-retencao-painel [class*="text-primary-neon"] {
+  color: #5c3d0a !important;
+}
+html[data-app-theme="light"] .relatorios-retencao-limpar {
+  color: #9f1239 !important;
+  border-color: #be123c !important;
+}
+
 /* Só o detalhe da coleta cassino — cards escuros + letra remapeada para preto */
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-slate-9"],
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-gradient-to"] {

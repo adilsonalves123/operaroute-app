@@ -90,7 +90,7 @@ export function RelatoriosRetencaoPanel({ retencaoDias, podeGerir }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-at bg-slate-900/40 px-4 py-3 space-y-3">
+    <div className="relatorios-retencao-painel rounded-xl border border-at bg-slate-900/40 px-4 py-3 space-y-3">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-medium text-white">Guardar fotos e relatórios</p>
@@ -103,7 +103,7 @@ export function RelatoriosRetencaoPanel({ retencaoDias, podeGerir }: Props) {
             type="button"
             disabled={cleaning || saving}
             onClick={() => void limparAgora()}
-            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-300 hover:bg-red-500/10 disabled:opacity-50"
+            className="relatorios-retencao-limpar inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-300 hover:bg-red-500/10 disabled:opacity-50"
           >
             {cleaning ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
