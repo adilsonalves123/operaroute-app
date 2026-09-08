@@ -413,6 +413,41 @@ html[data-app-theme="light"] .chamado-novo-modal .chamado-busca-titulo {
   color: #141210 !important;
 }
 
+/* Montar kits — card cinza + letra remapeada para preto */
+html[data-app-theme="light"] .kit-montar-painel {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
+  box-shadow: 0 8px 32px rgba(28, 25, 23, 0.08) !important;
+}
+html[data-app-theme="light"] .kit-montar-painel [class*="border-white"] {
+  border-color: rgba(28, 25, 23, 0.12) !important;
+}
+html[data-app-theme="light"] .kit-montar-painel [class*="border-slate-"] {
+  border-color: rgba(28, 25, 23, 0.16) !important;
+}
+html[data-app-theme="light"] .kit-montar-painel [class*="bg-slate-9"] {
+  background-color: #f3efe6 !important;
+}
+html[data-app-theme="light"] .kit-montar-painel .text-white,
+html[data-app-theme="light"] .kit-montar-painel .text-slate-200,
+html[data-app-theme="light"] .kit-montar-painel .text-slate-400,
+html[data-app-theme="light"] .kit-montar-painel .text-slate-500,
+html[data-app-theme="light"] .kit-montar-painel .text-slate-600 {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .kit-montar-painel [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .kit-montar-painel input,
+html[data-app-theme="light"] .kit-montar-painel textarea {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .kit-montar-painel input::placeholder,
+html[data-app-theme="light"] .kit-montar-painel textarea::placeholder {
+  color: #5c564f !important;
+}
+
 /* Só o detalhe da coleta cassino — cards escuros + letra remapeada para preto */
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-slate-9"],
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-gradient-to"] {
