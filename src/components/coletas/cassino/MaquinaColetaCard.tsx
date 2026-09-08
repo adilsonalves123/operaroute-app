@@ -506,7 +506,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               "rounded-xl border px-3 py-2.5",
               entradaPeriodo < 0
                 ? "border-red-500/40 bg-red-500/10"
-                : "border-white/[0.08] bg-white/[0.03]"
+                : "coleta-box-periodo border-white/[0.08] bg-white/[0.03]"
             )}
           >
             <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
@@ -515,7 +515,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
             <p
               className={cn(
                 "mt-0.5 text-sm font-semibold tabular-nums",
-                entradaPeriodo < 0 ? "text-red-400" : "text-white"
+                entradaPeriodo < 0 ? "text-red-400" : "coleta-tom-periodo text-white"
               )}
             >
               {formatContador(entradaPeriodo)}
@@ -531,7 +531,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               "rounded-xl border px-3 py-2.5",
               saidaPeriodo < 0
                 ? "border-red-500/40 bg-red-500/10"
-                : "border-white/[0.08] bg-white/[0.03]"
+                : "coleta-box-periodo border-white/[0.08] bg-white/[0.03]"
             )}
           >
             <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
@@ -540,7 +540,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
             <p
               className={cn(
                 "mt-0.5 text-sm font-semibold tabular-nums",
-                saidaPeriodo < 0 ? "text-red-400" : "text-white"
+                saidaPeriodo < 0 ? "text-red-400" : "coleta-tom-periodo text-white"
               )}
             >
               {formatContador(saidaPeriodo)}
@@ -555,12 +555,12 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       ) : null}
 
       {lucro !== null && !erroEntrada && !erroSaida ? (
-        <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-sm">
+        <div className="coleta-box-lucro flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-sm">
           <span className="text-slate-400">Lucro da máquina</span>
           <span
             className={cn(
               "font-semibold tabular-nums",
-              lucro >= 0 ? "text-white" : "text-red-400"
+              lucro >= 0 ? "coleta-tom-lucro text-white" : "text-red-400"
             )}
           >
             {formatCurrency(centesimosToReais(lucro))}

@@ -1496,11 +1496,11 @@ export function NovaColetaCassinoForm() {
                   />
                 ) : (
                   <>
-                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    <div className="coleta-box-operacao rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4">
+                      <p className="coleta-tom-lucro text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                         Valor da operação
                       </p>
-                      <p className="mt-1.5 text-3xl font-bold tabular-nums tracking-tight text-white">
+                      <p className="coleta-tom-lucro mt-1.5 text-3xl font-bold tabular-nums tracking-tight text-white">
                         {formatCurrency(
                           descontoOperacaoExibido > 0.009
                             ? calculo.valorOperacaoEfetivoReais
@@ -1519,7 +1519,7 @@ export function NovaColetaCassinoForm() {
                             {comissaoBloqueada(calculo) ? "Comissão bloqueada" : "Comissão"}
                             {!comissaoBloqueada(calculo) ? ` (${comissaoPercentual}%)` : ""}
                           </span>
-                          <span className="tabular-nums text-slate-200">
+                          <span className="coleta-tom-comissao tabular-nums text-slate-200">
                             {formatCurrency(calculo.valorClienteReais)}
                           </span>
                         </div>
@@ -1597,7 +1597,7 @@ export function NovaColetaCassinoForm() {
                             </>
                           )}
                         </div>
-                        <p className="font-semibold text-slate-200 tabular-nums shrink-0">
+                        <p className="coleta-tom-comissao font-semibold tabular-nums shrink-0 text-slate-200">
                           {formatCurrency(calculo.valorClienteReais)}
                         </p>
                       </div>
@@ -1622,7 +1622,7 @@ export function NovaColetaCassinoForm() {
                         {calculo.debitoTotalReais > 0.009 && (
                           <div>
                             <p className="text-slate-500">Negativo em aberto</p>
-                            <p className="font-semibold text-amber-400">
+                            <p className="coleta-tom-negativo font-semibold text-amber-400">
                               {formatCurrency(calculo.debitoTotalReais)}
                             </p>
                           </div>
@@ -1630,7 +1630,7 @@ export function NovaColetaCassinoForm() {
                         {calculo.recuperacaoNegativoReais > 0.009 && (
                           <div>
                             <p className="text-slate-500">Recuperar negativo</p>
-                            <p className="font-semibold text-amber-400">
+                            <p className="coleta-tom-negativo font-semibold text-amber-400">
                               {formatCurrency(calculo.recuperacaoNegativoReais)}
                             </p>
                           </div>
@@ -1664,7 +1664,7 @@ export function NovaColetaCassinoForm() {
                         {calculo.pendenciaOperacaoIncluidaReais > 0.009 && (
                           <div>
                             <p className="text-slate-500">Pendência anterior</p>
-                            <p className="font-semibold text-amber-400">
+                            <p className="coleta-tom-negativo font-semibold text-amber-400">
                               + {formatCurrency(calculo.pendenciaOperacaoIncluidaReais)}
                             </p>
                           </div>

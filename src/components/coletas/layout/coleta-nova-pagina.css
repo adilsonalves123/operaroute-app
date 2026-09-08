@@ -14,3 +14,61 @@ html[data-app-theme="light"] .coleta-nova-pagina [class*="border-slate-7"],
 html[data-app-theme="light"] .coleta-nova-pagina [class*="border-slate-8"] {
   border-color: rgba(28, 25, 23, 0.14) !important;
 }
+
+/* Tons de leitura (não neon) — só no tema claro */
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-box-periodo {
+  background: #eaf3f4 !important;
+  border-color: rgba(14, 92, 107, 0.22) !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-tom-periodo {
+  color: #0e5c6b !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-box-lucro,
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-box-operacao {
+  background: #eaf4ee !important;
+  border-color: rgba(15, 107, 76, 0.22) !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-tom-lucro {
+  color: #0f6b4c !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-tom-comissao,
+html[data-app-theme="light"] .coleta-nova-pagina [class*="text-orange-"] {
+  color: #8a4b0a !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-tom-negativo,
+html[data-app-theme="light"] .coleta-nova-pagina [class*="text-amber-"] {
+  color: #8a4b0a !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina [class*="bg-amber-500"] {
+  background-color: #f6ead0 !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-box-receber {
+  background: #f6ead0 !important;
+  border-color: rgba(92, 61, 10, 0.28) !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-tom-receber,
+html[data-app-theme="light"] .coleta-nova-pagina [class*="text-primary-neon"] {
+  color: #5c3d0a !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina [class*="text-cyan-"] {
+  color: #0e5c6b !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina [class*="bg-cyan-500"] {
+  background-color: #eaf3f4 !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina [class*="text-emerald-"],
+html[data-app-theme="light"] .coleta-nova-pagina [class*="text-green-"] {
+  color: #0f6b4c !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina [class*="bg-emerald-500"],
+html[data-app-theme="light"] .coleta-nova-pagina [class*="bg-green-500"] {
+  background-color: #eaf4ee !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina [class*="text-red-"],
+html[data-app-theme="light"] .coleta-nova-pagina [class*="text-rose-"] {
+  color: #9f1239 !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina [class*="bg-red-500"],
+html[data-app-theme="light"] .coleta-nova-pagina [class*="bg-rose-500"] {
+  background-color: #fde8e8 !important;
+}

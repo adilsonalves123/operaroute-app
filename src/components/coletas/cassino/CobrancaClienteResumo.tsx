@@ -90,12 +90,12 @@ export function CobrancaClienteResumo({
       )}
 
       {mostrarTotal && (
-        <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-4 space-y-3">
+        <div className="coleta-box-receber rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-4 space-y-3">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+            <p className="coleta-tom-receber text-xs font-medium uppercase tracking-wide text-slate-400">
               Receber do cliente
             </p>
-            <p className="text-3xl font-bold tabular-nums text-white mt-1">
+            <p className="coleta-tom-receber text-3xl font-bold tabular-nums text-white mt-1">
               {formatCurrency(cobranca.totalACobrarReais)}
             </p>
             <p className="text-xs text-slate-400 mt-1">
