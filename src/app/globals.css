@@ -238,26 +238,28 @@ html[data-app-theme="light"] .bank-card {
 }
 
 /* Legibilidade global no tema claro (menu + conteúdo) */
-html[data-app-theme="light"] .text-white {
-  color: #141210;
-}
-
+html[data-app-theme="light"] .text-white,
+html[data-app-theme="light"] .text-slate-50,
+html[data-app-theme="light"] .text-slate-100,
+html[data-app-theme="light"] .text-slate-200,
 html[data-app-theme="light"] .text-slate-300 {
-  color: #1c1917;
+  color: #141210 !important;
 }
 
 html[data-app-theme="light"] .text-slate-400,
-html[data-app-theme="light"] .text-slate-500 {
-  color: #3d3833;
-}
-
+html[data-app-theme="light"] .text-slate-500,
 html[data-app-theme="light"] .text-slate-600 {
-  color: #44403c;
+  color: #3d3833 !important;
 }
 
 html[data-app-theme="light"] [class*="text-[#f4efe6]"],
 html[data-app-theme="light"] [class*="text-[#e8d5b0]"] {
+  color: #141210 !important;
+}
+
+html[data-app-theme="light"] .rascunho-folha {
   color: #141210;
+  color-scheme: light;
 }
 
 html[data-app-theme="light"] main [class*="border-white"] {

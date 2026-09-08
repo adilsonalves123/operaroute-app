@@ -133,7 +133,7 @@ function DestinosPainelOperador({
   if (operadores.length === 0) {
     return (
       <div className="space-y-2 rounded-xl border border-white/10 p-4">
-        <p className="text-sm font-medium text-[#f4efe6]">Enviar para operadores</p>
+        <p className="text-sm font-medium text-[var(--shell-text)]">Enviar para operadores</p>
         <p className="text-xs leading-relaxed text-slate-400">
           Ninguém está no painel restrito ainda. Marque os operadores em Equipe → Painel restrito.
         </p>
@@ -544,7 +544,7 @@ export function DashboardRascunhoClient({
         sans.variable,
         "relative -mx-4 min-h-[60vh] px-4 pb-8 sm:mx-0 sm:px-0",
         !salvo && "pb-28",
-        "font-[family-name:var(--font-rasc-sans)]"
+        "rascunho-folha font-[family-name:var(--font-rasc-sans)]"
       )}
     >
       <div
@@ -563,12 +563,12 @@ export function DashboardRascunhoClient({
                 OperaRoute
               </p>
               <h1
-                className="text-[clamp(2.4rem,8vw,3.4rem)] font-normal leading-[0.95] tracking-tight text-[#f4efe6]"
+                className="text-[clamp(2.4rem,8vw,3.4rem)] font-normal leading-[0.95] tracking-tight text-[var(--shell-text)]"
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
                 Resumo
               </h1>
-              <p className="max-w-md text-[15px] leading-relaxed text-slate-400">
+              <p className="max-w-md text-[16px] leading-relaxed text-[var(--shell-text-muted)]">
                 Escolha o dia — puxa quanto cada ponto mandou (Pix e Dinheiro).
                 Os totais batem: soma dos pontos = Pix + Dinheiro.
               </p>
@@ -586,7 +586,7 @@ export function DashboardRascunhoClient({
                       onChange={(e) => {
                         if (e.target.value) setDataSelecionada(e.target.value);
                       }}
-                      className="w-full min-w-[11rem] border-0 border-b border-white/15 bg-transparent py-2 pl-6 pr-1 text-[15px] text-[#f4efe6] [color-scheme:dark] focus:border-[#c4a574]/50 focus:outline-none"
+                      className="w-full min-w-[11rem] border-0 border-b border-[var(--shell-border)] bg-transparent py-2 pl-6 pr-1 text-[16px] text-[var(--shell-text)] focus:border-[#c4a574]/50 focus:outline-none"
                     />
                   </div>
                   {carregandoDia ? (
@@ -639,7 +639,7 @@ export function DashboardRascunhoClient({
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
                 placeholder="Nome do fechamento (opcional)"
-                className="w-full border-0 border-b border-white/15 bg-transparent px-0 py-2 text-[15px] text-[#f4efe6] placeholder:text-slate-600 focus:border-[#c4a574]/50 focus:outline-none"
+                className="w-full border-0 border-b border-white/15 bg-transparent px-0 py-2 text-[15px] text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
               />
             </header>
 
@@ -675,7 +675,7 @@ export function DashboardRascunhoClient({
                           )}
                         />
                         <div className="flex items-center gap-3">
-                          <span className="w-5 shrink-0 text-[12px] tabular-nums text-slate-600">
+                          <span className="w-5 shrink-0 text-[13px] tabular-nums text-[var(--shell-text-muted)]">
                             {String(idx + 1).padStart(2, "0")}
                           </span>
                           <div className="relative w-[7.75rem] shrink-0">
@@ -686,17 +686,17 @@ export function DashboardRascunhoClient({
                               value={valores[p.id] ?? ""}
                               onChange={(e) => setValor(p.id, e.target.value)}
                               className={cn(
-                                "w-full border-b bg-transparent py-2 pr-1 text-right text-[15px] tabular-nums placeholder:text-slate-700 focus:outline-none",
+                                "w-full border-b bg-transparent py-2 pr-1 text-right text-[16px] tabular-nums placeholder:text-[var(--shell-text-muted)] focus:outline-none",
                                 preenchido
                                   ? v < 0
-                                    ? "border-rose-400/40 text-rose-300"
-                                    : "border-[#c4a574]/40 text-[#f4efe6]"
-                                  : "border-white/10 text-slate-300 focus:border-[#c4a574]/40"
+                                    ? "border-rose-400/40 text-rose-600"
+                                    : "border-[#c4a574]/40 text-[var(--shell-text)]"
+                                  : "border-[var(--shell-border)] text-[var(--shell-text)] focus:border-[#c4a574]/40"
                               )}
                             />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <p className="truncate text-[14px] text-slate-200">
+                            <p className="truncate text-[16px] font-medium text-[var(--shell-text)]">
                               {p.nome}
                             </p>
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
@@ -734,7 +734,7 @@ export function DashboardRascunhoClient({
               <div className="space-y-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-4">
                 <div className="flex items-baseline justify-between gap-3 text-[13px]">
                   <span className="text-slate-500">Recebido</span>
-                  <span className="tabular-nums text-[#f4efe6]">
+                  <span className="tabular-nums text-[var(--shell-text)]">
                     {formatCurrency(resumoCaixa.recebido)}
                   </span>
                 </div>
@@ -775,7 +775,7 @@ export function DashboardRascunhoClient({
                       setPixEditadoManual(true);
                       setPixStr(sanitizarMoney(e.target.value));
                     }}
-                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[#f4efe6] placeholder:text-slate-700 focus:border-[#c4a574]/50 focus:outline-none"
+                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
                   />
                 </label>
                 <label className="block space-y-2">
@@ -791,7 +791,7 @@ export function DashboardRascunhoClient({
                       setDinheiroEditadoManual(true);
                       setDinheiroStr(sanitizarMoney(e.target.value));
                     }}
-                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[#f4efe6] placeholder:text-slate-700 focus:border-[#c4a574]/50 focus:outline-none"
+                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
                   />
                 </label>
               </div>
@@ -800,7 +800,7 @@ export function DashboardRascunhoClient({
                   "Nenhum ponto com valor ainda"
                 ) : (
                   <>
-                    <span className="tabular-nums text-[#f4efe6]">
+                    <span className="tabular-nums text-[var(--shell-text)]">
                       {formatCurrency(resumoCaixa.liquido)}
                     </span>
                     {" · "}
@@ -846,7 +846,7 @@ export function DashboardRascunhoClient({
                 OperaRoute · fechamento
               </p>
               <h1
-                className="text-[clamp(2.2rem,7vw,3rem)] font-normal leading-[0.95] tracking-tight text-[#f4efe6]"
+                className="text-[clamp(2.2rem,7vw,3rem)] font-normal leading-[0.95] tracking-tight text-[var(--shell-text)]"
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
                 {titulo.trim() || TITULO_PADRAO}
@@ -884,7 +884,7 @@ export function DashboardRascunhoClient({
               <p
                 className={cn(
                   "text-[clamp(2.8rem,10vw,4rem)] font-normal leading-none tracking-tight tabular-nums",
-                  resumoCaixa.liquido < 0 ? "text-rose-300" : "text-[#f4efe6]"
+                  resumoCaixa.liquido < 0 ? "text-rose-300" : "text-[var(--shell-text)]"
                 )}
                 style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
               >
@@ -910,7 +910,7 @@ export function DashboardRascunhoClient({
                   Pix
                 </p>
                 <p
-                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[#f4efe6]"
+                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[var(--shell-text)]"
                   style={{
                     fontFamily: "var(--font-rasc-display), Georgia, serif",
                   }}
@@ -923,7 +923,7 @@ export function DashboardRascunhoClient({
                   Dinheiro
                 </p>
                 <p
-                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[#f4efe6]"
+                  className="mt-1 text-[1.75rem] tabular-nums leading-none text-[var(--shell-text)]"
                   style={{
                     fontFamily: "var(--font-rasc-display), Georgia, serif",
                   }}
@@ -943,7 +943,7 @@ export function DashboardRascunhoClient({
                   return (
                     <li key={r.id} className="space-y-1.5">
                       <div className="flex items-baseline justify-between gap-3">
-                        <p className="min-w-0 truncate text-[14px] text-slate-300">
+                        <p className="min-w-0 truncate text-[16px] text-[var(--shell-text)]">
                           <span className="mr-2 tabular-nums text-slate-600">
                             {String(i + 1).padStart(2, "0")}
                           </span>
@@ -957,7 +957,7 @@ export function DashboardRascunhoClient({
                         <p
                           className={cn(
                             "shrink-0 text-[15px] tabular-nums",
-                            r.valor < 0 ? "text-rose-300" : "text-[#f4efe6]"
+                            r.valor < 0 ? "text-rose-300" : "text-[var(--shell-text)]"
                           )}
                           style={{
                             fontFamily:
