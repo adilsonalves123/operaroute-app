@@ -1534,6 +1534,36 @@ html[data-app-theme="light"] .corrigir-pagamento-cancelar {
   border-color: rgba(28, 25, 23, 0.22) !important;
 }
 
+/* Detalhe coleta nicho (ursinho, bolinha, etc.) — cards cinza no claro */
+html[data-app-theme="light"] .coleta-nicho-detalhe [class*="bg-slate-9"] {
+  background-color: #f3efe6 !important;
+}
+html[data-app-theme="light"] .coleta-nicho-detalhe [class*="border-slate-"] {
+  border-color: rgba(28, 25, 23, 0.16) !important;
+}
+html[data-app-theme="light"] .coleta-nicho-detalhe .text-white,
+html[data-app-theme="light"] .coleta-nicho-detalhe .text-slate-200,
+html[data-app-theme="light"] .coleta-nicho-detalhe .text-slate-300 {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .coleta-nicho-detalhe [class*="text-amber-"] {
+  color: #7a4a0a !important;
+}
+html[data-app-theme="light"] .coleta-nicho-detalhe [class*="text-emerald-"],
+html[data-app-theme="light"] .coleta-nicho-detalhe [class*="text-green-"] {
+  color: #047857 !important;
+}
+html[data-app-theme="light"] .coleta-nicho-detalhe [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .coleta-nicho-detalhe [class*="text-rose-"],
+html[data-app-theme="light"] .coleta-nicho-detalhe [class*="text-pink-"] {
+  color: #9f1239 !important;
+}
+html[data-app-theme="light"] .coleta-nicho-detalhe [class*="text-primary-neon"] {
+  color: #5c3d0a !important;
+}
+
 .text-at-primary { color: var(--at-primary); }
 .text-at-muted { color: var(--at-muted); }
 .text-at-soft { color: var(--at-soft); }

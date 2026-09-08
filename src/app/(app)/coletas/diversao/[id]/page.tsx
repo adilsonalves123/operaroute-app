@@ -135,7 +135,7 @@ export default async function ColetaDiversaoDetalhePage({
   };
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="coleta-nicho-detalhe mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Link href="/coletas" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
           <ArrowLeft className="h-5 w-5" />
