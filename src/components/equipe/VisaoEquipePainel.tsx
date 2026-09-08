@@ -15,6 +15,7 @@ export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Pro
   const router = useRouter();
   const operadores = membros.filter((m) => m.role !== "admin");
   const [abertoId, setAbertoId] = useState<string | null>(null);
+  const [listaCheiaId, setListaCheiaId] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [erro, setErro] = useState("");
   const [ok, setOk] = useState("");
@@ -106,24 +107,61 @@ export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Pro
               </label>
               {restrita && (
                 <div className="mt-3 space-y-2 pl-7">
-                  <button
-                    type="button"
-                    className="text-xs text-amber-200 underline-offset-2 hover:underline"
-                    onClick={() => setAbertoId(aberto ? null : membro.id)}
-                  >
-                    {aberto ? "Ocultar pontos" : "Escolher pontos"}
-                  </button>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-[#5c3d0a] underline-offset-2 hover:underline"
+                      onClick={() => setAbertoId(aberto ? null : membro.id)}
+                    >
+                      {aberto ? "Ocultar pontos" : "Escolher pontos"}
+                    </button>
+                    {aberto && pontos.length > 0 && (
+                      <>
+                        <button
+                          type="button"
+                          className="text-xs font-medium text-[#5c3d0a] underline-offset-2 hover:underline"
+                          onClick={() =>
+                            setListaCheiaId(listaCheiaId === membro.id ? null : membro.id)
+                          }
+                        >
+                          {listaCheiaId === membro.id ? "Lista compacta" : "Ver todos"}
+                        </button>
+                        <button
+                          type="button"
+                          disabled={savingId === membro.id}
+                          className="text-xs font-medium text-[#5c3d0a] underline-offset-2 hover:underline disabled:opacity-50"
+                          onClick={() => {
+                            const todos = pontos.map((p) => p.id);
+                            const jaTodos =
+                              todos.length > 0 && todos.every((id) => pontoIds.includes(id));
+                            void salvar(membro, true, jaTodos ? [] : todos);
+                          }}
+                        >
+                          {pontos.length > 0 &&
+                          pontos.every((p) => pontoIds.includes(p.id))
+                            ? "Desmarcar todos"
+                            : "Marcar todos"}
+                        </button>
+                      </>
+                    )}
+                  </div>
                   {aberto && (
-                    <div className="max-h-48 space-y-1.5 overflow-y-auto rounded-md border border-white/10 p-2">
+                    <div
+                      className={
+                        listaCheiaId === membro.id
+                          ? "space-y-1.5 rounded-md border border-[#5c3d0a]/25 bg-white p-2"
+                          : "max-h-48 space-y-1.5 overflow-y-auto rounded-md border border-[#5c3d0a]/25 bg-white p-2"
+                      }
+                    >
                       {pontos.length === 0 ? (
-                        <p className="text-xs text-slate-500">Cadastre pontos primeiro.</p>
+                        <p className="text-xs text-[#3d3833]">Cadastre pontos primeiro.</p>
                       ) : (
                         pontos.map((p) => {
                           const checked = pontoIds.includes(p.id);
                           return (
                             <label
                               key={p.id}
-                              className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
+                              className="flex cursor-pointer items-center gap-2 text-sm text-[#141210]"
                             >
                               <input
                                 type="checkbox"
