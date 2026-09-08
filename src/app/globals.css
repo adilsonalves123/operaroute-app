@@ -351,6 +351,68 @@ html[data-app-theme="light"] .pendencias-btn-apagar {
   border-color: #be123c !important;
 }
 
+/* Modal Adicionar chamado — portal no body, fora do main; no claro precisa fundo claro */
+html[data-app-theme="light"] .chamado-novo-modal {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
+  --at-primary: #141210;
+  --at-muted: #3d3833;
+  --at-soft: #5c564f;
+  --at-link: #5c3d0a;
+}
+html[data-app-theme="light"] .chamado-novo-modal [class*="border-slate-"] {
+  border-color: rgba(28, 25, 23, 0.16) !important;
+}
+html[data-app-theme="light"] .chamado-novo-modal [class*="bg-slate-9"],
+html[data-app-theme="light"] .chamado-novo-modal [class*="bg-slate-8"] {
+  background-color: #ffffff !important;
+}
+html[data-app-theme="light"] .chamado-novo-cabecalho,
+html[data-app-theme="light"] .chamado-novo-footer {
+  background: #f3efe6 !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+}
+html[data-app-theme="light"] .chamado-novo-modal h3,
+html[data-app-theme="light"] .chamado-novo-modal .chamado-busca-titulo {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .chamado-novo-modal .chamado-busca-sub,
+html[data-app-theme="light"] .chamado-novo-modal .chamado-busca-meta,
+html[data-app-theme="light"] .chamado-novo-cancelar {
+  color: #3d3833 !important;
+}
+html[data-app-theme="light"] .chamado-busca-tab {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .chamado-busca-tab-on {
+  background: #1c1917 !important;
+  color: #faf8f4 !important;
+}
+html[data-app-theme="light"] .chamado-busca-input {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.22) !important;
+}
+html[data-app-theme="light"] .chamado-busca-input input {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .chamado-busca-input input::placeholder {
+  color: #5c564f !important;
+}
+html[data-app-theme="light"] .chamado-novo-modal .text-white,
+html[data-app-theme="light"] .chamado-novo-modal .text-at-muted,
+html[data-app-theme="light"] .chamado-novo-modal .text-at-soft {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .chamado-novo-modal .chamado-busca-item {
+  background: #f3efe6 !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .chamado-novo-modal .chamado-busca-titulo {
+  color: #141210 !important;
+}
+
 /* Só o detalhe da coleta cassino — cards escuros + letra remapeada para preto */
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-slate-9"],
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-gradient-to"] {

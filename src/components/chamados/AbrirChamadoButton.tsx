@@ -103,7 +103,7 @@ export function AbrirChamadoButton({
               aria-modal="true"
               aria-labelledby="abrir-chamado-titulo"
               onClick={(e) => e.stopPropagation()}
-              className="flex w-full max-w-md max-h-[min(90dvh,640px)] flex-col overflow-hidden rounded-t-2xl border border-amber-500/20 bg-slate-950 shadow-2xl sm:rounded-xl"
+              className="chamado-novo-modal flex w-full max-w-md max-h-[min(90dvh,640px)] flex-col overflow-hidden rounded-t-2xl border border-amber-500/20 bg-slate-950 shadow-2xl sm:rounded-xl"
             >
               <div className="flex items-start justify-between gap-3 border-b border-slate-800 px-5 py-4 shrink-0">
                 <div className="min-w-0">
