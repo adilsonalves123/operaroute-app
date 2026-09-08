@@ -13,6 +13,7 @@ import {
 import { ColetasClient } from "@/app/(app)/coletas/ColetasClient";
 import type { DashboardNichoId } from "@/lib/dashboard-nichos-ativos";
 import type { Coleta } from "@/lib/types/database";
+import "@/components/coletas/layout/coleta-nova-pagina.css";
 
 type Visita = Parameters<typeof VisitasListClient>[0]["visitas"][number];
 type ColetaUrsinho = Coleta & { pontos?: { nome: string; cidade: string | null } | null };
@@ -104,7 +105,7 @@ export function ColetasMultiNichoTabs({
         </div>
 
         <nav
-          className="inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-at bg-slate-950/50 p-1.5 backdrop-blur-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="nicho-tabs-bar inline-flex max-w-full gap-1 overflow-x-auto rounded-2xl border border-at bg-slate-950/50 p-1.5 backdrop-blur-sm [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           aria-label="Nichos"
         >
           {nichos.map((id) => {
@@ -117,7 +118,7 @@ export function ColetasMultiNichoTabs({
                 className={cn(
                   "shrink-0 rounded-xl px-4 py-2 text-sm font-medium transition-all duration-200",
                   active
-                    ? "bg-[#c4a574] text-[#0a0e16] shadow-sm"
+                    ? "nicho-tabs-bar-on bg-[#c4a574] text-[#0a0e16] shadow-sm"
                     : "text-at-muted hover:bg-at-card-soft hover:text-at-primary"
                 )}
               >

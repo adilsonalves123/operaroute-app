@@ -77,3 +77,15 @@ html[data-app-theme="light"] :is(.coleta-nova-pagina, .visita-ponto-pagina) [cla
 html[data-app-theme="light"] :is(.coleta-nova-pagina, .visita-ponto-pagina) [class*="text-pink-"] {
   color: #9f1239 !important;
 }
+
+html[data-app-theme="light"] .nicho-tabs-bar {
+  background: #efeae0 !important;
+  border-color: rgba(28, 25, 23, 0.14) !important;
+}
+html[data-app-theme="light"] .nicho-tabs-bar button {
+  color: #3d3833 !important;
+}
+html[data-app-theme="light"] .nicho-tabs-bar .nicho-tabs-bar-on {
+  background: #e8d5b0 !important;
+  color: #3d1f08 !important;
+}
