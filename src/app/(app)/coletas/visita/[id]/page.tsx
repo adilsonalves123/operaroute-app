@@ -307,7 +307,7 @@ export default async function VisitaDetailPage({
         <div className="flex flex-wrap gap-2 print:hidden">
           <Link
             href={`/coletas/nova/cassino?ponto=${visita.ponto_id}&editar_visita=${id}`}
-            className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 hover:bg-amber-500/20"
+            className="coleta-visita-btn-editar inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 hover:bg-amber-500/20"
           >
             Editar coleta completa
           </Link>

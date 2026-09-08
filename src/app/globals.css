@@ -327,6 +327,15 @@ html[data-app-theme="light"] .coleta-visita-pagina .coleta-maquina-bloco {
   background: #f3efe6 !important;
   color: #141210 !important;
 }
+html[data-app-theme="light"] .coleta-visita-pagina .coleta-visita-btn-editar {
+  background: #f6ead0 !important;
+  border-color: #8a5a12 !important;
+  color: #5c3d0a !important;
+}
+html[data-app-theme="light"] .coleta-visita-pagina .coleta-resultado-icone {
+  background: #e4f6f7 !important;
+  border-color: rgba(14, 116, 144, 0.35) !important;
+}
 
 html[data-app-theme="light"] main [class*="border-white"] {
   border-color: rgba(28, 25, 23, 0.1) !important;

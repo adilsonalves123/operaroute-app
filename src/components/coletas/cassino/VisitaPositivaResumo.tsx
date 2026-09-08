@@ -198,7 +198,7 @@ export function VisitaPositivaResumo({
         )}
       >
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20">
+          <div className="coleta-resultado-icone flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-black/20">
             {cobertoPorHaver ? (
               <HandCoins className="h-5 w-5 text-cyan-400" />
             ) : calculo.totalACobrarReais > 0.009 ? (
