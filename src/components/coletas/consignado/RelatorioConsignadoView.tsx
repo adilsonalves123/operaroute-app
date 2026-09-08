@@ -46,12 +46,6 @@ function buildLinhasResumo(data: RelatorioConsignadoData): RelatorioLinhaComprov
     variant: "highlight",
     destaque: true,
   });
-  linhas.push({ label: "Separar p/ custo", valor: formatCurrency(c.custoProdutos) });
-  linhas.push({
-    label: "Livre pra você (lucro)",
-    valor: formatCurrency(c.lucroReal),
-    variant: "success",
-  });
 
   const comCobranca = appendLinhasCobrancaDetalhe(linhas, data.cobranca);
 
