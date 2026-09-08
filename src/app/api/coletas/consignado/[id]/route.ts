@@ -153,6 +153,16 @@ export async function DELETE(
     return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
 
+  if (!preservarSlot) {
+    const { sincronizarPendenciasUniversaisPonto } = await import(
+      "@/lib/visitas-ponto/pendencia-universal"
+    );
+    await sincronizarPendenciasUniversaisPonto(supabase, {
+      empresaId: profile.empresa_id,
+      pontoId: coleta.ponto_id,
+    });
+  }
+
   // Devolve unidades vendidas ao expositor (reposto pós-coleta não fica na coleta).
   const vendidos = parseVendidosSalvos(coleta.brindes_entregues);
   if (vendidos.length > 0 && coleta.equipamento_id) {

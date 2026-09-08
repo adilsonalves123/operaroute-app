@@ -136,6 +136,16 @@ export async function DELETE(
     return NextResponse.json({ error: deleteError.message }, { status: 500 });
   }
 
+  if (!preservarSlot) {
+    const { sincronizarPendenciasUniversaisPonto } = await import(
+      "@/lib/visitas-ponto/pendencia-universal"
+    );
+    await sincronizarPendenciasUniversaisPonto(supabase, {
+      empresaId: profile.empresa_id,
+      pontoId: coleta.ponto_id,
+    });
+  }
+
   if (coleta.equipamento_id && coleta.entrada_anterior != null) {
     await supabase
       .from("equipamentos")

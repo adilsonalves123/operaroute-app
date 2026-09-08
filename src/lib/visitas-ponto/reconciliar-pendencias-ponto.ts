@@ -155,6 +155,15 @@ export async function reconciliarPendenciasCobraveisPonto(
     }
   }
 
+  const { sincronizarPendenciasUniversaisPonto } = await import(
+    "@/lib/visitas-ponto/pendencia-universal"
+  );
+  const uni = await sincronizarPendenciasUniversaisPonto(supabase, {
+    empresaId,
+    pontoId,
+  });
+  ajustadas += uni.ajustadas;
+
   // 3) Órfãs (sem coleta_id/visita_id): só LIMITA o valor ao que ainda falta
   //    nas coletas. NÃO zera automaticamente — zerar órfãs apagava dívida real
   //    (visita_consolidada / parcial) e deixava o cassino “desregulado”.
