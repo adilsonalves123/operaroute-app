@@ -671,10 +671,39 @@ export async function finalizarVisitaPontoComCheckout(
     }
   );
 
-  // Receber agora: pagamento já entrou na coleta/pendências. Fechar sem reprocessar.
-  // Importante: após pagar, subtotalCobravel fica 0 — não gravar total_cobrado=0.
+  // Receber agora: pagamento já entrou na coleta. Fechar sem cobrar de novo.
+  // Se ainda falta, vira pendência universal e some o saldo das coletas
+  // (senão Análise soma coleta + pendência).
   if (opts.somenteFechar) {
-    // Garante que visita_consolidada / pendências órfãs sumam quando as coletas já foram pagas.
+    const unpaidVisitaHoje = round2(Math.max(0, resumo.subtotalCobravel));
+    if (unpaidVisitaHoje > 0.009) {
+      const linhas = resumo.nichos.map(
+        (n) => `${n.label}: ${n.totalCobravel.toFixed(2).replace(".", ",")}`
+      );
+      const pagoJa = round2(Math.max(0, resumo.totalRecebido ?? 0));
+      await supabase.from("pendencias").insert({
+        empresa_id: opts.empresaId,
+        ponto_id: resumo.pontoId,
+        visita_ponto_id: opts.visitaPontoId,
+        tipo: pagoJa > 0.009 ? "parcial" : "visita_consolidada",
+        titulo: `Visita ao ponto — ${new Date().toLocaleDateString("pt-BR")}`,
+        descricao: [
+          pontoNome,
+          ...linhas,
+          `Total visita: R$ ${round2(pagoJa + unpaidVisitaHoje).toFixed(2)}`,
+          `Pago: R$ ${pagoJa.toFixed(2)}`,
+          `Pendência universal: R$ ${unpaidVisitaHoje.toFixed(2)}`,
+        ].join(" · "),
+        valor: unpaidVisitaHoje,
+        status: "aberta",
+        prioridade: "media",
+      });
+      await absorverSaldosItensVisitaNaConsolidada(supabase, {
+        empresaId: opts.empresaId,
+        visitaPontoId: opts.visitaPontoId,
+      });
+    }
+
     await reconciliarPendenciasCobraveisPonto(supabase, {
       empresaId: opts.empresaId,
       pontoId: resumo.pontoId,
@@ -848,17 +877,10 @@ export async function finalizarVisitaPontoComCheckout(
       .single();
     pendenciaId = pend?.id ?? null;
 
-    // Só absorve saldos nos itens quando houve crédito real (pix/dinheiro/haver).
-    // Sem recebimento: a dívida fica na consolidada E nos itens — cassino não vira "quitado"
-    // e os outros nichos continuam visíveis no histórico.
-    const recebeuNestaCobranca =
-      calculo.valorPago > 0.009 || calculo.haverAbatido > 0.009;
-    if (recebeuNestaCobranca && calculo.aplicadoVisita > 0.009) {
-      await absorverSaldosItensVisitaNaConsolidada(supabase, {
-        empresaId: opts.empresaId,
-        visitaPontoId: opts.visitaPontoId,
-      });
-    }
+    await absorverSaldosItensVisitaNaConsolidada(supabase, {
+      empresaId: opts.empresaId,
+      visitaPontoId: opts.visitaPontoId,
+    });
   }
 
   if (calculo.haver > 0.009) {

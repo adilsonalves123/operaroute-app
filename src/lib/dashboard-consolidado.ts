@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { DashboardNichoId } from "@/lib/dashboard-nichos-ativos";
 import {
   fetchPendenciasAbertas,
+  somarDividaAbertaPorNicho,
   somarPendenciasPorNicho,
   type PendenciasPorNicho,
 } from "@/lib/dashboard-pendencias-abertas";
@@ -223,8 +224,8 @@ export function buildConsolidadoFromStats(input: {
     (acc, linha) => sumLinhas(acc, linha),
     emptyLinha()
   );
-  // Dívida universal (visita ao ponto) entra no total, sem ratear por nicho.
-  total.aReceber = round2(total.aReceber + (input.pendencias.pontoPendente ?? 0));
+  // Total “A receber” = tela Pendências, não soma de coleta + visita consolidada.
+  total.aReceber = somarDividaAbertaPorNicho(input.pendencias);
 
   return {
     linhas,

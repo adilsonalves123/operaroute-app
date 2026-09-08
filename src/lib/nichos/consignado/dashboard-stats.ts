@@ -11,6 +11,10 @@ import {
   pontoSemColetaHaMaisDe,
 } from "@/lib/dashboard-pontos-base";
 import { fetchPendenciasAbertas } from "@/lib/dashboard-pendencias-abertas";
+import {
+  fetchItensVisitaPontoFinalizada,
+  somarSaldoColetasNaoMigradas,
+} from "@/lib/visitas-ponto/itens-visita-finalizada";
 import { NICHO_MODULO_CONSIGNADO } from "@/lib/nichos/consignado";
 import type { Ponto } from "@/lib/types/database";
 import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
@@ -60,7 +64,7 @@ export async function getConsignadoDashboardStats(
     supabase
       .from("coletas")
       .select(
-        "valor_bruto, lucro_real, valor_liquido, custo_brindes, valor_a_receber, valor_pago_recebido, entrada_periodo, ponto_id, created_at"
+        "id, valor_bruto, lucro_real, valor_liquido, custo_brindes, valor_a_receber, valor_pago_recebido, entrada_periodo, ponto_id, created_at"
       )
       .eq("empresa_id", empresaId)
       .eq("nicho_modulo", NICHO_MODULO_CONSIGNADO)
@@ -104,11 +108,8 @@ export async function getConsignadoDashboardStats(
   );
   const totalBruto = list.reduce((s, c) => s + Number(c.valor_bruto ?? 0), 0);
   const custoBrindes = list.reduce((s, c) => s + Number(c.custo_brindes ?? 0), 0);
-  const aReceberPendente = list.reduce(
-    (s, c) =>
-      s + Math.max(0, Number(c.valor_a_receber ?? 0) - Number(c.valor_pago_recebido ?? 0)),
-    0
-  );
+  const migradas = await fetchItensVisitaPontoFinalizada(supabase, empresaId);
+  const aReceberPendente = somarSaldoColetasNaoMigradas(list, migradas.coletaIds);
 
   const pontosAtivos = pontos?.filter((p) => p.status === "ativo").length ?? 0;
   const pontosSemColeta =

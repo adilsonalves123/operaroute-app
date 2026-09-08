@@ -117,6 +117,29 @@ function valorAberto(p: PendenciaAbertaRow): number {
   });
 }
 
+/** Mesmo total da tela Pendências (abertas, sem haver). */
+export function somarCobravelPendenciasAbertas(rows: PendenciaAbertaRow[]): number {
+  return round2(
+    rows.reduce((s, p) => {
+      if ((p.tipo ?? "").toLowerCase() === "haver") return s;
+      const v = valorAberto(p);
+      return v > 0.009 ? s + v : s;
+    }, 0)
+  );
+}
+
+export function somarDividaAbertaPorNicho(p: PendenciasPorNicho): number {
+  return round2(
+    p.pontoPendente +
+      p.cassinoPendente +
+      p.furaPendente +
+      p.ursinhoPendente +
+      p.diversaoPendente +
+      p.bolinhaPendente +
+      p.consignadoPendente
+  );
+}
+
 export function somarPendenciasPorNicho(rows: PendenciaAbertaRow[]): PendenciasPorNicho {
   const out: PendenciasPorNicho = {
     cassinoPendente: 0,

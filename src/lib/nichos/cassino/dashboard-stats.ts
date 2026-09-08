@@ -19,6 +19,7 @@ import {
 } from "@/lib/dashboard-saude-pontos";
 import { liquidoRecebidoCassinoVisita, lucroOperacaoCassinoVisita } from "@/lib/nichos/cassino/lucro-recebido";
 import { cobravelCassinoVisita } from "@/lib/visitas-ponto/resumo";
+import { fetchItensVisitaPontoFinalizada } from "@/lib/visitas-ponto/itens-visita-finalizada";
 import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
 
 function round2(n: number) {
@@ -182,9 +183,16 @@ export async function getCassinoDashboardStats(
   const pendSums = somarPendenciasPorNicho(pendenciasAbertas);
   // Fonte da verdade do "A receber": cobravel das visitas (igual ao badge Quitada).
   // Pendências espelhadas podem ficar abertas após "corrigir pagamento".
+  const migradas = await fetchItensVisitaPontoFinalizada(supabase, empresaId);
   const aReceberVisitas = round2(
     (visitasRaw ?? [])
-      .filter((v) => !v.saldo_negativo)
+      .filter(
+        (v) =>
+          !v.saldo_negativo &&
+          !migradas.cassinoVisitaIds.has(v.id) &&
+          v.created_at >= inicioISO &&
+          v.created_at <= fimISO
+      )
       .reduce((s, v) => s + cobravelCassinoVisita(v), 0)
   );
 

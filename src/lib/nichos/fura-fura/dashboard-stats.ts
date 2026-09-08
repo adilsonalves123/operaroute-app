@@ -11,7 +11,11 @@ import {
   pontoSemColetaHaMaisDe,
 } from "@/lib/dashboard-pontos-base";
 import { fetchPendenciasAbertas } from "@/lib/dashboard-pendencias-abertas";
-import { NICHO_MODULO_FURA_FURA, saldoPendenteColeta, somarHaverFuraFuraAberto } from "@/lib/nichos/fura-fura";
+import {
+  fetchItensVisitaPontoFinalizada,
+  somarSaldoColetasNaoMigradas,
+} from "@/lib/visitas-ponto/itens-visita-finalizada";
+import { NICHO_MODULO_FURA_FURA, somarHaverFuraFuraAberto } from "@/lib/nichos/fura-fura";
 import type { ComparativoMes } from "@/lib/nichos/fura-fura/reconstruct-coleta";
 import type { Ponto } from "@/lib/types/database";
 import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
@@ -106,7 +110,7 @@ export async function getFuraFuraDashboardStats(
       .gte("created_at", thirtyFiveDaysAgo),
     supabase
       .from("coletas")
-      .select("valor_a_receber, valor_pago_recebido")
+      .select("id, valor_a_receber, valor_pago_recebido")
       .eq("empresa_id", empresaId)
       .eq("nicho_modulo", NICHO_MODULO_FURA_FURA)
       .gt("valor_a_receber", 0),
@@ -124,9 +128,10 @@ export async function getFuraFuraDashboardStats(
   const totalBruto = mesAtual.totalBruto;
   const lucroReal = mesAtual.lucroReal;
   const totalFuros = mesAtual.furos;
-  const pendenteColetas = (coletasPendentesAbertas ?? []).reduce(
-    (s, c) => s + saldoPendenteColeta(c),
-    0
+  const migradas = await fetchItensVisitaPontoFinalizada(supabase, empresaId);
+  const pendenteColetas = somarSaldoColetasNaoMigradas(
+    coletasPendentesAbertas ?? [],
+    migradas.coletaIds
   );
   const haverPontos = somarHaverFuraFuraAberto(pendenciasAbertas);
 

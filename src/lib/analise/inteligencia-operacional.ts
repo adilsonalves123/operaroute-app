@@ -24,11 +24,16 @@ import type { PeriodoAnaliseRange } from "@/lib/analise/periodo-analise";
 import { periodoAnterior, resolverPeriodoAnalise } from "@/lib/analise/periodo-analise";
 import {
   filtrarPendenciasJaQuitadas,
+  somarCobravelPendenciasAbertas,
   somarPendenciasPorNicho,
   type PendenciaAbertaRow,
 } from "@/lib/dashboard-pendencias-abertas";
 import { liquidoRecebidoCassinoVisita } from "@/lib/nichos/cassino/lucro-recebido";
 import { cobravelCassinoVisita } from "@/lib/visitas-ponto/resumo";
+import {
+  fetchItensVisitaPontoFinalizada,
+  somarSaldoColetasNaoMigradas,
+} from "@/lib/visitas-ponto/itens-visita-finalizada";
 import { formatCurrency } from "@/lib/utils";
 
 function mapaPendenciaOperacaoAberta(
@@ -950,7 +955,7 @@ export async function fetchInteligenciaOperacional(
     "id, ponto_id, equipamento_id, created_at, valor_bruto, valor_a_receber, valor_pago_recebido, lucro_real, custo_brindes, entrada_periodo, brindes_entregues, pontos(nome), equipamentos(id, nome, numero_maquina, tipo, ponto_id, pontos(nome))";
   const coletaPrevSelect =
     "lucro_real, valor_a_receber, valor_pago_recebido, valor_bruto, entrada_periodo";
-  const coletaSaldoSelect = "valor_a_receber, valor_pago_recebido";
+  const coletaSaldoSelect = "id, valor_a_receber, valor_pago_recebido";
 
   function queryColetasSaldoAberto(nichoModulo: string) {
     return supabase
@@ -1165,16 +1170,19 @@ export async function fetchInteligenciaOperacional(
       : Promise.resolve({ data: [] as never[], error: null }),
   ]);
 
-  const pendenciasAbertas = await filtrarPendenciasJaQuitadas(
-    supabase,
-    empresaId,
-    (pendenciasRes.data ?? []) as PendenciaAbertaRow[]
-  );
+  const [pendenciasAbertas, migradas] = await Promise.all([
+    filtrarPendenciasJaQuitadas(
+      supabase,
+      empresaId,
+      (pendenciasRes.data ?? []) as PendenciaAbertaRow[]
+    ),
+    fetchItensVisitaPontoFinalizada(supabase, empresaId),
+  ]);
 
   function somarSaldoAbertoColetas(
-    rows: { valor_a_receber?: number | null; valor_pago_recebido?: number | null }[] | null
+    rows: { id?: string | null; valor_a_receber?: number | null; valor_pago_recebido?: number | null }[] | null
   ): number {
-    return round2((rows ?? []).reduce((s, c) => s + saldoPendenteColeta(c), 0));
+    return somarSaldoColetasNaoMigradas(rows ?? [], migradas.coletaIds);
   }
 
   const estoquePendenteFura = somarSaldoAbertoColetas(saldoAbertoFuraRes.data);
@@ -1965,23 +1973,9 @@ export async function fetchInteligenciaOperacional(
   const lucroLiquido = liquidoOperacao;
 
   const pendSums = somarPendenciasPorNicho(pendenciasAbertas);
-  const cassinoAReceberVisitas = round2(
-    (visitasRes.data ?? [])
-      .filter((v) => !v.saldo_negativo)
-      .reduce((s, v) => s + cobravelCassinoVisita(v), 0)
-  );
-  // Estoque de dívida aberta (coletas) por nicho; Math.max evita double-count com
-  // pendências espelhadas ("Coleta X pendente") na tabela pendencias.
-  // Cassino: cobravel das visitas (fonte do Quitada), não a tabela pendencias.
-  const aReceber = round2(
-    Math.max(furaBlock?.caixa.pendenteReceber ?? 0, pendSums.furaPendente) +
-      Math.max(ursinhoBlock?.caixa.pendenteReceber ?? 0, pendSums.ursinhoPendente) +
-      Math.max(diversaoBlock?.caixa.pendenteReceber ?? 0, pendSums.diversaoPendente) +
-      Math.max(bolinhaBlock?.caixa.pendenteReceber ?? 0, pendSums.bolinhaPendente) +
-      Math.max(consignadoBlock?.caixa.pendenteReceber ?? 0, pendSums.consignadoPendente) +
-      cassinoAReceberVisitas +
-      pendSums.pontoPendente
-  );
+  // Igual à tela Pendências: não soma de novo saldo de coleta/visita já virado
+  // em “Visita ao ponto” (era 183 na pendência + 562 nas coletas = 745).
+  const aReceber = somarCobravelPendenciasAbertas(pendenciasAbertas);
   const haver = round2(
     pendSums.cassinoHaver +
       pendSums.furaHaver +

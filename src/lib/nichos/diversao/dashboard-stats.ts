@@ -12,6 +12,10 @@ import {
   pontoSemColetaHaMaisDe,
 } from "@/lib/dashboard-pontos-base";
 import { fetchPendenciasAbertas } from "@/lib/dashboard-pendencias-abertas";
+import {
+  fetchItensVisitaPontoFinalizada,
+  somarSaldoColetasNaoMigradas,
+} from "@/lib/visitas-ponto/itens-visita-finalizada";
 import { NICHO_MODULO_DIVERSAO } from "@/lib/nichos/diversao";
 import { DIVERSAO_EQUIPAMENTO_TIPOS } from "@/lib/equipamentos";
 import type { Ponto } from "@/lib/types/database";
@@ -86,7 +90,7 @@ export async function getDiversaoDashboardStats(
       .gte("created_at", thirtyFiveDaysAgo),
     supabase
       .from("coletas")
-      .select("valor_a_receber, valor_pago_recebido")
+      .select("id, valor_a_receber, valor_pago_recebido")
       .eq("empresa_id", empresaId)
       .eq("nicho_modulo", NICHO_MODULO_DIVERSAO)
       .gt("valor_a_receber", 0),
@@ -112,10 +116,10 @@ export async function getDiversaoDashboardStats(
     0
   );
   const totalBruto = list.reduce((s, c) => s + Number(c.valor_bruto ?? 0), 0);
-  const aReceberPendente = (coletasPendentesAbertas ?? []).reduce(
-    (s, c) =>
-      s + Math.max(0, Number(c.valor_a_receber ?? 0) - Number(c.valor_pago_recebido ?? 0)),
-    0
+  const migradas = await fetchItensVisitaPontoFinalizada(supabase, empresaId);
+  const aReceberPendente = somarSaldoColetasNaoMigradas(
+    coletasPendentesAbertas ?? [],
+    migradas.coletaIds
   );
   const entradaTotal = list.reduce(
     (s, c) =>
