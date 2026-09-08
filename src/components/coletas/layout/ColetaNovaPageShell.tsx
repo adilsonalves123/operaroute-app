@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { Instrument_Serif, Outfit } from "next/font/google";
 import { cn } from "@/lib/utils";
+import "./coleta-nova-pagina.css";
 
 const display = Instrument_Serif({
   weight: "400",
@@ -34,7 +35,7 @@ export function ColetaNovaPageShell({
       className={cn(
         display.variable,
         sans.variable,
-        "mx-auto max-w-6xl space-y-5 pb-8",
+        "coleta-nova-pagina mx-auto max-w-6xl space-y-5 pb-8",
         className
       )}
       style={{ fontFamily: "var(--font-coleta-sans), system-ui, sans-serif" }}

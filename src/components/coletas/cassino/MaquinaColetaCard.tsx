@@ -362,13 +362,13 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       id={`maquina-${leitura.equipamentoId}`}
       className={cn(
         "scroll-mt-24 space-y-4 overflow-hidden rounded-2xl border p-4 sm:p-5",
-        "bg-slate-950/60 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]",
+        "coleta-maquina-card bg-slate-950/60 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]",
         temErro
           ? "border-red-500/45 ring-1 ring-red-500/15"
           : leitura.iaPendenteConfirmacao
             ? "border-amber-400/40 ring-1 ring-amber-400/15"
             : pronta
-              ? "border-cyan-400/30 ring-1 ring-cyan-400/10"
+              ? "border-white/[0.12]"
               : "border-white/[0.07]"
       )}
     >

@@ -1,0 +1,16 @@
+/* Card da máquina / fechar coleta — fundo claro no tema light */
+html[data-app-theme="light"] .coleta-nova-pagina [class*="bg-slate-9"] {
+  background-color: #ffffff !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina [class*="bg-slate-8"] {
+  background-color: #f3efe6 !important;
+}
+html[data-app-theme="light"] .coleta-nova-pagina .coleta-maquina-card {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.12) !important;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.05);
+}
+html[data-app-theme="light"] .coleta-nova-pagina [class*="border-slate-7"],
+html[data-app-theme="light"] .coleta-nova-pagina [class*="border-slate-8"] {
+  border-color: rgba(28, 25, 23, 0.14) !important;
+}
