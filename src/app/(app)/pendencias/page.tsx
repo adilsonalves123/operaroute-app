@@ -34,7 +34,7 @@ export default async function PendenciasPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Pendências</h1>
-          <p className="mt-1 text-base text-slate-400">
+          <p className="mt-1 text-sm text-[var(--shell-text-muted)]">
             Débitos e pagamentos em aberto por ponto
           </p>
         </div>
