@@ -63,7 +63,7 @@ function NavLinkRow({
           : undefined
       }
       className={cn(
-        "relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13px] transition",
+        "relative flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[14px] transition",
         collapsed && "justify-center px-2",
         temAlertas &&
           !active &&
@@ -73,16 +73,16 @@ function NavLinkRow({
           "bg-orange-500/25 font-medium text-orange-200 ring-1 ring-orange-500/40",
         !temAlertas &&
           active &&
-          "bg-[#c4a574]/15 font-medium text-[#e8d5b0]",
+          "bg-[var(--shell-nav-active-bg)] font-medium text-[var(--shell-nav-active-text)]",
         !temAlertas &&
           !active &&
-          "text-slate-400 hover:bg-white/[0.04] hover:text-[#f4efe6]"
+          "text-[var(--shell-text-muted)] hover:bg-[var(--shell-hover)] hover:text-[var(--shell-text)]"
       )}
     >
       <span className="relative shrink-0">
         <Icon
           className={cn(
-            "h-4 w-4 opacity-80",
+            "h-4 w-4 opacity-90",
             temAlertas && "text-orange-400 opacity-100"
           )}
         />

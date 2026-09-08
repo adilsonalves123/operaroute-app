@@ -45,7 +45,7 @@ export function AppThemeToggle({ compact = false, className }: Props) {
         title="Tema escuro"
         className={cn(
           "inline-flex items-center justify-center rounded-full transition",
-          compact ? "h-6 w-6" : "gap-1 px-2.5 py-1 text-[11px] font-medium",
+          compact ? "h-6 w-6" : "gap-1 px-2.5 py-1 text-[12px] font-medium",
           theme === "dark"
             ? "bg-[var(--shell-tab-active-bg)] text-[var(--shell-tab-active-text)]"
             : "text-[var(--shell-text-muted)] hover:text-[var(--shell-text)]"
@@ -60,7 +60,7 @@ export function AppThemeToggle({ compact = false, className }: Props) {
         title="Tema claro"
         className={cn(
           "inline-flex items-center justify-center rounded-full transition",
-          compact ? "h-6 w-6" : "gap-1 px-2.5 py-1 text-[11px] font-medium",
+          compact ? "h-6 w-6" : "gap-1 px-2.5 py-1 text-[12px] font-medium",
           theme === "light"
             ? "bg-[var(--shell-tab-active-bg)] text-[var(--shell-tab-active-text)]"
             : "text-[var(--shell-text-muted)] hover:text-[var(--shell-text)]"

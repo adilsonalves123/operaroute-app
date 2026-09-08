@@ -78,7 +78,7 @@ export function AppSidebar({
               >
                 OperaRoute
               </p>
-              <p className="mt-1.5 truncate text-[11px] text-[var(--shell-text-muted)]">
+              <p className="mt-1.5 truncate text-[13px] text-[var(--shell-text-muted)]">
                 {nomeOperacao?.trim() || "Sua operação"}
               </p>
             </div>

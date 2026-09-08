@@ -156,7 +156,7 @@ function DestinosPainelOperador({
         Salvar mantém a folha só para você. Aqui você escolhe quem recebe no painel — um, vários
         ou todos, no mesmo envio. A coleta real não muda.
       </p>
-      <div className="flex gap-3 text-[12px]">
+      <div className="flex gap-3 text-[13px]">
         <button type="button" onClick={onTodos} className="text-[#c4a574] hover:underline">
           Marcar todos
         </button>
@@ -559,7 +559,7 @@ export function DashboardRascunhoClient({
         {!salvo ? (
           <>
             <header className="space-y-4 pt-2">
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#c4a574]/90">
+              <p className="text-[12px] font-medium uppercase tracking-[0.22em] text-[#c4a574]/90">
                 OperaRoute
               </p>
               <h1
@@ -568,13 +568,13 @@ export function DashboardRascunhoClient({
               >
                 Resumo
               </h1>
-              <p className="max-w-md text-[14px] leading-relaxed text-slate-400">
+              <p className="max-w-md text-[15px] leading-relaxed text-slate-400">
                 Escolha o dia — puxa quanto cada ponto mandou (Pix e Dinheiro).
                 Os totais batem: soma dos pontos = Pix + Dinheiro.
               </p>
 
               <label className="block space-y-2">
-                <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
                   Dia da rota
                 </span>
                 <div className="flex flex-wrap items-center gap-3">
@@ -590,25 +590,25 @@ export function DashboardRascunhoClient({
                     />
                   </div>
                   {carregandoDia ? (
-                    <span className="inline-flex items-center gap-1.5 text-[12px] text-slate-500">
+                    <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-500">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       Carregando…
                     </span>
                   ) : (
                     <>
                       {puxouDia ? (
-                        <span className="text-[12px] text-[#c4a574]/90">
+                        <span className="text-[13px] text-[#c4a574]/90">
                           Coletas do dia importadas
                         </span>
                       ) : (
-                        <span className="text-[12px] text-slate-600">
+                        <span className="text-[13px] text-slate-600">
                           Nenhuma coleta neste dia
                         </span>
                       )}
                       <button
                         type="button"
                         onClick={() => void puxarDia(dataSelecionada)}
-                        className="text-[12px] text-slate-500 underline-offset-2 transition hover:text-slate-300 hover:underline"
+                        className="text-[13px] text-slate-500 underline-offset-2 transition hover:text-slate-300 hover:underline"
                       >
                         Atualizar
                       </button>
@@ -617,7 +617,7 @@ export function DashboardRascunhoClient({
                 </div>
               </label>
 
-              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-white/[0.08] pt-4 text-[12px] text-slate-500">
+              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-white/[0.08] pt-4 text-[13px] text-slate-500">
                 <span className="capitalize text-slate-400">
                   {dataLabel(dataSelecionada)}
                 </span>
@@ -647,7 +647,7 @@ export function DashboardRascunhoClient({
               <button
                 type="button"
                 onClick={limpar}
-                className="inline-flex items-center gap-1.5 text-[12px] text-slate-500 transition hover:text-slate-300"
+                className="inline-flex items-center gap-1.5 text-[13px] text-slate-500 transition hover:text-slate-300"
               >
                 <Eraser className="h-3.5 w-3.5" />
                 Limpar folha
@@ -675,7 +675,7 @@ export function DashboardRascunhoClient({
                           )}
                         />
                         <div className="flex items-center gap-3">
-                          <span className="w-5 shrink-0 text-[11px] tabular-nums text-slate-600">
+                          <span className="w-5 shrink-0 text-[12px] tabular-nums text-slate-600">
                             {String(idx + 1).padStart(2, "0")}
                           </span>
                           <div className="relative w-[7.75rem] shrink-0">
@@ -701,7 +701,7 @@ export function DashboardRascunhoClient({
                             </p>
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
                               {p.status !== "ativo" ? (
-                                <p className="text-[11px] capitalize text-slate-600">
+                                <p className="text-[12px] capitalize text-slate-600">
                                   {p.status}
                                 </p>
                               ) : null}
@@ -747,7 +747,7 @@ export function DashboardRascunhoClient({
                   </div>
                 ) : null}
                 <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3">
-                  <span className="text-[12px] uppercase tracking-[0.16em] text-slate-500">
+                  <span className="text-[13px] uppercase tracking-[0.16em] text-slate-500">
                     Total líquido
                   </span>
                   <span
@@ -763,7 +763,7 @@ export function DashboardRascunhoClient({
 
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="block space-y-2">
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
                     Pix
                   </span>
                   <input
@@ -779,7 +779,7 @@ export function DashboardRascunhoClient({
                   />
                 </label>
                 <label className="block space-y-2">
-                  <span className="text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                  <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
                     Dinheiro
                   </span>
                   <input
@@ -809,7 +809,7 @@ export function DashboardRascunhoClient({
                 )}
               </p>
               {feedback ? (
-                <p className="text-[12px] text-rose-400">{feedback}</p>
+                <p className="text-[13px] text-rose-400">{feedback}</p>
               ) : null}
             </section>
 
@@ -842,7 +842,7 @@ export function DashboardRascunhoClient({
             `}</style>
 
             <header className="space-y-3">
-              <p className="text-[11px] font-medium uppercase tracking-[0.22em] text-[#c4a574]/90">
+              <p className="text-[12px] font-medium uppercase tracking-[0.22em] text-[#c4a574]/90">
                 OperaRoute · fechamento
               </p>
               <h1
@@ -878,7 +878,7 @@ export function DashboardRascunhoClient({
             </section>
 
             <section className="space-y-2">
-              <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+              <p className="text-[12px] uppercase tracking-[0.2em] text-slate-500">
                 Total líquido
               </p>
               <p
@@ -906,7 +906,7 @@ export function DashboardRascunhoClient({
 
             <section className="grid gap-6 border-y border-white/[0.08] py-6 sm:grid-cols-2">
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-[12px] uppercase tracking-[0.2em] text-slate-500">
                   Pix
                 </p>
                 <p
@@ -919,7 +919,7 @@ export function DashboardRascunhoClient({
                 </p>
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-slate-500">
+                <p className="text-[12px] uppercase tracking-[0.2em] text-slate-500">
                   Dinheiro
                 </p>
                 <p
@@ -934,7 +934,7 @@ export function DashboardRascunhoClient({
             </section>
 
             <section className="space-y-5">
-              <h2 className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-500">
+              <h2 className="text-[12px] font-medium uppercase tracking-[0.2em] text-slate-500">
                 Por ponto
               </h2>
               <ol className="space-y-4">
@@ -984,11 +984,11 @@ export function DashboardRascunhoClient({
 
             <div className="flex flex-wrap gap-x-5 gap-y-3 border-t border-white/[0.08] pt-6 text-[13px]">
               <div className="w-full space-y-3">
-                <p className="text-[11px] text-slate-600">
+                <p className="text-[12px] text-slate-600">
                   WhatsApp e compartilhar enviam só o link da página web.
                 </p>
                 {compartilhandoLink && !linkCompartilhamento ? (
-                  <p className="inline-flex items-center gap-2 text-[12px] text-slate-500">
+                  <p className="inline-flex items-center gap-2 text-[13px] text-slate-500">
                     <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     Gerando link…
                   </p>
@@ -1000,7 +1000,7 @@ export function DashboardRascunhoClient({
                         href={linkCompartilhamento}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="min-w-0 truncate text-[12px] text-[#c4a574] underline-offset-2 hover:underline"
+                        className="min-w-0 truncate text-[13px] text-[#c4a574] underline-offset-2 hover:underline"
                       >
                         {linkCompartilhamento}
                       </a>
@@ -1009,7 +1009,7 @@ export function DashboardRascunhoClient({
                       type="button"
                       onClick={() => void copiarLink()}
                       disabled={compartilhandoLink}
-                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-[12px] text-slate-300 transition hover:border-white/20 hover:text-white disabled:opacity-50"
+                      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-[13px] text-slate-300 transition hover:border-white/20 hover:text-white disabled:opacity-50"
                     >
                       <Copy className="h-3.5 w-3.5" />
                       Copiar link
@@ -1075,7 +1075,7 @@ export function DashboardRascunhoClient({
               onEnviar={() => void publicarVisao()}
             />
             {feedback ? (
-              <p className="text-[12px] text-slate-400">{feedback}</p>
+              <p className="text-[13px] text-slate-400">{feedback}</p>
             ) : null}
           </div>
         )}

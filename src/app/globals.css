@@ -55,8 +55,8 @@
 html[data-app-theme="light"] {
   --background: #faf8f4;
   --background-secondary: #f3efe6;
-  --foreground: #1c1917;
-  --foreground-muted: #57534e;
+  --foreground: #141210;
+  --foreground-muted: #3d3833;
   --card: #ffffff;
   --card-border: rgba(28, 25, 23, 0.1);
   --primary: #92662a;
@@ -71,8 +71,8 @@ html[data-app-theme="light"] {
   --shell-bg: rgba(250, 248, 244, 0.97);
   --shell-surface-soft: rgba(28, 25, 23, 0.04);
   --shell-border: rgba(28, 25, 23, 0.1);
-  --shell-text: #1c1917;
-  --shell-text-muted: #57534e;
+  --shell-text: #141210;
+  --shell-text-muted: #3d3833;
   --shell-accent: #92662a;
   --shell-accent-soft: rgba(146, 102, 42, 0.12);
   --shell-hover: rgba(28, 25, 23, 0.05);
@@ -118,6 +118,10 @@ html[data-app-theme="light"] {
 
 * {
   box-sizing: border-box;
+}
+
+html {
+  font-size: 17px;
 }
 
 body {
@@ -233,25 +237,27 @@ html[data-app-theme="light"] .bank-card {
   background: var(--shell-main-bg);
 }
 
-/* Legibilidade global no tema claro */
-html[data-app-theme="light"] main .text-white {
+/* Legibilidade global no tema claro (menu + conteúdo) */
+html[data-app-theme="light"] .text-white {
+  color: #141210;
+}
+
+html[data-app-theme="light"] .text-slate-300 {
   color: #1c1917;
 }
 
-html[data-app-theme="light"] main .text-slate-300 {
-  color: #292524;
+html[data-app-theme="light"] .text-slate-400,
+html[data-app-theme="light"] .text-slate-500 {
+  color: #3d3833;
 }
 
-html[data-app-theme="light"] main .text-slate-400 {
+html[data-app-theme="light"] .text-slate-600 {
   color: #44403c;
 }
 
-html[data-app-theme="light"] main .text-slate-500 {
-  color: #44403c;
-}
-
-html[data-app-theme="light"] main .text-slate-600 {
-  color: #57534e;
+html[data-app-theme="light"] [class*="text-[#f4efe6]"],
+html[data-app-theme="light"] [class*="text-[#e8d5b0]"] {
+  color: #141210;
 }
 
 html[data-app-theme="light"] main [class*="border-white"] {
@@ -271,7 +277,8 @@ html[data-app-theme="light"] select,
 html[data-app-theme="light"] textarea {
   background: #ffffff;
   border-color: rgba(28, 25, 23, 0.14);
-  color: #1c1917;
+  color: #141210;
+  color-scheme: light;
 }
 
 html[data-app-theme="light"] input::placeholder,
@@ -1122,9 +1129,9 @@ input::placeholder, textarea::placeholder {
 .analise-premium-root[data-analise-visual="claro"],
 html[data-app-theme="light"] .premium-desk-root,
 html[data-app-theme="light"] .analise-premium-root {
-  --at-primary: #1c1917;
-  --at-muted: #78716c;
-  --at-soft: #a8a29e;
+  --at-primary: #141210;
+  --at-muted: #3d3833;
+  --at-soft: #5c564f;
   --at-accent: rgba(120, 83, 32, 0.95);
   --at-card: #ffffff;
   --at-card-soft: #faf8f4;
