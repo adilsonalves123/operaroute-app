@@ -1466,6 +1466,44 @@ html[data-app-theme="light"] .analise-premium-root {
   );
 }
 
+/* Splash OperaRoute — no escuro o OR e o texto não herdam token de tema claro */
+.or-loader-screen[data-analise-visual="escuro"] {
+  --at-primary: #f7f1e6;
+  --at-muted: #d8d2c8;
+  --at-soft: #c9c2b6;
+  --at-accent: #f0d9a8;
+  --loader-node-start: #f3e0b8;
+  --loader-node-end: #5ce1ff;
+  --loader-route: #ead7b0;
+  --loader-arc-top: rgba(255, 236, 200, 0.98);
+  --loader-arc-side: rgba(92, 225, 255, 0.55);
+  --loader-ring: rgba(232, 213, 176, 0.55);
+  --loader-ring-mid: rgba(232, 213, 176, 0.32);
+  --loader-glow-gold: rgba(232, 213, 176, 0.38);
+  --loader-glow-cyan: rgba(0, 212, 255, 0.22);
+}
+.or-loader-screen[data-analise-visual="escuro"] .or-loader-kicker {
+  color: #f0d9a8;
+}
+.or-loader-screen[data-analise-visual="escuro"] .or-loader-brand {
+  color: #f7f1e6;
+  text-shadow: 0 0 32px rgba(232, 213, 176, 0.35);
+}
+.or-loader-screen[data-analise-visual="escuro"] .or-loader-tagline,
+.or-loader-screen[data-analise-visual="escuro"] .or-loader-message {
+  color: #d8d2c8;
+}
+.or-loader-screen[data-analise-visual="claro"] .or-loader-kicker {
+  color: #5c3d0a;
+}
+.or-loader-screen[data-analise-visual="claro"] .or-loader-brand {
+  color: #141210;
+}
+.or-loader-screen[data-analise-visual="claro"] .or-loader-tagline,
+.or-loader-screen[data-analise-visual="claro"] .or-loader-message {
+  color: #3d3833;
+}
+
 .text-at-primary { color: var(--at-primary); }
 .text-at-muted { color: var(--at-muted); }
 .text-at-soft { color: var(--at-soft); }

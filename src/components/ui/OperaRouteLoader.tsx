@@ -57,7 +57,7 @@ export function OperaRouteLoader({
       className={cn(
         display.variable,
         sans.variable,
-        "premium-desk-root relative flex w-full flex-col items-center justify-center overflow-hidden",
+        "or-loader-screen premium-desk-root relative flex w-full flex-col items-center justify-center overflow-hidden",
         variant === "fullscreen"
           ? "min-h-[min(100%,86vh)] px-6 py-14 sm:px-12"
           : "min-h-[min(100%,82vh)] px-6 py-16"
@@ -76,7 +76,7 @@ export function OperaRouteLoader({
       </div>
 
       <div className="relative z-10 flex w-full max-w-2xl flex-col items-center text-center">
-        <p className="text-[11px] font-medium uppercase tracking-[0.36em] text-at-accent sm:text-xs">
+        <p className="or-loader-kicker text-[11px] font-medium uppercase tracking-[0.36em] sm:text-xs">
           OperaRoute
         </p>
 
@@ -118,7 +118,7 @@ export function OperaRouteLoader({
 
           <div className="absolute inset-0 flex items-center justify-center">
             <span
-              className="text-[3.25rem] leading-none tracking-tight text-at-primary sm:text-[4.25rem]"
+              className="or-loader-brand text-[3.25rem] leading-none tracking-tight sm:text-[4.25rem]"
               style={{ fontFamily: "var(--font-loader-display), Georgia, serif" }}
             >
               OR
@@ -127,13 +127,13 @@ export function OperaRouteLoader({
         </div>
 
         <h1
-          className="text-[clamp(2.75rem,7vw,4rem)] leading-none tracking-tight text-at-primary"
+          className="or-loader-brand text-[clamp(2.75rem,7vw,4rem)] leading-none tracking-tight"
           style={{ fontFamily: "var(--font-loader-display), Georgia, serif" }}
         >
           OperaRoute
         </h1>
 
-        <p className="mt-4 max-w-md text-[15px] leading-relaxed text-at-muted sm:mt-5 sm:max-w-lg sm:text-[17px]">
+        <p className="or-loader-tagline mt-4 max-w-md text-[15px] leading-relaxed sm:mt-5 sm:max-w-lg sm:text-[17px]">
           Gestão profissional da sua operação em campo.
         </p>
 
@@ -143,7 +143,7 @@ export function OperaRouteLoader({
 
         <p
           key={displayMessage}
-          className="or-loader-message mt-7 text-[14px] text-at-muted sm:mt-8 sm:text-[15px]"
+          className="or-loader-message mt-7 text-[14px] sm:mt-8 sm:text-[15px]"
         >
           {displayMessage}
         </p>
