@@ -110,7 +110,7 @@ export function VisitaPontoHub({
   return (
     <div
       className={cn(
-        "mx-auto max-w-3xl space-y-6",
+        "visita-ponto-pagina mx-auto max-w-3xl space-y-6",
         // Espaço para sticky (Outro nicho / Cobrar) + BottomNav + safe-area no tablet
         temColeta && "pb-[calc(12rem+env(safe-area-inset-bottom,0px))] lg:pb-36"
       )}

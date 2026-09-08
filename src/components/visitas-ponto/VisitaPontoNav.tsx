@@ -17,6 +17,7 @@ import {
 import { cn, formatCurrency } from "@/lib/utils";
 import type { VisitaPontoNicho, VisitaPontoResumo } from "@/lib/visitas-ponto/types";
 import { buildColetaUrl } from "@/lib/visitas-ponto";
+import "@/components/coletas/layout/coleta-nova-pagina.css";
 
 const NICHO_META: {
   id: VisitaPontoNicho;
@@ -152,7 +153,7 @@ export function VisitaPontoNav({
             </Link>
           )}
           {subtotal > 0.009 && (
-            <span className="tabular-nums text-amber-300/90">
+            <span className="coleta-tom-negativo tabular-nums text-amber-300/90">
               Acumulado {formatCurrency(subtotal)} · ainda não pago
             </span>
           )}

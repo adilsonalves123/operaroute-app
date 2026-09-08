@@ -222,11 +222,11 @@ export function VisitaPontoCheckoutForm({
         )}
       </div>
 
-      <div className="rounded-xl border border-primary-neon/30 bg-primary-neon/[0.08] px-4 py-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-neon/80">
+      <div className="coleta-box-receber rounded-xl border border-primary-neon/30 bg-primary-neon/[0.08] px-4 py-3">
+        <p className="coleta-tom-receber text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-neon/80">
           3 · A cobrar agora
         </p>
-        <p className="mt-1 text-3xl font-bold tabular-nums text-primary-neon">
+        <p className="coleta-tom-receber mt-1 text-3xl font-bold tabular-nums text-primary-neon">
           {formatCurrency(calculo.totalACobrar)}
         </p>
         {!incluirDivida && temDivida && (
@@ -283,11 +283,11 @@ export function VisitaPontoCheckoutForm({
 
       {(calculo.valorPago > 0.009 || calculo.restante > 0.009) && (
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg border border-green-500/25 bg-green-500/5 px-3 py-3">
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-green-400/80">
+          <div className="coleta-box-lucro rounded-lg border border-green-500/25 bg-green-500/5 px-3 py-3">
+            <p className="coleta-tom-lucro text-[10px] font-semibold uppercase tracking-wider text-green-400/80">
               Pago hoje
             </p>
-            <p className="mt-1 text-xl font-bold tabular-nums text-green-300">
+            <p className="coleta-tom-lucro mt-1 text-xl font-bold tabular-nums text-green-300">
               {formatCurrency(calculo.valorPago)}
             </p>
           </div>
@@ -295,14 +295,14 @@ export function VisitaPontoCheckoutForm({
             className={cn(
               "rounded-lg border px-3 py-3",
               calculo.restante > 0.009
-                ? "border-amber-500/25 bg-amber-500/5"
+                ? "coleta-box-receber border-amber-500/25 bg-amber-500/5"
                 : "border-at bg-white/[0.02]"
             )}
           >
             <p
               className={cn(
                 "text-[10px] font-semibold uppercase tracking-wider",
-                calculo.restante > 0.009 ? "text-amber-400/80" : "text-at-muted"
+                calculo.restante > 0.009 ? "coleta-tom-negativo text-amber-400/80" : "text-at-muted"
               )}
             >
               Ainda deve
@@ -310,7 +310,7 @@ export function VisitaPontoCheckoutForm({
             <p
               className={cn(
                 "mt-1 text-xl font-bold tabular-nums",
-                calculo.restante > 0.009 ? "text-amber-300" : "text-at-muted"
+                calculo.restante > 0.009 ? "coleta-tom-negativo text-amber-300" : "text-at-muted"
               )}
             >
               {formatCurrency(calculo.restante)}
