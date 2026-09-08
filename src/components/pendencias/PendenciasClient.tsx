@@ -595,7 +595,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                     ) : null}
 
                     {p.descricao ? (
-                      <details className="group rounded-lg border border-slate-800/80 bg-slate-900/30">
+                      <details className="pendencias-historico group rounded-lg border border-slate-800/80 bg-slate-900/30">
                         <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-300 [&::-webkit-details-marker]:hidden">
                           Histórico
                           <span className="ml-1 text-slate-600 group-open:hidden">▾</span>
@@ -698,7 +698,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                             Pagamento sincroniza com a coleta fura-fura (FIFO).
                           </p>
                         ) : null}
-                        <div className="space-y-3 rounded-lg border border-slate-800/80 bg-slate-900/20 p-4">
+                        <div className="pendencias-pagamento space-y-3 rounded-lg border border-slate-800/80 bg-slate-900/20 p-4">
                           <p className="text-sm font-semibold text-[var(--shell-text)]">Registrar pagamento</p>
                           <div className="grid gap-3 sm:grid-cols-3">
                           <div className="space-y-1.5">
@@ -768,7 +768,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                               href={cobrarUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-green-500/30 px-3.5 py-2 text-sm font-medium text-green-400 hover:bg-green-500/10"
+                              className="pendencias-btn-acao pendencias-btn-cobrar inline-flex items-center gap-1.5 rounded-lg border border-green-500/30 px-3.5 py-2 text-sm font-medium text-green-400 hover:bg-green-500/10"
                             >
                               <MessageCircle className="h-4 w-4" />
                               Cobrar
@@ -778,7 +778,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                             type="button"
                             disabled={loadingId === p.id}
                             onClick={() => baixar(p.id)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/30 px-3.5 py-2 text-sm font-medium text-primary-neon hover:bg-blue-500/10 disabled:opacity-50"
+                            className="pendencias-btn-baixa inline-flex items-center gap-1.5 rounded-lg border border-blue-500/30 px-3.5 py-2 text-sm font-medium text-primary-neon hover:bg-blue-500/10 disabled:opacity-50"
                           >
                             <CheckCircle className="h-4 w-4" />
                             {loadingId === p.id ? "Salvando..." : "Dar baixa"}
@@ -787,7 +787,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                             type="button"
                             disabled={loadingId === p.id}
                             onClick={() => quitar(p.id)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-green-500/30 px-3.5 py-2 text-sm font-medium text-green-400 hover:bg-green-500/10 disabled:opacity-50"
+                            className="pendencias-btn-acao pendencias-btn-quitar inline-flex items-center gap-1.5 rounded-lg border border-green-500/30 px-3.5 py-2 text-sm font-medium text-green-400 hover:bg-green-500/10 disabled:opacity-50"
                           >
                             <CheckCircle className="h-4 w-4" />
                             Quitar tudo
@@ -796,7 +796,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                             type="button"
                             disabled={loadingId === p.id}
                             onClick={() => apagar(p.id)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3.5 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                            className="pendencias-btn-apagar inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3.5 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                           >
                             <Trash2 className="h-4 w-4" />
                             Apagar

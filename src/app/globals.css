@@ -313,6 +313,36 @@ html[data-app-theme="light"] .pendencias-faixa-chip-on {
   color: #faf8f4 !important;
 }
 
+/* Só o card de pagamento da pendência — cinza e amarelo mais fortes no claro */
+html[data-app-theme="light"] .pendencias-historico {
+  background: #ddd6c8 !important;
+  border-color: rgba(28, 25, 23, 0.22) !important;
+}
+html[data-app-theme="light"] .pendencias-historico summary,
+html[data-app-theme="light"] .pendencias-historico p {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .pendencias-pagamento {
+  background: #ddd6c8 !important;
+  border-color: rgba(28, 25, 23, 0.22) !important;
+}
+html[data-app-theme="light"] .pendencias-pagamento input::placeholder {
+  color: #5c564f !important;
+}
+html[data-app-theme="light"] .pendencias-btn-baixa {
+  color: #7a3f08 !important;
+  border-color: #9a4f0a !important;
+}
+html[data-app-theme="light"] .pendencias-btn-cobrar,
+html[data-app-theme="light"] .pendencias-btn-quitar {
+  color: #065f46 !important;
+  border-color: #047857 !important;
+}
+html[data-app-theme="light"] .pendencias-btn-apagar {
+  color: #9f1239 !important;
+  border-color: #be123c !important;
+}
+
 /* Só o detalhe da coleta cassino — cards escuros + letra remapeada para preto */
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-slate-9"],
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-gradient-to"] {
