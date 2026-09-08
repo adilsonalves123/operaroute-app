@@ -274,7 +274,7 @@ export default async function ColetaUrsinhoDetalhePage({
       <div className="flex flex-wrap gap-3">
         <Link
           href={editarHref}
-          className="inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 hover:bg-amber-500/20"
+          className="coleta-visita-btn-editar inline-flex items-center gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-2 text-sm text-amber-100 hover:bg-amber-500/20"
         >
           Editar coleta completa
         </Link>

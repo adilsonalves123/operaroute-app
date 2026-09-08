@@ -549,7 +549,8 @@ html[data-app-theme="light"] .coleta-visita-pagina .coleta-maquina-bloco {
   background: #f3efe6 !important;
   color: #141210 !important;
 }
-html[data-app-theme="light"] .coleta-visita-pagina .coleta-visita-btn-editar {
+html[data-app-theme="light"] .coleta-visita-pagina .coleta-visita-btn-editar,
+html[data-app-theme="light"] .coleta-visita-btn-editar {
   background: #f6ead0 !important;
   border-color: #8a5a12 !important;
   color: #5c3d0a !important;
@@ -1502,6 +1503,35 @@ html[data-app-theme="light"] .analise-premium-root {
 .or-loader-screen[data-analise-visual="claro"] .or-loader-tagline,
 .or-loader-screen[data-analise-visual="claro"] .or-loader-message {
   color: #3d3833;
+}
+
+/* Corrigir pagamento — card cinza + letra remapeada para preto */
+html[data-app-theme="light"] .corrigir-pagamento-painel {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .corrigir-pagamento-painel .text-white,
+html[data-app-theme="light"] .corrigir-pagamento-painel .text-slate-200,
+html[data-app-theme="light"] .corrigir-pagamento-painel .text-slate-300,
+html[data-app-theme="light"] .corrigir-pagamento-painel .text-slate-400,
+html[data-app-theme="light"] .corrigir-pagamento-painel .text-slate-500 {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .corrigir-pagamento-painel input {
+  color: #141210 !important;
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.2) !important;
+}
+html[data-app-theme="light"] .corrigir-pagamento-painel [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .corrigir-pagamento-painel [class*="text-emerald-2"] {
+  color: #047857 !important;
+}
+html[data-app-theme="light"] .corrigir-pagamento-cancelar {
+  color: #141210 !important;
+  border-color: rgba(28, 25, 23, 0.22) !important;
 }
 
 .text-at-primary { color: var(--at-primary); }
