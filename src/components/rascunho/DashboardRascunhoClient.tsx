@@ -111,11 +111,88 @@ function formaLabel(forma: PontoMetaRascunho["forma"]): string {
   return "";
 }
 
-type Props = {
-  pontos: PontoRascunho[];
-  empresaNome: string;
-  operadoresVisao?: { id: string; nome: string }[];
-};
+type OperadorVisao = { id: string; nome: string };
+
+function DestinosPainelOperador({
+  operadores,
+  selecionados,
+  publicando,
+  onToggle,
+  onTodos,
+  onNenhum,
+  onEnviar,
+}: {
+  operadores: OperadorVisao[];
+  selecionados: string[];
+  publicando: boolean;
+  onToggle: (id: string, checked: boolean) => void;
+  onTodos: () => void;
+  onNenhum: () => void;
+  onEnviar: () => void;
+}) {
+  if (operadores.length === 0) {
+    return (
+      <div className="space-y-2 rounded-xl border border-white/10 p-4">
+        <p className="text-sm font-medium text-[#f4efe6]">Enviar para operadores</p>
+        <p className="text-xs leading-relaxed text-slate-400">
+          Ninguém está no painel restrito ainda. Marque os operadores em Equipe → Painel restrito.
+        </p>
+      </div>
+    );
+  }
+
+  const n = selecionados.length;
+  const label =
+    n === 0
+      ? "Marque um ou mais operadores"
+      : n === 1
+        ? `Enviar para ${operadores.find((o) => o.id === selecionados[0])?.nome ?? "1 operador"}`
+        : `Enviar para ${n} operadores`;
+
+  return (
+    <div className="space-y-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-4">
+      <p className="text-sm font-medium text-amber-100/90">Enviar para operadores</p>
+      <p className="text-xs leading-relaxed text-slate-400">
+        Salvar mantém a folha só para você. Aqui você escolhe quem recebe no painel — um, vários
+        ou todos, no mesmo envio. A coleta real não muda.
+      </p>
+      <div className="flex gap-3 text-[12px]">
+        <button type="button" onClick={onTodos} className="text-[#c4a574] hover:underline">
+          Marcar todos
+        </button>
+        <button type="button" onClick={onNenhum} className="text-slate-500 hover:underline">
+          Limpar seleção
+        </button>
+      </div>
+      <div className="space-y-1.5">
+        {operadores.map((op) => {
+          const on = selecionados.includes(op.id);
+          return (
+            <label
+              key={op.id}
+              className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
+            >
+              <input
+                type="checkbox"
+                checked={on}
+                onChange={(e) => onToggle(op.id, e.target.checked)}
+              />
+              {op.nome}
+            </label>
+          );
+        })}
+      </div>
+      <button
+        type="button"
+        onClick={onEnviar}
+        disabled={publicando || n === 0}
+        className="rounded-lg bg-[#c4a574] px-4 py-2 text-sm font-semibold text-slate-900 disabled:opacity-50"
+      >
+        {publicando ? "Enviando…" : label}
+      </button>
+    </div>
+  );
+}
 
 function hojeISO(): string {
   const d = new Date();
@@ -157,7 +234,13 @@ function sanitizarMoney(raw: string): string {
   return negativo ? `-${resto}` : resto;
 }
 
-/** Digita valores → Salvar → lista some e ficam só os números. */
+type Props = {
+  pontos: PontoRascunho[];
+  empresaNome: string;
+  operadoresVisao?: OperadorVisao[];
+};
+
+/** Digita valores → Salvar para manter. Enviar para operadores é um passo à parte. */
 export function DashboardRascunhoClient({
   pontos,
   empresaNome,
@@ -177,9 +260,7 @@ export function DashboardRascunhoClient({
   const [puxouDia, setPuxouDia] = useState(false);
   const [compartilhandoLink, setCompartilhandoLink] = useState(false);
   const [linkCompartilhamento, setLinkCompartilhamento] = useState<string | null>(null);
-  const [operadoresSel, setOperadoresSel] = useState<string[]>(() =>
-    operadoresVisao.map((o) => o.id)
-  );
+  const [operadoresSel, setOperadoresSel] = useState<string[]>([]);
   const [publicando, setPublicando] = useState(false);
 
   const puxarDia = useCallback(async (dataISO: string) => {
@@ -388,8 +469,17 @@ export function DashboardRascunhoClient({
         setFeedback(body.error ?? "Não foi possível publicar.");
         return;
       }
+      const nomes = operadoresVisao
+        .filter((o) => operadoresSel.includes(o.id))
+        .map((o) => o.nome);
+      const quem =
+        nomes.length === 1
+          ? nomes[0]
+          : nomes.length === 2
+            ? `${nomes[0]} e ${nomes[1]}`
+            : `${nomes.slice(0, -1).join(", ")} e ${nomes[nomes.length - 1]}`;
       setFeedback(
-        `Publicado para o painel do operador (${body.publicados ?? 0} valores).`
+        `Enviado para ${quem} (${body.publicados ?? 0} valores). A folha continua salva aqui.`
       );
     } catch {
       setFeedback("Erro de conexão ao publicar.");
@@ -431,8 +521,7 @@ export function DashboardRascunhoClient({
       setFeedback("Preencha pelo menos um valor.");
       return;
     }
-    setFeedback(null);
-    setLinkCompartilhamento(null);
+    setFeedback("Folha salva. Ninguém recebeu ainda — marque os operadores para enviar.");
     setSalvo(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
     void (async () => {
@@ -731,7 +820,7 @@ export function DashboardRascunhoClient({
                   onClick={salvar}
                   className="flex w-full items-center justify-center rounded-lg bg-[#c4a574] px-4 py-3.5 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:brightness-110"
                 >
-                  Fechar resumo
+                  Salvar para manter
                 </button>
               </div>
             </div>
@@ -972,48 +1061,19 @@ export function DashboardRascunhoClient({
               </button>
             </div>
 
-            {operadoresVisao.length > 0 && (
-              <div className="mt-6 space-y-3 rounded-xl border border-amber-500/25 bg-amber-500/[0.04] p-4">
-                <p className="text-sm font-medium text-amber-100/90">
-                  Publicar no painel do operador
-                </p>
-                <p className="text-xs leading-relaxed text-slate-400">
-                  A coleta real não muda. Ele vê só estes valores e os pontos liberados na
-                  Equipe.
-                </p>
-                <div className="space-y-1.5">
-                  {operadoresVisao.map((op) => {
-                    const on = operadoresSel.includes(op.id);
-                    return (
-                      <label
-                        key={op.id}
-                        className="flex cursor-pointer items-center gap-2 text-sm text-slate-300"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={on}
-                          onChange={(e) => {
-                            const checked = e.target.checked;
-                            setOperadoresSel((prev) =>
-                              checked ? [...prev, op.id] : prev.filter((id) => id !== op.id)
-                            );
-                          }}
-                        />
-                        {op.nome}
-                      </label>
-                    );
-                  })}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => void publicarVisao()}
-                  disabled={publicando}
-                  className="rounded-lg bg-[#c4a574] px-4 py-2 text-sm font-semibold text-slate-900 disabled:opacity-50"
-                >
-                  {publicando ? "Publicando…" : "Publicar para o painel"}
-                </button>
-              </div>
-            )}
+            <DestinosPainelOperador
+              operadores={operadoresVisao}
+              selecionados={operadoresSel}
+              publicando={publicando}
+              onToggle={(id, checked) =>
+                setOperadoresSel((prev) =>
+                  checked ? [...prev, id] : prev.filter((x) => x !== id)
+                )
+              }
+              onTodos={() => setOperadoresSel(operadoresVisao.map((o) => o.id))}
+              onNenhum={() => setOperadoresSel([])}
+              onEnviar={() => void publicarVisao()}
+            />
             {feedback ? (
               <p className="text-[12px] text-slate-400">{feedback}</p>
             ) : null}
