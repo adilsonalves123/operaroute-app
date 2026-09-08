@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Crown,
+  EyeOff,
   KeyRound,
   LogIn,
   Mail,
@@ -500,15 +501,26 @@ export function EquipeClient({
             </Link>
           )}
         </div>
-        <button
-          type="button"
-          onClick={openCreate}
-          disabled={!podeAdicionar || !podeGerenciarEquipe}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          <Plus className="h-4 w-4" />
-          Adicionar membro
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {podeGerenciarEquipe && (
+            <Link
+              href="/painel-restrito"
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-[#c4a574] bg-[#c4a574] px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-[#d4b584]"
+            >
+              <EyeOff className="h-4 w-4" />
+              Painel restrito
+            </Link>
+          )}
+          <button
+            type="button"
+            onClick={openCreate}
+            disabled={!podeAdicionar || !podeGerenciarEquipe}
+            className="inline-flex items-center gap-2 rounded-lg bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Plus className="h-4 w-4" />
+            Adicionar membro
+          </button>
+        </div>
       </div>
 
       {podeGerenciarEquipe && (
@@ -965,6 +977,13 @@ export function EquipeClient({
                       Nova senha
                     </button>
                   )}
+                  <Link
+                    href="/painel-restrito"
+                    className="inline-flex items-center gap-1 rounded-lg bg-[#c4a574] px-2.5 py-1.5 text-xs font-semibold text-slate-900 hover:bg-[#d4b584]"
+                  >
+                    <EyeOff className="h-3.5 w-3.5" />
+                    Painel restrito
+                  </Link>
                 </div>
               )}
             </article>

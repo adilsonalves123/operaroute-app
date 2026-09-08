@@ -50,24 +50,24 @@ export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Pro
   return (
     <section
       id="painel-restrito"
-      className="space-y-3 rounded-xl border-2 border-amber-400/50 bg-amber-500/10 p-4"
+      className="space-y-3 rounded-xl border-2 border-[#c4a574] bg-[#c4a574]/20 p-4"
     >
       <div className="flex items-start gap-2">
-        <EyeOff className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+        <EyeOff className="mt-0.5 h-5 w-5 shrink-0 text-[#8a6a3d]" />
         <div>
-          <h2 className="text-base font-semibold text-amber-100">Painel restrito</h2>
-          <p className="mt-1 text-sm leading-relaxed text-slate-300">
-            Aqui você escolhe quem vê só o que você publicar. A coleta na rua continua
-            normal.
+          <h2 className="text-base font-semibold text-at-primary">Painel restrito</h2>
+          <p className="mt-1 text-sm leading-relaxed text-at-muted">
+            Marque o operador para ele coletar normal, mas no painel ver só o que você
+            publicar.
           </p>
         </div>
       </div>
 
-      {erro && <p className="text-sm text-red-300">{erro}</p>}
-      {ok && <p className="text-sm text-emerald-300">{ok}</p>}
+      {erro && <p className="text-sm text-red-600">{erro}</p>}
+      {ok && <p className="text-sm text-emerald-700">{ok}</p>}
 
       {operadores.length === 0 ? (
-        <p className="rounded-lg border border-amber-400/30 bg-slate-950/40 p-3 text-sm text-slate-200">
+        <p className="rounded-lg border border-[#c4a574]/40 bg-white/60 p-3 text-sm text-at-primary">
           Ainda não tem operador na equipe. Clique em <strong>Adicionar membro</strong>{" "}
           acima, crie um login de <strong>operador</strong> e volte aqui para marcar o
           checkbox.
@@ -81,7 +81,7 @@ export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Pro
           return (
             <li
               key={membro.id}
-              className="rounded-lg border border-white/10 bg-slate-950/40 p-3"
+              className="rounded-lg border border-at bg-at-card p-3"
             >
               <label className="flex cursor-pointer items-start gap-3">
                 <input
@@ -96,8 +96,8 @@ export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Pro
                   }}
                 />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-white">{membro.nome}</span>
-                  <span className="block text-xs text-slate-400">
+                  <span className="block text-sm font-medium text-at-primary">{membro.nome}</span>
+                  <span className="block text-xs text-at-muted">
                     {restrita
                       ? `${pontoIds.length} ponto(s) liberado(s)`
                       : "Vê tudo (igual você)"}
