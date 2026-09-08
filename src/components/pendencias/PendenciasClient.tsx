@@ -400,23 +400,23 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
   return (
     <>
     <div className="space-y-4">
-      <div className="space-y-3 rounded-xl border border-[var(--shell-border)] bg-[var(--shell-surface-soft)] p-3 sm:p-4">
+      <div className="pendencias-faixa space-y-3 rounded-xl p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-[var(--shell-text-muted)]">
-            <span className="font-semibold text-[var(--shell-text)]">{abertasCount}</span>{" "}
+          <p className="pendencias-faixa-texto text-base">
+            <span className="pendencias-faixa-numero font-semibold">{abertasCount}</span>{" "}
             {abertasCount === 1 ? "aberta" : "abertas"}
             {totalAberto > 0.009 ? (
               <>
                 {" "}
                 · total{" "}
-                <span className="font-semibold text-[var(--shell-accent)]">{formatCurrency(totalAberto)}</span>
+                <span className="pendencias-faixa-total font-semibold">{formatCurrency(totalAberto)}</span>
               </>
             ) : null}
           </p>
           <button
             type="button"
             onClick={() => setMostrarTodas((v) => !v)}
-            className="text-sm text-[var(--shell-text-muted)] underline-offset-2 hover:text-[var(--shell-text)] hover:underline"
+            className="pendencias-faixa-texto text-sm underline-offset-2 hover:underline"
           >
             {mostrarTodas ? "Só abertas" : "Incluir resolvidas"}
           </button>
@@ -432,9 +432,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                 setExpandedId(null);
               }}
               className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-                filtroTipo === f.id
-                  ? "bg-[var(--shell-tab-active-bg)] text-[var(--shell-tab-active-text)]"
-                  : "border border-[var(--shell-border)] bg-transparent text-[var(--shell-text)] hover:bg-[var(--shell-hover)]"
+                filtroTipo === f.id ? "pendencias-faixa-chip-on" : "pendencias-faixa-chip"
               }`}
             >
               {f.label}
@@ -447,10 +445,10 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
             <button
               type="button"
               onClick={() => setMostrarFiltrosExtras((v) => !v)}
-              className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+              className={`rounded-full px-3 py-1.5 text-sm font-medium transition ${
                 mostrarFiltrosExtras || filtroAtivoEhExtra
-                  ? "border-[var(--shell-border)] bg-[var(--shell-hover)] text-[var(--shell-text)]"
-                  : "border-[var(--shell-border)] text-[var(--shell-text-muted)] hover:text-[var(--shell-text)]"
+                  ? "pendencias-faixa-chip-on"
+                  : "pendencias-faixa-chip"
               }`}
             >
               Outros tipos
@@ -472,9 +470,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                   setExpandedId(null);
                 }}
                 className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-                  filtroTipo === f.id
-                    ? "bg-[var(--shell-tab-active-bg)] text-[var(--shell-tab-active-text)]"
-                    : "border border-[var(--shell-border)] bg-transparent text-[var(--shell-text-muted)] hover:text-[var(--shell-text)]"
+                  filtroTipo === f.id ? "pendencias-faixa-chip-on" : "pendencias-faixa-chip"
                 }`}
               >
                 {f.label}

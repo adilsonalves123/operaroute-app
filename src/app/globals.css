@@ -262,6 +262,57 @@ html[data-app-theme="light"] .rascunho-folha {
   color-scheme: light;
 }
 
+/* Só a faixa de filtros de Pendências — não altera os cards */
+.pendencias-faixa {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #f4efe6;
+}
+.pendencias-faixa-texto {
+  color: #cbd5e1;
+}
+.pendencias-faixa-numero {
+  color: #f4efe6;
+}
+.pendencias-faixa-total {
+  color: #e8d5b0;
+}
+.pendencias-faixa-chip {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f4efe6;
+}
+.pendencias-faixa-chip-on {
+  background: #c4a574;
+  border: 1px solid #c4a574;
+  color: #0a0e16;
+}
+
+html[data-app-theme="light"] .pendencias-faixa {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.18) !important;
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .pendencias-faixa-texto {
+  color: #3d3833 !important;
+}
+html[data-app-theme="light"] .pendencias-faixa-numero {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .pendencias-faixa-total {
+  color: #7a5418 !important;
+}
+html[data-app-theme="light"] .pendencias-faixa-chip {
+  background: #efeae0 !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .pendencias-faixa-chip-on {
+  background: #1c1917 !important;
+  border-color: #1c1917 !important;
+  color: #faf8f4 !important;
+}
+
 html[data-app-theme="light"] main [class*="border-white"] {
   border-color: rgba(28, 25, 23, 0.1) !important;
 }
