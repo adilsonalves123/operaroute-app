@@ -361,14 +361,15 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
     <div
       id={`maquina-${leitura.equipamentoId}`}
       className={cn(
-        "scroll-mt-24 space-y-4 overflow-hidden rounded-2xl border bg-at-card p-4 shadow-sm sm:p-5",
+        "scroll-mt-24 space-y-4 overflow-hidden rounded-2xl border p-4 sm:p-5",
+        "bg-slate-950/60 shadow-[0_0_0_1px_rgba(255,255,255,0.02)]",
         temErro
           ? "border-red-500/45 ring-1 ring-red-500/15"
           : leitura.iaPendenteConfirmacao
             ? "border-amber-400/40 ring-1 ring-amber-400/15"
             : pronta
-              ? "border-[#c4a574]/35 ring-1 ring-[#c4a574]/10"
-              : "border-at"
+              ? "border-cyan-400/30 ring-1 ring-cyan-400/10"
+              : "border-white/[0.07]"
       )}
     >
       <div className="flex items-start gap-3">
@@ -381,18 +382,18 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               fullWidth={false}
             />
           ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-at bg-at-card-soft">
-              <Gamepad2 className="h-6 w-6 text-at-link" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-white/[0.04] ring-1 ring-white/10">
+              <Gamepad2 className="h-6 w-6 text-slate-400" />
             </div>
           )}
-          <span className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-md bg-[#c4a574] text-[10px] font-bold text-[#0a0e16]">
+          <span className="absolute -left-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-md bg-[#c4a574] text-[10px] font-bold text-slate-950">
             {index + 1}
           </span>
         </div>
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <p className="truncate font-medium text-at-primary">{leitura.nome}</p>
+            <p className="truncate font-medium text-white">{leitura.nome}</p>
             <AbrirChamadoButton
               pontoId={pontoId}
               equipamentoId={leitura.equipamentoId}
@@ -413,10 +414,10 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
                 Confirme a IA
               </span>
             ) : pronta ? (
-              <span className="ml-auto text-xs text-at-money-pos">Pronta</span>
+              <span className="ml-auto text-xs text-emerald-400">Pronta</span>
             ) : null}
           </div>
-          <p className="mt-0.5 text-xs text-at-muted">
+          <p className="mt-0.5 text-xs text-slate-500">
             {leitura.fotoReferenciaUrl
               ? "Miniatura = última foto cadastrada"
               : "Sem foto de referência no cadastro"}
@@ -425,19 +426,19 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       </div>
 
       <div className="grid grid-cols-2 gap-2.5">
-        <div className="rounded-xl border border-at bg-at-card-soft px-3 py-2.5">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-at-muted">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
             Entrada ant.
           </p>
-          <p className="mt-0.5 text-sm font-semibold tabular-nums text-at-primary">
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-200">
             {formatContador(leitura.entradaAnterior)}
           </p>
         </div>
-        <div className="rounded-xl border border-at bg-at-card-soft px-3 py-2.5">
-          <p className="text-[10px] font-medium uppercase tracking-wide text-at-muted">
+        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
             Saída ant.
           </p>
-          <p className="mt-0.5 text-sm font-semibold tabular-nums text-at-primary">
+          <p className="mt-0.5 text-sm font-semibold tabular-nums text-slate-200">
             {formatContador(leitura.saidaAnterior)}
           </p>
         </div>
@@ -445,7 +446,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
 
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-at-muted">
+          <label className="block text-xs font-medium text-slate-400">
             Entrada atual *
             {leitura.iaPendenteConfirmacao ? (
               <span className="ml-1.5 font-normal text-amber-400/90">sugerido</span>
@@ -471,7 +472,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           ) : null}
         </div>
         <div className="space-y-1.5">
-          <label className="block text-xs font-medium text-at-muted">
+          <label className="block text-xs font-medium text-slate-400">
             Saída atual *
             {leitura.iaPendenteConfirmacao ? (
               <span className="ml-1.5 font-normal text-amber-400/90">sugerido</span>
@@ -505,16 +506,16 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               "rounded-xl border px-3 py-2.5",
               entradaPeriodo < 0
                 ? "border-red-500/40 bg-red-500/10"
-                : "border-cyan-500/20 bg-cyan-500/[0.06]"
+                : "border-white/[0.08] bg-white/[0.03]"
             )}
           >
-            <p className="text-[10px] font-medium uppercase tracking-wide text-at-muted">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
               Entrada no período
             </p>
             <p
               className={cn(
                 "mt-0.5 text-sm font-semibold tabular-nums",
-                entradaPeriodo < 0 ? "text-red-400" : "text-cyan-300"
+                entradaPeriodo < 0 ? "text-red-400" : "text-white"
               )}
             >
               {formatContador(entradaPeriodo)}
@@ -530,16 +531,16 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               "rounded-xl border px-3 py-2.5",
               saidaPeriodo < 0
                 ? "border-red-500/40 bg-red-500/10"
-                : "border-cyan-500/20 bg-cyan-500/[0.06]"
+                : "border-white/[0.08] bg-white/[0.03]"
             )}
           >
-            <p className="text-[10px] font-medium uppercase tracking-wide text-at-muted">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500">
               Saída no período
             </p>
             <p
               className={cn(
                 "mt-0.5 text-sm font-semibold tabular-nums",
-                saidaPeriodo < 0 ? "text-red-400" : "text-cyan-300"
+                saidaPeriodo < 0 ? "text-red-400" : "text-white"
               )}
             >
               {formatContador(saidaPeriodo)}
@@ -554,12 +555,12 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       ) : null}
 
       {lucro !== null && !erroEntrada && !erroSaida ? (
-        <div className="flex items-center justify-between rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] px-3.5 py-2.5 text-sm">
-          <span className="text-at-muted">Lucro da máquina</span>
+        <div className="flex items-center justify-between rounded-xl border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 text-sm">
+          <span className="text-slate-400">Lucro da máquina</span>
           <span
             className={cn(
               "font-semibold tabular-nums",
-              lucro >= 0 ? "text-emerald-400" : "text-red-400"
+              lucro >= 0 ? "text-white" : "text-red-400"
             )}
           >
             {formatCurrency(centesimosToReais(lucro))}
@@ -594,7 +595,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           }}
           className={cn(
             "flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition",
-            "border-[#c4a574]/35 bg-[#c4a574]/10 text-at-link hover:bg-[#c4a574]/15",
+            "border-[#c4a574]/40 bg-[#c4a574]/10 text-[#e8d5b0] hover:bg-[#c4a574]/15",
             "disabled:cursor-not-allowed disabled:opacity-50",
             !leitura.fotoFile && "opacity-80"
           )}
@@ -612,13 +613,13 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           )}
         </button>
         {!leitura.fotoFile ? (
-          <p className="text-center text-[11px] text-at-muted">
+          <p className="text-center text-[11px] text-slate-500">
             {leitura.fotoPreview
               ? "Tire uma foto nova desta coleta para a IA ler (foto só de referência não envia)."
               : "Tire a foto do painel acima para liberar a leitura com IA."}
           </p>
         ) : (
-          <p className="text-center text-[11px] text-at-muted">
+          <p className="text-center text-[11px] text-slate-500">
             A IA sugere entrada/saída — você confirma antes de salvar. Só bloqueamos fotos claramente ilegíveis.
           </p>
         )}
@@ -711,7 +712,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
                           "rounded-lg border px-3 py-1.5 text-[11px] font-medium transition",
                           leitura.entradaAtualInput === opcao
                             ? "border-amber-300 bg-amber-300/20 text-amber-50"
-                            : "border-at-soft bg-black/20 text-amber-100/80 hover:bg-black/30"
+                            : "border-white/10 bg-black/20 text-amber-100/80 hover:bg-black/30"
                         )}
                       >
                         {opcao}
@@ -735,7 +736,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
                           "rounded-lg border px-3 py-1.5 text-[11px] font-medium transition",
                           leitura.saidaAtualInput === opcao
                             ? "border-amber-300 bg-amber-300/20 text-amber-50"
-                            : "border-at-soft bg-black/20 text-amber-100/80 hover:bg-black/30"
+                            : "border-white/10 bg-black/20 text-amber-100/80 hover:bg-black/30"
                         )}
                       >
                         {opcao}
@@ -780,7 +781,7 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
                     (e.target.value || null) as ExcecaoContadorTipo | null
                   )
                 }
-                className="w-full rounded-lg border border-at-soft bg-slate-950 px-3 py-2 text-xs text-amber-50"
+                className="w-full rounded-lg border border-white/10 bg-slate-950 px-3 py-2 text-xs text-amber-50"
               >
                 <option value="">Selecione o motivo (se aplicável)</option>
                 {EXCECAO_CONTADOR_OPCOES.map((opcao) => (

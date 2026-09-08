@@ -1460,13 +1460,7 @@ export function NovaColetaCassinoForm() {
             }
             fechar={
               <FecharColetaPanel
-                accent={
-                  calculo?.saldoNegativo
-                    ? "red"
-                    : receberAgora || editandoVisitaFinalizada
-                      ? "emerald"
-                      : "cyan"
-                }
+                accent={calculo?.saldoNegativo ? "red" : "cyan"}
                 title={
                   calculo?.saldoNegativo
                     ? "Visita negativa"
@@ -1502,8 +1496,8 @@ export function NovaColetaCassinoForm() {
                   />
                 ) : (
                   <>
-                    <div className="rounded-2xl border border-emerald-500/20 bg-gradient-to-b from-emerald-500/[0.08] to-transparent px-4 py-4">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-emerald-400/90">
+                    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] px-4 py-4">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">
                         Valor da operação
                       </p>
                       <p className="mt-1.5 text-3xl font-bold tabular-nums tracking-tight text-white">
@@ -1525,7 +1519,7 @@ export function NovaColetaCassinoForm() {
                             {comissaoBloqueada(calculo) ? "Comissão bloqueada" : "Comissão"}
                             {!comissaoBloqueada(calculo) ? ` (${comissaoPercentual}%)` : ""}
                           </span>
-                          <span className="tabular-nums text-orange-400">
+                          <span className="tabular-nums text-slate-200">
                             {formatCurrency(calculo.valorClienteReais)}
                           </span>
                         </div>
@@ -1540,7 +1534,7 @@ export function NovaColetaCassinoForm() {
                       </div>
                       {calculo.haverCompensadoReais > 0.009 &&
                         calculo.totalACobrarReais <= 0.009 && (
-                          <p className="mt-3 text-xs leading-relaxed text-cyan-300/90">
+                          <p className="mt-3 text-xs leading-relaxed text-slate-400">
                             Cliente não paga nesta visita — a operação é menor que o haver do ponto
                             (você deve a ele)
                             {calculo.haverRestanteReais > 0.009
@@ -1603,7 +1597,7 @@ export function NovaColetaCassinoForm() {
                             </>
                           )}
                         </div>
-                        <p className="font-semibold text-orange-400 tabular-nums shrink-0">
+                        <p className="font-semibold text-slate-200 tabular-nums shrink-0">
                           {formatCurrency(calculo.valorClienteReais)}
                         </p>
                       </div>

@@ -42,14 +42,14 @@ export function CobrancaClienteResumo({
   return (
     <div className={cn("space-y-3", className)}>
       {operacaoCobertaPorHaver && (
-        <div className="rounded-lg border border-cyan-500/35 bg-cyan-500/8 px-4 py-4 space-y-3">
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-4 space-y-3">
           <div className="flex items-start gap-3">
-            <HandCoins className="mt-0.5 h-5 w-5 shrink-0 text-cyan-400" />
+            <HandCoins className="mt-0.5 h-5 w-5 shrink-0 text-slate-400" />
             <div className="min-w-0 flex-1 space-y-1.5">
-              <p className="text-xs font-medium uppercase tracking-wide text-cyan-400/90">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
                 Nada a receber nesta coleta
               </p>
-              <p className="text-sm leading-relaxed text-at-primary/90">
+              <p className="text-sm leading-relaxed text-slate-200">
                 A operação ({formatCurrency(operacaoCobranca)}) foi coberta pelo haver do ponto —
                 o cliente não pagou nesta visita.
               </p>
@@ -57,11 +57,11 @@ export function CobrancaClienteResumo({
           </div>
 
           {cobranca.itens.length > 0 && (
-            <div className="border-t border-cyan-500/20 pt-3 space-y-1.5 text-sm">
+            <div className="border-t border-white/[0.08] pt-3 space-y-1.5 text-sm">
               {cobranca.itens.map((item) => (
                 <div key={item.label} className="flex justify-between gap-4">
-                  <span className="text-at-muted">{item.label}</span>
-                  <span className="font-medium tabular-nums text-at-primary/90">
+                  <span className="text-slate-400">{item.label}</span>
+                  <span className="font-medium tabular-nums text-slate-200">
                     {formatCurrency(item.valorReais)}
                   </span>
                 </div>
@@ -70,18 +70,18 @@ export function CobrancaClienteResumo({
           )}
 
           {calculo.haverQuitadoReais > 0.009 && (
-            <div className="rounded-md border border-cyan-500/25 bg-cyan-500/5 px-3 py-2 text-sm flex justify-between gap-4">
-              <span className="text-cyan-200/90">Você pagou o restante do haver</span>
-              <span className="font-semibold tabular-nums text-cyan-300 shrink-0">
+            <div className="rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm flex justify-between gap-4">
+              <span className="text-slate-300">Você pagou o restante do haver</span>
+              <span className="font-semibold tabular-nums text-white shrink-0">
                 {formatCurrency(calculo.haverQuitadoReais)}
               </span>
             </div>
           )}
 
           {calculo.haverRestanteReais > 0.009 && (
-            <div className="rounded-md border border-cyan-500/25 bg-cyan-500/5 px-3 py-2 text-sm flex justify-between gap-4">
-              <span className="text-cyan-200/90">Haver que você ainda deve ao ponto</span>
-              <span className="font-semibold tabular-nums text-cyan-300 shrink-0">
+            <div className="rounded-md border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-sm flex justify-between gap-4">
+              <span className="text-slate-300">Haver que você ainda deve ao ponto</span>
+              <span className="font-semibold tabular-nums text-white shrink-0">
                 {formatCurrency(calculo.haverRestanteReais)}
               </span>
             </div>
@@ -90,15 +90,15 @@ export function CobrancaClienteResumo({
       )}
 
       {mostrarTotal && (
-        <div className="rounded-lg border border-primary-neon/35 bg-primary-neon/8 px-4 py-4 space-y-3">
+        <div className="rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-4 space-y-3">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-primary-neon/90">
+            <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
               Receber do cliente
             </p>
-            <p className="text-3xl font-bold tabular-nums text-primary-neon mt-1">
+            <p className="text-3xl font-bold tabular-nums text-white mt-1">
               {formatCurrency(cobranca.totalACobrarReais)}
             </p>
-            <p className="text-xs text-at-muted mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               {cobranca.negativoParaProximaReais > 0.009
                 ? "Valor desta visita — o restante do negativo fica para a próxima coleta"
                 : calculo.haverCompensadoReais > 0.009
@@ -108,11 +108,11 @@ export function CobrancaClienteResumo({
           </div>
 
           {cobranca.itens.length > 0 && (
-            <div className="border-t border-primary-neon/20 pt-3 space-y-1.5 text-sm">
+            <div className="border-t border-white/[0.08] pt-3 space-y-1.5 text-sm">
               {cobranca.itens.map((item) => (
                 <div key={item.label} className="flex justify-between gap-4">
-                  <span className="text-at-muted">{item.label}</span>
-                  <span className="font-medium tabular-nums text-at-primary/90">
+                  <span className="text-slate-400">{item.label}</span>
+                  <span className="font-medium tabular-nums text-slate-200">
                     {formatCurrency(item.valorReais)}
                   </span>
                 </div>
@@ -141,7 +141,7 @@ export function CobrancaClienteResumo({
           )}
         >
           <div className="flex justify-between gap-4">
-            <span className="text-at-muted">Recebido agora</span>
+            <span className="text-slate-400">Recebido agora</span>
             <span className="font-semibold tabular-nums text-green-400">
               {formatCurrency(cobranca.valorRecebidoReais)}
             </span>
@@ -170,7 +170,7 @@ export function CobrancaClienteResumo({
           ) : null}
 
           {hintFalta() && cobranca.faltaReceberReais > 0.009 && (
-            <p className="text-[11px] text-at-muted text-right">
+            <p className="text-[11px] text-slate-500 text-right">
               {cobranca.faltaOperacaoReais > 0.009
                 ? `dívida da operação ${formatCurrency(cobranca.faltaOperacaoReais)}`
                 : hintFalta()}
