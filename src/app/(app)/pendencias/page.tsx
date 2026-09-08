@@ -33,8 +33,8 @@ export default async function PendenciasPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">Pendências</h1>
-          <p className="text-slate-400 mt-1 text-sm">
+          <h1 className="text-3xl font-bold text-white">Pendências</h1>
+          <p className="mt-1 text-base text-slate-400">
             Débitos e pagamentos em aberto por ponto
           </p>
         </div>

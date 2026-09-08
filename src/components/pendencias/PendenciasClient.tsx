@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AlertBadge } from "@/components/ui/AlertBadge";
-import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput, cn } from "@/lib/utils";
-import { saldoPendenciaReais, isNegativoManualSemLeitura } from "@/lib/nichos/cassino/pendencias";
+import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
+import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
 import { whatsAppUrl } from "@/lib/nichos/cassino/relatorio";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { AlertTriangle, CheckCircle, ChevronDown, MessageCircle, Pencil, Trash2, X } from "lucide-react";
@@ -35,9 +35,6 @@ function isFuraFuraPendencia(p: PendenciaItem): boolean {
 }
 
 function valorPendenciaAberta(p: PendenciaItem): number {
-  if (isNegativoManualSemLeitura({ tipo: p.tipo, visita_id: p.visita_id })) {
-    return Number(p.valor ?? 0);
-  }
   if (p.tipo === "negativo") {
     return saldoPendenciaReais({
       id: p.id,
@@ -400,40 +397,73 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
   );
   const filtroAtivoEhExtra = filtrosExtras.some((f) => f.id === filtroTipo);
 
-  const chipClass = (ativo: boolean) =>
-    cn(
-      "shrink-0 whitespace-nowrap rounded-sm px-3 py-1.5 text-xs font-medium transition",
-      ativo ? "analise-tab-active" : "analise-tab-idle border"
-    );
-
   return (
     <>
     <div className="space-y-4">
-      <div className="rounded-sm border border-at bg-at-card p-3 sm:p-4 space-y-3">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="min-w-0 text-sm leading-snug text-at-muted">
-            <span className="font-medium text-at-primary/90">{abertasCount}</span>{" "}
+      <div className="rounded-xl border border-white/[0.06] bg-slate-950/50 p-3 sm:p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-sm text-slate-400">
+            <span className="font-medium text-slate-200">{abertasCount}</span>{" "}
             {abertasCount === 1 ? "aberta" : "abertas"}
             {totalAberto > 0.009 ? (
               <>
                 {" "}
                 · total{" "}
-                <span className="font-medium text-at-link">{formatCurrency(totalAberto)}</span>
+                <span className="font-medium text-amber-300">{formatCurrency(totalAberto)}</span>
               </>
             ) : null}
           </p>
           <button
             type="button"
             onClick={() => setMostrarTodas((v) => !v)}
-            className="self-start shrink-0 text-xs text-at-muted hover:text-at-primary/85 underline-offset-2 hover:underline sm:self-auto"
+            className="text-xs text-slate-500 hover:text-slate-300 underline-offset-2 hover:underline"
           >
             {mostrarTodas ? "Só abertas" : "Incluir resolvidas"}
           </button>
         </div>
 
-        <div className="-mx-1 overflow-x-auto pb-1 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <div className="flex w-max min-w-full gap-1.5 px-1">
-            {filtrosComItens.map((f) => (
+        <div className="flex flex-wrap gap-1.5">
+          {filtrosComItens.map((f) => (
+            <button
+              key={f.id}
+              type="button"
+              onClick={() => {
+                setFiltroTipo(f.id);
+                setExpandedId(null);
+              }}
+              className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                filtroTipo === f.id
+                  ? "bg-primary-neon text-slate-900"
+                  : "bg-slate-800/80 text-slate-400 hover:bg-slate-800 hover:text-white"
+              }`}
+            >
+              {f.label}
+              {f.id !== "todos" ? (
+                <span className="ml-1 tabular-nums opacity-80">({countTipo(f.id)})</span>
+              ) : null}
+            </button>
+          ))}
+          {filtrosExtras.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setMostrarFiltrosExtras((v) => !v)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                mostrarFiltrosExtras || filtroAtivoEhExtra
+                  ? "border-slate-600 bg-slate-800 text-slate-200"
+                  : "border-slate-700/80 text-slate-500 hover:border-slate-600 hover:text-slate-300"
+              }`}
+            >
+              Outros tipos
+              {!mostrarFiltrosExtras && !filtroAtivoEhExtra ? (
+                <span className="ml-1 opacity-70">({filtrosExtras.length})</span>
+              ) : null}
+            </button>
+          ) : null}
+        </div>
+
+        {(mostrarFiltrosExtras || filtroAtivoEhExtra) && filtrosExtras.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 border-t border-white/[0.05] pt-3">
+            {filtrosExtras.map((f) => (
               <button
                 key={f.id}
                 type="button"
@@ -441,53 +471,22 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                   setFiltroTipo(f.id);
                   setExpandedId(null);
                 }}
-                className={chipClass(filtroTipo === f.id)}
+                className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
+                  filtroTipo === f.id
+                    ? "bg-primary-neon text-slate-900"
+                    : "bg-slate-900 text-slate-500 hover:bg-slate-800 hover:text-slate-300"
+                }`}
               >
                 {f.label}
-                {f.id !== "todos" ? (
-                  <span className="ml-1 tabular-nums opacity-80">({countTipo(f.id)})</span>
-                ) : null}
+                <span className="ml-1 opacity-60">(0)</span>
               </button>
             ))}
-            {filtrosExtras.length > 0 ? (
-              <button
-                type="button"
-                onClick={() => setMostrarFiltrosExtras((v) => !v)}
-                className={chipClass(mostrarFiltrosExtras || filtroAtivoEhExtra)}
-              >
-                Outros tipos
-                {!mostrarFiltrosExtras && !filtroAtivoEhExtra ? (
-                  <span className="ml-1 opacity-70">({filtrosExtras.length})</span>
-                ) : null}
-              </button>
-            ) : null}
-          </div>
-        </div>
-
-        {(mostrarFiltrosExtras || filtroAtivoEhExtra) && filtrosExtras.length > 0 ? (
-          <div className="-mx-1 overflow-x-auto border-t border-at pt-3 pb-1 scrollbar-none [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <div className="flex w-max min-w-full gap-1.5 px-1">
-              {filtrosExtras.map((f) => (
-                <button
-                  key={f.id}
-                  type="button"
-                  onClick={() => {
-                    setFiltroTipo(f.id);
-                    setExpandedId(null);
-                  }}
-                  className={chipClass(filtroTipo === f.id)}
-                >
-                  {f.label}
-                  <span className="ml-1 opacity-60">(0)</span>
-                </button>
-              ))}
-            </div>
           </div>
         ) : null}
       </div>
 
       {lista.length === 0 ? (
-        <p className="text-sm text-at-muted text-center py-8">
+        <p className="text-sm text-slate-400 text-center py-8">
           Nenhuma pendência neste filtro.
         </p>
       ) : (
@@ -532,8 +531,9 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-medium text-at-primary truncate">{p.titulo}</p>
+                      <p className="truncate text-lg font-semibold text-white">{p.titulo}</p>
                       <AlertBadge
+                        className="text-[11px] px-2.5 py-1"
                         variant={
                           p.tipo === "haver" &&
                           /pagou ganhadores/i.test(`${p.titulo ?? ""} ${p.descricao ?? ""}`)
@@ -549,27 +549,26 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                             : (tipoLabels[p.tipo] ?? p.tipo)}
                       </AlertBadge>
                       {p.status === "resolvida" && (
-                        <AlertBadge variant="success">Resolvida</AlertBadge>
+                        <AlertBadge className="text-[11px] px-2.5 py-1" variant="success">Resolvida</AlertBadge>
                       )}
                     </div>
-                    <p className="text-xs text-at-muted mt-1 truncate">{contextoLabel}</p>
+                    <p className="mt-1 truncate text-sm text-[var(--shell-text-muted)]">{contextoLabel}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <p
-                      className={cn(
-                        "text-base font-semibold tabular-nums",
+                      className={`text-lg font-semibold tabular-nums ${
                         p.tipo === "haver"
                           ? /pagou ganhadores/i.test(`${p.titulo ?? ""} ${p.descricao ?? ""}`)
-                            ? "text-at-muted"
-                            : "text-at-money-pos"
-                          : "text-at-primary"
-                      )}
+                            ? "text-violet-400"
+                            : "text-cyan-400"
+                          : "text-amber-300"
+                      }`}
                     >
                       {p.tipo === "haver" ? "+" : ""}
                       {formatCurrency(valorAtual)}
                     </p>
                     <ChevronDown
-                      className={`h-4 w-4 text-at-muted transition ${
+                      className={`h-4 w-4 text-slate-500 transition ${
                         isOpen ? "rotate-180" : ""
                       }`}
                     />
@@ -577,7 +576,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                 </button>
 
                 {isOpen && (
-                  <div className="border-t border-at px-4 pb-4 pt-3 space-y-4">
+                  <div className="border-t border-slate-800 px-4 pb-4 pt-3 space-y-4">
                     {(isFura && p.coleta_id) || (isVisita && p.visita_ponto_id) ? (
                       <div className="flex flex-wrap gap-2">
                         {isFura && p.coleta_id ? (
@@ -601,12 +600,12 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
 
                     {p.descricao ? (
                       <details className="group rounded-lg border border-slate-800/80 bg-slate-900/30">
-                        <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-at-muted hover:text-at-primary/85 [&::-webkit-details-marker]:hidden">
+                        <summary className="cursor-pointer list-none px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-300 [&::-webkit-details-marker]:hidden">
                           Histórico
-                          <span className="ml-1 text-at-soft group-open:hidden">▾</span>
-                          <span className="ml-1 text-at-soft hidden group-open:inline">▴</span>
+                          <span className="ml-1 text-slate-600 group-open:hidden">▾</span>
+                          <span className="ml-1 text-slate-600 hidden group-open:inline">▴</span>
                         </summary>
-                        <p className="border-t border-slate-800/80 px-3 py-2 text-xs text-at-muted whitespace-pre-line max-h-40 overflow-y-auto">
+                        <p className="border-t border-slate-800/80 px-3 py-2 text-xs text-slate-500 whitespace-pre-line max-h-40 overflow-y-auto">
                           {p.descricao}
                         </p>
                       </details>
@@ -614,10 +613,10 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
 
                     {editando && (
                       <div className="rounded-lg border border-primary-neon/25 bg-primary-neon/5 p-4 space-y-3">
-                        <p className="text-sm font-medium text-at-primary">Editar pendência</p>
+                        <p className="text-sm font-medium text-white">Editar pendência</p>
                         <div className="grid gap-3 sm:grid-cols-2">
                           <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-at-primary/85">
+                            <label className="block text-sm font-medium text-slate-300">
                               Saldo em aberto (R$)
                             </label>
                             <input
@@ -638,7 +637,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-at-primary/85">
+                            <label className="block text-sm font-medium text-slate-300">
                               Título
                             </label>
                             <input
@@ -649,7 +648,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                           </div>
                         </div>
                         <div className="space-y-1.5">
-                          <label className="block text-sm font-medium text-at-primary/85">
+                          <label className="block text-sm font-medium text-slate-300">
                             Motivo da alteração (opcional)
                           </label>
                           <input
@@ -675,7 +674,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                             type="button"
                             disabled={loadingId === p.id}
                             onClick={() => cancelarEdicao(p.id)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
                           >
                             <X className="h-3.5 w-3.5" />
                             Cancelar
@@ -689,9 +688,9 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                         type="button"
                         disabled={loadingId === p.id}
                         onClick={() => iniciarEdicao(p)}
-                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-3 py-1.5 text-xs font-medium text-at-primary/85 hover:bg-slate-800 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-3.5 py-2 text-sm font-medium text-slate-300 hover:bg-slate-800 disabled:opacity-50"
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pencil className="h-4 w-4" />
                         Editar valor
                       </button>
                     )}
@@ -699,15 +698,15 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                     {p.status === "aberta" && !editando && (
                       <>
                         {isFura ? (
-                          <p className="text-xs text-at-muted">
+                          <p className="text-xs text-slate-500">
                             Pagamento sincroniza com a coleta fura-fura (FIFO).
                           </p>
                         ) : null}
-                        <div className="rounded-lg border border-slate-800/80 bg-slate-900/20 p-3 space-y-3">
-                          <p className="text-xs font-medium text-at-muted">Registrar pagamento</p>
+                        <div className="space-y-3 rounded-lg border border-slate-800/80 bg-slate-900/20 p-4">
+                          <p className="text-sm font-semibold text-[var(--shell-text)]">Registrar pagamento</p>
                           <div className="grid gap-3 sm:grid-cols-3">
                           <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-at-primary/85">
+                            <label className="block text-sm font-medium text-[var(--shell-text)]">
                               {valorLabelPix}
                             </label>
                             <input
@@ -723,12 +722,12 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                                   formatMoneyInputOnBlur(e.target.value)
                                 )
                               }
-                              className="w-full"
+                              className="w-full text-base"
                               placeholder="0,00"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-at-primary/85">
+                            <label className="block text-sm font-medium text-[var(--shell-text)]">
                               {valorLabelDinheiro}
                             </label>
                             <input
@@ -748,24 +747,24 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                                   formatMoneyInputOnBlur(e.target.value)
                                 )
                               }
-                              className="w-full"
+                              className="w-full text-base"
                               placeholder="0,00"
                             />
                           </div>
                           <div className="space-y-1.5">
-                            <label className="block text-sm font-medium text-at-primary/85">
+                            <label className="block text-sm font-medium text-[var(--shell-text)]">
                               Observação
                             </label>
                             <input
                               value={form.observacao}
                               onChange={(e) => updateForm(p.id, "observacao", e.target.value)}
-                              className="w-full"
+                              className="w-full text-base"
                               placeholder="Ex: pago em dinheiro"
                             />
                           </div>
                           </div>
 
-                        {form.erro && <p className="text-xs text-red-400">{form.erro}</p>}
+                        {form.erro && <p className="text-sm text-red-400">{form.erro}</p>}
 
                         <div className="flex flex-wrap gap-2 pt-1">
                           {cobrarUrl && (
@@ -773,9 +772,9 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                               href={cobrarUrl}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 rounded-lg border border-green-500/30 px-3 py-1.5 text-xs font-medium text-green-400 hover:bg-green-500/10"
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-green-500/30 px-3.5 py-2 text-sm font-medium text-green-400 hover:bg-green-500/10"
                             >
-                              <MessageCircle className="h-3.5 w-3.5" />
+                              <MessageCircle className="h-4 w-4" />
                               Cobrar
                             </a>
                           )}
@@ -783,27 +782,27 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
                             type="button"
                             disabled={loadingId === p.id}
                             onClick={() => baixar(p.id)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/30 px-3 py-1.5 text-xs font-medium text-primary-neon hover:bg-blue-500/10 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-blue-500/30 px-3.5 py-2 text-sm font-medium text-primary-neon hover:bg-blue-500/10 disabled:opacity-50"
                           >
-                            <CheckCircle className="h-3.5 w-3.5" />
+                            <CheckCircle className="h-4 w-4" />
                             {loadingId === p.id ? "Salvando..." : "Dar baixa"}
                           </button>
                           <button
                             type="button"
                             disabled={loadingId === p.id}
                             onClick={() => quitar(p.id)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-green-500/30 px-3 py-1.5 text-xs font-medium text-green-400 hover:bg-green-500/10 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-green-500/30 px-3.5 py-2 text-sm font-medium text-green-400 hover:bg-green-500/10 disabled:opacity-50"
                           >
-                            <CheckCircle className="h-3.5 w-3.5" />
+                            <CheckCircle className="h-4 w-4" />
                             Quitar tudo
                           </button>
                           <button
                             type="button"
                             disabled={loadingId === p.id}
                             onClick={() => apagar(p.id)}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3 py-1.5 text-xs font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-red-500/30 px-3.5 py-2 text-sm font-medium text-red-400 hover:bg-red-500/10 disabled:opacity-50"
                           >
-                            <Trash2 className="h-3.5 w-3.5" />
+                            <Trash2 className="h-4 w-4" />
                             Apagar
                           </button>
                         </div>
