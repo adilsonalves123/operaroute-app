@@ -14,7 +14,7 @@ export default async function PainelRestritoPage() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pt-6 sm:pt-10">
+    <div className="equipe-pagina mx-auto max-w-2xl space-y-6 pt-6 sm:pt-10">
       <PremiumPageHeader
         title="Painel restrito"
         subtitle="Escolha o que cada operador vê. A coleta na rua continua normal."

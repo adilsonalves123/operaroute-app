@@ -470,7 +470,7 @@ export function EquipeClient({
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="equipe-pagina space-y-6">
       {loading && <LoadingOverlay show={loading} />}
 
       {!loginDisponivel && (

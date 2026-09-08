@@ -448,6 +448,31 @@ html[data-app-theme="light"] .kit-montar-painel textarea::placeholder {
   color: #5c564f !important;
 }
 
+/* Equipe / painel restrito — amarelo e dourado claros no fundo claro */
+html[data-app-theme="light"] .equipe-pagina {
+  --at-primary: #141210;
+  --at-muted: #3d3833;
+  --at-soft: #3d3833;
+  --at-link: #5c3d0a;
+}
+html[data-app-theme="light"] .equipe-pagina [class*="text-amber-"],
+html[data-app-theme="light"] .equipe-pagina [class*="text-[#c4a574]"],
+html[data-app-theme="light"] .equipe-pagina [class*="text-primary-neon"] {
+  color: #5c3d0a !important;
+}
+html[data-app-theme="light"] .equipe-pagina [class*="text-cyan-3"],
+html[data-app-theme="light"] .equipe-pagina [class*="text-purple-3"],
+html[data-app-theme="light"] .equipe-pagina [class*="text-green-2"] {
+  color: #065f46 !important;
+}
+html[data-app-theme="light"] .equipe-pagina .text-at-muted,
+html[data-app-theme="light"] .equipe-pagina .text-at-soft {
+  color: #3d3833 !important;
+}
+html[data-app-theme="light"] .equipe-pagina .text-at-primary {
+  color: #141210 !important;
+}
+
 /* Só o detalhe da coleta cassino — cards escuros + letra remapeada para preto */
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-slate-9"],
 html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-gradient-to"] {

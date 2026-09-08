@@ -51,7 +51,7 @@ export function VisaoEquipePainel({ membros, pontos, visaoPontosPorEquipe }: Pro
   return (
     <section
       id="painel-restrito"
-      className="space-y-3 rounded-xl border-2 border-[#c4a574] bg-[#c4a574]/20 p-4"
+      className="equipe-pagina space-y-3 rounded-xl border-2 border-[#c4a574] bg-[#c4a574]/20 p-4"
     >
       <div className="flex items-start gap-2">
         <EyeOff className="mt-0.5 h-5 w-5 shrink-0 text-[#8a6a3d]" />
