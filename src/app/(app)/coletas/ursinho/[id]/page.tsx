@@ -12,6 +12,7 @@ import {
 } from "@/components/coletas/ColetaHistoricoRecebimentoCards";
 import { CompartilharColetaHistoricoActions } from "@/components/coletas/CompartilharColetaHistoricoActions";
 import { CorrigirPagamentoButton } from "@/components/coletas/CorrigirPagamentoButton";
+import { ExcluirColetaNichoButton } from "@/components/coletas/ExcluirColetaNichoButton";
 import { redirectSeVisaoRestrita } from "@/lib/visao/bloquear-historico";
 
 export default async function ColetaUrsinhoDetalhePage({
@@ -289,6 +290,10 @@ export default async function ColetaUrsinhoDetalhePage({
         <CompartilharColetaHistoricoActions
           snapshot={snapshot}
           telefone={ponto?.whatsapp}
+        />
+        <ExcluirColetaNichoButton
+          coletaId={id}
+          apiPath={`/api/coletas/ursinho/${id}`}
         />
       </div>
     </div>
