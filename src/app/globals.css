@@ -313,6 +313,21 @@ html[data-app-theme="light"] .pendencias-faixa-chip-on {
   color: #faf8f4 !important;
 }
 
+/* Só o detalhe da coleta cassino — cards escuros + letra remapeada para preto */
+html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-slate-9"],
+html[data-app-theme="light"] .coleta-visita-pagina [class*="bg-gradient-to"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+html[data-app-theme="light"] .coleta-visita-pagina [class*="border-slate-8"],
+html[data-app-theme="light"] .coleta-visita-pagina [class*="border-slate-7"] {
+  border-color: rgba(28, 25, 23, 0.16) !important;
+}
+html[data-app-theme="light"] .coleta-visita-pagina .coleta-maquina-bloco {
+  background: #f3efe6 !important;
+  color: #141210 !important;
+}
+
 html[data-app-theme="light"] main [class*="border-white"] {
   border-color: rgba(28, 25, 23, 0.1) !important;
 }

@@ -270,7 +270,7 @@ export default async function VisitaDetailPage({
     : null;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="coleta-visita-pagina mx-auto max-w-3xl space-y-6">
       <div className="space-y-4">
         <div className="flex items-start gap-3">
           <Link
@@ -384,7 +384,7 @@ export default async function VisitaDetailPage({
 
       <div className="space-y-3">
         <div className="flex items-end justify-between gap-3 px-0.5">
-          <h2 className="text-sm font-semibold text-white">
+          <h2 className="text-base font-semibold text-white">
             Máquinas{" "}
             <span className="font-normal text-slate-500">({coletas?.length ?? 0})</span>
           </h2>
@@ -398,19 +398,19 @@ export default async function VisitaDetailPage({
             >
               <div className="flex items-start justify-between gap-3 border-b border-slate-800/80 px-4 py-3">
                 <div>
-                  <p className="font-medium text-white">{eq?.nome ?? "Máquina"}</p>
+                  <p className="text-base font-medium text-white">{eq?.nome ?? "Máquina"}</p>
                   {eq?.tipo && (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm text-slate-500">
                       {getEquipamentoTipoLabel(eq.tipo as never)}
                     </p>
                   )}
                 </div>
-                <p className="text-base font-semibold tabular-nums text-emerald-400">
+                <p className="text-lg font-semibold tabular-nums text-emerald-400">
                   {formatCurrency(centesimosToReais(Number(c.lucro_centavos ?? 0)))}
                 </p>
               </div>
               <div className="grid gap-3 p-4 sm:grid-cols-2">
-                <div className="rounded-xl bg-slate-900/70 p-3 text-xs space-y-1.5">
+                <div className="coleta-maquina-bloco space-y-1.5 rounded-xl bg-slate-900/70 p-3 text-sm">
                   <p className="font-medium text-slate-300">Entrada</p>
                   <div className="flex justify-between gap-2 text-slate-400">
                     <span>Anterior</span>
@@ -427,7 +427,7 @@ export default async function VisitaDetailPage({
                     </span>
                   </div>
                 </div>
-                <div className="rounded-xl bg-slate-900/70 p-3 text-xs space-y-1.5">
+                <div className="coleta-maquina-bloco space-y-1.5 rounded-xl bg-slate-900/70 p-3 text-sm">
                   <p className="font-medium text-slate-300">Saída</p>
                   <div className="flex justify-between gap-2 text-slate-400">
                     <span>Anterior</span>
