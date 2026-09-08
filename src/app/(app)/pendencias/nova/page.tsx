@@ -6,14 +6,13 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { FormInput, FormTextarea, FormSelect } from "@/components/ui/FormInput";
 import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
-import { createClient } from "@/lib/supabase/client";
-import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import type { Ponto } from "@/lib/types/database";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
 
 const TITULOS_PADRAO: Record<string, string> = {
-  pagamento_pendente: "Deixei no ponto (sem leitura)",
+  negativo: "Deixei no ponto (sem leitura)",
+  pagamento_pendente: "Ponto me deve (sem leitura)",
   parcial: "Pagamento parcial",
   haver: "Haver do ponto",
 };
@@ -33,16 +32,9 @@ export default function NovaPendenciaPage() {
 
   useEffect(() => {
     async function load() {
-      const supabase = createClient();
-      const empresaId = await getEmpresaIdForUser(supabase);
-      if (!empresaId) return;
-      const { data } = await supabase
-        .from("pontos")
-        .select("*")
-        .eq("empresa_id", empresaId)
-        .eq("status", "ativo")
-        .order("nome");
-      setPontos(data ?? []);
+      const res = await fetch("/api/pontos");
+      const json = (await res.json()) as { pontos?: { id: string; nome: string }[] };
+      setPontos((json.pontos ?? []) as Ponto[]);
     }
     load();
   }, []);
@@ -108,7 +100,7 @@ export default function NovaPendenciaPage() {
   return (
     <div className="max-w-lg mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/pendencias" className="rounded-lg p-2 text-at-muted hover:bg-slate-800">
+        <Link href="/pendencias" className="rounded-lg p-2 text-slate-400 hover:bg-slate-800">
           <ArrowLeft className="h-5 w-5" />
         </Link>
         <h1 className="text-2xl font-bold text-white">Nova pendência</h1>
@@ -129,7 +121,11 @@ export default function NovaPendenciaPage() {
           options={[
             {
               value: "pagamento_pendente",
-              label: "Deixei no ponto (sem leitura)",
+              label: "Ponto me deve — vou receber na coleta",
+            },
+            {
+              value: "negativo",
+              label: "Deixei no ponto — recupero nas positivas",
             },
             { value: "parcial", label: "Pagamento parcial" },
             { value: "haver", label: "Haver (crédito do ponto)" },
@@ -137,9 +133,14 @@ export default function NovaPendenciaPage() {
         />
         {form.tipo === "pagamento_pendente" && (
           <p className="text-xs text-amber-300/90">
-            Use quando repôs o ponto sem leitura (ex.: mandou dinheiro após coleta negativa). Na
-            próxima coleta, se o prejuízo da leitura for menor, o sistema abate automaticamente e
-            você cobra a diferença do ponto — não soma como débito negativo.
+            Use quando repôs o ponto sem leitura (ex.: cliente ganhou e você deixou o dinheiro). Na
+            próxima coleta negativa, o valor abate o prejuízo e você informa quanto recebeu do ponto.
+          </p>
+        )}
+        {form.tipo === "negativo" && (
+          <p className="text-xs text-amber-300/90">
+            Use quando você adiantou dinheiro no ponto e quer recuperar nas próximas coletas
+            positivas (abatimento automático no lucro).
           </p>
         )}
         {form.tipo === "haver" && (

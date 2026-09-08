@@ -34,9 +34,19 @@ export const resolverVisaoOperador = cache(async (
   };
 });
 
+export function visaoPermitePonto(
+  visao: VisaoOperador,
+  pontoId: string | null | undefined
+): boolean {
+  if (!visao.restrita) return true;
+  if (!pontoId || visao.pontoIds.length === 0) return false;
+  return visao.pontoIds.includes(pontoId);
+}
+
 export function aplicarFiltroIdsPontos<Q>(
   query: Q,
-  visao: VisaoOperador
+  visao: VisaoOperador,
+  coluna: "id" | "ponto_id" = "id"
 ): Q {
   if (!visao.restrita) return query;
   const q = query as Q & {
@@ -44,8 +54,8 @@ export function aplicarFiltroIdsPontos<Q>(
     eq: (col: string, v: string) => Q;
   };
   if (visao.pontoIds.length === 0) {
-    return q.eq("id", "00000000-0000-0000-0000-000000000000");
+    return q.eq(coluna, "00000000-0000-0000-0000-000000000000");
   }
-  return q.in("id", visao.pontoIds);
+  return q.in(coluna, visao.pontoIds);
 }
 

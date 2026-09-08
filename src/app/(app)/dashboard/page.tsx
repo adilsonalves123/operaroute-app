@@ -423,7 +423,14 @@ export default async function DashboardPage({
         valor: valorPorPonto.has(p.id) ? (valorPorPonto.get(p.id) as number) : null,
       }));
       const total = pontosPainel.reduce((s, p) => s + (p.valor ?? 0), 0);
-      return <VisaoPainelClient dataISO={dataISO} pontos={pontosPainel} total={total} />;
+      return (
+        <VisaoPainelClient
+          dataISO={dataISO}
+          pontos={pontosPainel}
+          total={total}
+          nomeOperador={profile.nome}
+        />
+      );
     }
   }
 

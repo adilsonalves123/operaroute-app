@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
-import { requireAcesso } from "@/lib/equipe/require-acesso";
+import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
+import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import { extrairTotalAbatido } from "@/lib/nichos/cassino/pendencias";
 import { parseMoneyInput } from "@/lib/utils";
 import { baixarPendenciaVisitaPonto } from "@/lib/visitas-ponto/checkout";
 import { sincronizarOrigemAposEdicaoPendencia } from "@/lib/visitas-ponto/sync-pendencia-edit";
 import type { FormaPagamento } from "@/lib/types/database";
+import { resolverVisaoOperador, visaoPermitePonto } from "@/lib/visao/resolver";
 
 function deriveFormaPagamento(pix: number, dinheiro: number): FormaPagamento {
   if (pix > 0 && dinheiro > 0) return "misto";
@@ -40,6 +41,13 @@ export async function PATCH(
   }
 
   if (!pendencia) {
+    return NextResponse.json({ error: "Pendência não encontrada" }, { status: 404 });
+  }
+
+  const empresa = await getEmpresa(profile.empresa_id);
+  const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
+  const visao = await resolverVisaoOperador(supabase, acesso);
+  if (!visaoPermitePonto(visao, pendencia.ponto_id)) {
     return NextResponse.json({ error: "Pendência não encontrada" }, { status: 404 });
   }
 
@@ -100,17 +108,6 @@ export async function PATCH(
           titulo: `Baixou pendência · ${ponto?.nome ?? "ponto"}`,
           resumo: `Pix R$ ${valorPix.toFixed(2)} · Dinheiro R$ ${valorDinheiro.toFixed(2)}`,
           request,
-        });
-
-        const { pushPendenciaQuitada } = await import("@/lib/push/events");
-        pushPendenciaQuitada({
-          empresaId: profile.empresa_id,
-          autorUserId: profile.user_id,
-          autorNome: profile.nome,
-          pontoNome: ponto?.nome ?? null,
-          pendenciaId: id,
-          titulo: pendencia.titulo,
-          valor: valorPago,
         });
 
         return NextResponse.json({ success: true, ...resultado });
@@ -306,24 +303,6 @@ export async function PATCH(
     request,
   });
 
-  if (updates.status === "resolvida" && pendencia.status !== "resolvida") {
-    const { data: ponto } = await supabase
-      .from("pontos")
-      .select("nome")
-      .eq("id", pendencia.ponto_id ?? "")
-      .maybeSingle();
-    const { pushPendenciaQuitada } = await import("@/lib/push/events");
-    pushPendenciaQuitada({
-      empresaId: profile.empresa_id,
-      autorUserId: profile.user_id,
-      autorNome: profile.nome,
-      pontoNome: ponto?.nome ?? null,
-      pendenciaId: id,
-      titulo: pendencia.titulo,
-      valor: baixaFinanceira?.valor ?? valorAtual,
-    });
-  }
-
   return NextResponse.json({ success: true });
 }
 
@@ -338,10 +317,9 @@ export async function DELETE(
   }
 
   const supabase = await createClient();
-
   const { data: pendencia } = await supabase
     .from("pendencias")
-    .select("id, titulo, valor, tipo, ponto_id, pontos(nome)")
+    .select("ponto_id")
     .eq("id", id)
     .eq("empresa_id", profile.empresa_id)
     .maybeSingle();
@@ -350,8 +328,12 @@ export async function DELETE(
     return NextResponse.json({ error: "Pendência não encontrada" }, { status: 404 });
   }
 
-  const pontoNome =
-    (pendencia.pontos as { nome?: string } | null)?.nome ?? null;
+  const empresa = await getEmpresa(profile.empresa_id);
+  const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
+  const visao = await resolverVisaoOperador(supabase, acesso);
+  if (!visaoPermitePonto(visao, pendencia.ponto_id)) {
+    return NextResponse.json({ error: "Pendência não encontrada" }, { status: 404 });
+  }
 
   const { error } = await supabase
     .from("pendencias")
@@ -362,17 +344,6 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
-
-  const { pushPendenciaExcluida } = await import("@/lib/push/events");
-  pushPendenciaExcluida({
-    empresaId: profile.empresa_id,
-    autorUserId: profile.user_id,
-    autorNome: profile.nome,
-    pontoNome,
-    pendenciaId: id,
-    titulo: pendencia.titulo,
-    valor: Number(pendencia.valor) || 0,
-  });
 
   const { auditarAcao } = await import("@/lib/auditoria/auditar");
   await auditarAcao(supabase, profile, {
