@@ -1,9 +1,19 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { NICHO_VISITA_LABELS, type VisitaPontoNicho } from "@/lib/visitas-ponto/types";
 
 const TIPOS_UNIVERSAL = ["pagamento_pendente", "parcial", "visita_consolidada"] as const;
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
+}
+
+function labelNicho(raw: string | null | undefined): string {
+  const n = String(raw ?? "") as VisitaPontoNicho;
+  return NICHO_VISITA_LABELS[n] ?? "Coleta";
+}
+
+function formatBRL(n: number) {
+  return n.toFixed(2).replace(".", ",");
 }
 
 /**
@@ -21,13 +31,13 @@ export async function sincronizarPendenciasUniversaisPonto(
 
   const { data: pends } = await supabase
     .from("pendencias")
-    .select("id, valor, tipo, titulo, visita_ponto_id")
+    .select("id, valor, tipo, titulo, visita_ponto_id, descricao")
     .eq("empresa_id", opts.empresaId)
     .eq("ponto_id", opts.pontoId)
     .eq("status", "aberta")
     .in("tipo", [...TIPOS_UNIVERSAL]);
 
-  const porVisita = new Map<string, typeof pends>();
+  const porVisita = new Map<string, NonNullable<typeof pends>>();
   for (const p of pends ?? []) {
     const vpId = p.visita_ponto_id;
     const tipo = String(p.tipo ?? "").toLowerCase();
@@ -50,17 +60,17 @@ export async function sincronizarPendenciasUniversaisPonto(
   const [{ data: itens }, { data: visitasPonto }] = await Promise.all([
     supabase
       .from("visita_ponto_itens")
-      .select("visita_ponto_id, coleta_id, cassino_visita_id")
+      .select("visita_ponto_id, coleta_id, cassino_visita_id, nicho")
       .in("visita_ponto_id", vpIds)
       .eq("empresa_id", opts.empresaId),
     supabase
       .from("visitas_ponto")
-      .select("id, valor_pago")
+      .select("id, valor_pago, status, pontos(nome)")
       .in("id", vpIds)
       .eq("empresa_id", opts.empresaId),
   ]);
 
-  const itensPorVisita = new Map<string, typeof itens>();
+  const itensPorVisita = new Map<string, NonNullable<typeof itens>>();
   for (const item of itens ?? []) {
     const lista = itensPorVisita.get(item.visita_ponto_id) ?? [];
     lista.push(item);
@@ -69,6 +79,15 @@ export async function sincronizarPendenciasUniversaisPonto(
 
   const visitaPontoPago = new Map(
     (visitasPonto ?? []).map((v) => [v.id, Number(v.valor_pago ?? 0)])
+  );
+  const visitaPontoStatus = new Map(
+    (visitasPonto ?? []).map((v) => [v.id, String(v.status ?? "").toLowerCase()])
+  );
+  const visitaPontoNome = new Map(
+    (visitasPonto ?? []).map((v) => {
+      const p = Array.isArray(v.pontos) ? v.pontos[0] : v.pontos;
+      return [v.id, (p as { nome?: string } | null)?.nome ?? ""] as const;
+    })
   );
   const visitasExistentes = new Set((visitasPonto ?? []).map((v) => v.id));
 
@@ -115,16 +134,20 @@ export async function sincronizarPendenciasUniversaisPonto(
     }
   }
 
+  async function apagarLista(lista: NonNullable<typeof pends>) {
+    for (const p of lista ?? []) {
+      await supabase
+        .from("pendencias")
+        .delete()
+        .eq("id", p.id)
+        .eq("empresa_id", opts.empresaId);
+      ajustadas++;
+    }
+  }
+
   for (const [visitaPontoId, lista] of porVisita) {
     if (!visitasExistentes.has(visitaPontoId)) {
-      for (const p of lista ?? []) {
-        await supabase
-          .from("pendencias")
-          .delete()
-          .eq("id", p.id)
-          .eq("empresa_id", opts.empresaId);
-        ajustadas++;
-      }
+      await apagarLista(lista ?? []);
       continue;
     }
 
@@ -135,50 +158,66 @@ export async function sincronizarPendenciasUniversaisPonto(
         (i.cassino_visita_id && cassinoValor.has(i.cassino_visita_id))
     );
 
-    // Slots vazios (edição com preservar_slot): não mexe na pendência.
-    if (origens.length === 0 && (itensVisita ?? []).length > 0) {
+    const status = visitaPontoStatus.get(visitaPontoId) ?? "";
+    // Rascunho em edição: slots vazios ainda vão religar. Visita já fechada
+    // sem coleta/visita viva = dívida fantasma — apaga.
+    if (origens.length === 0) {
+      if (status === "rascunho" && (itensVisita ?? []).length > 0) {
+        continue;
+      }
+      await apagarLista(lista ?? []);
       continue;
     }
 
+    const porNicho = new Map<string, number>();
     let contrib = 0;
     for (const i of origens) {
+      let v = 0;
       if (i.coleta_id && coletaValor.has(i.coleta_id)) {
-        contrib += coletaValor.get(i.coleta_id) ?? 0;
+        v = coletaValor.get(i.coleta_id) ?? 0;
       }
       if (i.cassino_visita_id && cassinoValor.has(i.cassino_visita_id)) {
-        contrib += cassinoValor.get(i.cassino_visita_id) ?? 0;
+        v += cassinoValor.get(i.cassino_visita_id) ?? 0;
       }
+      if (v <= 0.009) continue;
+      contrib += v;
+      const lab = labelNicho(i.nicho);
+      porNicho.set(lab, round2((porNicho.get(lab) ?? 0) + v));
     }
     contrib = round2(contrib);
     const pago = round2(Math.max(0, visitaPontoPago.get(visitaPontoId) ?? 0));
     const novo = round2(Math.max(0, contrib - pago));
 
     const [principal, ...extras] = lista ?? [];
-    for (const extra of extras) {
-      await supabase
-        .from("pendencias")
-        .delete()
-        .eq("id", extra.id)
-        .eq("empresa_id", opts.empresaId);
-      ajustadas++;
-    }
+    await apagarLista(extras);
 
     if (!principal) continue;
 
     if (novo <= 0.009) {
-      await supabase
-        .from("pendencias")
-        .delete()
-        .eq("id", principal.id)
-        .eq("empresa_id", opts.empresaId);
-      ajustadas++;
+      await apagarLista([principal]);
       continue;
     }
 
-    if (Math.abs(Number(principal.valor ?? 0) - novo) > 0.019) {
+    const pontoNome = visitaPontoNome.get(visitaPontoId) ?? "";
+    const linhasNicho = [...porNicho.entries()].map(
+      ([lab, v]) => `${lab}: ${formatBRL(v)}`
+    );
+    const descricao = [
+      pontoNome,
+      ...linhasNicho,
+      `Total visita: R$ ${formatBRL(contrib)}`,
+      `Pago: R$ ${formatBRL(pago)}`,
+      `Pendência universal: R$ ${formatBRL(novo)}`,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+
+    const valorMudou = Math.abs(Number(principal.valor ?? 0) - novo) > 0.019;
+    const descMudou = String(principal.descricao ?? "") !== descricao;
+    if (valorMudou || descMudou) {
       await supabase
         .from("pendencias")
-        .update({ valor: novo })
+        .update({ valor: novo, descricao })
         .eq("id", principal.id)
         .eq("empresa_id", opts.empresaId);
       ajustadas++;
