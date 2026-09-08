@@ -34,14 +34,18 @@ export const resolverVisaoOperador = cache(async (
   };
 });
 
-export function aplicarFiltroIdsPontos<T extends { in: (col: string, ids: string[]) => T; eq: (col: string, v: string) => T }>(
-  query: T,
+export function aplicarFiltroIdsPontos<Q>(
+  query: Q,
   visao: VisaoOperador
-): T {
+): Q {
   if (!visao.restrita) return query;
+  const q = query as Q & {
+    in: (col: string, ids: string[]) => Q;
+    eq: (col: string, v: string) => Q;
+  };
   if (visao.pontoIds.length === 0) {
-    return query.eq("id", "00000000-0000-0000-0000-000000000000");
+    return q.eq("id", "00000000-0000-0000-0000-000000000000");
   }
-  return query.in("id", visao.pontoIds);
+  return q.in("id", visao.pontoIds);
 }
 

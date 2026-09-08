@@ -397,6 +397,8 @@ export function DashboardRascunhoClient({
       setPublicando(false);
     }
   }
+
+  function setValor(id: string, raw: string) {
     setPixEditadoManual(false);
     setDinheiroEditadoManual(false);
     const limpo = sanitizarMoney(raw);
