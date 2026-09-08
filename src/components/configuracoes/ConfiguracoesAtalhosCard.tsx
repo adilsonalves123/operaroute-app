@@ -10,7 +10,7 @@ const links = [
     desc: "Convites, cargos e o que cada colaborador pode acessar",
   },
   {
-    href: "/equipe#painel-restrito",
+    href: "/painel-restrito",
     icon: EyeOff,
     title: "Painel restrito",
     desc: "O que o operador vê no painel e em Coletas (valores publicados)",

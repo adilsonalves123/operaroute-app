@@ -20,6 +20,7 @@ import {
   LifeBuoy,
   Shield,
   Home,
+  EyeOff,
 } from "lucide-react";
 
 export type AppNavItem = {
@@ -34,6 +35,7 @@ export const APP_NAV_HREF_OCULTOS_VISAO = new Set([
   "/analise",
   "/financeiro",
   "/equipe",
+  "/painel-restrito",
   "/auditoria",
   "/relatorios",
 ]);
@@ -56,6 +58,7 @@ export const APP_NAV_MAIN: AppNavItem[] = [
   },
   { href: "/rotas", label: "Rotas", icon: Route, modulo: "rotas" },
   { href: "/equipe", label: "Equipe", icon: Users, modulo: "equipe" },
+  { href: "/painel-restrito", label: "Painel restrito", icon: EyeOff, modulo: "equipe" },
   { href: "/relatorios", label: "Relatórios", icon: BarChart3, modulo: "relatorios" },
   { href: "/ia", label: "IA", icon: Bot, modulo: "ia" },
   {

@@ -337,6 +337,7 @@ export function moduloDaRota(pathname: string): PermissaoModulo | null {
   if (p.startsWith("/produtos-consignados")) return "estoque";
   if (p.startsWith("/rotas")) return "rotas";
   if (p.startsWith("/equipe")) return "equipe";
+  if (p.startsWith("/painel-restrito")) return "equipe";
   if (p.startsWith("/relatorios")) return "relatorios";
   if (p.startsWith("/ia")) return "ia";
   if (p.startsWith("/universidade")) return "universidade";
