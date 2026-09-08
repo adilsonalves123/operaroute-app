@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { extrairTotalAbatido } from "@/lib/nichos/cassino/pendencias";
 import { parseMoneyInput } from "@/lib/utils";
 import { baixarPendenciaVisitaPonto } from "@/lib/visitas-ponto/checkout";
