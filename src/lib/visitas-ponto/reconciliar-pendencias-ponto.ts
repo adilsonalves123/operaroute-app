@@ -38,9 +38,24 @@ export async function reconciliarPendenciasCobraveisPonto(
 
   if (rows.length === 0) return { ajustadas: 0 };
 
+  const { fetchItensVisitaPontoFinalizada } = await import(
+    "@/lib/visitas-ponto/itens-visita-finalizada"
+  );
+  const migradas = await fetchItensVisitaPontoFinalizada(supabase, empresaId);
+
   // 1) Pendências ligadas a coleta → espelham saldo da coleta
+  //    Itens já fechados na visita ao ponto: dívida vive na consolidada — não reabrir.
   for (const p of rows) {
     if (!p.coleta_id) continue;
+    if (migradas.coletaIds.has(p.coleta_id)) {
+      await supabase
+        .from("pendencias")
+        .update({ status: "resolvida", valor: 0, resolvido_em: agora })
+        .eq("id", p.id)
+        .eq("empresa_id", empresaId);
+      ajustadas++;
+      continue;
+    }
     const { data: coleta } = await supabase
       .from("coletas")
       .select("valor_a_receber, valor_pago_recebido")
@@ -72,6 +87,16 @@ export async function reconciliarPendenciasCobraveisPonto(
     if (!p.visita_id || p.coleta_id) continue;
     const tipo = (p.tipo ?? "").toLowerCase();
     if (tipo === "negativo") continue;
+
+    if (migradas.cassinoVisitaIds.has(p.visita_id)) {
+      await supabase
+        .from("pendencias")
+        .update({ status: "resolvida", valor: 0, resolvido_em: agora })
+        .eq("id", p.id)
+        .eq("empresa_id", empresaId);
+      ajustadas++;
+      continue;
+    }
 
     const { data: visita } = await supabase
       .from("visitas")

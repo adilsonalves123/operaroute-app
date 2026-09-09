@@ -152,6 +152,69 @@ async function carregarItensCobraveis(
   return itensCobraveis.filter((i) => i.valorCobravel > 0.009);
 }
 
+/**
+ * Desconto do checkout não é pagamento: reduz o cobrável da visita/coleta.
+ * Sem isso o caixa some (ou fica no comprovante) e o ponto continua pendente
+ * pelo valor do desconto.
+ */
+async function aplicarDescontoCobravelItensVisita(
+  supabase: SupabaseClient,
+  opts: {
+    empresaId: string;
+    visitaPontoId: string;
+    desconto: number;
+  }
+): Promise<void> {
+  const desconto = round2(Math.max(0, opts.desconto));
+  if (desconto <= 0.009) return;
+
+  const itens = await carregarItensCobraveis(supabase, opts.empresaId, opts.visitaPontoId);
+  if (itens.length === 0) return;
+
+  const saldos = itens.map((i) => round2(Math.max(0, i.valorCobravel - i.valorPago)));
+  const rateios = ratearValorProporcional(saldos, desconto);
+
+  for (let idx = 0; idx < itens.length; idx++) {
+    const aplicar = round2(Math.max(0, rateios[idx] ?? 0));
+    if (aplicar <= 0.009) continue;
+    const item = itens[idx];
+
+    if (item.kind === "coleta") {
+      const novoAReceber = round2(Math.max(0, item.valorCobravel - aplicar));
+      await supabase
+        .from("coletas")
+        .update({ valor_a_receber: novoAReceber })
+        .eq("id", item.id)
+        .eq("empresa_id", opts.empresaId);
+      continue;
+    }
+
+    const { data: visita } = await supabase
+      .from("visitas")
+      .select("valor_operacao_efetivo, valor_operacao, restante")
+      .eq("id", item.id)
+      .eq("empresa_id", opts.empresaId)
+      .maybeSingle();
+    if (!visita) continue;
+
+    const efetivo = Number(visita.valor_operacao_efetivo ?? visita.valor_operacao ?? 0);
+    const restanteAtual = Number(visita.restante ?? NaN);
+    const novoEfetivo = round2(Math.max(0, efetivo - aplicar));
+    const novoRestante = Number.isFinite(restanteAtual)
+      ? round2(Math.max(0, restanteAtual - aplicar))
+      : round2(Math.max(0, item.valorCobravel - item.valorPago - aplicar));
+
+    await supabase
+      .from("visitas")
+      .update({
+        valor_operacao_efetivo: novoEfetivo,
+        restante: novoRestante,
+      })
+      .eq("id", item.id)
+      .eq("empresa_id", opts.empresaId);
+  }
+}
+
 export async function aplicarPagamentoDividaAnterior(
   supabase: SupabaseClient,
   opts: {
@@ -410,6 +473,11 @@ async function aplicarCreditoHaverItensVisita(
   }
 }
 
+/**
+ * Migra a cobrança item a item para a pendência universal da visita.
+ * NÃO inventa pagamento em coleta/visita — senão o histórico marca nicho
+ * não pago como quitado. A análise já ignora itens de visita finalizada.
+ */
 async function absorverSaldosItensVisitaNaConsolidada(
   supabase: SupabaseClient,
   opts: { empresaId: string; visitaPontoId: string }
@@ -422,27 +490,18 @@ async function absorverSaldosItensVisitaNaConsolidada(
     if (saldo <= 0.009) continue;
 
     if (item.kind === "coleta") {
-      // Dívida da visita migrou para pendência universal do ponto — zera saldo da coleta.
       await supabase
-        .from("coletas")
-        .update({ valor_pago_recebido: item.valorCobravel })
-        .eq("id", item.id)
-        .eq("empresa_id", opts.empresaId);
-
-      await sincronizarPendenciaDaColeta(supabase, {
-        empresaId: opts.empresaId,
-        coletaId: item.id,
-      });
-    } else {
-      await supabase
-        .from("visitas")
+        .from("pendencias")
         .update({
-          valor_pago: item.valorCobravel,
-          restante: 0,
+          valor: 0,
+          status: "resolvida",
+          resolvido_em: agora,
         })
-        .eq("id", item.id)
-        .eq("empresa_id", opts.empresaId);
-
+        .eq("empresa_id", opts.empresaId)
+        .eq("coleta_id", item.id)
+        .eq("status", "aberta")
+        .in("tipo", ["pagamento_pendente", "parcial"]);
+    } else {
       await supabase
         .from("pendencias")
         .update({
@@ -675,12 +734,41 @@ export async function finalizarVisitaPontoComCheckout(
   // Se ainda falta, vira pendência universal e some o saldo das coletas
   // (senão Análise soma coleta + pendência).
   if (opts.somenteFechar) {
-    const unpaidVisitaHoje = round2(Math.max(0, resumo.subtotalCobravel));
+    const pagoInformadoPre = round2(Math.max(0, opts.pix) + Math.max(0, opts.dinheiro));
+    const pagoJaResumo = round2(Math.max(0, resumo.totalRecebido ?? 0));
+    // Coleta só-cassino: o valor foi digitado, mas a visita ficou com pago 0.
+    // Sem gravar aqui, o encerrar cria pendência do total e o pagamento some.
+    if (pagoJaResumo <= 0.009 && pagoInformadoPre > 0.009) {
+      const pixRestantePre = { v: opts.pix };
+      const dinheiroRestantePre = { v: opts.dinheiro };
+      await aplicarPagamentoItensVisita(supabase, {
+        empresaId: opts.empresaId,
+        pontoId: resumo.pontoId,
+        pontoNome,
+        visitaPontoId: opts.visitaPontoId,
+        valor: pagoInformadoPre,
+        pixRestante: pixRestantePre,
+        dinheiroRestante: dinheiroRestantePre,
+        formaPagamento: deriveFormaPagamento(opts.pix, opts.dinheiro),
+        operadorId: opts.operadorId,
+      });
+    }
+
+    const resumoAposPago =
+      pagoJaResumo <= 0.009 && pagoInformadoPre > 0.009
+        ? await fetchVisitaPontoResumo(supabase, opts.empresaId, opts.visitaPontoId)
+        : resumo;
+    const cobravelAgora = round2(
+      Math.max(0, resumoAposPago?.subtotalCobravel ?? resumo.subtotalCobravel)
+    );
+    const unpaidVisitaHoje = cobravelAgora;
     if (unpaidVisitaHoje > 0.009) {
-      const linhas = resumo.nichos.map(
+      const linhas = (resumoAposPago ?? resumo).nichos.map(
         (n) => `${n.label}: ${n.totalCobravel.toFixed(2).replace(".", ",")}`
       );
-      const pagoJa = round2(Math.max(0, resumo.totalRecebido ?? 0));
+      const pagoJa = round2(
+        Math.max(pagoJaResumo, pagoInformadoPre, resumoAposPago?.totalRecebido ?? 0)
+      );
       await supabase.from("pendencias").insert({
         empresa_id: opts.empresaId,
         ponto_id: resumo.pontoId,
@@ -704,11 +792,6 @@ export async function finalizarVisitaPontoComCheckout(
       });
     }
 
-    await reconciliarPendenciasCobraveisPonto(supabase, {
-      empresaId: opts.empresaId,
-      pontoId: resumo.pontoId,
-    });
-
     const dividaAposSync = await totalDividaAnteriorPonto(
       supabase,
       opts.empresaId,
@@ -719,9 +802,11 @@ export async function finalizarVisitaPontoComCheckout(
       }
     );
 
-    const totalRecebido = round2(Math.max(0, resumo.totalRecebido ?? 0));
-    const aindaAberto = round2(Math.max(0, resumo.subtotalCobravel) + dividaAposSync);
-    const pagoInformado = round2(Math.max(0, opts.pix) + Math.max(0, opts.dinheiro));
+    const totalRecebido = round2(
+      Math.max(0, resumoAposPago?.totalRecebido ?? resumo.totalRecebido ?? 0, pagoInformadoPre)
+    );
+    const aindaAberto = round2(cobravelAgora + dividaAposSync);
+    const pagoInformado = pagoInformadoPre;
     const valorPago = round2(
       totalRecebido > 0.009 ? totalRecebido : pagoInformado
     );
@@ -748,6 +833,12 @@ export async function finalizarVisitaPontoComCheckout(
         forma_pagamento: forma,
       })
       .eq("id", opts.visitaPontoId);
+
+    // Depois do snapshot: a pendência universal precisa ver valor_pago já gravado.
+    await reconciliarPendenciasCobraveisPonto(supabase, {
+      empresaId: opts.empresaId,
+      pontoId: resumo.pontoId,
+    });
 
     const resumoFinal = await fetchVisitaPontoResumo(supabase, opts.empresaId, opts.visitaPontoId);
 
@@ -791,6 +882,19 @@ export async function finalizarVisitaPontoComCheckout(
   const pixRestante = { v: opts.pix };
   const dinheiroRestante = { v: opts.dinheiro };
   const forma = deriveFormaPagamento(opts.pix, opts.dinheiro);
+
+  // Desconto baixa o cobrável antes do pagamento — senão o ponto fica pendente
+  // exatamente pelo valor do desconto, mesmo tendo pago o líquido.
+  const descontoNoCobravel = round2(
+    Math.min(calculo.desconto, Math.max(0, resumo.subtotalCobravel))
+  );
+  if (descontoNoCobravel > 0.009) {
+    await aplicarDescontoCobravelItensVisita(supabase, {
+      empresaId: opts.empresaId,
+      visitaPontoId: opts.visitaPontoId,
+      desconto: descontoNoCobravel,
+    });
+  }
 
   // Haver abate só a visita — dinheiro cobre o restante da visita e depois a dívida.
   const haverNaVisita = round2(

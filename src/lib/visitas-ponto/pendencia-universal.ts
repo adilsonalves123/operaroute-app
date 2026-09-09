@@ -1,4 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { saldoPendenteColeta } from "@/lib/nichos/fura-fura/pagamentos-fifo";
+import { cobravelCassinoVisita } from "@/lib/visitas-ponto/resumo";
 import { NICHO_VISITA_LABELS, type VisitaPontoNicho } from "@/lib/visitas-ponto/types";
 
 const TIPOS_UNIVERSAL = ["pagamento_pendente", "parcial", "visita_consolidada"] as const;
@@ -18,10 +20,9 @@ function formatBRL(n: number) {
 
 /**
  * Depois do checkout, a dívida da visita migra para pendência universal
- * (`visita_consolidada` / `parcial` com visita_ponto_id) e as coletas ficam
- * com saldo zerado. Apagar a coleta não apagava essa linha.
- *
- * Recalcula (ou remove) a pendência com o que ainda existe na visita.
+ * (`visita_consolidada` / `parcial` com visita_ponto_id).
+ * O valor da consolidada = restante real dos itens (já desconta o pago no cassino/coleta).
+ * Visitas antigas que “absorveram” inventando pagamento caem no fallback de `restante`.
  */
 export async function sincronizarPendenciasUniversaisPonto(
   supabase: SupabaseClient,
@@ -65,7 +66,7 @@ export async function sincronizarPendenciasUniversaisPonto(
       .eq("empresa_id", opts.empresaId),
     supabase
       .from("visitas_ponto")
-      .select("id, valor_pago, status, pontos(nome)")
+      .select("id, valor_pago, restante, status, desconto, subtotal_cobravel, pontos(nome)")
       .in("id", vpIds)
       .eq("empresa_id", opts.empresaId),
   ]);
@@ -79,6 +80,15 @@ export async function sincronizarPendenciasUniversaisPonto(
 
   const visitaPontoPago = new Map(
     (visitasPonto ?? []).map((v) => [v.id, Number(v.valor_pago ?? 0)])
+  );
+  const visitaPontoRestante = new Map(
+    (visitasPonto ?? []).map((v) => [v.id, Math.max(0, Number(v.restante ?? 0))])
+  );
+  const visitaPontoDesconto = new Map(
+    (visitasPonto ?? []).map((v) => [v.id, Math.max(0, Number(v.desconto ?? 0))])
+  );
+  const visitaPontoSubtotal = new Map(
+    (visitasPonto ?? []).map((v) => [v.id, Math.max(0, Number(v.subtotal_cobravel ?? 0))])
   );
   const visitaPontoStatus = new Map(
     (visitasPonto ?? []).map((v) => [v.id, String(v.status ?? "").toLowerCase()])
@@ -106,31 +116,30 @@ export async function sincronizarPendenciasUniversaisPonto(
     ),
   ];
 
-  const coletaValor = new Map<string, number>();
+  const coletaRestante = new Map<string, number>();
   if (coletaIds.length > 0) {
     const { data: coletas } = await supabase
       .from("coletas")
-      .select("id, valor_a_receber")
+      .select("id, valor_a_receber, valor_pago_recebido")
       .in("id", coletaIds)
       .eq("empresa_id", opts.empresaId);
     for (const c of coletas ?? []) {
-      coletaValor.set(c.id, Math.max(0, Number(c.valor_a_receber ?? 0)));
+      coletaRestante.set(c.id, Math.max(0, saldoPendenteColeta(c)));
     }
   }
 
-  const cassinoValor = new Map<string, number>();
+  const cassinoRestante = new Map<string, number>();
   if (cassinoIds.length > 0) {
     const { data: visitas } = await supabase
       .from("visitas")
-      .select("id, saldo_negativo, valor_operacao_efetivo, valor_operacao")
+      .select(
+        "id, saldo_negativo, valor_operacao_efetivo, valor_operacao, valor_pago, restante, debito_abatido"
+      )
       .in("id", cassinoIds)
       .eq("empresa_id", opts.empresaId);
     for (const v of visitas ?? []) {
       if (v.saldo_negativo) continue;
-      cassinoValor.set(
-        v.id,
-        Math.max(0, Number(v.valor_operacao_efetivo ?? v.valor_operacao ?? 0))
-      );
+      cassinoRestante.set(v.id, Math.max(0, cobravelCassinoVisita(v)));
     }
   }
 
@@ -154,8 +163,8 @@ export async function sincronizarPendenciasUniversaisPonto(
     const itensVisita = itensPorVisita.get(visitaPontoId) ?? [];
     const origens = (itensVisita ?? []).filter(
       (i) =>
-        (i.coleta_id && coletaValor.has(i.coleta_id)) ||
-        (i.cassino_visita_id && cassinoValor.has(i.cassino_visita_id))
+        (i.coleta_id && coletaRestante.has(i.coleta_id)) ||
+        (i.cassino_visita_id && cassinoRestante.has(i.cassino_visita_id))
     );
 
     const status = visitaPontoStatus.get(visitaPontoId) ?? "";
@@ -170,23 +179,42 @@ export async function sincronizarPendenciasUniversaisPonto(
     }
 
     const porNicho = new Map<string, number>();
-    let contrib = 0;
+    let restanteItens = 0;
     for (const i of origens) {
       let v = 0;
-      if (i.coleta_id && coletaValor.has(i.coleta_id)) {
-        v = coletaValor.get(i.coleta_id) ?? 0;
+      if (i.coleta_id && coletaRestante.has(i.coleta_id)) {
+        v = coletaRestante.get(i.coleta_id) ?? 0;
       }
-      if (i.cassino_visita_id && cassinoValor.has(i.cassino_visita_id)) {
-        v += cassinoValor.get(i.cassino_visita_id) ?? 0;
+      if (i.cassino_visita_id && cassinoRestante.has(i.cassino_visita_id)) {
+        v += cassinoRestante.get(i.cassino_visita_id) ?? 0;
       }
       if (v <= 0.009) continue;
-      contrib += v;
+      restanteItens += v;
       const lab = labelNicho(i.nicho);
       porNicho.set(lab, round2((porNicho.get(lab) ?? 0) + v));
     }
-    contrib = round2(contrib);
+    restanteItens = round2(restanteItens);
     const pago = round2(Math.max(0, visitaPontoPago.get(visitaPontoId) ?? 0));
-    const novo = round2(Math.max(0, contrib - pago));
+    const desconto = round2(Math.max(0, visitaPontoDesconto.get(visitaPontoId) ?? 0));
+    const subtotal = round2(Math.max(0, visitaPontoSubtotal.get(visitaPontoId) ?? 0));
+    const restanteSnapshot = round2(
+      Math.max(0, visitaPontoRestante.get(visitaPontoId) ?? 0)
+    );
+    // Itens com pagamento real → soma dos restantes.
+    // Legado (absorveu inventando quitação) → usa o restante gravado na visita.
+    let novo = restanteItens;
+    if (novo <= 0.009 && restanteSnapshot > 0.009) {
+      novo = restanteSnapshot;
+    }
+    // Desconto do checkout ainda no cobravel bruto (legado): não cobrar de novo.
+    if (
+      novo > 0.009 &&
+      desconto > 0.009 &&
+      subtotal > 0.009 &&
+      restanteItens + 0.02 >= subtotal
+    ) {
+      novo = round2(Math.max(0, novo - desconto));
+    }
 
     const [principal, ...extras] = lista ?? [];
     await apagarLista(extras);
@@ -199,13 +227,14 @@ export async function sincronizarPendenciasUniversaisPonto(
     }
 
     const pontoNome = visitaPontoNome.get(visitaPontoId) ?? "";
-    const linhasNicho = [...porNicho.entries()].map(
-      ([lab, v]) => `${lab}: ${formatBRL(v)}`
-    );
+    const linhasNicho =
+      porNicho.size > 0
+        ? [...porNicho.entries()].map(([lab, v]) => `${lab}: ${formatBRL(v)}`)
+        : [];
     const descricao = [
       pontoNome,
       ...linhasNicho,
-      `Total visita: R$ ${formatBRL(contrib)}`,
+      `Total visita: R$ ${formatBRL(round2(novo + pago))}`,
       `Pago: R$ ${formatBRL(pago)}`,
       `Pendência universal: R$ ${formatBRL(novo)}`,
     ]
