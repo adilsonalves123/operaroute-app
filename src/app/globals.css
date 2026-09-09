@@ -1526,6 +1526,34 @@ html[data-app-theme="light"] .analise-premium-root {
   color: #3d3833;
 }
 
+/* Decisão após receber nicho — título ciano ilegível no fundo claro */
+html[data-app-theme="light"] .receber-visita-decisao {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .receber-visita-decisao .text-white,
+html[data-app-theme="light"] .receber-visita-decisao .text-slate-100,
+html[data-app-theme="light"] .receber-visita-decisao .text-slate-300,
+html[data-app-theme="light"] .receber-visita-decisao .text-slate-400,
+html[data-app-theme="light"] .receber-visita-decisao .text-slate-500 {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .receber-visita-decisao [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .receber-visita-decisao [class*="text-emerald-"] {
+  color: #047857 !important;
+}
+html[data-app-theme="light"] .receber-visita-decisao button[class*="bg-cyan-"] {
+  background-color: #ecfeff !important;
+  border-color: rgba(14, 116, 144, 0.35) !important;
+}
+html[data-app-theme="light"] .receber-visita-decisao button[class*="bg-white"] {
+  background-color: #f8fafc !important;
+  border-color: rgba(28, 25, 23, 0.14) !important;
+}
+
 /* Corrigir pagamento — card cinza + letra remapeada para preto */
 html[data-app-theme="light"] .corrigir-pagamento-painel {
   background: #ffffff !important;
