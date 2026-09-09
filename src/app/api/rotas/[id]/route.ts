@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
-import { createClient, getEmpresa } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import { canGerenciarRotas } from "@/lib/rotas/permissoes-rotas";
 
 async function rotaDaEmpresa(

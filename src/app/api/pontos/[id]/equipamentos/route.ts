@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
-import { getEmpresa } from "@/lib/supabase/server";
 import { canUseEquipamentoTipo, resolveNichosAtivos } from "@/lib/assinatura";
 import type { EquipamentoTipo } from "@/lib/equipamentos";
 import { parseLeituraContador, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
