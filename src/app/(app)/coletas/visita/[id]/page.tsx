@@ -430,35 +430,14 @@ export default async function VisitaDetailPage({
           totalLucroCentavos={Number(visita.total_lucro_centavos)}
         />
       ) : calculoPositivo ? (
-        <>
-          <VisitaPositivaResumo
-            calculo={calculoPositivo}
-            comissaoPercentual={Number(ponto?.comissao_percentual) || 0}
-            totalLucroCentavos={Number(visita.total_lucro_centavos)}
-            pagamentoPix={pagamentoExibido.pix}
-            pagamentoDinheiro={pagamentoExibido.dinheiro}
-            formaPagamento={visita.forma_pagamento}
-          />
-          {Number(calculoPositivo.valorPagoReais ?? visita.valor_pago ?? 0) > 0.009 ||
-          pagamentoExibido.pix + pagamentoExibido.dinheiro > 0.009 ? (
-            <section className="coleta-pagamento-forma-fallback rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-3.5">
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between gap-4">
-                  <span className="text-slate-400">Pix</span>
-                  <span className="font-semibold tabular-nums text-emerald-400">
-                    {formatCurrency(pagamentoExibido.pix)}
-                  </span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-slate-400">Dinheiro</span>
-                  <span className="font-semibold tabular-nums text-emerald-400">
-                    {formatCurrency(pagamentoExibido.dinheiro)}
-                  </span>
-                </div>
-              </div>
-            </section>
-          ) : null}
-        </>
+        <VisitaPositivaResumo
+          calculo={calculoPositivo}
+          comissaoPercentual={Number(ponto?.comissao_percentual) || 0}
+          totalLucroCentavos={Number(visita.total_lucro_centavos)}
+          pagamentoPix={pagamentoExibido.pix}
+          pagamentoDinheiro={pagamentoExibido.dinheiro}
+          formaPagamento={visita.forma_pagamento}
+        />
       ) : (
         <div className="glass-card grid gap-3 p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
           <div>
