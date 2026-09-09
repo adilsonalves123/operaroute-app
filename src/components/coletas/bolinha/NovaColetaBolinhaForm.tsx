@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Circle } from "lucide-react";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { FotoColetaCaptura } from "@/components/coletas/FotoColetaCaptura";
@@ -83,7 +83,6 @@ function inputClass(hasError: boolean) {
 }
 
 export function NovaColetaBolinhaForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const pontoInicial = searchParams.get("ponto") ?? "";
   const editarColetaId =
@@ -270,10 +269,20 @@ export function NovaColetaBolinhaForm() {
         });
 
         setComissaoPercentual(String(coleta.comissao_percentual ?? ""));
-        setDesconto(Number(coleta.desconto ?? 0) > 0.009 ? String(coleta.desconto) : "");
-        setValorPix(Number(coleta.valor_pix ?? 0) > 0.009 ? String(coleta.valor_pix) : "");
+        setDesconto(
+          Number(coleta.desconto ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.desconto))
+            : ""
+        );
+        setValorPix(
+          Number(coleta.valor_pix ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.valor_pix))
+            : ""
+        );
         setValorDinheiro(
-          Number(coleta.valor_dinheiro ?? 0) > 0.009 ? String(coleta.valor_dinheiro) : ""
+          Number(coleta.valor_dinheiro ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.valor_dinheiro))
+            : ""
         );
         setObservacao(String(coleta.observacao ?? ""));
         setEditandoCarregado(true);
@@ -341,7 +350,7 @@ export function NovaColetaBolinhaForm() {
       return calcularColetaBolinha({
         leituras,
         comissaoPercentual: Number(comissaoPercentual) || 0,
-        desconto: Number(desconto) || 0,
+        desconto: parseMoneyInput(desconto),
         valorPagoRecebido: valorRecebido,
       });
     } catch {
@@ -390,7 +399,7 @@ export function NovaColetaBolinhaForm() {
       calcularColetaBolinha({
         leituras,
         comissaoPercentual: Number(comissaoPercentual) || 0,
-        desconto: Number(desconto) || 0,
+        desconto: parseMoneyInput(desconto),
         valorPagoRecebido: valorRecebido,
       });
       return null;
@@ -554,7 +563,7 @@ export function NovaColetaBolinhaForm() {
         body: JSON.stringify({
           ponto_id: pontoId,
           comissao_percentual: Number(comissaoPercentual) || 0,
-          desconto: Number(desconto) || 0,
+          desconto: parseMoneyInput(desconto),
           valor_pix: cobrandoAgora ? parseMoneyInput(valorPix) : 0,
           valor_dinheiro: cobrandoAgora ? parseMoneyInput(valorDinheiro) : 0,
           observacao: observacao || null,
@@ -574,7 +583,6 @@ export function NovaColetaBolinhaForm() {
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
           religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
-          editando_coleta: Boolean(editarColetaId),
         }),
       });
 
@@ -593,19 +601,6 @@ export function NovaColetaBolinhaForm() {
         });
       }
 
-      if (editarColetaId) {
-        const params = new URLSearchParams();
-        if (pontoId) params.set("ponto", pontoId);
-        if (visitaPontoId && !fecharVisitaAgora) {
-          params.set("visita_ponto", visitaPontoId);
-        }
-        router.replace(
-          params.toString()
-            ? `/coletas/nova/bolinha?${params.toString()}`
-            : "/coletas/nova/bolinha"
-        );
-      }
-
       voltarAposColeta(fecharVisitaAgora ? { visitaJaFinalizada: true } : undefined);
       concluido = true;
     } catch (err) {
@@ -619,7 +614,7 @@ export function NovaColetaBolinhaForm() {
   if (editarColetaId && !editandoCarregado) {
     return (
       <ColetaNovaPageShell title="Editar coleta Bolinha" subtitle="Carregando coleta…" backHref="/coletas">
-        <p className="text-sm text-at-muted">Carregando dados da coleta…</p>
+        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
       </ColetaNovaPageShell>
     );
   }
@@ -641,7 +636,7 @@ export function NovaColetaBolinhaForm() {
         emVisitaPonto ? (
           <VisitaPontoNav visitaPontoId={visitaPontoId} pontoId={pontoId || undefined} active="bolinha" />
         ) : ensuringVisita ? (
-          <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 px-3 py-2 text-xs text-at-muted">
+          <div className="rounded-xl border border-orange-500/20 bg-orange-500/5 px-3 py-2 text-xs text-slate-400">
             Preparando visita multi-nicho…
           </div>
         ) : undefined
@@ -666,7 +661,7 @@ export function NovaColetaBolinhaForm() {
           }
           comissaoField={
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-at-primary/85">Comissão (%)</label>
+              <label className="block text-sm font-medium text-slate-300">Comissão (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -706,7 +701,7 @@ export function NovaColetaBolinhaForm() {
               loading={loadingPonto}
               empty={
                 !loadingPonto && maquinas.length === 0 && pontoId ? (
-                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-at-muted">
+                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
                     Nenhuma máquina de Bolinha ativa neste ponto.
                   </div>
                 ) : undefined
@@ -760,7 +755,7 @@ export function NovaColetaBolinhaForm() {
                           variant="icon"
                         />
                       </div>
-                      <p className="text-xs text-at-muted">
+                      <p className="text-xs text-slate-500">
                         Jogada:{" "}
                         {maquina.precoJogada > 0
                           ? formatCurrency(maquina.precoJogada)
@@ -768,7 +763,7 @@ export function NovaColetaBolinhaForm() {
                         {pronta && <span className="ml-2 text-green-400">· Pronta</span>}
                       </p>
                       {!maquina.fotoReferenciaUrl && (
-                        <p className="mt-0.5 text-[11px] text-at-soft">
+                        <p className="mt-0.5 text-[11px] text-slate-600">
                           Sem foto cadastrada — edite a máquina no ponto
                         </p>
                       )}
@@ -777,7 +772,7 @@ export function NovaColetaBolinhaForm() {
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-at-primary/85">
+                      <label className="block text-sm font-medium text-slate-300">
                         Dinheiro contado (R$) *
                       </label>
                       <input
@@ -799,7 +794,7 @@ export function NovaColetaBolinhaForm() {
                       />
                     </div>
                     <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2.5">
-                      <p className="text-xs text-at-muted">Saiu de cápsulas</p>
+                      <p className="text-xs text-slate-500">Saiu de cápsulas</p>
                       <p className="mt-1 text-lg font-semibold text-emerald-300">
                         {maquinaCalc
                           ? `${maquinaCalc.unidadesSaiu} ${
@@ -809,7 +804,7 @@ export function NovaColetaBolinhaForm() {
                             ? "—"
                             : "Preencha o valor"}
                       </p>
-                      <p className="mt-0.5 text-[11px] text-at-muted">
+                      <p className="mt-0.5 text-[11px] text-slate-500">
                         Estoque na máquina: {estoqueDisponivel}
                       </p>
                     </div>
@@ -817,15 +812,15 @@ export function NovaColetaBolinhaForm() {
 
                   <div className="space-y-2">
                     <div>
-                      <p className="text-sm font-medium text-at-primary/85">Baixa automática de brindes</p>
-                      <p className="text-xs text-at-muted">
+                      <p className="text-sm font-medium text-slate-300">Baixa automática de brindes</p>
+                      <p className="text-xs text-slate-500">
                         O sistema deduz do estoque alocado nesta máquina conforme o dinheiro
                         contado ÷ preço da jogada.
                       </p>
                     </div>
 
                     {!maquinaCalc || maquinaCalc.brindes.length === 0 ? (
-                      <div className="rounded-lg border border-dashed border-slate-700 px-3 py-3 text-xs text-at-muted">
+                      <div className="rounded-lg border border-dashed border-slate-700 px-3 py-3 text-xs text-slate-500">
                         {maquina.valorContadoInput.trim()
                           ? estoqueDisponivel <= 0
                             ? "Nenhum brinde alocado. Aloque em Pontos → equipamento → aba Brindes."
@@ -840,18 +835,18 @@ export function NovaColetaBolinhaForm() {
                             className="grid gap-2 rounded-lg border border-slate-800 bg-slate-950/40 p-3 sm:grid-cols-[minmax(0,1fr)_90px_100px] items-end"
                           >
                             <div>
-                              <p className="text-xs text-at-muted">Item</p>
+                              <p className="text-xs text-slate-500">Item</p>
                               <p className="text-sm font-medium text-white">{brinde.nome}</p>
                             </div>
                             <div>
-                              <p className="text-xs text-at-muted">Qtd</p>
-                              <p className="py-2 text-sm tabular-nums text-at-primary/85">
+                              <p className="text-xs text-slate-500">Qtd</p>
+                              <p className="py-2 text-sm tabular-nums text-slate-300">
                                 {brinde.quantidade}
                               </p>
                             </div>
                             <div>
-                              <p className="text-xs text-at-muted">Custo un.</p>
-                              <p className="py-2 text-sm tabular-nums text-at-primary/85">
+                              <p className="text-xs text-slate-500">Custo un.</p>
+                              <p className="py-2 text-sm tabular-nums text-slate-300">
                                 {formatCurrency(brinde.custo_unitario)}
                               </p>
                             </div>
@@ -878,7 +873,7 @@ export function NovaColetaBolinhaForm() {
               accent="amber"
               empty={
                 !calculo || calculo.maquinas.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-at-muted">
+                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
                     Informe o dinheiro contado de pelo menos uma máquina para ver o resumo e
                     registrar o pagamento.
                     {calculoError ? (

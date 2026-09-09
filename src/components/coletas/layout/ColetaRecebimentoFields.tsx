@@ -56,7 +56,10 @@ export function ColetaRecebimentoFields({
       <div className="space-y-1.5">
         <label className="block text-xs text-at-muted">Desconto (R$)</label>
         <input
-          inputMode="numeric"
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          enterKeyHint="done"
           value={desconto}
           onChange={(e) => onDescontoChange(formatMoneyInput(e.target.value))}
           onBlur={(e) => onDescontoChange(formatMoneyInputOnBlur(e.target.value))}
@@ -70,7 +73,10 @@ export function ColetaRecebimentoFields({
           <div className="space-y-1.5">
             <label className="block text-xs text-at-muted">Dinheiro (R$)</label>
             <input
-              inputMode="numeric"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              enterKeyHint="done"
               value={dinheiro}
               onChange={(e) => onDinheiroChange(formatMoneyInput(e.target.value))}
               onBlur={(e) => onDinheiroChange(formatMoneyInputOnBlur(e.target.value))}
@@ -81,7 +87,10 @@ export function ColetaRecebimentoFields({
           <div className="space-y-1.5">
             <label className="block text-xs text-at-muted">Pix (R$)</label>
             <input
-              inputMode="numeric"
+              type="text"
+              inputMode="decimal"
+              autoComplete="off"
+              enterKeyHint="done"
               value={pix}
               onChange={(e) => onPixChange(formatMoneyInput(e.target.value))}
               onBlur={(e) => onPixChange(formatMoneyInputOnBlur(e.target.value))}

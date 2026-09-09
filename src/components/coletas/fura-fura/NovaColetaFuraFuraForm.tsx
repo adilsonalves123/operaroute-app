@@ -477,7 +477,7 @@ export function NovaColetaFuraFuraForm() {
           ? Number(form.preco_furo) || Number(ponto.preco_furo ?? 0)
           : 0,
         comissaoPercentual: ponto ? Number(form.comissao_percentual) || 0 : 0,
-        desconto: Number(form.desconto) || 0,
+        desconto: parseMoneyInput(form.desconto),
         brindes,
         valorPagoRecebido: valorRecebido,
       }),

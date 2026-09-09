@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Trash2, ImageIcon } from "lucide-react";
 import { FotoColetaLeitura } from "@/components/coletas/FotoColetaLeitura";
 import { createClient } from "@/lib/supabase/client";
@@ -10,7 +10,12 @@ import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { uploadFotosMaquinasParalelo } from "@/lib/storage/coleta-fotos";
 import { useVisitaPontoContext } from "@/components/visitas-ponto/useVisitaPontoContext";
 import { VisitaPontoNav } from "@/components/visitas-ponto/VisitaPontoNav";
-import { formatCurrency, cn, parseMoneyInput } from "@/lib/utils";
+import {
+  formatCurrency,
+  cn,
+  parseMoneyInput,
+  formatMoneyInputOnBlur,
+} from "@/lib/utils";
 import { formatContador, formatContadorInput, parseContadorInput } from "@/lib/nichos/cassino";
 import { calcularColetaUrsinho, NICHO_MODULO_URSINHO } from "@/lib/nichos/ursinho";
 import {
@@ -101,7 +106,6 @@ function inputClass(hasError: boolean) {
 }
 
 export function NovaColetaUrsinhoForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const pontoInicial = searchParams.get("ponto") ?? "";
   const editarColetaId =
@@ -325,10 +329,20 @@ export function NovaColetaUrsinhoForm() {
         });
 
         setComissaoPercentual(String(coleta.comissao_percentual ?? ""));
-        setDesconto(Number(coleta.desconto ?? 0) > 0.009 ? String(coleta.desconto) : "");
-        setValorPix(Number(coleta.valor_pix ?? 0) > 0.009 ? String(coleta.valor_pix) : "");
+        setDesconto(
+          Number(coleta.desconto ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.desconto))
+            : ""
+        );
+        setValorPix(
+          Number(coleta.valor_pix ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.valor_pix))
+            : ""
+        );
         setValorDinheiro(
-          Number(coleta.valor_dinheiro ?? 0) > 0.009 ? String(coleta.valor_dinheiro) : ""
+          Number(coleta.valor_dinheiro ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.valor_dinheiro))
+            : ""
         );
         setObservacao(String(coleta.observacao ?? ""));
         setEditandoCarregado(true);
@@ -396,7 +410,7 @@ export function NovaColetaUrsinhoForm() {
       return calcularColetaUrsinho({
         leituras,
         comissaoPercentual: Number(comissaoPercentual) || 0,
-        desconto: Number(desconto) || 0,
+        desconto: parseMoneyInput(desconto),
         valorPagoRecebido: valorRecebido,
       });
     } catch {
@@ -660,7 +674,7 @@ export function NovaColetaUrsinhoForm() {
         body: JSON.stringify({
           ponto_id: pontoId,
           comissao_percentual: Number(comissaoPercentual) || 0,
-          desconto: Number(desconto) || 0,
+          desconto: parseMoneyInput(desconto),
           valor_pix: cobrandoAgora ? parseMoneyInput(valorPix) : 0,
           valor_dinheiro: cobrandoAgora ? parseMoneyInput(valorDinheiro) : 0,
           observacao: observacao || null,
@@ -680,7 +694,6 @@ export function NovaColetaUrsinhoForm() {
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
           religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
-          editando_coleta: Boolean(editarColetaId),
         }),
       });
 
@@ -699,19 +712,6 @@ export function NovaColetaUrsinhoForm() {
         });
       }
 
-      if (editarColetaId) {
-        const params = new URLSearchParams();
-        if (pontoId) params.set("ponto", pontoId);
-        if (visitaPontoId && !fecharVisitaAgora) {
-          params.set("visita_ponto", visitaPontoId);
-        }
-        router.replace(
-          params.toString()
-            ? `/coletas/nova/ursinho?${params.toString()}`
-            : "/coletas/nova/ursinho"
-        );
-      }
-
       voltarAposColeta(fecharVisitaAgora ? { visitaJaFinalizada: true } : undefined);
       concluido = true;
     } catch (err) {
@@ -725,7 +725,7 @@ export function NovaColetaUrsinhoForm() {
   if (editarColetaId && !editandoCarregado) {
     return (
       <ColetaNovaPageShell title="Editar coleta ursinho" subtitle="Carregando coleta…" backHref="/coletas">
-        <p className="text-sm text-at-muted">Carregando dados da coleta…</p>
+        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
       </ColetaNovaPageShell>
     );
   }
@@ -747,7 +747,7 @@ export function NovaColetaUrsinhoForm() {
         emVisitaPonto ? (
           <VisitaPontoNav visitaPontoId={visitaPontoId} pontoId={pontoId || undefined} active="ursinho" />
         ) : ensuringVisita ? (
-          <div className="rounded-xl border border-pink-500/20 bg-pink-500/5 px-3 py-2 text-xs text-at-muted">
+          <div className="rounded-xl border border-pink-500/20 bg-pink-500/5 px-3 py-2 text-xs text-slate-400">
             Preparando visita multi-nicho…
           </div>
         ) : undefined
@@ -772,7 +772,7 @@ export function NovaColetaUrsinhoForm() {
           }
           comissaoField={
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-at-primary/85">Comissão (%)</label>
+              <label className="block text-sm font-medium text-slate-300">Comissão (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -812,7 +812,7 @@ export function NovaColetaUrsinhoForm() {
               loading={loadingPonto}
               empty={
                 !loadingPonto && maquinas.length === 0 && pontoId ? (
-                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-at-muted">
+                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
                     Nenhuma máquina de ursinho ativa neste ponto.
                   </div>
                 ) : undefined
@@ -851,7 +851,7 @@ export function NovaColetaUrsinhoForm() {
                           variant="icon"
                         />
                       </div>
-                      <p className="text-xs text-at-muted">
+                      <p className="text-xs text-slate-500">
                         Anterior {formatContador(maquina.entradaAnterior)}
                         {pronta && <span className="ml-2 text-green-400">· Pronta</span>}
                       </p>
@@ -860,7 +860,7 @@ export function NovaColetaUrsinhoForm() {
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-at-primary/85">
+                      <label className="block text-sm font-medium text-slate-300">
                         Entrada atual (visor) *
                       </label>
                       <input
@@ -877,7 +877,7 @@ export function NovaColetaUrsinhoForm() {
                       />
                     </div>
                     <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2.5">
-                      <p className="text-xs text-at-muted">Arrecadação da máquina</p>
+                      <p className="text-xs text-slate-500">Arrecadação da máquina</p>
                       <p className="mt-1 text-lg font-semibold text-emerald-300">
                         {valorBruto ?? "Preencha a leitura"}
                       </p>
@@ -886,8 +886,8 @@ export function NovaColetaUrsinhoForm() {
 
                   <div className="space-y-2">
                     <div>
-                      <p className="text-sm font-medium text-at-primary/85">Brindes / itens que saíram</p>
-                      <p className="text-xs text-at-muted">
+                      <p className="text-sm font-medium text-slate-300">Brindes / itens que saíram</p>
+                      <p className="text-xs text-slate-500">
                         Selecione itens alocados nesta máquina. A quantidade não pode ultrapassar o
                         estoque da máquina.
                       </p>
@@ -913,7 +913,7 @@ export function NovaColetaUrsinhoForm() {
                                 className={cn(
                                   "inline-flex items-center gap-2 rounded-md border px-2 py-1.5 text-xs",
                                   restante <= 0
-                                    ? "cursor-not-allowed border-slate-800 text-at-soft"
+                                    ? "cursor-not-allowed border-slate-800 text-slate-600"
                                     : "border-pink-500/25 text-pink-300 hover:bg-pink-500/10"
                                 )}
                               >
@@ -926,7 +926,7 @@ export function NovaColetaUrsinhoForm() {
                                   />
                                 ) : (
                                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded border border-slate-800 bg-slate-900">
-                                    <ImageIcon className="h-3.5 w-3.5 text-at-soft" />
+                                    <ImageIcon className="h-3.5 w-3.5 text-slate-600" />
                                   </span>
                                 )}
                                 <span className="text-left leading-tight">
@@ -940,13 +940,13 @@ export function NovaColetaUrsinhoForm() {
                           })}
                       </div>
                     ) : (
-                      <p className="text-xs italic text-at-soft">
+                      <p className="text-xs italic text-slate-600">
                         Nenhum brinde nesta máquina. Aloque em Pontos → equipamento → aba Brindes.
                       </p>
                     )}
 
                     {maquina.brindes.length === 0 ? (
-                      <div className="rounded-lg border border-dashed border-slate-700 px-3 py-3 text-xs text-at-muted">
+                      <div className="rounded-lg border border-dashed border-slate-700 px-3 py-3 text-xs text-slate-500">
                         Nenhum item informado para esta máquina.
                       </div>
                     ) : (
@@ -975,15 +975,15 @@ export function NovaColetaUrsinhoForm() {
                                 />
                               ) : (
                                 <span className="mb-0.5 flex h-10 w-10 items-center justify-center rounded-md border border-slate-800 bg-slate-900">
-                                  <ImageIcon className="h-4 w-4 text-at-soft" />
+                                  <ImageIcon className="h-4 w-4 text-slate-600" />
                                 </span>
                               )}
                               <div>
-                                <p className="text-xs text-at-muted">Item</p>
+                                <p className="text-xs text-slate-500">Item</p>
                                 <p className="text-sm font-medium text-white">{brinde.nome}</p>
                               </div>
                               <div className="space-y-1">
-                                <label className="block text-xs text-at-muted">
+                                <label className="block text-xs text-slate-500">
                                   Qtd (máx. {maxQtd})
                                 </label>
                                 <input
@@ -1002,15 +1002,15 @@ export function NovaColetaUrsinhoForm() {
                                 />
                               </div>
                               <div>
-                                <p className="text-xs text-at-muted">Custo un.</p>
-                                <p className="py-2 text-sm tabular-nums text-at-primary/85">
+                                <p className="text-xs text-slate-500">Custo un.</p>
+                                <p className="py-2 text-sm tabular-nums text-slate-300">
                                   {formatCurrency(brinde.custo_unitario)}
                                 </p>
                               </div>
                               <button
                                 type="button"
                                 onClick={() => removeBrinde(maquina.equipamentoId, brinde.id)}
-                                className="rounded-lg border border-slate-700 text-at-muted hover:text-red-400"
+                                className="rounded-lg border border-slate-700 text-slate-400 hover:text-red-400"
                               >
                                 <Trash2 className="mx-auto h-4 w-4" />
                               </button>
@@ -1043,7 +1043,7 @@ export function NovaColetaUrsinhoForm() {
               accent="pink"
               empty={
                 !calculo || calculo.maquinas.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-at-muted">
+                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
                     Preencha a entrada de pelo menos uma máquina para ver o resumo e registrar o
                     pagamento.
                   </p>

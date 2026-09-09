@@ -2,14 +2,19 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { FotoColetaLeitura } from "@/components/coletas/FotoColetaLeitura";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { uploadFotosMaquinasParalelo } from "@/lib/storage/coleta-fotos";
 import { useVisitaPontoContext } from "@/components/visitas-ponto/useVisitaPontoContext";
 import { VisitaPontoNav } from "@/components/visitas-ponto/VisitaPontoNav";
-import { formatCurrency, cn, parseMoneyInput } from "@/lib/utils";
+import {
+  formatCurrency,
+  cn,
+  parseMoneyInput,
+  formatMoneyInputOnBlur,
+} from "@/lib/utils";
 import { formatContador, formatContadorInput, parseContadorInput } from "@/lib/nichos/cassino";
 import {
   calcularColetaDiversao,
@@ -70,7 +75,6 @@ function inputClass(hasError: boolean) {
 }
 
 export function NovaColetaDiversaoForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const pontoInicial = searchParams.get("ponto") ?? "";
   const editarColetaId =
@@ -246,10 +250,20 @@ export function NovaColetaDiversaoForm() {
         }));
 
         setComissaoPercentual(String(coleta.comissao_percentual ?? ""));
-        setDesconto(Number(coleta.desconto ?? 0) > 0.009 ? String(coleta.desconto) : "");
-        setValorPix(Number(coleta.valor_pix ?? 0) > 0.009 ? String(coleta.valor_pix) : "");
+        setDesconto(
+          Number(coleta.desconto ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.desconto))
+            : ""
+        );
+        setValorPix(
+          Number(coleta.valor_pix ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.valor_pix))
+            : ""
+        );
         setValorDinheiro(
-          Number(coleta.valor_dinheiro ?? 0) > 0.009 ? String(coleta.valor_dinheiro) : ""
+          Number(coleta.valor_dinheiro ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.valor_dinheiro))
+            : ""
         );
         setObservacao(String(coleta.observacao ?? ""));
         setEditandoCarregado(true);
@@ -315,7 +329,7 @@ export function NovaColetaDiversaoForm() {
       return calcularColetaDiversao({
         leituras,
         comissaoPercentual: Number(comissaoPercentual) || 0,
-        desconto: Number(desconto) || 0,
+        desconto: parseMoneyInput(desconto),
         valorPagoRecebido: valorRecebido,
       });
     } catch {
@@ -489,7 +503,7 @@ export function NovaColetaDiversaoForm() {
         body: JSON.stringify({
           ponto_id: pontoId,
           comissao_percentual: Number(comissaoPercentual) || 0,
-          desconto: Number(desconto) || 0,
+          desconto: parseMoneyInput(desconto),
           valor_pix: cobrandoAgora ? parseMoneyInput(valorPix) : 0,
           valor_dinheiro: cobrandoAgora ? parseMoneyInput(valorDinheiro) : 0,
           observacao: observacao || null,
@@ -508,7 +522,6 @@ export function NovaColetaDiversaoForm() {
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
           religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
-          editando_coleta: Boolean(editarColetaId),
         }),
       });
 
@@ -527,19 +540,6 @@ export function NovaColetaDiversaoForm() {
         });
       }
 
-      if (editarColetaId) {
-        const params = new URLSearchParams();
-        if (pontoId) params.set("ponto", pontoId);
-        if (visitaPontoId && !fecharVisitaAgora) {
-          params.set("visita_ponto", visitaPontoId);
-        }
-        router.replace(
-          params.toString()
-            ? `/coletas/nova/diversao?${params.toString()}`
-            : "/coletas/nova/diversao"
-        );
-      }
-
       voltarAposColeta(fecharVisitaAgora ? { visitaJaFinalizada: true } : undefined);
       concluido = true;
     } catch (err) {
@@ -553,7 +553,7 @@ export function NovaColetaDiversaoForm() {
   if (editarColetaId && !editandoCarregado) {
     return (
       <ColetaNovaPageShell title="Editar coleta diversão" subtitle="Carregando coleta…" backHref="/coletas">
-        <p className="text-sm text-at-muted">Carregando dados da coleta…</p>
+        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
       </ColetaNovaPageShell>
     );
   }
@@ -575,7 +575,7 @@ export function NovaColetaDiversaoForm() {
         emVisitaPonto ? (
           <VisitaPontoNav visitaPontoId={visitaPontoId} pontoId={pontoId || undefined} active="diversao" />
         ) : ensuringVisita ? (
-          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs text-at-muted">
+          <div className="rounded-xl border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-xs text-slate-400">
             Preparando visita multi-nicho…
           </div>
         ) : undefined
@@ -600,7 +600,7 @@ export function NovaColetaDiversaoForm() {
           }
           comissaoField={
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-at-primary/85">Comissão (%)</label>
+              <label className="block text-sm font-medium text-slate-300">Comissão (%)</label>
               <input
                 type="number"
                 step="0.01"
@@ -640,7 +640,7 @@ export function NovaColetaDiversaoForm() {
               loading={loadingPonto}
               empty={
                 !loadingPonto && maquinas.length === 0 && pontoId ? (
-                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-at-muted">
+                  <div className="glass-card border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
                     Nenhuma máquina de diversão ativa neste ponto.
                   </div>
                 ) : undefined
@@ -679,7 +679,7 @@ export function NovaColetaDiversaoForm() {
                           variant="icon"
                         />
                       </div>
-                      <p className="text-xs text-at-muted">
+                      <p className="text-xs text-slate-500">
                         Anterior {formatContador(maquina.entradaAnterior)}
                         {pronta && <span className="ml-2 text-green-400">· Pronta</span>}
                       </p>
@@ -688,7 +688,7 @@ export function NovaColetaDiversaoForm() {
 
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-1.5">
-                      <label className="block text-sm font-medium text-at-primary/85">
+                      <label className="block text-sm font-medium text-slate-300">
                         Entrada atual (visor) *
                       </label>
                       <input
@@ -705,7 +705,7 @@ export function NovaColetaDiversaoForm() {
                       />
                     </div>
                     <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2.5">
-                      <p className="text-xs text-at-muted">Arrecadação da máquina</p>
+                      <p className="text-xs text-slate-500">Arrecadação da máquina</p>
                       <p className="mt-1 text-lg font-semibold text-emerald-300">
                         {valorBruto ?? "Preencha a leitura"}
                       </p>
@@ -734,7 +734,7 @@ export function NovaColetaDiversaoForm() {
               accent="cyan"
               empty={
                 !calculo || calculo.maquinas.length === 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-at-muted">
+                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
                     Preencha a entrada de pelo menos uma máquina para ver o resumo e registrar o
                     pagamento.
                   </p>
