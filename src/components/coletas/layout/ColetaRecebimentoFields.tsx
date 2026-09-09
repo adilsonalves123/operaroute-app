@@ -56,11 +56,10 @@ export function ColetaRecebimentoFields({
       <div className="space-y-1.5">
         <label className="block text-xs text-at-muted">Desconto (R$)</label>
         <input
-          type="number"
-          step="0.01"
-          min="0"
+          inputMode="numeric"
           value={desconto}
-          onChange={(e) => onDescontoChange(e.target.value)}
+          onChange={(e) => onDescontoChange(formatMoneyInput(e.target.value))}
+          onBlur={(e) => onDescontoChange(formatMoneyInputOnBlur(e.target.value))}
           className={coletaFieldClass()}
           placeholder="0,00"
         />

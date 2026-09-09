@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSubmitLock } from "@/hooks/use-submit-lock";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Navigation, Trash2, ImageIcon } from "lucide-react";
 import { FormInput } from "@/components/ui/FormInput";
 import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchSelect";
-import { parseMoneyInput } from "@/lib/utils";
+import { parseMoneyInput, formatMoneyInputOnBlur } from "@/lib/utils";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { ColetaFuraFuraResumo } from "./ColetaFuraFuraResumo";
 import { FotoColetaFuraFura, type UltimaColetaFoto } from "./FotoColetaFuraFura";
@@ -32,6 +32,7 @@ import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { uploadFotoFuraFura } from "@/lib/storage/coleta-fotos";
 import { useVisitaPontoContext } from "@/components/visitas-ponto/useVisitaPontoContext";
 import { parseFetchJson } from "@/lib/http/parse-fetch-json";
+import { replaceUrlSemRsc } from "@/lib/navigation/replace-url-sem-rsc";
 import { VisitaPontoNav } from "@/components/visitas-ponto/VisitaPontoNav";
 import {
   VisitaColetaModoPagamento,
@@ -73,7 +74,6 @@ type PontoFura = Ponto & {
 };
 
 export function NovaColetaFuraFuraForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const submitLock = useSubmitLock();
@@ -222,10 +222,18 @@ export function NovaColetaFuraFuraForm() {
         quantidade_furos: String(coleta.quantidade_furos ?? ""),
         preco_furo: String(coleta.preco_furo ?? ""),
         comissao_percentual: String(coleta.comissao_percentual ?? ""),
-        desconto: String(coleta.desconto ?? ""),
-        valor_pix: Number(coleta.valor_pix ?? 0) > 0.009 ? String(coleta.valor_pix) : "",
+        desconto:
+          Number(coleta.desconto ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.desconto))
+            : "",
+        valor_pix:
+          Number(coleta.valor_pix ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.valor_pix))
+            : "",
         valor_dinheiro:
-          Number(coleta.valor_dinheiro ?? 0) > 0.009 ? String(coleta.valor_dinheiro) : "",
+          Number(coleta.valor_dinheiro ?? 0) > 0.009
+            ? formatMoneyInputOnBlur(String(coleta.valor_dinheiro))
+            : "",
         brindes_repostos: coleta.brindes_repostos != null ? String(coleta.brindes_repostos) : "",
         brindes_restantes:
           coleta.brindes_restantes != null ? String(coleta.brindes_restantes) : "",
@@ -645,7 +653,6 @@ export function NovaColetaFuraFuraForm() {
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
           religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
-          editando_coleta: Boolean(editarColetaId),
         }),
       });
       const data = await parseFetchJson<{
@@ -691,14 +698,14 @@ export function NovaColetaFuraFuraForm() {
       });
       concluido = true;
 
-      // Evita F5 reabrir a coleta já salva.
+      // Evita F5 reabrir a coleta já salva — sem `router.replace` (splash do app).
       {
         const params = new URLSearchParams();
         if (form.ponto_id) params.set("ponto", form.ponto_id);
         if (visitaPontoId && !fecharVisitaAgora) {
           params.set("visita_ponto", visitaPontoId);
         }
-        router.replace(
+        replaceUrlSemRsc(
           params.toString()
             ? `/coletas/nova/fura-fura?${params.toString()}`
             : "/coletas/nova/fura-fura"
@@ -729,7 +736,7 @@ export function NovaColetaFuraFuraForm() {
   if (editarColetaId && !editandoCarregado) {
     return (
       <ColetaNovaPageShell title="Editar coleta fura-fura" subtitle="Carregando coleta…" backHref="/coletas">
-        <p className="text-sm text-at-muted">Carregando dados da coleta…</p>
+        <p className="text-sm text-slate-500">Carregando dados da coleta…</p>
       </ColetaNovaPageShell>
     );
   }
@@ -751,7 +758,7 @@ export function NovaColetaFuraFuraForm() {
         emVisitaPonto ? (
           <VisitaPontoNav visitaPontoId={visitaPontoId} pontoId={form.ponto_id || undefined} active="fura_fura" />
         ) : ensuringVisita ? (
-          <div className="rounded-xl border border-primary-neon/20 bg-primary-neon/5 px-3 py-2 text-xs text-at-muted">
+          <div className="rounded-xl border border-primary-neon/20 bg-primary-neon/5 px-3 py-2 text-xs text-slate-400">
             Preparando visita multi-nicho…
           </div>
         ) : undefined
@@ -811,11 +818,11 @@ export function NovaColetaFuraFuraForm() {
                   onIncluirPendenciaChange={setIncluirPendencia}
                 />
                 <PontoFuraAlertas ponto={ponto} />
-                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-at-muted">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-500">
                   {ponto.furos_estoque != null && (
                     <span>
                       Furos na máquina:{" "}
-                      <strong className="text-at-primary/85">{ponto.furos_estoque}</strong>
+                      <strong className="text-slate-300">{ponto.furos_estoque}</strong>
                     </span>
                   )}
                   {gps && <span className="text-green-500/80 text-xs">GPS capturado</span>}
@@ -832,7 +839,7 @@ export function NovaColetaFuraFuraForm() {
                       href={navLinks.waze}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-at-primary/85 hover:border-primary-neon/40 hover:text-primary-neon"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-primary-neon/40 hover:text-primary-neon"
                     >
                       <Navigation className="h-3.5 w-3.5" />
                       Waze
@@ -841,7 +848,7 @@ export function NovaColetaFuraFuraForm() {
                       href={navLinks.google}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-at-primary/85 hover:border-primary-neon/40 hover:text-primary-neon"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700 px-3 py-1.5 text-xs font-medium text-slate-300 hover:border-primary-neon/40 hover:text-primary-neon"
                     >
                       <Navigation className="h-3.5 w-3.5" />
                       Google Maps
@@ -868,8 +875,8 @@ export function NovaColetaFuraFuraForm() {
                       onChange={(e) => update("quantidade_furos", e.target.value)}
                     />
                     {maxFuros != null && (
-                      <p className="text-xs text-at-muted">
-                        Máximo: <strong className="text-at-muted">{maxFuros}</strong> furos na
+                      <p className="text-xs text-slate-500">
+                        Máximo: <strong className="text-slate-400">{maxFuros}</strong> furos na
                         máquina
                         {ponto?.furos_minimo != null && ponto.furos_minimo > 0 && (
                           <> (mín. operacional: {ponto.furos_minimo})</>
@@ -900,14 +907,14 @@ export function NovaColetaFuraFuraForm() {
 
               <div className="glass-card space-y-4 p-4 sm:p-5">
           <div>
-            <h3 className="text-sm font-medium text-at-primary/85">Prêmios entregues</h3>
+            <h3 className="text-sm font-medium text-slate-300">Prêmios entregues</h3>
             {kitAtivo ? (
               <p className="text-xs text-cyan-400/90 mt-1">
                 Kit ativo: {kitAtivo.nome} — toque no prêmio que o cliente ganhou (baixa no
                 pool do ponto).
               </p>
             ) : (
-              <p className="text-xs text-at-muted mt-1">
+              <p className="text-xs text-slate-500 mt-1">
                 Toque no item alocado no ponto. A quantidade não pode ultrapassar o estoque.
               </p>
             )}
@@ -928,8 +935,8 @@ export function NovaColetaFuraFuraForm() {
                     className={cn(
                       "inline-flex items-center gap-2 rounded-lg border px-2 py-1.5 text-xs transition",
                       semEstoque
-                        ? "cursor-not-allowed border-slate-800 text-at-soft"
-                        : "border-slate-700 text-at-primary/85 hover:border-primary-neon/40 hover:text-primary-neon"
+                        ? "cursor-not-allowed border-slate-800 text-slate-600"
+                        : "border-slate-700 text-slate-300 hover:border-primary-neon/40 hover:text-primary-neon"
                     )}
                   >
                     {foto ? (
@@ -941,12 +948,12 @@ export function NovaColetaFuraFuraForm() {
                       />
                     ) : (
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-800 bg-slate-900">
-                        <ImageIcon className="h-3.5 w-3.5 text-at-soft" />
+                        <ImageIcon className="h-3.5 w-3.5 text-slate-600" />
                       </span>
                     )}
                     <span className="text-left leading-tight">
                       <span className="block font-medium">+ {item.nome}</span>
-                      <span className="text-[10px] text-at-muted">
+                      <span className="text-[10px] text-slate-500">
                         {item.quantidade <= 0
                           ? "0 no ponto"
                           : `${restante}/${item.quantidade} no ponto`}
@@ -957,7 +964,7 @@ export function NovaColetaFuraFuraForm() {
               })}
             </div>
           ) : (
-            <p className="text-xs italic text-at-soft">
+            <p className="text-xs italic text-slate-600">
               {kitAtivo
                 ? "Este kit não tem itens na composição, ou o pool do ponto está vazio. Realoque o kit em Pontos."
                 : "Nenhum brinde alocado neste ponto. Alocar em Pontos → configuração fura-fura."}
@@ -965,7 +972,7 @@ export function NovaColetaFuraFuraForm() {
           )}
 
           {brindes.length === 0 ? (
-            <p className="text-xs text-at-muted">
+            <p className="text-xs text-slate-500">
               {estoqueBrindes.some((i) => i.quantidade > 0)
                 ? "Nenhum prêmio registrado ainda — toque em um item acima."
                 : "Nenhum brinde nesta coleta."}
@@ -986,7 +993,7 @@ export function NovaColetaFuraFuraForm() {
                       />
                     ) : (
                       <span className="mb-0.5 flex h-10 w-10 items-center justify-center rounded-md border border-slate-800 bg-slate-900">
-                        <ImageIcon className="h-4 w-4 text-at-soft" />
+                        <ImageIcon className="h-4 w-4 text-slate-600" />
                       </span>
                     )}
                     <FormInput label="Item" value={b.nome} readOnly />
@@ -1039,11 +1046,11 @@ export function NovaColetaFuraFuraForm() {
             <FecharColetaPanel
               empty={
                 !ponto ? (
-                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-at-muted">
+                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
                     Selecione o ponto para carregar comissão, preço do furo e o resumo.
                   </p>
                 ) : calculo.quantidadeFuros <= 0 ? (
-                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-at-muted">
+                  <p className="rounded-lg border border-dashed border-slate-700 bg-slate-950/30 px-3 py-4 text-sm text-slate-500">
                     Informe a quantidade de furos para ver o resumo e registrar o pagamento.
                   </p>
                 ) : undefined
