@@ -1774,3 +1774,26 @@ html[data-app-theme="light"] #detalhe-nicho table td[class*="text-slate"] {
   color: #292524;
 }
 
+/* Login do dono — sempre fundo escuro; não herdar tema claro do app */
+.dono-login-root {
+  color: #f4efe6;
+}
+
+.dono-login-root .dono-login-input,
+html[data-app-theme="light"] .dono-login-root .dono-login-input {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f4efe6;
+}
+
+.dono-login-root .dono-login-input::placeholder,
+html[data-app-theme="light"] .dono-login-root .dono-login-input::placeholder {
+  color: #8b93a3;
+}
+
+.dono-login-root .dono-login-input:focus,
+html[data-app-theme="light"] .dono-login-root .dono-login-input:focus {
+  border-color: rgba(196, 165, 116, 0.55);
+  box-shadow: 0 0 0 2px rgba(196, 165, 116, 0.12);
+}
+

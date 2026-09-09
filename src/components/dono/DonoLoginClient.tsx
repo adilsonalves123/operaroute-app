@@ -49,7 +49,11 @@ export function DonoLoginClient() {
 
   return (
     <div
-      className={cn(display.variable, sans.variable, "relative flex min-h-dvh items-center justify-center px-4")}
+      className={cn(
+        display.variable,
+        sans.variable,
+        "dono-login-root relative flex min-h-dvh items-center justify-center px-4"
+      )}
       style={{ fontFamily: "var(--font-dono-login-sans), system-ui, sans-serif" }}
     >
       <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
@@ -64,24 +68,24 @@ export function DonoLoginClient() {
 
       <div className="w-full max-w-sm">
         <p
-          className="text-[11px] font-medium uppercase text-at-link/90"
+          className="text-[11px] font-medium uppercase text-[#e0c9a0]"
           style={{ letterSpacing: "0.28em" }}
         >
           OperaRoute
         </p>
         <h1
-          className="mt-3 text-[2.4rem] leading-none tracking-tight text-at-primary"
+          className="mt-3 text-[2.4rem] leading-none tracking-tight text-[#f4efe6]"
           style={{ fontFamily: "var(--font-dono-login-display), Georgia, serif" }}
         >
           Painel do dono
         </h1>
-        <p className="mt-3 text-[13px] text-at-muted">
+        <p className="mt-3 text-[13px] text-[#b8c0cc]">
           Login separado do app dos clientes. Só você entra aqui.
         </p>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-4">
           <label className="block">
-            <span className="text-[11px] uppercase tracking-[0.14em] text-at-muted">
+            <span className="text-[11px] uppercase tracking-[0.14em] text-[#c5ccd6]">
               E-mail
             </span>
             <input
@@ -90,11 +94,11 @@ export function DonoLoginClient() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="username"
-              className="mt-1.5 w-full rounded-sm border border-white/[0.1] bg-at-card-soft px-3.5 py-2.5 text-[14px] text-at-primary outline-none focus:border-[#c4a574]/40"
+              className="dono-login-input mt-1.5 w-full rounded-sm border border-white/15 bg-white/[0.06] px-3.5 py-2.5 text-[14px] text-[#f4efe6] outline-none focus:border-[#c4a574]/55"
             />
           </label>
           <label className="block">
-            <span className="text-[11px] uppercase tracking-[0.14em] text-at-muted">
+            <span className="text-[11px] uppercase tracking-[0.14em] text-[#c5ccd6]">
               Senha
             </span>
             <input
@@ -103,7 +107,7 @@ export function DonoLoginClient() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="current-password"
-              className="mt-1.5 w-full rounded-sm border border-white/[0.1] bg-at-card-soft px-3.5 py-2.5 text-[14px] text-at-primary outline-none focus:border-[#c4a574]/40"
+              className="dono-login-input mt-1.5 w-full rounded-sm border border-white/15 bg-white/[0.06] px-3.5 py-2.5 text-[14px] text-[#f4efe6] outline-none focus:border-[#c4a574]/55"
             />
           </label>
 
@@ -116,7 +120,7 @@ export function DonoLoginClient() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full rounded-sm border border-[#c4a574]/45 bg-[#c4a574]/15 py-2.5 text-[13px] text-at-link transition hover:bg-[#c4a574]/25 disabled:opacity-50"
+            className="w-full rounded-sm border border-[#c4a574]/55 bg-[#c4a574]/20 py-2.5 text-[13px] font-medium text-[#f4efe6] transition hover:bg-[#c4a574]/30 disabled:opacity-50"
           >
             {loading ? "Entrando…" : "Entrar"}
           </button>
