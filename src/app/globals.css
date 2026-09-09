@@ -1527,6 +1527,49 @@ html[data-app-theme="light"] .analise-premium-root {
 }
 
 /* Decisão após receber nicho — título ciano ilegível no fundo claro */
+/* Modal "Coleta registrada" — botão ciano ilegível no tema claro */
+html[data-app-theme="light"] .coleta-sucesso-modal {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .coleta-sucesso-modal .text-white,
+html[data-app-theme="light"] .coleta-sucesso-modal .text-slate-100,
+html[data-app-theme="light"] .coleta-sucesso-modal .text-slate-300,
+html[data-app-theme="light"] .coleta-sucesso-modal .text-slate-400 {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .coleta-sucesso-modal [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .coleta-sucesso-modal [class*="text-green-"],
+html[data-app-theme="light"] .coleta-sucesso-modal [class*="text-emerald-"] {
+  color: #047857 !important;
+}
+html[data-app-theme="light"] .coleta-sucesso-modal button[class*="bg-cyan-"] {
+  background-color: #ecfeff !important;
+  border-color: rgba(14, 116, 144, 0.4) !important;
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .coleta-sucesso-modal button[class*="bg-green-"] {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+}
+html[data-app-theme="light"] .coleta-sucesso-modal button[class*="bg-green-"] .text-white,
+html[data-app-theme="light"] .coleta-sucesso-modal button[class*="bg-green-"] svg {
+  color: #ffffff !important;
+}
+html[data-app-theme="light"] .coleta-sucesso-modal button[class*="border-slate-"] {
+  background-color: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.2) !important;
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .coleta-sucesso-modal button[class*="bg-primary-neon"],
+html[data-app-theme="light"] .coleta-sucesso-modal button[class*="bg-cyan-300"] {
+  background-color: #0e7490 !important;
+  color: #ffffff !important;
+}
+
 html[data-app-theme="light"] .receber-visita-decisao {
   background: #ffffff !important;
   border-color: rgba(28, 25, 23, 0.16) !important;

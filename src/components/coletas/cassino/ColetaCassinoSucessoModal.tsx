@@ -164,7 +164,7 @@ export function ColetaCassinoSucessoModal({
 
   return (
     <div className="fixed inset-0 z-[210] flex items-end sm:items-center justify-center p-4 bg-black/70">
-      <div className="w-full max-w-md glass-card p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div className="coleta-sucesso-modal w-full max-w-md glass-card p-6 space-y-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2">
             <CheckCircle className="h-6 w-6 text-green-400 shrink-0" />
