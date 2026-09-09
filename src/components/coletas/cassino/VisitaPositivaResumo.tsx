@@ -463,22 +463,6 @@ export function VisitaPositivaResumo({
                 );
               })}
             </ol>
-            {pagoTotal > 0.009 && (
-              <div className="mt-2 space-y-0.5 border-t border-dashed border-slate-700/70 pt-1.5">
-                <div className="flex items-center justify-between gap-3 rounded-lg px-2 py-2">
-                  <p className="text-sm text-slate-400">Pix</p>
-                  <p className="shrink-0 text-sm font-semibold tabular-nums text-emerald-400">
-                    {formatCurrency(pixRecebido)}
-                  </p>
-                </div>
-                <div className="flex items-center justify-between gap-3 rounded-lg px-2 py-2">
-                  <p className="text-sm text-slate-400">Dinheiro</p>
-                  <p className="shrink-0 text-sm font-semibold tabular-nums text-emerald-400">
-                    {formatCurrency(dinheiroRecebido)}
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </section>
