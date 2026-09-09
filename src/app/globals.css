@@ -1527,6 +1527,27 @@ html[data-app-theme="light"] .analise-premium-root {
 }
 
 /* Decisão após receber nicho — título ciano ilegível no fundo claro */
+/* Hero do ponto — fundo escuro permanente; não remapear texto para preto no tema claro */
+html[data-app-theme="light"] .ponto-hero .ponto-hero-nome,
+html[data-app-theme="light"] .ponto-hero .text-white {
+  color: #ffffff !important;
+}
+html[data-app-theme="light"] .ponto-hero .ponto-hero-local,
+html[data-app-theme="light"] .ponto-hero .text-slate-200,
+html[data-app-theme="light"] .ponto-hero [class*="text-slate-2"] {
+  color: #e2e8f0 !important;
+}
+html[data-app-theme="light"] .ponto-hero [class*="text-emerald-"] {
+  color: #a7f3d0 !important;
+}
+html[data-app-theme="light"] .ponto-hero [class*="bg-slate-9"],
+html[data-app-theme="light"] .ponto-hero [class*="from-slate-9"] {
+  background-color: #020617 !important;
+}
+html[data-app-theme="light"] .ponto-hero {
+  border-color: rgba(28, 25, 23, 0.2) !important;
+}
+
 /* Modal "Coleta registrada" — botão ciano ilegível no tema claro */
 html[data-app-theme="light"] .coleta-sucesso-modal {
   background: #ffffff !important;

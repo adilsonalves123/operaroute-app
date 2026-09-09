@@ -178,7 +178,7 @@ export function PontoHero({
         </button>
       </div>
 
-      <section className="relative overflow-hidden rounded-[1.75rem] border border-at-soft">
+      <section className="ponto-hero relative overflow-hidden rounded-[1.75rem] border border-at-soft">
         <div className="relative aspect-[16/10] min-h-[220px] w-full bg-slate-950 sm:aspect-[2/1] sm:min-h-[280px]">
           {fotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -200,22 +200,22 @@ export function PontoHero({
                     ? "bg-emerald-400/15 text-emerald-200"
                     : status === "inadimplente"
                       ? "bg-rose-400/15 text-rose-200"
-                      : "bg-white/10 text-at-primary/85"
+                      : "bg-white/10 text-slate-200"
                 )}
               >
                 {STATUS_LABEL[status] ?? status}
               </span>
               {totalCobravel > 0.009 && (
-                <span className="rounded-full bg-amber-400/15 px-2.5 py-0.5 text-[11px] font-medium text-amber-100">
+                <span className="rounded-full bg-amber-400/90 px-2.5 py-0.5 text-[11px] font-medium text-slate-950">
                   A receber {formatCurrency(totalCobravel)}
                 </span>
               )}
             </div>
-            <h1 className="max-w-xl text-[clamp(1.85rem,5vw,2.75rem)] font-semibold leading-[1.05] tracking-tight text-white">
+            <h1 className="ponto-hero-nome max-w-xl text-[clamp(1.85rem,5vw,2.75rem)] font-semibold leading-[1.05] tracking-tight text-white">
               {nome}
             </h1>
             {local && (
-              <p className="max-w-lg text-[13px] leading-relaxed text-at-primary/85/90">
+              <p className="ponto-hero-local max-w-lg text-[13px] leading-relaxed text-slate-200/90">
                 {local}
               </p>
             )}
