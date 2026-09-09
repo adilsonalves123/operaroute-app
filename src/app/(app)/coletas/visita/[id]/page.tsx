@@ -22,6 +22,52 @@ import { snapshotFromRelatorioCassino } from "@/lib/comprovantes/types";
 import type { RelatorioColetaData } from "@/lib/nichos/cassino/relatorio";
 import { redirectSeVisaoRestrita } from "@/lib/visao/bloquear-historico";
 
+function parseValorBr(raw: string) {
+  const n = Number(raw.replace(/\./g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function resolverPixDinheiroVisita(opts: {
+  pix: number;
+  dinheiro: number;
+  forma: string | null | undefined;
+  valorPago: number;
+  financeiro: { valor: number | null; forma_pagamento: string | null; descricao: string | null }[];
+  visitasPonto: { valor_pix: number | null; valor_dinheiro: number | null; forma_pagamento: string | null }[];
+}) {
+  let pix = Math.max(0, opts.pix);
+  let dinheiro = Math.max(0, opts.dinheiro);
+  if (pix + dinheiro > 0.009) return { pix, dinheiro };
+
+  for (const vp of opts.visitasPonto) {
+    pix += Math.max(0, Number(vp.valor_pix ?? 0));
+    dinheiro += Math.max(0, Number(vp.valor_dinheiro ?? 0));
+  }
+  if (pix + dinheiro > 0.009) return { pix, dinheiro };
+
+  for (const row of opts.financeiro) {
+    const desc = String(row.descricao ?? "");
+    const pixMatch = desc.match(/Pix R\$\s*([\d.,]+)/i);
+    const dinMatch = desc.match(/Dinheiro R\$\s*([\d.,]+)/i);
+    if (pixMatch || dinMatch) {
+      if (pixMatch) pix += parseValorBr(pixMatch[1]);
+      if (dinMatch) dinheiro += parseValorBr(dinMatch[1]);
+      continue;
+    }
+    const forma = String(row.forma_pagamento ?? "").toLowerCase();
+    const valor = Math.max(0, Number(row.valor ?? 0));
+    if (forma === "pix") pix += valor;
+    else if (forma === "dinheiro") dinheiro += valor;
+  }
+  if (pix + dinheiro > 0.009) return { pix, dinheiro };
+
+  const forma = String(opts.forma ?? "").toLowerCase();
+  const pago = Math.max(0, opts.valorPago);
+  if (forma === "pix") return { pix: pago, dinheiro: 0 };
+  if (forma === "dinheiro") return { pix: 0, dinheiro: pago };
+  return { pix: 0, dinheiro: 0 };
+}
+
 export default async function VisitaDetailPage({
   params,
 }: {
@@ -43,7 +89,7 @@ export default async function VisitaDetailPage({
 
   if (!visita) notFound();
 
-  const [{ data: coletas }, { data: empresa }, { data: pendenciasNegativas }, { data: pendenciasVisita }, { data: pendenciasHaverPonto }] =
+  const [{ data: coletas }, { data: empresa }, { data: pendenciasNegativas }, { data: pendenciasVisita }, { data: pendenciasHaverPonto }, { data: financeiroVisita }, { data: itensVisitaPonto }] =
     await Promise.all([
       supabase
         .from("coletas")
@@ -71,6 +117,16 @@ export default async function VisitaDetailPage({
         .eq("ponto_id", visita.ponto_id)
         .eq("empresa_id", profile.empresa_id)
         .ilike("tipo", "haver"),
+      supabase
+        .from("financeiro")
+        .select("valor, forma_pagamento, descricao, tipo")
+        .eq("visita_id", id)
+        .eq("empresa_id", profile.empresa_id)
+        .eq("tipo", "entrada"),
+      supabase
+        .from("visita_ponto_itens")
+        .select("visitas_ponto(valor_pix, valor_dinheiro, forma_pagamento)")
+        .eq("cassino_visita_id", id),
     ]);
 
   const pendenciasParaHistorico = (() => {
@@ -97,6 +153,19 @@ export default async function VisitaDetailPage({
   const descontoManual = Number(visita.desconto);
   const descontoRecebimento = Number(visita.desconto_recebimento);
   const valorPago = Number(visita.valor_pago);
+  const visitasPontoPagamento = (itensVisitaPonto ?? []).flatMap((item) => {
+    const vp = item.visitas_ponto;
+    if (!vp) return [];
+    return Array.isArray(vp) ? vp : [vp];
+  });
+  const pagamentoExibido = resolverPixDinheiroVisita({
+    pix: Number(visita.valor_pix ?? 0),
+    dinheiro: Number(visita.valor_dinheiro ?? 0),
+    forma: visita.forma_pagamento,
+    valorPago,
+    financeiro: financeiroVisita ?? [],
+    visitasPonto: visitasPontoPagamento,
+  });
   const valorACobrar = Number(visita.valor_operacao_efetivo);
   const lucroReais = centesimosToReais(Number(visita.total_lucro_centavos));
   const saldoAposDesconto = lucroReais - descontoManual;
@@ -181,6 +250,9 @@ export default async function VisitaDetailPage({
         totalLucroCentavos: Number(visita.total_lucro_centavos),
         calculo: calculoRelatorio,
         adiantamento: adiantamentoDetalhe,
+        pagamentoPix: pagamentoExibido.pix,
+        pagamentoDinheiro: pagamentoExibido.dinheiro,
+        formaPagamento: visita.forma_pagamento,
         maquinas: (coletas ?? []).map((c) => ({
           nome: (c.equipamentos as { nome: string; tipo?: string } | null)?.nome ?? "Máquina",
           tipo: (c.equipamentos as { tipo?: string } | null)?.tipo ?? null,
@@ -358,11 +430,35 @@ export default async function VisitaDetailPage({
           totalLucroCentavos={Number(visita.total_lucro_centavos)}
         />
       ) : calculoPositivo ? (
-        <VisitaPositivaResumo
-          calculo={calculoPositivo}
-          comissaoPercentual={Number(ponto?.comissao_percentual) || 0}
-          totalLucroCentavos={Number(visita.total_lucro_centavos)}
-        />
+        <>
+          <VisitaPositivaResumo
+            calculo={calculoPositivo}
+            comissaoPercentual={Number(ponto?.comissao_percentual) || 0}
+            totalLucroCentavos={Number(visita.total_lucro_centavos)}
+            pagamentoPix={pagamentoExibido.pix}
+            pagamentoDinheiro={pagamentoExibido.dinheiro}
+            formaPagamento={visita.forma_pagamento}
+          />
+          {Number(calculoPositivo.valorPagoReais ?? visita.valor_pago ?? 0) > 0.009 ||
+          pagamentoExibido.pix + pagamentoExibido.dinheiro > 0.009 ? (
+            <section className="coleta-pagamento-forma-fallback rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-3.5">
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Pix</span>
+                  <span className="font-semibold tabular-nums text-emerald-400">
+                    {formatCurrency(pagamentoExibido.pix)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Dinheiro</span>
+                  <span className="font-semibold tabular-nums text-emerald-400">
+                    {formatCurrency(pagamentoExibido.dinheiro)}
+                  </span>
+                </div>
+              </div>
+            </section>
+          ) : null}
+        </>
       ) : (
         <div className="glass-card grid gap-3 p-6 text-sm sm:grid-cols-2 lg:grid-cols-3">
           <div>

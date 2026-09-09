@@ -38,6 +38,9 @@ export type HistoricoCassinoPayload = {
   adiantamento?: AdiantamentoDetalhe;
   maquinas: HistoricoCassinoMaquina[];
   observacao?: string | null;
+  pagamentoPix?: number;
+  pagamentoDinheiro?: number;
+  formaPagamento?: string | null;
 };
 
 /**
@@ -62,7 +65,7 @@ export function HistoricoVisitaCassinoPublicView({
     !raw.saldoNegativo && Number(raw.calculo.restanteReais ?? 0) > 0.009;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+    <div className="coleta-detalhe-root mx-auto max-w-3xl space-y-6 px-4 py-8">
       <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-2">
           <h1 className="text-2xl font-bold tracking-tight text-white">
@@ -95,6 +98,9 @@ export function HistoricoVisitaCassinoPublicView({
           comissaoPercentual={raw.comissaoPercentual}
           totalLucroCentavos={raw.totalLucroCentavos}
           ocultarStaff
+          pagamentoPix={Number(raw.pagamentoPix ?? 0)}
+          pagamentoDinheiro={Number(raw.pagamentoDinheiro ?? 0)}
+          formaPagamento={raw.formaPagamento}
         />
       )}
 

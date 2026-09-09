@@ -152,6 +152,9 @@ export function VisitaPositivaResumo({
   totalLucroCentavos,
   className,
   ocultarStaff = false,
+  pagamentoPix = 0,
+  pagamentoDinheiro = 0,
+  formaPagamento = null,
 }: {
   calculo: CalculoVisitaResult;
   comissaoPercentual: number;
@@ -159,9 +162,13 @@ export function VisitaPositivaResumo({
   className?: string;
   /** Esconde comissão de staff no link público. */
   ocultarStaff?: boolean;
+  /** Só exibição — não entra no cálculo. */
+  pagamentoPix?: number;
+  pagamentoDinheiro?: number;
+  formaPagamento?: string | null;
 }) {
   const [detalheAberto, setDetalheAberto] = useState(false);
-  const passos = buildPassos({ ...calculo, totalLucroCentavos }, comissaoPercentual);
+  const passosBase = buildPassos({ ...calculo, totalLucroCentavos }, comissaoPercentual);
 
   const operacao =
     calculo.valorOperacaoEfetivoReais > 0.009
@@ -183,6 +190,49 @@ export function VisitaPositivaResumo({
 
   const temPagamento =
     calculo.valorPagoReais > 0.009 || calculo.restanteReais > 0.009;
+  const pixInformado = Math.max(0, Number(pagamentoPix) || 0);
+  const dinheiroInformado = Math.max(0, Number(pagamentoDinheiro) || 0);
+  const forma = String(formaPagamento ?? "").toLowerCase();
+  const pagoTotal = Math.max(0, Number(calculo.valorPagoReais) || 0);
+  const pixRecebido =
+    pixInformado > 0.009
+      ? pixInformado
+      : forma === "pix" && pagoTotal > 0.009
+        ? pagoTotal
+        : 0;
+  const dinheiroRecebido =
+    dinheiroInformado > 0.009
+      ? dinheiroInformado
+      : forma === "dinheiro" && pagoTotal > 0.009
+        ? pagoTotal
+        : 0;
+  const mistoSemSplit =
+    pixRecebido <= 0.009 &&
+    dinheiroRecebido <= 0.009 &&
+    forma === "misto" &&
+    pagoTotal > 0.009;
+  const temFormaPagamento =
+    pixRecebido > 0.009 || dinheiroRecebido > 0.009 || mistoSemSplit;
+  const mostrarFormaNoCard = pagoTotal > 0.009;
+  const passos = mostrarFormaNoCard
+    ? [
+        ...passosBase,
+        {
+          id: "pix",
+          label: "Pix",
+          valor: pixRecebido,
+          tom: "positivo" as const,
+          operador: undefined,
+        },
+        {
+          id: "dinheiro",
+          label: "Dinheiro",
+          valor: dinheiroRecebido,
+          tom: "positivo" as const,
+          operador: undefined,
+        },
+      ]
+    : passosBase;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -236,6 +286,11 @@ export function VisitaPositivaResumo({
             {!cobertoPorHaver && calculo.valorPagoReais > 0.009 && (
               <p className="mt-1.5 text-sm text-slate-400">
                 Recebido {formatCurrency(calculo.valorPagoReais)}
+                {pixRecebido > 0.009 ? ` · Pix ${formatCurrency(pixRecebido)}` : ""}
+                {dinheiroRecebido > 0.009
+                  ? ` · Dinheiro ${formatCurrency(dinheiroRecebido)}`
+                  : ""}
+                {mistoSemSplit ? " · Pix e dinheiro" : ""}
                 {calculo.restanteReais > 0.009
                   ? ` · falta ${formatCurrency(calculo.restanteReais)}`
                   : " · quitado"}
@@ -408,13 +463,29 @@ export function VisitaPositivaResumo({
                 );
               })}
             </ol>
+            {pagoTotal > 0.009 && (
+              <div className="mt-2 space-y-0.5 border-t border-dashed border-slate-700/70 pt-1.5">
+                <div className="flex items-center justify-between gap-3 rounded-lg px-2 py-2">
+                  <p className="text-sm text-slate-400">Pix</p>
+                  <p className="shrink-0 text-sm font-semibold tabular-nums text-emerald-400">
+                    {formatCurrency(pixRecebido)}
+                  </p>
+                </div>
+                <div className="flex items-center justify-between gap-3 rounded-lg px-2 py-2">
+                  <p className="text-sm text-slate-400">Dinheiro</p>
+                  <p className="shrink-0 text-sm font-semibold tabular-nums text-emerald-400">
+                    {formatCurrency(dinheiroRecebido)}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </section>
 
       {/* 5. Pagamento — só se houver movimento de caixa do cliente */}
       {temPagamento && (
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-3.5">
+        <section className="coleta-pagamento-forma rounded-2xl border border-slate-800 bg-slate-900/40 px-4 py-3.5">
           <div className="space-y-2 text-sm">
             {calculo.valorPagoReais > 0.009 && (
               <div className="flex justify-between gap-4">
@@ -423,6 +494,22 @@ export function VisitaPositivaResumo({
                   {formatCurrency(calculo.valorPagoReais)}
                 </span>
               </div>
+            )}
+            {pagoTotal > 0.009 && (
+              <>
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Pix</span>
+                  <span className="font-semibold tabular-nums text-emerald-400">
+                    {formatCurrency(pixRecebido)}
+                  </span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Dinheiro</span>
+                  <span className="font-semibold tabular-nums text-emerald-400">
+                    {formatCurrency(dinheiroRecebido)}
+                  </span>
+                </div>
+              </>
             )}
             {calculo.restanteReais > 0.009 ? (
               <div className="flex justify-between gap-4 border-t border-slate-800 pt-2">
