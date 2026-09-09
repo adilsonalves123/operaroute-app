@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
-import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
+import { createClient, getProfile } from "@/lib/supabase/server";
 import { canUseEquipamentoTipo, resolveNichosAtivos } from "@/lib/assinatura";
 import type { EquipamentoTipo } from "@/lib/equipamentos";
 import { isEquipamentoTipoDiversao, parseLeituraContador } from "@/lib/equipamentos";
@@ -16,7 +16,7 @@ function parsePrecoJogada(raw: unknown): number | null {
 export async function POST(request: Request) {
   const auth = await requireAcesso("pontos", "editar");
   if (!auth.ok) return auth.response;
-  const { profile, supabase } = auth;
+  const { profile, supabase, empresa } = auth;
 
   const body = await request.json();
   const nome = String(body.nome ?? "").trim();
@@ -40,7 +40,6 @@ export async function POST(request: Request) {
     }
   }
 
-  const empresa = await getEmpresa(profile.empresa_id);
   const nichosAtivos = resolveNichosAtivos(empresa?.nichos_ativos, empresa?.nicho);
   if (!canUseEquipamentoTipo(nichosAtivos, tipo)) {
     return NextResponse.json(
