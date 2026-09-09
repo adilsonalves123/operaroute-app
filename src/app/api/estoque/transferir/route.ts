@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { transferirEstoqueParaPonto } from "@/lib/estoque/transferir-ponto";
 
 export async function POST(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
   const itemId = String(body.item_id ?? "").trim();
@@ -20,7 +19,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Informe uma quantidade válida." }, { status: 400 });
   }
 
-  const supabase = await createClient();
   const result = await transferirEstoqueParaPonto(supabase, {
     empresaId: profile.empresa_id,
     itemId,

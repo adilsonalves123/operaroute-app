@@ -2,13 +2,17 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ResumoPublicView } from "@/components/rascunho/ResumoPublicView";
 import { carregarResumoRascunhoPorToken } from "@/lib/rascunho/compartilhar-server";
-import { createPublicClient } from "@/lib/supabase/public";
+import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
 
 type Props = { params: Promise<{ token: string }> };
 
 async function loadSnapshot(token: string) {
-  const supabase = createPublicClient();
-  return carregarResumoRascunhoPorToken(supabase, token);
+  if (!isAdminConfigured()) {
+    throw new Error(
+      "Configure SUPABASE_SERVICE_ROLE_KEY para liberar links públicos de resumo."
+    );
+  }
+  return carregarResumoRascunhoPorToken(createAdminClient(), token);
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -33,7 +37,7 @@ export default async function ResumoPublicPage({ params }: Props) {
     loaded = await loadSnapshot(token);
   } catch (e) {
     return (
-      <main className="min-h-screen bg-at-card px-4 py-16 text-center text-at-primary/85">
+      <main className="min-h-screen bg-[#0a0e16] px-4 py-16 text-center text-slate-300">
         <p className="text-[15px]">
           {e instanceof Error ? e.message : "Link indisponível no momento."}
         </p>

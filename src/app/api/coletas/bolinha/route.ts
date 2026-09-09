@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { formatPagamentoDetalhe } from "@/lib/financeiro/forma-pagamento";
 import {
   calcularRecebimentoComPendencia,
@@ -23,10 +23,9 @@ import { aplicarPagamentoDividaAnterior } from "@/lib/visitas-ponto/checkout";
 import { totalDividaAnteriorPonto } from "@/lib/visitas-ponto/divida-ponto";
 
 export async function POST(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("coletas", "criar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
   const visitaPontoId = parseVisitaPontoId(body.visita_ponto_id);
@@ -52,7 +51,6 @@ export async function POST(request: Request) {
   }
 
   const comissaoPercentual = Math.max(0, Number(body.comissao_percentual) || 0);
-  const supabase = await createClient();
 
   const { data: ponto } = await supabase
     .from("pontos")
@@ -287,34 +285,17 @@ export async function POST(request: Request) {
     }
 
     if (!modoVisitaPonto && recebimentoRateado.saldoPendenteColeta > 0.009 && primeiraColetaId) {
-      const { data: pendNova } = await supabase
-        .from("pendencias")
-        .insert({
-          empresa_id: profile.empresa_id,
-          ponto_id: pontoId,
-          coleta_id: primeiraColetaId,
-          tipo: recebimentoRateado.aplicadoColetaAtual > 0.009 ? "parcial" : "pagamento_pendente",
-          titulo: "Coleta Bolinha pendente",
-          descricao: `Saldo da coleta de ${new Date().toLocaleDateString("pt-BR")} — ${ponto.nome}`,
-          valor: recebimentoRateado.saldoPendenteColeta,
-          prioridade: "media",
-          status: "aberta",
-        })
-        .select("id, tipo, titulo, valor")
-        .maybeSingle();
-      if (pendNova) {
-        const { pushPendenciaCriada } = await import("@/lib/push/events");
-        pushPendenciaCriada({
-          empresaId: profile.empresa_id!,
-          autorUserId: profile.user_id,
-          autorNome: profile.nome,
-          pontoNome: ponto.nome,
-          pendenciaId: pendNova.id,
-          tipo: pendNova.tipo,
-          titulo: pendNova.titulo,
-          valor: Number(pendNova.valor) || 0,
-        });
-      }
+      await supabase.from("pendencias").insert({
+        empresa_id: profile.empresa_id,
+        ponto_id: pontoId,
+        coleta_id: primeiraColetaId,
+        tipo: recebimentoRateado.aplicadoColetaAtual > 0.009 ? "parcial" : "pagamento_pendente",
+        titulo: "Coleta Bolinha pendente",
+        descricao: `Saldo da coleta de ${new Date().toLocaleDateString("pt-BR")} — ${ponto.nome}`,
+        valor: recebimentoRateado.saldoPendenteColeta,
+        prioridade: "media",
+        status: "aberta",
+      });
     }
 
     let haverGerado = 0;
@@ -431,16 +412,14 @@ export async function POST(request: Request) {
       request,
     });
 
-    const { pushColetaSalva, bodyEditandoColeta } = await import("@/lib/push/events");
-    pushColetaSalva({
+    const { pushColetaRegistrada } = await import("@/lib/push/events");
+    pushColetaRegistrada({
       empresaId: profile.empresa_id!,
       autorUserId: profile.user_id,
       autorNome: profile.nome,
       pontoNome: ponto.nome,
       nichoLabel: "Bolinha",
       valor: Number(calculo.valorAReceber) || 0,
-      coletaId: coletasCriadasIds[0],
-      editando: bodyEditandoColeta(body as Record<string, unknown>),
     });
 
     return NextResponse.json({

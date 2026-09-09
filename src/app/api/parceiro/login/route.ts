@@ -28,6 +28,11 @@ export async function POST(request: Request) {
   if (!isAdminConfigured()) {
     return NextResponse.json({ error: "Admin não configurado." }, { status: 503 });
   }
+  const { clientIp, rateLimitOk } = await import("@/lib/security/guards");
+  const ip = clientIp(request);
+  if (!rateLimitOk(`parceiro-login:${ip}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Muitas tentativas. Aguarde." }, { status: 429 });
+  }
   const body = await request.json().catch(() => ({}));
   const email = String(body.email ?? "").trim().toLowerCase();
   const senha = String(body.senha ?? "");

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
 import { uploadFotoEstoque } from "@/lib/storage/coleta-fotos";
 import { asUploadFile, readRequestFormData } from "@/lib/request-form-data";
@@ -17,12 +17,10 @@ function asImageFile(raw: FormDataEntryValue | null): File | null {
 
 export async function POST(request: Request, ctx: RouteCtx) {
   const { id: itemId } = await ctx.params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
-  const supabase = await createClient();
   const empresaId = profile.empresa_id;
 
   const { data: item, error: itemErr } = await supabase

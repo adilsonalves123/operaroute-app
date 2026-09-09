@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { carregarKitCompleto } from "@/lib/nichos/fura-fura/kits/instalar-kit-ponto";
 import {
   calcularKitsPossiveis,
@@ -10,16 +10,14 @@ type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, ctx: RouteCtx) {
   const { id: kitId } = await ctx.params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json().catch(() => ({}));
   const montarMaximo = Boolean(body.montar_maximo);
   let quantidade = Math.floor(Number(body.quantidade) || 0);
 
-  const supabase = await createClient();
 
   if (montarMaximo) {
     const loaded = await carregarKitCompleto(supabase, kitId, profile.empresa_id);

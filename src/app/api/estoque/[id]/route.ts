@@ -1,18 +1,16 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
-  const supabase = await createClient();
 
   let quantidadeAnterior: number | null = null;
   if (body.quantidade != null) {
@@ -105,12 +103,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
-  const supabase = await createClient();
   const { error } = await supabase
     .from("estoque")
     .delete()

@@ -4,13 +4,13 @@ const COOKIE = "or_dono_session";
 const MAX_AGE_SEC = 60 * 60 * 24 * 14; // 14 dias
 
 function secret(): string {
-  const s =
-    process.env.DONO_SESSION_SECRET?.trim() ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
-    "";
+  const dedicated = process.env.DONO_SESSION_SECRET?.trim() || "";
+  if (dedicated.length >= 16) return dedicated;
+  // Fallback legado — preferir DONO_SESSION_SECRET separado da service role.
+  const s = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
   if (!s || s.length < 16) {
     throw new Error(
-      "Configure DONO_SESSION_SECRET (ou SUPABASE_SERVICE_ROLE_KEY) no .env.local"
+      "Configure DONO_SESSION_SECRET (mín. 16 chars) no .env / Vercel."
     );
   }
   return s;

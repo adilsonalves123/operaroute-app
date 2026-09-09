@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { normalizarEstoqueBrindesPonto } from "@/lib/estoque/brindes-ponto";
 
 type ItemBody = { produto_id?: unknown; quantidade?: unknown };
 
 /** Soma quantidade ao estoque do expositor e baixa do catálogo central. */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("pontos", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const { id } = await params;
   const body = await request.json();
@@ -27,7 +26,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Informe ao menos um produto para repor." }, { status: 400 });
   }
 
-  const supabase = await createClient();
 
   const { data: equipamento } = await supabase
     .from("equipamentos")

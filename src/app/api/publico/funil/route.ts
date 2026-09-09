@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
 import { requestMeta } from "@/lib/auditoria/registrar";
+import { clientIp, rateLimitOk } from "@/lib/security/guards";
 
 const TIPOS = new Set([
   "visita_login",
@@ -11,6 +12,11 @@ const TIPOS = new Set([
 
 /** Público — registra visita ao funil (login/cadastro). */
 export async function POST(request: Request) {
+  const ip = clientIp(request);
+  if (!rateLimitOk(`funil:${ip}`, 60, 60_000)) {
+    return NextResponse.json({ ok: true });
+  }
+
   if (!isAdminConfigured()) {
     return NextResponse.json({ ok: false }, { status: 204 });
   }

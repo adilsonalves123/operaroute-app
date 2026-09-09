@@ -6,8 +6,14 @@ import {
   getDonoCredentials,
   verifyDonoPassword,
 } from "@/lib/dono/auth";
+import { clientIp, rateLimitOk } from "@/lib/security/guards";
 
 export async function POST(request: Request) {
+  const ip = clientIp(request);
+  if (!rateLimitOk(`dono-login:${ip}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Muitas tentativas. Aguarde." }, { status: 429 });
+  }
+
   const cred = getDonoCredentials();
   if (!cred) {
     return NextResponse.json(

@@ -34,16 +34,10 @@ CREATE POLICY "Empresa scoped select public_rascunho_resumos"
 GRANT SELECT, INSERT ON public.public_rascunho_resumos TO authenticated;
 GRANT ALL ON public.public_rascunho_resumos TO service_role;
 
--- Leitura pública do link (/r/TOKEN) sem login.
+-- Leitura pública do link (/r/TOKEN): NÃO conceder SELECT amplo ao anon.
+-- App carrega via service_role (igual /c/[token]).
+-- Opcional: RPC get_resumo_rascunho_by_token em security-hardening.sql.
 DROP POLICY IF EXISTS "Anon read public resumo by token" ON public.public_rascunho_resumos;
-CREATE POLICY "Anon read public resumo by token"
-  ON public.public_rascunho_resumos FOR SELECT
-  TO anon
-  USING (
-    revoked_at IS NULL
-    AND (expires_at IS NULL OR expires_at > NOW())
-  );
-
-GRANT SELECT ON public.public_rascunho_resumos TO anon;
+REVOKE SELECT ON public.public_rascunho_resumos FROM anon;
 
 NOTIFY pgrst, 'reload schema';

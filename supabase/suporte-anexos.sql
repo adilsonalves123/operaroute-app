@@ -66,5 +66,8 @@ CREATE POLICY "Empresa delete suporte anexos" ON storage.objects
   );
 
 CREATE POLICY "Public read suporte anexos" ON storage.objects
-  FOR SELECT TO public
-  USING (bucket_id = 'suporte-anexos');
+  FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'suporte-anexos'
+    AND (storage.foldername(name))[1] = get_user_empresa_id()::text
+  );

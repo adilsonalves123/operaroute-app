@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
 import { cobravelCassinoVisita } from "@/lib/visitas-ponto/resumo";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -303,18 +303,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const profile = await getProfile();
-
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("coletas", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const url = new URL(request.url);
   const preservarSlot =
     url.searchParams.get("preservar_slot") === "1" ||
     url.searchParams.get("preservar_slot") === "true";
 
-  const supabase = await createClient();
 
   const { data: visita, error: visitaError } = await supabase
     .from("visitas")

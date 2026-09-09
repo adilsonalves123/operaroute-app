@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
 import { canUseEquipamentoTipo, resolveNichosAtivos } from "@/lib/assinatura";
 import type { EquipamentoTipo } from "@/lib/equipamentos";
@@ -13,10 +14,9 @@ function parsePrecoJogada(raw: unknown): number | null {
 
 /** Cadastra equipamento no estoque central (ponto_id = null). */
 export async function POST(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("pontos", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
   const nome = String(body.nome ?? "").trim();
@@ -52,7 +52,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createClient();
   const { encontrarSerieEmUso, mensagemSerieJaCadastrada } = await import(
     "@/lib/equipamentos/serie-unica"
   );

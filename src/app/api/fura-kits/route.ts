@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { premiosFromReposicao } from "@/lib/nichos/fura-fura/kits/premios-from-reposicao";
 import { montarKitsProntos } from "@/lib/nichos/fura-fura/kits/sincronizar-estoque-kit";
@@ -122,10 +123,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
   const nome = String(body.nome ?? "").trim();
@@ -140,7 +140,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Adicione ao menos um item ao kit." }, { status: 400 });
   }
 
-  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -168,7 +167,11 @@ export async function POST(request: Request) {
     reposicao.map((r) => ({ ...r, kit_id: kit.id }))
   );
   if (repErr) {
-    await supabase.from("fura_kits").delete().eq("id", kit.id);
+    await supabase
+      .from("fura_kits")
+      .delete()
+      .eq("id", kit.id)
+      .eq("empresa_id", profile.empresa_id);
     return NextResponse.json({ error: kitDbErrorMessage(repErr.message) }, { status: 500 });
   }
 
@@ -176,7 +179,11 @@ export async function POST(request: Request) {
     premios.map((p) => ({ ...p, kit_id: kit.id }))
   );
   if (premErr) {
-    await supabase.from("fura_kits").delete().eq("id", kit.id);
+    await supabase
+      .from("fura_kits")
+      .delete()
+      .eq("id", kit.id)
+      .eq("empresa_id", profile.empresa_id);
     return NextResponse.json({ error: kitDbErrorMessage(premErr.message) }, { status: 500 });
   }
 
@@ -197,7 +204,11 @@ export async function POST(request: Request) {
   });
 
   if (sync.error) {
-    await supabase.from("fura_kits").delete().eq("id", kit.id);
+    await supabase
+      .from("fura_kits")
+      .delete()
+      .eq("id", kit.id)
+      .eq("empresa_id", profile.empresa_id);
     return NextResponse.json(
       {
         error:

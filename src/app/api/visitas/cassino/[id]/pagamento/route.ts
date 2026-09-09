@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { corrigirPagamentoVisitaCassino } from "@/lib/coletas/corrigir-pagamento-coleta";
 import { parseMoneyInput } from "@/lib/utils";
 
@@ -8,16 +8,14 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("coletas", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json().catch(() => ({}));
   const pix = parseMoneyInput(String(body.valor_pix ?? body.pix ?? "0"));
   const dinheiro = parseMoneyInput(String(body.valor_dinheiro ?? body.dinheiro ?? "0"));
 
-  const supabase = await createClient();
 
   const { data: visita } = await supabase
     .from("visitas")

@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { desmontarKitsNoCentral } from "@/lib/nichos/fura-fura/kits/montar-kit-estoque";
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, ctx: RouteCtx) {
   const { id: kitId } = await ctx.params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json().catch(() => ({}));
   const quantidade = Math.floor(Number(body.quantidade) || 0);
 
-  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import {
   calcularVisitaCassino,
   calcularMaquina,
@@ -99,13 +99,11 @@ function descricaoHaverAposBaixa(
 }
 
 export async function POST(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("coletas", "criar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
-  const supabase = await createClient();
   const visitaPontoId = parseVisitaPontoId(body.visita_ponto_id);
 
   if (!body.ponto_id || !Array.isArray(body.leituras) || body.leituras.length === 0) {
@@ -202,12 +200,6 @@ export async function POST(request: Request) {
     .eq("status", "aberta")
     .ilike("tipo", "negativo");
 
-  const { partitionPendenciasNegativasCassino } = await import(
-    "@/lib/nichos/cassino/pendencias"
-  );
-  const { negativosCassino, operacaoSemLeitura } =
-    partitionPendenciasNegativasCassino(pendenciasRaw);
-
   const { data: haverRaw } = await supabase
     .from("pendencias")
     .select("*")
@@ -227,10 +219,6 @@ export async function POST(request: Request) {
         .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"])
     ).data
   );
-  operacaoPendencias = [
-    ...operacaoPendencias,
-    ...mapPendenciasOperacao(operacaoSemLeitura),
-  ];
 
   const descontoManual = parseMoneyInput(body.desconto_manual);
   const descontoRecebimento = parseMoneyInput(body.desconto_recebimento);
@@ -266,29 +254,19 @@ export async function POST(request: Request) {
   if (visitaNegativa && abaterPendenciaOperacaoNegativa) {
     const { data: operacaoFresh } = await supabase
       .from("pendencias")
-      .select("id, valor, descricao, visita_id, tipo")
+      .select("id, valor, descricao")
       .eq("ponto_id", body.ponto_id)
       .eq("empresa_id", profile.empresa_id)
       .eq("status", "aberta")
-      .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada", "negativo"]);
-    const { operacaoSemLeitura: operacaoManual } = partitionPendenciasNegativasCassino(
-      operacaoFresh
-    );
-    operacaoPendencias = [
-      ...mapPendenciasOperacao(
-        (operacaoFresh ?? []).filter(
-          (p) => (p.tipo ?? "").toLowerCase() !== "negativo"
-        )
-      ),
-      ...mapPendenciasOperacao(operacaoManual),
-    ];
+      .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"]);
+    operacaoPendencias = mapPendenciasOperacao(operacaoFresh);
   }
 
   let calculo;
   try {
     calculo = calcularVisitaCassino({
       leituras: leiturasPayload,
-      pendenciasNegativas: negativosCassino.map((p) => ({
+      pendenciasNegativas: (pendenciasRaw ?? []).map((p) => ({
         id: p.id,
         valor: Number(p.valor ?? 0),
         observacao: p.descricao,

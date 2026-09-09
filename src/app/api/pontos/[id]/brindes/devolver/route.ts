@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { devolverBrindeDoPontoParaCentral } from "@/lib/estoque/transferir-ponto";
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, ctx: RouteCtx) {
   const { id: pontoId } = await ctx.params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("pontos", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
   const itemId = typeof body.item_id === "string" ? body.item_id.trim() : undefined;
@@ -22,7 +21,6 @@ export async function POST(request: Request, ctx: RouteCtx) {
   const quantidade =
     body.quantidade != null ? Math.max(0, Math.floor(Number(body.quantidade) || 0)) : undefined;
 
-  const supabase = await createClient();
   const result = await devolverBrindeDoPontoParaCentral(supabase, {
     empresaId: profile.empresa_id,
     pontoId,

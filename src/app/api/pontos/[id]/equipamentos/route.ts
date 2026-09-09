@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
+import { getEmpresa } from "@/lib/supabase/server";
 import { canUseEquipamentoTipo, resolveNichosAtivos } from "@/lib/assinatura";
 import type { EquipamentoTipo } from "@/lib/equipamentos";
 import { parseLeituraContador, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
@@ -16,14 +17,11 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: pontoId } = await params;
-  const profile = await getProfile();
-
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("pontos", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase, empresa } = auth;
 
   const body = await request.json();
-  const supabase = await createClient();
 
   const { data: ponto } = await supabase
     .from("pontos")
@@ -77,7 +75,6 @@ export async function POST(
     return NextResponse.json({ error: "Informe a entrada atual" }, { status: 400 });
   }
 
-  const empresa = await getEmpresa(profile.empresa_id);
   const nichosAtivos = resolveNichosAtivos(empresa?.nichos_ativos, empresa?.nicho);
 
   if (!canUseEquipamentoTipo(nichosAtivos, tipo)) {

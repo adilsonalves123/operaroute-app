@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { devolverTodoEstoqueMaquinaParaPonto } from "@/lib/estoque/transferir-maquina";
 
 /** Devolve equipamento ao estoque central (ponto_id = null). */
@@ -8,13 +8,10 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: equipamentoId } = await params;
-  const profile = await getProfile();
+  const auth = await requireAcesso("pontos", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
-
-  const supabase = await createClient();
 
   const { data: equipamento } = await supabase
     .from("equipamentos")

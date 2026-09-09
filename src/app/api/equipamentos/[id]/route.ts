@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { buscarHistoricoPorNumeroSerie } from "@/lib/equipamentos/buscar-historico-serie";
 import { parseLeituraContador, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
-import { createClient, getProfile, getSession } from "@/lib/supabase/server";
+import { createClient, getSession } from "@/lib/supabase/server";
 import { devolverTodoEstoqueMaquinaParaPonto } from "@/lib/estoque/transferir-maquina";
 import { diffCampos, registrarAuditoria, requestMeta } from "@/lib/auditoria/registrar";
 import {
@@ -364,13 +364,10 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: equipamentoId } = await params;
-  const profile = await getProfile();
+  const auth = await requireAcesso("pontos", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
-
-  const supabase = await createClient();
   const empresaId = profile.empresa_id;
 
   const { data: equipamento, error: eqError } = await supabase

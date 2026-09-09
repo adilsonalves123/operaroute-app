@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
+import { createClient, getEmpresa } from "@/lib/supabase/server";
 import { canGerenciarRotas } from "@/lib/rotas/permissoes-rotas";
 
 async function rotaDaEmpresa(
@@ -30,13 +31,10 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("rotas", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase, empresa } = auth;
 
-  const supabase = await createClient();
-  const empresa = await getEmpresa(profile.empresa_id);
   const gerencia = await canGerenciarRotas(supabase, profile, empresa?.owner_id);
 
   const rota = await rotaDaEmpresa(supabase, id, profile.empresa_id);
@@ -166,13 +164,9 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
-
-  const supabase = await createClient();
-  const empresa = await getEmpresa(profile.empresa_id);
+  const auth = await requireAcesso("rotas", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase, empresa } = auth;
 
   if (!(await canGerenciarRotas(supabase, profile, empresa?.owner_id))) {
     return NextResponse.json({ error: "Sem permissão." }, { status: 403 });

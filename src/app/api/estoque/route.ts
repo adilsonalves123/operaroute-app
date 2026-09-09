@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { createClient, getProfile } from "@/lib/supabase/server";
 
 export async function GET() {
@@ -22,10 +23,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "criar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
   const nome = String(body.nome_item ?? "").trim();
@@ -33,7 +33,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Informe o nome do item." }, { status: 400 });
   }
 
-  const supabase = await createClient();
   const { data, error } = await supabase
     .from("estoque")
     .insert({

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { createClient, getProfile } from "@/lib/supabase/server";
 import { premiosFromReposicao } from "@/lib/nichos/fura-fura/kits/premios-from-reposicao";
 import { desmontarKitsNoCentral } from "@/lib/nichos/fura-fura/kits/montar-kit-estoque";
@@ -77,13 +78,11 @@ export async function GET(_request: Request, ctx: RouteCtx) {
 
 export async function PATCH(request: Request, ctx: RouteCtx) {
   const { id } = await ctx.params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
-  const supabase = await createClient();
   const empresaId = profile.empresa_id;
   const {
     data: { user },
@@ -229,12 +228,10 @@ export async function PATCH(request: Request, ctx: RouteCtx) {
 
 export async function DELETE(_request: Request, ctx: RouteCtx) {
   const { id } = await ctx.params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("estoque", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
-  const supabase = await createClient();
   const empresaId = profile.empresa_id;
 
   const { data: existing } = await supabase

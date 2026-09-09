@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { canGerenciarRotas } from "@/lib/rotas/permissoes-rotas";
 import type { RotaSalva } from "@/lib/rotas/rotas-salvas";
 import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
@@ -87,13 +88,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
-
-  const supabase = await createClient();
-  const empresa = await getEmpresa(profile.empresa_id);
+  const auth = await requireAcesso("rotas", "criar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase, empresa } = auth;
 
   if (!(await canGerenciarRotas(supabase, profile, empresa?.owner_id))) {
     return NextResponse.json({ error: "Sem permissão para criar rotas." }, { status: 403 });
@@ -165,7 +162,11 @@ export async function POST(request: Request) {
   const { error: pontosError } = await supabase.from("rota_pontos").insert(rows);
 
   if (pontosError) {
-    await supabase.from("rotas").delete().eq("id", rota.id);
+    await supabase
+      .from("rotas")
+      .delete()
+      .eq("id", rota.id)
+      .eq("empresa_id", profile.empresa_id);
     return NextResponse.json({ error: pontosError.message }, { status: 500 });
   }
 

@@ -4,8 +4,18 @@ import { fetchMpPayment, isMercadoPagoConfigured } from "@/lib/billing/mp-client
 import { ativarCheckoutPago, type CheckoutRow } from "@/lib/billing/ativar-pagamento";
 import { loadPrecosPayload } from "@/lib/dono/precos";
 import { PLANOS_PADRAO } from "@/lib/pricing";
+import { verifyMercadoPagoWebhook } from "@/lib/security/guards";
 
 export const runtime = "nodejs";
+
+function assertWebhookSignature(request: Request, paymentId: string) {
+  const ok = verifyMercadoPagoWebhook({ request, paymentId });
+  if (ok === false) {
+    return NextResponse.json({ ok: false, error: "Assinatura inválida." }, { status: 401 });
+  }
+  // ok === null → secret não configurado (legado); ok === true → válido
+  return null;
+}
 
 async function processPaymentId(paymentId: string) {
   if (!isAdminConfigured() || !isMercadoPagoConfigured()) {
@@ -105,6 +115,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true, empty: true });
     }
 
+    const denied = assertWebhookSignature(request, paymentId);
+    if (denied) return denied;
+
     const result = await processPaymentId(paymentId);
     if (!result.ok) {
       console.error("[billing/webhook]", result.error);
@@ -132,6 +145,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: true, ignored: topic });
   }
   if (!id) return NextResponse.json({ ok: true, empty: true });
+
+  const denied = assertWebhookSignature(request, id);
+  if (denied) return denied;
 
   const result = await processPaymentId(id);
   if (!result.ok) {

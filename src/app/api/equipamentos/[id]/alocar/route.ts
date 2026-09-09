@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { parseLeituraContador } from "@/lib/equipamentos";
 
 /** Aloca equipamento do estoque central para um ponto. */
@@ -8,11 +8,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: equipamentoId } = await params;
-  const profile = await getProfile();
-
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("pontos", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
   const pontoId = String(body.ponto_id ?? "").trim();
@@ -25,7 +23,6 @@ export async function POST(
     return NextResponse.json({ error: "Informe o nº no ponto." }, { status: 400 });
   }
 
-  const supabase = await createClient();
 
   const [{ data: equipamento }, { data: ponto }] = await Promise.all([
     supabase

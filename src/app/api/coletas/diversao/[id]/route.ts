@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { NICHO_MODULO_DIVERSAO } from "@/lib/nichos/diversao";
 
 /** GET no browser não pode cair em 405 — manda para o detalhe da coleta. */
@@ -42,17 +42,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("coletas", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const url = new URL(request.url);
   const preservarSlot =
     url.searchParams.get("preservar_slot") === "1" ||
     url.searchParams.get("preservar_slot") === "true";
 
-  const supabase = await createClient();
 
   const { data: coleta, error: coletaError } = await supabase
     .from("coletas")
@@ -130,7 +128,7 @@ export async function DELETE(
     }
   }
 
-  const { error: deleteError } = await supabase.from("coletas").delete().eq("id", id);
+  const { error: deleteError } = await supabase.from("coletas").delete().eq("id", id).eq("empresa_id", profile.empresa_id);
 
   if (deleteError) {
     return NextResponse.json({ error: deleteError.message }, { status: 500 });

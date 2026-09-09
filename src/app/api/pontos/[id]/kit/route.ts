@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { instalarKitNoPonto } from "@/lib/nichos/fura-fura/kits";
 
 type RouteCtx = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, ctx: RouteCtx) {
   const { id: pontoId } = await ctx.params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada" }, { status: 404 });
-  }
+  const auth = await requireAcesso("pontos", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json();
   const kitId = String(body.kit_id ?? "").trim();
@@ -17,7 +16,6 @@ export async function POST(request: Request, ctx: RouteCtx) {
     return NextResponse.json({ error: "Selecione um kit." }, { status: 400 });
   }
 
-  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

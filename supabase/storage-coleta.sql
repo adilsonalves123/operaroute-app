@@ -46,8 +46,11 @@ CREATE POLICY "Empresa delete coleta fotos" ON storage.objects
   );
 
 CREATE POLICY "Public read coleta fotos" ON storage.objects
-  FOR SELECT TO public
-  USING (bucket_id = 'coleta-fotos');
+  FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'coleta-fotos'
+    AND (storage.foldername(name))[1] = get_user_empresa_id()::text
+  );
 
 -- Relatórios gerados por visita
 CREATE TABLE IF NOT EXISTS relatorios_coleta (

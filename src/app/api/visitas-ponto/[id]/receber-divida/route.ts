@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { parseRecebimentoPixDinheiro } from "@/lib/nichos/fura-fura/recebimento-pagamento";
 import { aplicarRecebimentoDividaInicio } from "@/lib/visitas-ponto/checkout";
 
@@ -8,10 +8,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada." }, { status: 404 });
-  }
+  const auth = await requireAcesso("coletas", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
 
   const body = await request.json().catch(() => ({}));
   const recebimento = parseRecebimentoPixDinheiro(body);
@@ -19,7 +18,6 @@ export async function POST(
     return NextResponse.json({ error: recebimento.error }, { status: 400 });
   }
 
-  const supabase = await createClient();
 
   const { data: visita } = await supabase
     .from("visitas_ponto")

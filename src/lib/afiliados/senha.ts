@@ -1,12 +1,14 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 function sessionSecret(): string {
-  const s =
+  const dedicated =
+    process.env.AFILIADO_SESSION_SECRET?.trim() ||
     process.env.DONO_SESSION_SECRET?.trim() ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
     "";
+  if (dedicated.length >= 16) return dedicated;
+  const s = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || "";
   if (!s || s.length < 16) {
-    throw new Error("Configure DONO_SESSION_SECRET no .env.local");
+    throw new Error("Configure AFILIADO_SESSION_SECRET ou DONO_SESSION_SECRET no .env");
   }
   return s;
 }

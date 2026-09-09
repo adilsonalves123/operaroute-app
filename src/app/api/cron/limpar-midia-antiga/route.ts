@@ -9,11 +9,9 @@ import { limparMidiaAntigaTodasEmpresas } from "@/lib/relatorios/retencao";
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET?.trim();
   const auth = request.headers.get("authorization");
-  const url = new URL(request.url);
-  const qSecret = url.searchParams.get("secret");
   const bearer = auth?.startsWith("Bearer ") ? auth.slice(7) : null;
 
-  if (!secret || (bearer !== secret && qSecret !== secret)) {
+  if (!secret || bearer !== secret) {
     return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
   }
 

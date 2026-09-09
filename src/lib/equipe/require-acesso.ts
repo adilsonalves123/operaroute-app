@@ -24,5 +24,16 @@ export async function requireAcesso(modulo: PermissaoModulo, acao: PermissaoAcao
     };
   }
 
-  return { ok: true as const, profile, supabase, empresa, acesso };
+  const profileComEmpresa = {
+    ...profile,
+    empresa_id: profile.empresa_id as string,
+  };
+
+  return {
+    ok: true as const,
+    profile: profileComEmpresa,
+    supabase,
+    empresa,
+    acesso,
+  };
 }

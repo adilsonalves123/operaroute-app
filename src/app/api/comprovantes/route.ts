@@ -98,21 +98,25 @@ export async function POST(request: Request) {
     const db = createAdminClient();
     let result: { token: string; url: string; snapshot: ComprovanteSnapshot };
 
-  // Relatório completo (prévia) ou histórico (tela de coleta): grava payload com layout.
-  if (
-    (snapshotFallback?.layout === "relatorio" ||
-      snapshotFallback?.layout === "historico") &&
-    snapshotFallback.relatorio
-  ) {
-    result = await insertSnapshotOnly(
-      profile.empresa_id,
-      {
-        ...snapshotFallback,
-        previa: snapshotFallback.previa === true,
-      },
+    // Relatório/histórico: só aceita snapshot do client em prévia (sem IDs).
+    // Com visita_id / visita_ponto_id, monta sempre no servidor (abaixo).
+    if (
+      !visitaPontoId &&
+      !visitaId &&
+      (snapshotFallback?.layout === "relatorio" ||
+        snapshotFallback?.layout === "historico") &&
+      snapshotFallback.relatorio &&
       snapshotFallback.previa === true
-    );
-  } else if (visitaPontoId) {
+    ) {
+      result = await insertSnapshotOnly(
+        profile.empresa_id,
+        {
+          ...snapshotFallback,
+          previa: true,
+        },
+        true
+      );
+    } else if (visitaPontoId) {
     try {
       result = await criarComprovanteVisitaPonto(db, {
         empresaId: profile.empresa_id,
@@ -158,10 +162,9 @@ export async function POST(request: Request) {
       snapshotFallback,
     });
   } else {
-    result = await insertSnapshotOnly(
-      profile.empresa_id,
-      snapshotFallback!,
-      previa
+    return jsonError(
+      "Informe visita_ponto_id ou visita_id (comprovante oficial). Snapshot avulso só em prévia.",
+      400
     );
   }
 

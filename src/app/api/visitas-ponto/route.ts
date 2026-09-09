@@ -1,14 +1,12 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { visitaPontoDisponivel } from "@/lib/visitas-ponto";
 import { resolveNichosAtivos } from "@/lib/assinatura";
-import { getEmpresa } from "@/lib/supabase/server";
 
 export async function POST(request: Request) {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Empresa não encontrada." }, { status: 404 });
-  }
+  const auth = await requireAcesso("coletas", "criar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase, empresa } = auth;
 
   const body = await request.json().catch(() => ({}));
   const pontoId = String(body.ponto_id ?? "").trim();
@@ -16,7 +14,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Informe o ponto." }, { status: 400 });
   }
 
-  const empresa = await getEmpresa(profile.empresa_id);
   const nichosAtivos = resolveNichosAtivos(empresa?.nichos_ativos, empresa?.nicho);
   if (!visitaPontoDisponivel(nichosAtivos)) {
     return NextResponse.json(
@@ -25,7 +22,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const supabase = await createClient();
 
   const { data: ponto } = await supabase
     .from("pontos")

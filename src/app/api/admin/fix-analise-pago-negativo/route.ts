@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createClient, getProfile } from "@/lib/supabase/server";
+import { requireAcesso } from "@/lib/equipe/require-acesso";
 
 export const runtime = "nodejs";
 
@@ -30,12 +30,9 @@ function visitaTagId(descricao: string | null): string | null {
  * não é recebimento de caixa.
  */
 async function runFix() {
-  const profile = await getProfile();
-  if (!profile?.empresa_id) {
-    return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
-  }
-
-  const supabase = await createClient();
+  const auth = await requireAcesso("configuracoes", "editar");
+  if (!auth.ok) return auth.response;
+  const { profile, supabase } = auth;
   const empresaId = profile.empresa_id;
 
   const { data: negVisitas, error: nErr } = await supabase
