@@ -560,6 +560,27 @@ html[data-app-theme="light"] .coleta-visita-pagina .coleta-resultado-icone {
   border-color: rgba(14, 116, 144, 0.35) !important;
 }
 
+html[data-app-theme="light"] .coleta-visita-pagina .coleta-pagamento-forma .text-emerald-700 {
+  color: #047857 !important;
+}
+html[data-app-theme="light"] .coleta-visita-pagina .coleta-pagamento-forma .text-cyan-800 {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .coleta-visita-pagina .coleta-pagamento-forma .text-stone-700,
+html[data-app-theme="light"] .coleta-visita-pagina .coleta-pagamento-forma .text-slate-500 {
+  color: #57534e !important;
+}
+html:not([data-app-theme="light"]) .coleta-pagamento-forma .text-emerald-700 {
+  color: #6ee7b7;
+}
+html:not([data-app-theme="light"]) .coleta-pagamento-forma .text-cyan-800 {
+  color: #67e8f9;
+}
+html:not([data-app-theme="light"]) .coleta-pagamento-forma .text-stone-700 {
+  color: #d6d3d1;
+}
+
+
 html[data-app-theme="light"] main [class*="border-white"] {
   border-color: rgba(28, 25, 23, 0.1) !important;
 }

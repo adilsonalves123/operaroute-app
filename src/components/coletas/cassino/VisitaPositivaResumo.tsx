@@ -442,37 +442,37 @@ export function VisitaPositivaResumo({
           <div className="space-y-2 text-sm">
             {calculo.valorPagoReais > 0.009 && (
               <div className="flex justify-between gap-4">
-                <span className="text-slate-400">Recebido</span>
-                <span className="font-semibold tabular-nums text-emerald-400">
+                <span className="text-slate-500">Recebido</span>
+                <span className="font-semibold tabular-nums text-emerald-700">
                   {formatCurrency(calculo.valorPagoReais)}
                 </span>
               </div>
             )}
             {pagoTotal > 0.009 && (
-              <>
+              <div className="space-y-1.5 border-l border-slate-700/80 pl-3">
                 <div className="flex justify-between gap-4">
-                  <span className="text-slate-400">Pix</span>
-                  <span className="font-semibold tabular-nums text-emerald-400">
+                  <span className="text-slate-500">Pix</span>
+                  <span className="font-medium tabular-nums text-cyan-800">
                     {formatCurrency(pixRecebido)}
                   </span>
                 </div>
                 <div className="flex justify-between gap-4">
-                  <span className="text-slate-400">Dinheiro</span>
-                  <span className="font-semibold tabular-nums text-emerald-400">
+                  <span className="text-slate-500">Dinheiro</span>
+                  <span className="font-medium tabular-nums text-stone-700">
                     {formatCurrency(dinheiroRecebido)}
                   </span>
                 </div>
-              </>
+              </div>
             )}
             {calculo.restanteReais > 0.009 ? (
               <div className="flex justify-between gap-4 border-t border-slate-800 pt-2">
-                <span className="font-medium text-amber-300">Em aberto</span>
-                <span className="font-bold tabular-nums text-amber-400">
+                <span className="font-medium text-amber-800">Em aberto</span>
+                <span className="font-semibold tabular-nums text-amber-800">
                   {formatCurrency(calculo.restanteReais)}
                 </span>
               </div>
             ) : calculo.valorPagoReais > 0.009 ? (
-              <div className="flex items-center gap-2 border-t border-slate-800 pt-2 text-emerald-400">
+              <div className="flex items-center gap-2 border-t border-slate-800 pt-2 text-emerald-700">
                 <CheckCircle2 className="h-4 w-4" />
                 <span className="font-medium">Quitada</span>
               </div>
