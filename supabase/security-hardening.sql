@@ -43,13 +43,16 @@ AS $$
     SELECT 1 FROM public.equipe eq
     WHERE eq.empresa_id = public.get_user_empresa_id()
       AND eq.user_id = auth.uid()
-      AND lower(coalesce(eq.role, '')) IN ('admin')
+      AND eq.role = 'admin'::public.user_role
   );
 $$;
 
 DROP POLICY IF EXISTS "Empresa scoped insert" ON public.equipe;
 DROP POLICY IF EXISTS "Empresa scoped update" ON public.equipe;
 DROP POLICY IF EXISTS "Empresa scoped delete" ON public.equipe;
+DROP POLICY IF EXISTS "Equipe admin insert" ON public.equipe;
+DROP POLICY IF EXISTS "Equipe admin update" ON public.equipe;
+DROP POLICY IF EXISTS "Equipe admin delete" ON public.equipe;
 
 CREATE POLICY "Equipe admin insert"
   ON public.equipe FOR INSERT TO authenticated
@@ -57,7 +60,7 @@ CREATE POLICY "Equipe admin insert"
     empresa_id = public.get_user_empresa_id()
     AND public.is_empresa_admin_or_owner()
     AND (
-      lower(coalesce(role, '')) IS DISTINCT FROM 'admin'
+      role IS DISTINCT FROM 'admin'::public.user_role
       OR EXISTS (
         SELECT 1 FROM public.empresas e
         WHERE e.id = empresa_id AND e.owner_id = auth.uid()
@@ -75,7 +78,7 @@ CREATE POLICY "Equipe admin update"
     empresa_id = public.get_user_empresa_id()
     AND public.is_empresa_admin_or_owner()
     AND (
-      lower(coalesce(role, '')) IS DISTINCT FROM 'admin'
+      role IS DISTINCT FROM 'admin'::public.user_role
       OR EXISTS (
         SELECT 1 FROM public.empresas e
         WHERE e.id = empresa_id AND e.owner_id = auth.uid()
