@@ -265,6 +265,84 @@ html[data-app-theme="light"] [class*="text-[#e8d5b0]"] {
   color: #141210 !important;
 }
 
+/* Login do painel dono: fundo sempre escuro — ignora tokens do tema claro do app */
+.dono-login-page,
+html[data-app-theme="light"] .dono-login-page {
+  color: #f7f2ea !important;
+  color-scheme: dark;
+}
+.dono-login-bg {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 0%, rgba(212, 184, 150, 0.18), transparent 55%),
+    linear-gradient(180deg, #05070c 0%, #0a0e16 100%);
+}
+.dono-login-brand,
+.dono-login-label,
+html[data-app-theme="light"] .dono-login-brand,
+html[data-app-theme="light"] .dono-login-label {
+  color: #e0c9a8 !important;
+}
+.dono-login-title,
+html[data-app-theme="light"] .dono-login-title {
+  color: #faf6ef !important;
+}
+.dono-login-sub,
+html[data-app-theme="light"] .dono-login-sub {
+  color: #c9ced9 !important;
+}
+.dono-login-input,
+html[data-app-theme="light"] .dono-login-input {
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  background: #12161f !important;
+  color: #faf6ef !important;
+}
+.dono-login-input:focus,
+html[data-app-theme="light"] .dono-login-input:focus {
+  border-color: rgba(224, 201, 168, 0.55) !important;
+}
+.dono-login-error {
+  border: 1px solid rgba(251, 113, 133, 0.4);
+  background: rgba(244, 63, 94, 0.15);
+  color: #ffe4e6 !important;
+}
+.dono-login-btn,
+html[data-app-theme="light"] .dono-login-btn {
+  border: 1px solid rgba(224, 201, 168, 0.6) !important;
+  background: #e0c9a8 !important;
+  color: #1a140c !important;
+}
+.dono-login-btn:hover:not(:disabled),
+html[data-app-theme="light"] .dono-login-btn:hover:not(:disabled) {
+  background: #edd9b8 !important;
+}
+
+/* Painel dono em modo escuro: tokens legíveis mesmo com app em tema claro */
+.dono-shell-dark,
+html[data-app-theme="light"] .dono-shell-dark {
+  --at-primary: #f7f2ea;
+  --at-muted: #aeb6c6;
+  --at-soft: #8b93a5;
+  --at-link: #e0c9a8;
+  --at-card: rgba(14, 18, 28, 0.96);
+  --at-card-soft: rgba(255, 255, 255, 0.05);
+  color: #f7f2ea;
+  color-scheme: dark;
+}
+html[data-app-theme="light"] .dono-shell-dark .text-white,
+html[data-app-theme="light"] .dono-shell-dark .text-slate-50,
+html[data-app-theme="light"] .dono-shell-dark .text-slate-100,
+html[data-app-theme="light"] .dono-shell-dark .text-slate-200,
+html[data-app-theme="light"] .dono-shell-dark .text-slate-300,
+html[data-app-theme="light"] .dono-shell-dark [class*="text-[#f4efe6]"],
+html[data-app-theme="light"] .dono-shell-dark [class*="text-[#e8d5b0]"] {
+  color: #f7f2ea !important;
+}
+html[data-app-theme="light"] .dono-shell-dark .text-slate-400,
+html[data-app-theme="light"] .dono-shell-dark .text-slate-500,
+html[data-app-theme="light"] .dono-shell-dark .text-slate-600 {
+  color: #aeb6c6 !important;
+}
+
 html[data-app-theme="light"] .rascunho-folha {
   color: #141210;
   color-scheme: light;

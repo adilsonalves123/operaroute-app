@@ -137,16 +137,16 @@ function DonoShellInner({
 
   const shellBg = light
     ? "bg-[#f4f1eb] text-slate-900"
-    : "bg-[#07090f] text-at-primary";
+    : "dono-shell-dark bg-[#07090f] text-at-primary";
   const asideBg = light
     ? "border-stone-200/80 bg-white/80"
     : "border-at bg-at-card/90";
   const topBg = light
     ? "border-stone-200/80 bg-white/70"
     : "border-at bg-at-card/70";
-  const muted = light ? "text-at-muted" : "text-at-muted";
+  const muted = light ? "text-slate-600" : "text-at-muted";
   const navIdle = light
-    ? "text-at-soft hover:bg-stone-100 hover:text-slate-900"
+    ? "text-slate-500 hover:bg-stone-100 hover:text-slate-900"
     : "text-at-muted hover:bg-at-card-soft hover:text-at-primary";
   const navActive = light
     ? "bg-stone-900 text-white"
