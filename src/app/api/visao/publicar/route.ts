@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { parseMoneyInput } from "@/lib/utils";
 
-type ValorBody = { ponto_id: string; valor: number | string };
+type ValorBody = { ponto_id: string; valor: number | string; forma?: string | null };
 
 export async function POST(request: Request) {
   const auth = await requireAcesso("equipe", "editar");
@@ -29,10 +29,15 @@ export async function POST(request: Request) {
 
   const valoresRaw: ValorBody[] = Array.isArray(body.valores) ? body.valores : [];
   const valores = valoresRaw
-    .map((v) => ({
-      ponto_id: String(v.ponto_id ?? ""),
-      valor: typeof v.valor === "number" ? v.valor : parseMoneyInput(String(v.valor ?? "")),
-    }))
+    .map((v) => {
+      const forma = String(v.forma ?? "").toLowerCase();
+      return {
+        ponto_id: String(v.ponto_id ?? ""),
+        valor: typeof v.valor === "number" ? v.valor : parseMoneyInput(String(v.valor ?? "")),
+        forma:
+          forma === "pix" || forma === "dinheiro" || forma === "misto" ? forma : null,
+      };
+    })
     .filter((v) => v.ponto_id);
 
   const { data: membros, error: membrosErr } = await supabase
@@ -75,6 +80,7 @@ export async function POST(request: Request) {
     ponto_id: string;
     data: string;
     valor_exibido: number;
+    forma: string | null;
     publicado_em: string;
   }[] = [];
   const agora = new Date().toISOString();
@@ -90,6 +96,7 @@ export async function POST(request: Request) {
         ponto_id: v.ponto_id,
         data,
         valor_exibido: Math.round(v.valor * 100) / 100,
+        forma: v.forma,
         publicado_em: agora,
       });
     }
@@ -107,7 +114,13 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    const semForma = rows.map(({ forma: _forma, ...row }) => row);
+    const retry = await supabase.from("visao_valores").upsert(semForma, {
+      onConflict: "equipe_id,ponto_id,data",
+    });
+    if (retry.error) {
+      return NextResponse.json({ error: retry.error.message }, { status: 500 });
+    }
   }
 
   return NextResponse.json({ success: true, publicados: rows.length });

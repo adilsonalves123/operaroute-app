@@ -20,7 +20,7 @@ import type { DashboardPeriodoFiltro } from "@/lib/dashboard-periodo";
 import { fetchChamadosAbertosResumo } from "@/lib/chamados/fetch-resumo";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import { resolverVisaoOperador } from "@/lib/visao/resolver";
-import { valoresVisaoDoDia, datasComValoresVisao } from "@/lib/visao/valores";
+import { valoresVisaoDoDia, valoresVisaoNoPeriodo, datasComValoresVisao } from "@/lib/visao/valores";
 import { VisaoPainelClient } from "@/components/visao/VisaoPainelClient";
 import {
   fetchComissaoStaffPeriodo,
@@ -356,9 +356,9 @@ function round2(n: number): number {
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ periodo?: string; de?: string; ate?: string; data?: string }>;
+  searchParams: Promise<{ periodo?: string; de?: string; ate?: string; data?: string; vista?: string }>;
 }) {
-  const { periodo: periodoRaw, de, ate, data: dataVisaoRaw } = await searchParams;
+  const { periodo: periodoRaw, de, ate, data: dataVisaoRaw, vista: vistaRaw } = await searchParams;
   const periodoRange = resolverPeriodoAnalise({ periodo: periodoRaw, de, ate });
   const periodoFiltro: DashboardPeriodoFiltro = {
     inicioISO: periodoRange.inicioISO,
@@ -411,29 +411,66 @@ export default async function DashboardPage({
         dataVisaoRaw <= hojeISO
           ? dataVisaoRaw
           : hojeISO;
-      const [{ data: pontosRaw }, valores, datasComValor] = await Promise.all([
-        visao.pontoIds.length
-          ? supabase
-              .from("pontos")
-              .select("id, nome")
-              .eq("empresa_id", profile.empresa_id)
-              .in("id", visao.pontoIds)
-              .order("nome")
-          : Promise.resolve({ data: [] as { id: string; nome: string }[] }),
-        valoresVisaoDoDia(supabase, profile.empresa_id, visao.equipeId, dataISO),
-        datasComValoresVisao(supabase, profile.empresa_id, visao.equipeId),
-      ]);
-      const valorPorPonto = new Map(valores.map((v) => [v.ponto_id, Number(v.valor_exibido)]));
-      const pontosPainel = (pontosRaw ?? []).map((p) => ({
-        id: p.id,
-        nome: p.nome,
-        valor: valorPorPonto.has(p.id) ? (valorPorPonto.get(p.id) as number) : null,
-      }));
+      const datasComValor = await datasComValoresVisao(
+        supabase,
+        profile.empresa_id,
+        visao.equipeId
+      );
+      const vista = vistaRaw === "periodo" ? "periodo" : "dia";
+      const deISO =
+        de && /^\d{4}-\d{2}-\d{2}$/.test(de)
+          ? de
+          : datasComValor[datasComValor.length - 1] ?? hojeISO;
+      const ateISO =
+        ate && /^\d{4}-\d{2}-\d{2}$/.test(ate) && ate <= hojeISO ? ate : hojeISO;
+      const valores =
+        vista === "periodo"
+          ? await valoresVisaoNoPeriodo(
+              supabase,
+              profile.empresa_id,
+              visao.equipeId,
+              deISO,
+              ateISO
+            )
+          : await valoresVisaoDoDia(supabase, profile.empresa_id, visao.equipeId, dataISO);
+      const nomePorId = new Map<string, string>();
+      const valorPorPonto = new Map<string, number>();
+      const formaPorPonto = new Map<string, Set<string>>();
+      for (const v of valores) {
+        const nome = v.pontos?.nome;
+        if (nome) nomePorId.set(v.ponto_id, nome);
+        valorPorPonto.set(
+          v.ponto_id,
+          (valorPorPonto.get(v.ponto_id) ?? 0) + Number(v.valor_exibido ?? 0)
+        );
+        const forma = String(v.forma ?? "").toLowerCase();
+        if (forma) {
+          const set = formaPorPonto.get(v.ponto_id) ?? new Set<string>();
+          set.add(forma);
+          formaPorPonto.set(v.ponto_id, set);
+        }
+      }
+      const pontosPainel = [...valorPorPonto.entries()].map(([id, valor]) => {
+        const formas = formaPorPonto.get(id);
+        let forma: string | null = null;
+        if (formas && formas.size > 0) {
+          forma = formas.size > 1 || formas.has("misto") ? "misto" : [...formas][0];
+        }
+        return {
+          id,
+          nome: nomePorId.get(id) ?? "Ponto",
+          valor,
+          forma,
+        };
+      });
       const total = pontosPainel.reduce((s, p) => s + (p.valor ?? 0), 0);
       return (
         <VisaoPainelClient
+          vista={vista}
           dataISO={dataISO}
           hojeISO={hojeISO}
+          deISO={deISO}
+          ateISO={ateISO}
           pontos={pontosPainel}
           total={total}
           nomeOperador={profile.nome}

@@ -5,6 +5,7 @@ export type VisaoValorLinha = {
   data: string;
   valor_exibido: number;
   publicado_em: string;
+  forma?: string | null;
   pontos: { nome: string; cidade: string | null } | null;
 };
 
@@ -16,7 +17,7 @@ export async function listarValoresVisao(
 ): Promise<VisaoValorLinha[]> {
   let q = supabase
     .from("visao_valores")
-    .select("ponto_id, data, valor_exibido, publicado_em, pontos(nome, cidade)")
+    .select("ponto_id, data, valor_exibido, publicado_em, forma, pontos(nome, cidade)")
     .eq("empresa_id", empresaId)
     .eq("equipe_id", equipeId)
     .order("data", { ascending: false })
@@ -26,7 +27,51 @@ export async function listarValoresVisao(
     q = q.eq("data", opts.data);
   }
 
-  const { data } = await q.limit(opts?.limit ?? 80);
+  const { data, error } = await q.limit(opts?.limit ?? 80);
+  if (error) {
+    let fallback = supabase
+      .from("visao_valores")
+      .select("ponto_id, data, valor_exibido, publicado_em, pontos(nome, cidade)")
+      .eq("empresa_id", empresaId)
+      .eq("equipe_id", equipeId)
+      .order("data", { ascending: false })
+      .order("publicado_em", { ascending: false });
+    if (opts?.data) fallback = fallback.eq("data", opts.data);
+    const retry = await fallback.limit(opts?.limit ?? 80);
+    return (retry.data ?? []) as unknown as VisaoValorLinha[];
+  }
+  return (data ?? []) as unknown as VisaoValorLinha[];
+}
+
+export async function valoresVisaoNoPeriodo(
+  supabase: SupabaseClient,
+  empresaId: string,
+  equipeId: string,
+  deISO: string,
+  ateISO: string
+): Promise<VisaoValorLinha[]> {
+  const { data, error } = await supabase
+    .from("visao_valores")
+    .select("ponto_id, data, valor_exibido, publicado_em, forma, pontos(nome, cidade)")
+    .eq("empresa_id", empresaId)
+    .eq("equipe_id", equipeId)
+    .gte("data", deISO)
+    .lte("data", ateISO)
+    .order("data", { ascending: false })
+    .limit(2000);
+
+  if (error) {
+    const retry = await supabase
+      .from("visao_valores")
+      .select("ponto_id, data, valor_exibido, publicado_em, pontos(nome, cidade)")
+      .eq("empresa_id", empresaId)
+      .eq("equipe_id", equipeId)
+      .gte("data", deISO)
+      .lte("data", ateISO)
+      .order("data", { ascending: false })
+      .limit(2000);
+    return (retry.data ?? []) as unknown as VisaoValorLinha[];
+  }
   return (data ?? []) as unknown as VisaoValorLinha[];
 }
 

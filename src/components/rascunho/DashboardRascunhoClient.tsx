@@ -461,6 +461,7 @@ export function DashboardRascunhoClient({
           valores: pontos.map((p) => ({
             ponto_id: p.id,
             valor: parseMoneyInput(valores[p.id] ?? ""),
+            forma: metaPorPonto[p.id]?.forma ?? null,
           })),
         }),
       });
