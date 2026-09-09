@@ -5,9 +5,18 @@ function round2(n: number) {
   return Math.round(n * 100) / 100;
 }
 
-/** Valor do nicho no comprovante: após pagar, cobravel zera — usa o recebido. */
-export function valorNichoComprovante(n: Pick<NichoResumoVisita, "totalCobravel" | "totalRecebido">): number {
-  return round2(Math.max(n.totalCobravel, n.totalRecebido));
+/** Valor do nicho no comprovante / prévia de cobrança.
+ *  Prévia: só o restante a cobrar (não reinfla com o que já foi pago).
+ *  Recibo: se ainda há saldo, mostra o restante; se quitou, mostra o recebido. */
+export function valorNichoComprovante(
+  n: Pick<NichoResumoVisita, "totalCobravel" | "totalRecebido">,
+  opts?: { previa?: boolean }
+): number {
+  const cobravel = Math.max(0, Number(n.totalCobravel) || 0);
+  const recebido = Math.max(0, Number(n.totalRecebido) || 0);
+  if (opts?.previa) return round2(cobravel);
+  if (cobravel > 0.009) return round2(cobravel);
+  return round2(recebido);
 }
 
 export type TotaisComprovanteVisita = {
@@ -48,6 +57,10 @@ export function totaisComprovanteVisita(
 
   const subtotalNichos = round2(
     resumo.nichos.reduce((s, n) => s + valorNichoComprovante(n), 0)
+  );
+  // Prévia / visita aberta: o subtotal é o cobravel restante (já desconta pagos parciais).
+  const subtotalAberto = round2(
+    Math.max(0, resumo.subtotalCobravel > 0.009 ? resumo.subtotalCobravel : subtotalNichos)
   );
 
   if (resumo.status === "finalizada" && checkout) {
@@ -114,7 +127,7 @@ export function totaisComprovanteVisita(
   }
 
   const calculo = calcularCheckoutVisita({
-    subtotalCobravel: Math.max(resumo.subtotalCobravel, subtotalNichos),
+    subtotalCobravel: subtotalAberto,
     dividaAnteriorTotal: dividaSaldo,
     dividaRecebidaInicio: 0,
     desconto,
@@ -129,7 +142,7 @@ export function totaisComprovanteVisita(
   );
 
   return {
-    subtotal: round2(Math.max(resumo.subtotalCobravel, subtotalNichos)),
+    subtotal: subtotalAberto,
     totalACobrar: calculo.totalACobrar,
     valorPago: calculo.valorPago,
     restante: calculo.restante,

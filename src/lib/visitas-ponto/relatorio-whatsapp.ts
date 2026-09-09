@@ -47,7 +47,7 @@ export function mensagemWhatsAppVisitaPonto(
   if (resumo.nichos.length > 0) {
     linhas.push("*Coletas desta visita:*");
     for (const n of resumo.nichos) {
-      linhas.push(`• ${n.label}: ${formatCurrency(valorNichoComprovante(n))}`);
+      linhas.push(`• ${n.label}: ${formatCurrency(valorNichoComprovante(n, { previa: opts.previa }))}`);
     }
     linhas.push("");
   }
@@ -134,7 +134,7 @@ export function mensagemCobrancaVisitaPonto(
   if (resumo.nichos.length > 0) {
     linhas.push("*Resumo das coletas:*");
     for (const n of resumo.nichos) {
-      linhas.push(`• ${n.label}: ${formatCurrency(valorNichoComprovante(n))}`);
+      linhas.push(`• ${n.label}: ${formatCurrency(valorNichoComprovante(n, { previa: true }))}`);
     }
     linhas.push("");
   }

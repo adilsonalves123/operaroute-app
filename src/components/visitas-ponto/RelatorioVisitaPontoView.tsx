@@ -156,7 +156,7 @@ export const RelatorioVisitaPontoView = forwardRef<HTMLDivElement, Props>(
               >
                 <span style={{ color: colors.slate300 }}>{n.label}</span>
                 <span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>
-                  {formatCurrency(valorNichoComprovante(n))}
+                  {formatCurrency(valorNichoComprovante(n, { previa }))}
                 </span>
               </div>
             ))}

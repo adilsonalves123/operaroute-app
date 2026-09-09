@@ -75,7 +75,7 @@ export function snapshotFromVisitaPonto(
     previa: opts.previa === true,
     nichos: resumo.nichos.map((n) => ({
       label: n.label,
-      valor: valorNichoComprovante(n),
+      valor: valorNichoComprovante(n, { previa: opts.previa === true }),
     })),
     maquinas: maquinas.length > 0 ? maquinas : undefined,
     valorOperacional,
