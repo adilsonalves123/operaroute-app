@@ -206,33 +206,7 @@ export function VisitaPositivaResumo({
       : forma === "dinheiro" && pagoTotal > 0.009
         ? pagoTotal
         : 0;
-  const mistoSemSplit =
-    pixRecebido <= 0.009 &&
-    dinheiroRecebido <= 0.009 &&
-    forma === "misto" &&
-    pagoTotal > 0.009;
-  const temFormaPagamento =
-    pixRecebido > 0.009 || dinheiroRecebido > 0.009 || mistoSemSplit;
-  const mostrarFormaNoCard = pagoTotal > 0.009;
-  const passos = mostrarFormaNoCard
-    ? [
-        ...passosBase,
-        {
-          id: "pix",
-          label: "Pix",
-          valor: pixRecebido,
-          tom: "positivo" as const,
-          operador: undefined,
-        },
-        {
-          id: "dinheiro",
-          label: "Dinheiro",
-          valor: dinheiroRecebido,
-          tom: "positivo" as const,
-          operador: undefined,
-        },
-      ]
-    : passosBase;
+  const passos = passosBase;
 
   return (
     <div className={cn("space-y-4", className)}>
@@ -286,11 +260,6 @@ export function VisitaPositivaResumo({
             {!cobertoPorHaver && calculo.valorPagoReais > 0.009 && (
               <p className="mt-1.5 text-sm text-slate-400">
                 Recebido {formatCurrency(calculo.valorPagoReais)}
-                {pixRecebido > 0.009 ? ` · Pix ${formatCurrency(pixRecebido)}` : ""}
-                {dinheiroRecebido > 0.009
-                  ? ` · Dinheiro ${formatCurrency(dinheiroRecebido)}`
-                  : ""}
-                {mistoSemSplit ? " · Pix e dinheiro" : ""}
                 {calculo.restanteReais > 0.009
                   ? ` · falta ${formatCurrency(calculo.restanteReais)}`
                   : " · quitado"}
