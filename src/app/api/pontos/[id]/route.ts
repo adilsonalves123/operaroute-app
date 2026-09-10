@@ -8,6 +8,7 @@ import {
   registrarMovimentoPonto,
 } from "@/lib/pontos-movimentos";
 import type { PontoStatus } from "@/lib/types/database";
+import { formatCidadeCampo } from "@/lib/endereco/brasil";
 
 export async function PATCH(
   request: Request,
@@ -84,7 +85,13 @@ export async function PATCH(
       updates[key] = String(body[key]).trim();
     } else if (["responsavel", "whatsapp", "cidade", "bairro", "endereco", "observacoes"].includes(key)) {
       const v = body[key];
-      updates[key] = typeof v === "string" ? v.trim() || null : v ?? null;
+      if (key === "cidade") {
+        const formatted =
+          typeof v === "string" ? formatCidadeCampo(v) : null;
+        updates[key] = formatted ?? (typeof v === "string" ? v.trim() || null : v ?? null);
+      } else {
+        updates[key] = typeof v === "string" ? v.trim() || null : v ?? null;
+      }
     } else if (key === "foto_url") {
       const v = body[key];
       updates[key] = typeof v === "string" && v.trim() ? v.trim() : null;

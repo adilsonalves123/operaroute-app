@@ -5,6 +5,7 @@ import { canAddPonto, canUseEquipamentoTipo, resolveNichosAtivos } from "@/lib/a
 import type { EquipamentoTipo } from "@/lib/equipamentos";
 import { parseLeituraContador, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
 import { registrarMovimentoPonto } from "@/lib/pontos-movimentos";
+import { formatCidadeCampo } from "@/lib/endereco/brasil";
 
 async function resolveEmpresaId(): Promise<string | null> {
   const supabase = await createClient();
@@ -191,7 +192,7 @@ export async function POST(request: Request) {
       nome: body.nome.trim(),
       responsavel: body.responsavel || null,
       whatsapp: body.whatsapp || null,
-      cidade: body.cidade || null,
+      cidade: formatCidadeCampo(body.cidade) ?? (body.cidade || null),
       bairro: body.bairro || null,
       endereco: body.endereco || null,
       latitude: (() => {

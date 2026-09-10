@@ -53,6 +53,7 @@ import { RotaDoDiaExecute } from "./RotaDoDiaExecute";
 import type { Ponto } from "@/lib/types/database";
 import { cn, formatDate } from "@/lib/utils";
 import { buscarRotaOsrm } from "@/lib/rotas/osrm";
+import { chaveCidadeCampo, formatCidadeCampo } from "@/lib/endereco/brasil";
 
 const RotaMapaAvancado = dynamic(
   () => import("./RotaMapaAvancado").then((m) => m.RotaMapaAvancado),
@@ -79,6 +80,14 @@ export type PontoRotaEnriquecido = Ponto & {
 
 type ModoGestor = "board" | "wizard" | "detalhe";
 type WizardStep = 1 | 2;
+
+function pontoNaCidade(
+  ponto: { cidade?: string | null },
+  cidade: string | null | undefined
+) {
+  if (!cidade) return false;
+  return chaveCidadeCampo(ponto.cidade) === chaveCidadeCampo(cidade);
+}
 
 function toInput(p: PontoRotaEnriquecido): PontoRotaInput {
   const chamados = p.chamadosAbertos ?? [];
@@ -179,16 +188,35 @@ export function RotaInteligenteClient({
   }, [rotasSalvasInicial]);
 
   const cidades = useMemo(() => {
-    const set = new Set(pontos.map((p) => p.cidade).filter(Boolean) as string[]);
-    return Array.from(set).sort();
+    const map = new Map<string, string>();
+    for (const p of pontos) {
+      const display = formatCidadeCampo(p.cidade);
+      if (!display) continue;
+      const key = chaveCidadeCampo(display);
+      const prev = map.get(key);
+      if (
+        !prev ||
+        (display.length >= prev.length &&
+          /[áàâãéêíóôõúçÁÀÂÃÉÊÍÓÔÕÚÇ]/u.test(display))
+      ) {
+        map.set(key, display);
+      }
+    }
+    return Array.from(map.values()).sort((a, b) =>
+      a.localeCompare(b, "pt-BR", { sensitivity: "base" })
+    );
   }, [pontos]);
 
   useEffect(() => {
     if (!cidades.length) return;
-    if (!filtroCidade || !cidades.includes(filtroCidade)) {
+    const chaveAtual = chaveCidadeCampo(filtroCidade);
+    const match = cidades.find((c) => chaveCidadeCampo(c) === chaveAtual);
+    if (!filtroCidade || !match) {
       const primeira = cidades[0];
       setFiltroCidade(primeira);
-      setSelecionados(new Set(pontos.filter((p) => p.cidade === primeira).map((p) => p.id)));
+      setSelecionados(new Set(pontos.filter((p) => pontoNaCidade(p, primeira)).map((p) => p.id)));
+    } else if (match !== filtroCidade) {
+      setFiltroCidade(match);
     }
   }, [cidades, filtroCidade, pontos]);
 
@@ -201,7 +229,7 @@ export function RotaInteligenteClient({
   }, [pontos]);
 
   const pontosFiltrados = useMemo(() => {
-    const base = filtroCidade ? pontos.filter((p) => p.cidade === filtroCidade) : [];
+    const base = filtroCidade ? pontos.filter((p) => pontoNaCidade(p, filtroCidade)) : [];
     const q = buscaPontos.trim().toLowerCase();
     if (!q) return base;
     return base.filter(
@@ -213,7 +241,7 @@ export function RotaInteligenteClient({
 
   function mudarCidade(cidade: string) {
     setFiltroCidade(cidade);
-    setSelecionados(new Set(pontos.filter((p) => p.cidade === cidade).map((p) => p.id)));
+    setSelecionados(new Set(pontos.filter((p) => pontoNaCidade(p, cidade)).map((p) => p.id)));
     setParadas(null);
     setRotaAtiva(null);
     setBuscaPontos("");
@@ -266,7 +294,7 @@ export function RotaInteligenteClient({
 
   function continuarMontagem() {
     const daCidade = pontos.filter(
-      (p) => p.cidade === filtroCidade && selecionados.has(p.id)
+      (p) => pontoNaCidade(p, filtroCidade) && selecionados.has(p.id)
     );
     if (daCidade.length === 0) return;
     const resultado = otimizarRota(daCidade.map(toInput), inicio);
@@ -290,7 +318,7 @@ export function RotaInteligenteClient({
     setBuscaPontos("");
     setShowAjusteOrdem(false);
     if (filtroCidade) {
-      setSelecionados(new Set(pontos.filter((p) => p.cidade === filtroCidade).map((p) => p.id)));
+      setSelecionados(new Set(pontos.filter((p) => pontoNaCidade(p, filtroCidade)).map((p) => p.id)));
     }
   }
 
@@ -306,7 +334,7 @@ export function RotaInteligenteClient({
   }
 
   function carregarRotaSalva(rota: RotaSalva) {
-    if (rota.cidade) setFiltroCidade(rota.cidade);
+    if (rota.cidade) setFiltroCidade(formatCidadeCampo(rota.cidade) ?? rota.cidade);
     const inputs = pontos.map(toInput);
     const { paradas: carregadas, distanciaTotalKm: dist } = paradasFromOrdemSalva(
       inputs,
@@ -453,7 +481,7 @@ export function RotaInteligenteClient({
         body: JSON.stringify({
           nome: nomeNova.trim(),
           operador_id: operadorNova,
-          cidade: filtroCidade,
+          cidade: formatCidadeCampo(filtroCidade) ?? filtroCidade,
           paradas: paradas.map((p) => ({ ponto_id: p.id, ordem: p.ordem })),
         }),
       });
@@ -855,14 +883,14 @@ export function RotaInteligenteClient({
                       onClick={continuarMontagem}
                       disabled={
                         !filtroCidade ||
-                        pontos.filter((p) => p.cidade === filtroCidade && selecionados.has(p.id))
+                        pontos.filter((p) => pontoNaCidade(p, filtroCidade) && selecionados.has(p.id))
                           .length === 0
                       }
                       className="ml-auto inline-flex items-center gap-2 rounded-xl bg-primary-neon px-4 py-2.5 text-sm font-semibold text-slate-900 hover:bg-cyan-300 disabled:opacity-40"
                     >
                       Continuar (
                       {
-                        pontos.filter((p) => p.cidade === filtroCidade && selecionados.has(p.id))
+                        pontos.filter((p) => pontoNaCidade(p, filtroCidade) && selecionados.has(p.id))
                           .length
                       }
                       )

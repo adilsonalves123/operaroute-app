@@ -80,6 +80,24 @@ export function parseCidadeUf(cidadeCampo: string): {
   return { cidade: raw, uf: null };
 }
 
+/** "Reginópolis - sp" → "Reginópolis - SP" (UF sempre maiúscula). */
+export function formatCidadeCampo(
+  cidadeCampo: string | null | undefined
+): string | null {
+  const raw = (cidadeCampo ?? "").trim().replace(/\s+/g, " ");
+  if (!raw) return null;
+  const { cidade, uf } = parseCidadeUf(raw);
+  if (!cidade) return null;
+  return uf ? `${cidade} - ${uf}` : cidade;
+}
+
+/** Chave estável: ignora acento e maiúsculas ("Reginópolis - sp" ≡ "Reginopolis - SP"). */
+export function chaveCidadeCampo(cidadeCampo: string | null | undefined): string {
+  const formatted = formatCidadeCampo(cidadeCampo);
+  if (!formatted) return "";
+  return semAcento(formatted).toLowerCase();
+}
+
 export function parseEnderecoSalvo(
   endereco: string | null,
   bairro: string | null,
