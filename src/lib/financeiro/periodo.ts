@@ -1,4 +1,5 @@
 import { calendarDateInTZ, dataOperacaoBR, TZ_OPERACAO } from "@/lib/financeiro/data-operacao";
+export { diaOperacaoFinanceiro } from "@/lib/financeiro/data-operacao";
 
 export type PeriodoFiltro = "hoje" | "7d" | "30d" | "periodo";
 

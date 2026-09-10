@@ -15,6 +15,7 @@ import {
 } from "@/lib/financeiro/breakdown";
 import {
   dataNoPeriodo,
+  diaOperacaoFinanceiro,
   labelPeriodoFiltro,
   periodoLabels,
   rangePeriodoPadrao,
@@ -40,6 +41,7 @@ const sans = DM_Sans({
 
 type FinanceiroRow = Financeiro & {
   visita_id?: string | null;
+  created_at?: string | null;
   visitas?: VisitaFinanceiro;
 };
 
@@ -84,7 +86,9 @@ export function FinanceiroDashboard({
     caixa.saldo > 0.009 ? Math.round((caixa.dinheiro / caixa.saldo) * 100) : 0;
 
   const movimento = useMemo(() => {
-    const rows = lancamentos.filter((l) => dataNoPeriodo(l.data, periodo, range));
+    const rows = lancamentos.filter((l) =>
+      dataNoPeriodo(diaOperacaoFinanceiro(l), periodo, range)
+    );
     const visitasPeriodo = visitas.filter((v) =>
       dataNoPeriodo(v.created_at, periodo, range)
     );
@@ -120,7 +124,9 @@ export function FinanceiroDashboard({
   }, [lancamentos, visitas, periodo, de, ate]);
 
   const hoje = useMemo(() => {
-    const rows = lancamentos.filter((l) => dataNoPeriodo(l.data, "hoje"));
+    const rows = lancamentos.filter((l) =>
+      dataNoPeriodo(diaOperacaoFinanceiro(l), "hoje")
+    );
     const visitasHoje = visitas.filter((v) => dataNoPeriodo(v.created_at, "hoje"));
     const descontos = somarDescontos(visitasHoje);
     let entradas = 0;
@@ -484,7 +490,7 @@ export function FinanceiroDashboard({
                       {descricaoValeVisivel(l.descricao) || l.descricao || l.categoria}
                     </p>
                     <p className="mt-0.5 text-[12px] text-at-muted">
-                      {formatDate(l.data)} · {l.categoria}
+                      {formatDate(diaOperacaoFinanceiro(l))} · {l.categoria}
                       {temPixDinheiro && (
                         <>
                           {" · "}

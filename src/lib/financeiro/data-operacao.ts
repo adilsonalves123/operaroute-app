@@ -44,3 +44,26 @@ function parseDateInput(raw: string): Date {
   }
   return new Date(s.includes("T") ? s : `${s}T12:00:00`);
 }
+
+function addDaysISO(isoDate: string, days: number): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const dt = new Date(y, m - 1, d + days, 12, 0, 0, 0);
+  return dataOperacaoBR(dt);
+}
+
+/**
+ * Dia de caixa do lançamento no Brasil.
+ * Corrige o bug em que CURRENT_DATE (UTC) gravou o dia seguinte após 21h BRT.
+ */
+export function diaOperacaoFinanceiro(l: {
+  data?: string | null;
+  created_at?: string | null;
+}): string {
+  const criado = l.created_at ? calendarDateInTZ(l.created_at) : null;
+  const marcado = l.data ? calendarDateInTZ(l.data) : null;
+  if (criado && marcado && marcado === addDaysISO(criado, 1)) {
+    return criado;
+  }
+  return marcado ?? criado ?? "";
+}
+
