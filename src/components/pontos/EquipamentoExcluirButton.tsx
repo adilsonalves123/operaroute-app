@@ -86,7 +86,7 @@ export function EquipamentoExcluirButton({ equipamento }: { equipamento: Equipam
           onClick={() => !loading && setOpen(false)}
         >
           <div
-            className="w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-xl"
+            className="equipamento-modal w-full max-w-md rounded-xl border border-slate-700 bg-slate-900 p-5 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start justify-between gap-3">

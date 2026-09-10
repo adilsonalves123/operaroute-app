@@ -512,14 +512,17 @@ html[data-app-theme="light"] .equipamento-modal .text-slate-50,
 html[data-app-theme="light"] .equipamento-modal .text-slate-100,
 html[data-app-theme="light"] .equipamento-modal .text-slate-200,
 html[data-app-theme="light"] .equipamento-modal .text-slate-300,
-html[data-app-theme="light"] .equipamento-modal .text-at-primary {
+html[data-app-theme="light"] .equipamento-modal .text-at-primary,
+html[data-app-theme="light"] .equipamento-modal [class*="text-at-primary"] {
   color: #141210 !important;
 }
 html[data-app-theme="light"] .equipamento-modal .text-slate-400,
 html[data-app-theme="light"] .equipamento-modal .text-slate-500,
 html[data-app-theme="light"] .equipamento-modal .text-slate-600,
 html[data-app-theme="light"] .equipamento-modal .text-at-muted,
-html[data-app-theme="light"] .equipamento-modal .text-at-soft {
+html[data-app-theme="light"] .equipamento-modal .text-at-soft,
+html[data-app-theme="light"] .equipamento-modal [class*="text-at-muted"],
+html[data-app-theme="light"] .equipamento-modal [class*="text-at-soft"] {
   color: #3d3833 !important;
 }
 html[data-app-theme="light"] .equipamento-modal [class*="text-cyan-"] {
