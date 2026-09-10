@@ -104,7 +104,7 @@ CREATE TABLE financeiro (
   ponto_id UUID REFERENCES pontos(id) ON DELETE SET NULL,
   coleta_id UUID REFERENCES coletas(id) ON DELETE SET NULL,
   operador_id UUID,
-  data DATE DEFAULT CURRENT_DATE,
+  data DATE DEFAULT ((timezone('America/Sao_Paulo', now()))::date),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

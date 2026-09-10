@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { formatPagamentoDetalhe } from "@/lib/financeiro/forma-pagamento";
 import {
@@ -270,6 +271,7 @@ export async function POST(request: Request) {
           tipo: "entrada",
           categoria: "Coleta ursinho",
           valor: valorPagoMaquina,
+      data: dataOperacaoBR(),
           descricao: pagamentoDetalhe
             ? `Coleta ursinho - ${ponto.nome} - ${maquina.nome} — ${pagamentoDetalhe}`
             : `Coleta ursinho - ${ponto.nome} - ${maquina.nome}`,

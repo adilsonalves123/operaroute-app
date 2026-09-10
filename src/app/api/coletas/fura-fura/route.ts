@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import {
   calcularColetaFuraFura,
@@ -361,6 +362,7 @@ async function postColetaFuraFura(request: Request) {
       tipo: "entrada",
       categoria: "Coleta fura-fura",
       valor: recebimentoRateado.aplicadoColetaAtual,
+      data: dataOperacaoBR(),
       descricao: pagamentoDetalhe
         ? `Coleta ${ponto.nome} — ${pagamentoDetalhe}`
         : `Coleta ${ponto.nome}`,

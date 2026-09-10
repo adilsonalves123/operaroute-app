@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { formatPagamentoDetalhe } from "@/lib/financeiro/forma-pagamento";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import { formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
 import { ehCategoriaVale, montarDescricaoVale } from "@/lib/equipe/vale-staff";
 import { usePermissoes } from "@/components/layout/PermissoesProvider";
@@ -31,7 +32,7 @@ export default function NovoFinanceiroPage() {
     valor: "",
     valor_pix: "",
     valor_dinheiro: "",
-    data: new Date().toISOString().split("T")[0],
+    data: dataOperacaoBR(),
     descricao: "",
     forma_pagamento: "pix",
     ajudante_id: "",

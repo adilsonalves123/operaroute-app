@@ -17,6 +17,7 @@ import {
   fetchSaldoCaixa,
   valorSaidaPermitidaNoCaixa,
 } from "@/lib/financeiro/saldo-caixa";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 
 import type { CorrecaoHumanaPayload } from "@/lib/nichos/cassino/correcao-humana";
 import type { ExcecaoContadorTipo } from "@/lib/nichos/cassino/excecoes-contador";
@@ -538,6 +539,7 @@ export async function POST(request: Request) {
       tipo: "entrada",
       categoria: "Coleta cassino",
       valor: pagoRecebido,
+      data: dataOperacaoBR(),
       descricao: `Coleta - ${ponto.nome}${partes.length ? ` (${partes.join(" · ")})` : ""}`,
       forma_pagamento: deriveFormaPagamento(entradaPix, entradaDinheiro),
       ponto_id: body.ponto_id,
@@ -571,6 +573,7 @@ export async function POST(request: Request) {
         tipo: "saida",
         categoria: "Adiantamento ponto",
         valor: saidaCaixa,
+      data: dataOperacaoBR(),
         descricao,
         forma_pagamento: deriveFormaPagamento(saidaPix, saidaDinheiro),
         ponto_id: body.ponto_id,
@@ -593,6 +596,7 @@ export async function POST(request: Request) {
         tipo: "saida",
         categoria: "Adiantamento ponto",
         valor: saida,
+      data: dataOperacaoBR(),
         descricao,
         forma_pagamento: "dinheiro",
         ponto_id: body.ponto_id,
@@ -635,6 +639,7 @@ export async function POST(request: Request) {
         tipo: "saida",
         categoria: "Pagamento haver",
         valor: saidaCaixa,
+      data: dataOperacaoBR(),
         descricao,
         forma_pagamento: deriveFormaPagamento(saidaPix, saidaDinheiro),
         ponto_id: body.ponto_id,

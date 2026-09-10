@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { formatPagamentoDetalhe, deriveFormaPagamento } from "@/lib/financeiro/forma-pagamento";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import { aplicarPagamentoFifoColetas, saldoPendenteColeta } from "@/lib/nichos/fura-fura";
 import { ratearValorProporcional } from "@/lib/nichos/ursinho";
 import { splitExcedentePagamento } from "@/lib/nichos/fura-fura/haver-ponto";
@@ -327,6 +328,7 @@ export async function aplicarPagamentoDividaAnterior(
         tipo: "entrada",
         categoria: "Recebimento visita",
         valor: aplicar,
+        data: dataOperacaoBR(),
         descricao: `Quitação cassino — ${opts.pontoNome}`,
         forma_pagamento: deriveFormaPagamento(pix, dinheiro),
         ponto_id: opts.pontoId,
@@ -387,6 +389,7 @@ export async function aplicarPagamentoDividaAnterior(
       tipo: "entrada",
       categoria: "Recebimento visita",
       valor: aplicar,
+      data: dataOperacaoBR(),
       descricao: `Quitação — ${opts.pontoNome} — ${pend.titulo}`,
       forma_pagamento: deriveFormaPagamento(pix, dinheiro),
       ponto_id: opts.pontoId,
@@ -624,6 +627,7 @@ async function aplicarPagamentoItensVisita(
       tipo: "entrada",
       categoria: "Visita ao ponto",
       valor: aplicar,
+      data: dataOperacaoBR(),
       descricao: detalhe
         ? `Visita — ${opts.pontoNome} — ${detalhe}`
         : `Visita — ${opts.pontoNome}`,

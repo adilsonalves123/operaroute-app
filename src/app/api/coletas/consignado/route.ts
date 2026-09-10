@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { formatPagamentoDetalhe } from "@/lib/financeiro/forma-pagamento";
 import {
@@ -309,6 +310,7 @@ export async function POST(request: Request) {
           tipo: "entrada",
           categoria: "Coleta Consignado",
           valor: valorPago,
+      data: dataOperacaoBR(),
           descricao: pagamentoDetalhe
             ? `Consignado - ${ponto.nome} - ${exp.nome} — ${pagamentoDetalhe}`
             : `Consignado - ${ponto.nome} - ${exp.nome}`,

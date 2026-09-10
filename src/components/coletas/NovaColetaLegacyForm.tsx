@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -137,6 +138,7 @@ export function NovaColetaLegacyForm() {
       tipo: "entrada",
       categoria: "Coleta",
       valor: coletaData.valor_liquido,
+      data: dataOperacaoBR(),
       descricao: `Coleta - ${pontos.find((p) => p.id === form.ponto_id)?.nome}`,
       forma_pagamento: form.forma_pagamento,
       ponto_id: form.ponto_id,

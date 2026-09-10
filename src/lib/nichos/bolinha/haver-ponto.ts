@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import { deriveFormaPagamento, formatPagamentoDetalhe } from "@/lib/financeiro/forma-pagamento";
 
 const TITULO_HAVER = "Haver do ponto (Bolinha)";

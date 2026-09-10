@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import { formatPagamentoDetalhe } from "@/lib/financeiro/forma-pagamento";
 import { splitExcedentePagamento } from "./haver-ponto";
 import {
@@ -81,6 +82,7 @@ export async function aplicarPagamentoFifoColetas(
       tipo: "entrada",
       categoria,
       valor: d.valor,
+      data: dataOperacaoBR(),
       descricao: pagamentoDetalhe
         ? `Pagamento coleta — ${opts.pontoNome} — ${pagamentoDetalhe}`
         : `Pagamento coleta — ${opts.pontoNome}`,

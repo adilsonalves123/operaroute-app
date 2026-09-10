@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import {
   deriveFormaPagamento,
   formatPagamentoDetalhe,
@@ -115,6 +116,7 @@ export async function corrigirPagamentoColeta(
       tipo: "entrada",
       categoria,
       valor: valorPago,
+      data: dataOperacaoBR(),
       descricao: detalhe
         ? `Coleta ${pontoNome} — ${detalhe} (corrigido)`
         : `Coleta ${pontoNome} (corrigido)`,
@@ -207,7 +209,7 @@ export async function corrigirPagamentoVisitaCassino(
   const { data: visita, error } = await supabase
     .from("visitas")
     .select(
-      "id, ponto_id, valor_pago, restante, valor_pix, valor_dinheiro, valor_operacao_efetivo, valor_operacao, debito_abatido, saldo_negativo"
+      "id, ponto_id, valor_pago, restante, valor_pix, valor_dinheiro, valor_operacao_efetivo, valor_operacao, desconto, desconto_recebimento, debito_abatido, saldo_negativo"
     )
     .eq("id", opts.visitaId)
     .eq("empresa_id", opts.empresaId)
@@ -217,15 +219,85 @@ export async function corrigirPagamentoVisitaCassino(
     return { ok: false, error: "Visita não encontrada." };
   }
 
-  const totalDevido = round2(
-    Math.max(0, Number(visita.valor_pago ?? 0) + Number(visita.restante ?? 0))
+  const { data: itemVisita } = await supabase
+    .from("visita_ponto_itens")
+    .select("visita_ponto_id")
+    .eq("cassino_visita_id", opts.visitaId)
+    .eq("empresa_id", opts.empresaId)
+    .limit(1)
+    .maybeSingle();
+
+  const visitaPontoId = itemVisita?.visita_ponto_id ?? null;
+  let descontoCheckout = 0;
+  let subtotalVisitaPonto = 0;
+  if (visitaPontoId) {
+    const { data: vp } = await supabase
+      .from("visitas_ponto")
+      .select("desconto, subtotal_cobravel, valor_pago")
+      .eq("id", visitaPontoId)
+      .eq("empresa_id", opts.empresaId)
+      .maybeSingle();
+    descontoCheckout = round2(Math.max(0, Number(vp?.desconto ?? 0)));
+    subtotalVisitaPonto = round2(Math.max(0, Number(vp?.subtotal_cobravel ?? 0)));
+  }
+
+  const operacao = round2(Math.max(0, Number(visita.valor_operacao ?? 0)));
+  const efetivo = round2(
+    Math.max(0, Number(visita.valor_operacao_efetivo ?? visita.valor_operacao ?? 0))
   );
+  const pagoAtual = round2(Math.max(0, Number(visita.valor_pago ?? 0)));
+  const restanteAtual = round2(Math.max(0, Number(visita.restante ?? 0)));
+  const descontoRecebimento = round2(
+    Math.max(0, Number(visita.desconto_recebimento ?? 0))
+  );
+  const descontoVisita = round2(Math.max(0, Number(visita.desconto ?? 0)));
+  // Desconto na operação / checkout. Desconto no lucro já está no valor da operação.
+  const descontoJaDado = round2(Math.max(descontoRecebimento, descontoCheckout));
+  const descontoJaNoEfetivo = round2(Math.max(0, operacao - efetivo));
+  const descontoAindaNaConta = round2(
+    Math.max(0, descontoJaDado - descontoJaNoEfetivo)
+  );
+
+  // Encerrar da visita ao ponto zera o cobrável marcando pago = total, sem o
+  // valor que o cliente realmente pagou. A correção substitui esse pago.
+  const pagoInflado =
+    efetivo > 0.009 && pagoAtual + 0.02 >= efetivo && restanteAtual <= 0.009;
+  let devidoBruto = pagoInflado
+    ? efetivo
+    : round2(Math.max(pagoAtual + restanteAtual, efetivo));
+
+  // O saldo em aberto é o desconto já concedido — não é dívida do cliente.
+  const descontoDoSaldo =
+    descontoAindaNaConta > 0.009
+      ? descontoAindaNaConta
+      : descontoVisita > 0.009 && Math.abs(restanteAtual - descontoVisita) <= 0.05
+        ? descontoVisita
+        : 0;
+  const restanteEhDesconto =
+    descontoDoSaldo > 0.009 && Math.abs(restanteAtual - descontoDoSaldo) <= 0.05;
+  if (descontoDoSaldo > 0.009 && (restanteEhDesconto || pagoInflado)) {
+    devidoBruto = round2(Math.max(0, devidoBruto - descontoDoSaldo));
+  }
+
+  const totalDevido = devidoBruto;
   const valorPago = round2(Math.min(pagoInformado, totalDevido > 0.009 ? totalDevido : pagoInformado));
   const fator = pagoInformado > 0.009 ? valorPago / pagoInformado : 0;
   const valorPix = round2(pix * (totalDevido > 0.009 ? fator : 1));
   const valorDinheiro = round2(dinheiro * (totalDevido > 0.009 ? fator : 1));
   const forma = deriveFormaPagamento(valorPix, valorDinheiro);
-  const restante = round2(Math.max(0, totalDevido - valorPago));
+  let restante = round2(Math.max(0, totalDevido - valorPago));
+  const liquidoJaComDesconto = round2(
+    Math.max(0, efetivo - Math.max(descontoAindaNaConta, descontoDoSaldo))
+  );
+  const descontoComparar = round2(Math.max(descontoJaDado, descontoDoSaldo));
+  // Pagou o líquido: o que sobra é o desconto já dado, não uma cobrança nova.
+  if (
+    descontoComparar > 0.009 &&
+    valorPago + 0.02 >= liquidoJaComDesconto &&
+    Math.abs(restante - descontoComparar) <= 0.05
+  ) {
+    restante = 0;
+  }
   const pontoNome = opts.pontoNome?.trim() || "Ponto";
   const detalhe = formatPagamentoDetalhe(valorPix, valorDinheiro);
 
@@ -258,6 +330,7 @@ export async function corrigirPagamentoVisitaCassino(
       tipo: "entrada",
       categoria: "Coleta cassino",
       valor: valorPago,
+      data: dataOperacaoBR(),
       descricao: detalhe
         ? `Visita ${pontoNome} — ${detalhe} (corrigido)`
         : `Visita ${pontoNome} (corrigido)`,
@@ -325,6 +398,34 @@ export async function corrigirPagamentoVisitaCassino(
           resolvido_em: agora,
         })
         .eq("id", p.id);
+    }
+  }
+
+  if (visitaPontoId) {
+    await supabase
+      .from("visitas_ponto")
+      .update({
+        valor_pago: valorPago,
+        valor_pix: valorPix,
+        valor_dinheiro: valorDinheiro,
+        restante,
+        forma_pagamento: forma,
+      })
+      .eq("id", visitaPontoId)
+      .eq("empresa_id", opts.empresaId);
+
+    if (restante <= 0.009) {
+      await supabase
+        .from("pendencias")
+        .update({
+          valor: 0,
+          status: "resolvida",
+          resolvido_em: agora,
+        })
+        .eq("empresa_id", opts.empresaId)
+        .eq("visita_ponto_id", visitaPontoId)
+        .eq("status", "aberta")
+        .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"]);
     }
   }
 

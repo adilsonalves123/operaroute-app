@@ -57,7 +57,16 @@ export function formatMoneyInputOnBlur(raw: string): string {
 }
 
 export function formatDate(date: string | Date): string {
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date.trim())) {
+    const [y, m, d] = date.trim().split("-").map(Number);
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date(y, m - 1, d, 12, 0, 0, 0));
+  }
   return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
@@ -66,6 +75,7 @@ export function formatDate(date: string | Date): string {
 
 export function formatDateTime(date: string | Date): string {
   return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "America/Sao_Paulo",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",

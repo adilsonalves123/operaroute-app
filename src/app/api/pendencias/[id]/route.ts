@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
 import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
@@ -275,6 +276,7 @@ export async function PATCH(
         tipo: pendencia.tipo === "haver" ? "saida" : "entrada",
         categoria: pendencia.tipo === "haver" ? "Uso de haver" : "Baixa de pendência",
         valor: valorLancamento,
+      data: dataOperacaoBR(),
         descricao: pagamentoDetalhe
           ? `${baixaFinanceira.descricao} (${pagamentoDetalhe})${descricaoExtra}`
           : `${baixaFinanceira.descricao}${descricaoExtra}`,
