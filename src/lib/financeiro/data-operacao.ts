@@ -9,14 +9,26 @@ export function dataOperacaoBR(agora: Date = new Date()): string {
   return calendarDateInTZ(agora, TZ_OPERACAO);
 }
 
+/**
+ * Extrai YYYY-MM-DD de um campo DATE do Postgres sem aplicar fuso.
+ * Timestamps reais (com hora ≠ 00:00Z) usam o fuso de operação.
+ */
 export function calendarDateInTZ(
   input: string | Date,
   timeZone: string = TZ_OPERACAO
 ): string {
-  const d =
-    typeof input === "string"
-      ? parseDateInput(input)
-      : input;
+  if (typeof input === "string") {
+    const s = input.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    // DATE serializado como meia-noite UTC — o dia do calendário é o prefixo
+    const midnite = s.match(
+      /^(\d{4}-\d{2}-\d{2})T00:00:00(?:\.\d+)?(?:Z|[+-]00:00)?$/
+    );
+    if (midnite) return midnite[1];
+  }
+
+  const d = typeof input === "string" ? new Date(input) : input;
+  if (Number.isNaN(d.getTime())) return "";
 
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
@@ -28,42 +40,26 @@ export function calendarDateInTZ(
   const y = parts.find((p) => p.type === "year")?.value;
   const m = parts.find((p) => p.type === "month")?.value;
   const day = parts.find((p) => p.type === "day")?.value;
-  if (!y || !m || !day) {
-    const iso = d.toISOString().slice(0, 10);
-    return iso;
-  }
+  if (!y || !m || !day) return d.toISOString().slice(0, 10);
   return `${y}-${m}-${day}`;
-}
-
-/** Interpreta DATE puro sem deslocar o dia; timestamps usam o instante real. */
-function parseDateInput(raw: string): Date {
-  const s = raw.trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-    const [y, m, d] = s.split("-").map(Number);
-    return new Date(y, m - 1, d, 12, 0, 0, 0);
-  }
-  return new Date(s.includes("T") ? s : `${s}T12:00:00`);
-}
-
-function addDaysISO(isoDate: string, days: number): string {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  const dt = new Date(y, m - 1, d + days, 12, 0, 0, 0);
-  return dataOperacaoBR(dt);
 }
 
 /**
  * Dia de caixa do lançamento no Brasil.
- * Corrige o bug em que CURRENT_DATE (UTC) gravou o dia seguinte após 21h BRT.
+ * `created_at` é a fonte da verdade (quando o dinheiro entrou).
+ * Só respeita `data` quando for backdate explícito (mais de 1 dia antes).
  */
 export function diaOperacaoFinanceiro(l: {
   data?: string | null;
   created_at?: string | null;
 }): string {
-  const criado = l.created_at ? calendarDateInTZ(l.created_at) : null;
-  const marcado = l.data ? calendarDateInTZ(l.data) : null;
-  if (criado && marcado && marcado === addDaysISO(criado, 1)) {
-    return criado;
-  }
-  return marcado ?? criado ?? "";
-}
+  const criado = l.created_at ? calendarDateInTZ(l.created_at) : "";
+  const marcado = l.data ? calendarDateInTZ(l.data) : "";
 
+  if (criado && marcado && marcado < criado) {
+    // Lançamento manual datado no passado
+    return marcado;
+  }
+  if (criado) return criado;
+  return marcado;
+}
