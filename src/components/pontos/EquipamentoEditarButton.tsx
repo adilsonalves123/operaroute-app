@@ -197,7 +197,7 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
             }}
           >
             <div
-              className="flex h-[100dvh] w-full max-w-xl flex-col overflow-hidden bg-[#070b14] shadow-2xl sm:h-auto sm:max-h-[min(90dvh,720px)] sm:rounded-2xl sm:border sm:border-slate-700 [&_input]:bg-slate-900 [&_textarea]:bg-slate-900"
+              className="equipamento-modal flex h-[100dvh] w-full max-w-xl flex-col overflow-hidden bg-[#070b14] shadow-2xl sm:h-auto sm:max-h-[min(90dvh,720px)] sm:rounded-2xl sm:border sm:border-slate-700 [&_input]:bg-slate-900 [&_textarea]:bg-slate-900"
               role="dialog"
               aria-modal="true"
               aria-labelledby={`editar-equipamento-${equipamento.id}`}
@@ -211,14 +211,14 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
                   >
                     Editar máquina · {getEquipamentoTipoLabel(equipamento.tipo)}
                   </h3>
-                  <p className="mt-1 hidden text-sm text-at-muted sm:block">
+                  <p className="mt-1 hidden text-sm text-slate-400 sm:block">
                     {subtituloEdicao(equipamento.tipo)}
                   </p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setOpen(false)}
-                  className="rounded-lg p-2 text-at-muted hover:bg-slate-800 hover:text-white"
+                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
                   aria-label="Fechar"
                 >
                   <X className="h-5 w-5" />
@@ -339,7 +339,7 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
                   type="button"
                   onClick={() => setOpen(false)}
                   disabled={loading}
-                  className="flex-1 rounded-lg px-4 py-3 text-sm text-at-primary/85 hover:text-white disabled:opacity-50 sm:flex-none sm:py-2"
+                  className="flex-1 rounded-lg px-4 py-3 text-sm text-slate-300 hover:text-white disabled:opacity-50 sm:flex-none sm:py-2"
                 >
                   Cancelar
                 </button>
@@ -364,7 +364,7 @@ export function EquipamentoEditarButton({ equipamento }: { equipamento: Equipame
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-md p-2 text-at-muted transition hover:bg-at-card-soft hover:text-at-link"
+        className="rounded-md p-2 text-slate-500 transition hover:bg-white/[0.04] hover:text-[#c4a574]"
         title="Editar equipamento"
       >
         <Edit3 className="h-4 w-4" />

@@ -491,6 +491,75 @@ html[data-app-theme="light"] .chamado-novo-modal .chamado-busca-titulo {
   color: #141210 !important;
 }
 
+/* Detalhes / editar máquina — portal no body; no claro o fundo escuro + texto remapeado some */
+html[data-app-theme="light"] .equipamento-modal {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
+  box-shadow: 0 12px 40px rgba(28, 25, 23, 0.14) !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="border-slate-"] {
+  border-color: rgba(28, 25, 23, 0.14) !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="bg-slate-9"],
+html[data-app-theme="light"] .equipamento-modal [class*="bg-slate-8"],
+html[data-app-theme="light"] .equipamento-modal [class*="bg-slate-950"],
+html[data-app-theme="light"] .equipamento-modal [class*="bg-[#070"] {
+  background-color: #f3efe6 !important;
+}
+html[data-app-theme="light"] .equipamento-modal .text-white,
+html[data-app-theme="light"] .equipamento-modal .text-slate-50,
+html[data-app-theme="light"] .equipamento-modal .text-slate-100,
+html[data-app-theme="light"] .equipamento-modal .text-slate-200,
+html[data-app-theme="light"] .equipamento-modal .text-slate-300,
+html[data-app-theme="light"] .equipamento-modal .text-at-primary {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .equipamento-modal .text-slate-400,
+html[data-app-theme="light"] .equipamento-modal .text-slate-500,
+html[data-app-theme="light"] .equipamento-modal .text-slate-600,
+html[data-app-theme="light"] .equipamento-modal .text-at-muted,
+html[data-app-theme="light"] .equipamento-modal .text-at-soft {
+  color: #3d3833 !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="text-green-"],
+html[data-app-theme="light"] .equipamento-modal [class*="text-emerald-"] {
+  color: #047857 !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="text-red-"],
+html[data-app-theme="light"] .equipamento-modal [class*="text-rose-"] {
+  color: #b91c1c !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="text-amber-"] {
+  color: #92400e !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="text-primary-neon"] {
+  color: #5c3d0a !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="border-primary-neon"] {
+  border-color: rgba(92, 61, 10, 0.35) !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="bg-primary-neon"] {
+  background-color: rgba(92, 61, 10, 0.08) !important;
+}
+html[data-app-theme="light"] .equipamento-modal [class*="hover:bg-slate-"]:hover {
+  background-color: rgba(28, 25, 23, 0.06) !important;
+}
+html[data-app-theme="light"] .equipamento-modal input,
+html[data-app-theme="light"] .equipamento-modal textarea,
+html[data-app-theme="light"] .equipamento-modal select {
+  background-color: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.2) !important;
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .equipamento-modal input::placeholder,
+html[data-app-theme="light"] .equipamento-modal textarea::placeholder {
+  color: #5c564f !important;
+}
+
 /* Montar kits — card cinza + letra remapeada para preto */
 html[data-app-theme="light"] .kit-montar-painel {
   background: #ffffff !important;
