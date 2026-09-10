@@ -9,7 +9,8 @@ export type PontoNegativoResumo = {
 };
 
 export function parsePeriodoFiltro(raw: string | undefined): PeriodoFiltro {
-  if (raw === "7d" || raw === "30d" || raw === "tudo") return raw;
+  if (raw === "7d" || raw === "30d" || raw === "periodo") return raw;
+  if (raw === "tudo") return "periodo";
   return "hoje";
 }
 
@@ -27,14 +28,15 @@ export function agregarNegativosPorPonto(
     descricao: string | null;
     pontos: { nome: string } | null;
   }[],
-  periodo: PeriodoFiltro
+  periodo: PeriodoFiltro,
+  range?: { de?: string | null; ate?: string | null }
 ): PontoNegativoResumo[] {
   const map = new Map<string, PontoNegativoResumo>();
 
   for (const v of visitas) {
     if (!v.ponto_id) continue;
     const recuperado = Number(v.debito_abatido ?? 0);
-    if (recuperado <= 0.009 || !dataNoPeriodo(v.created_at, periodo)) continue;
+    if (recuperado <= 0.009 || !dataNoPeriodo(v.created_at, periodo, range)) continue;
 
     const atual = map.get(v.ponto_id) ?? {
       pontoId: v.ponto_id,

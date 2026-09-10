@@ -15,7 +15,9 @@ import {
 } from "@/lib/financeiro/breakdown";
 import {
   dataNoPeriodo,
+  labelPeriodoFiltro,
   periodoLabels,
+  rangePeriodoPadrao,
   type PeriodoFiltro,
 } from "@/lib/financeiro/periodo";
 import {
@@ -48,7 +50,7 @@ type VisitaResumo = {
   created_at: string;
 };
 
-const periodos: PeriodoFiltro[] = ["hoje", "7d", "30d", "tudo"];
+const periodos: PeriodoFiltro[] = ["hoje", "7d", "30d", "periodo"];
 
 function round2(n: number) {
   return Math.round(n * 100) / 100;
@@ -64,8 +66,12 @@ export function FinanceiroDashboard({
   composicao: ComposicaoCaixa;
 }) {
   const [periodo, setPeriodo] = useState<PeriodoFiltro>("hoje");
+  const padrao = rangePeriodoPadrao();
+  const [de, setDe] = useState(padrao.de);
+  const [ate, setAte] = useState(padrao.ate);
   const { theme } = useAppTheme();
   const isLight = theme === "light";
+  const range = periodo === "periodo" ? { de, ate } : undefined;
 
   const caixa = useMemo(
     () => reconciliarComposicaoExibida(composicao),
@@ -78,9 +84,9 @@ export function FinanceiroDashboard({
     caixa.saldo > 0.009 ? Math.round((caixa.dinheiro / caixa.saldo) * 100) : 0;
 
   const movimento = useMemo(() => {
-    const rows = lancamentos.filter((l) => dataNoPeriodo(l.data, periodo));
+    const rows = lancamentos.filter((l) => dataNoPeriodo(l.data, periodo, range));
     const visitasPeriodo = visitas.filter((v) =>
-      dataNoPeriodo(v.created_at, periodo)
+      dataNoPeriodo(v.created_at, periodo, range)
     );
     const descontos = somarDescontos(visitasPeriodo);
 
@@ -111,7 +117,7 @@ export function FinanceiroDashboard({
       deixadoNoPonto: round2(descontos.manual),
       abatimentosTotal: round2(descontos.total),
     };
-  }, [lancamentos, visitas, periodo]);
+  }, [lancamentos, visitas, periodo, de, ate]);
 
   const hoje = useMemo(() => {
     const rows = lancamentos.filter((l) => dataNoPeriodo(l.data, "hoje"));
@@ -366,22 +372,53 @@ export function FinanceiroDashboard({
               O filtro não altera o saldo do caixa acima
             </p>
           </div>
-          <div className="flex flex-wrap gap-1.5">
-            {periodos.map((p) => (
-              <button
-                key={p}
-                type="button"
-                onClick={() => setPeriodo(p)}
-                className={cn(
-                  "rounded-sm px-3 py-1.5 text-[12px] tracking-wide transition",
-                  periodo === p
-                    ? "analise-tab-active"
-                    : "analise-tab-idle"
-                )}
-              >
-                {periodoLabels[p]}
-              </button>
-            ))}
+          <div className="flex flex-col items-stretch gap-2 sm:items-end">
+            <div className="flex flex-wrap gap-1.5">
+              {periodos.map((p) => (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => {
+                    setPeriodo(p);
+                    if (p === "periodo") {
+                      const pad = rangePeriodoPadrao();
+                      setDe((prev) => prev || pad.de);
+                      setAte((prev) => prev || pad.ate);
+                    }
+                  }}
+                  className={cn(
+                    "rounded-sm px-3 py-1.5 text-[12px] tracking-wide transition",
+                    periodo === p ? "analise-tab-active" : "analise-tab-idle"
+                  )}
+                >
+                  {periodoLabels[p]}
+                </button>
+              ))}
+            </div>
+            {periodo === "periodo" && (
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="flex items-center gap-1.5 text-[11px] text-at-muted">
+                  De
+                  <input
+                    type="date"
+                    value={de}
+                    max={ate || undefined}
+                    onChange={(e) => setDe(e.target.value)}
+                    className="rounded-sm border border-at bg-transparent px-2 py-1 text-[12px] text-at-primary"
+                  />
+                </label>
+                <label className="flex items-center gap-1.5 text-[11px] text-at-muted">
+                  Até
+                  <input
+                    type="date"
+                    value={ate}
+                    min={de || undefined}
+                    onChange={(e) => setAte(e.target.value)}
+                    className="rounded-sm border border-at bg-transparent px-2 py-1 text-[12px] text-at-primary"
+                  />
+                </label>
+              </div>
+            )}
           </div>
         </div>
 
@@ -413,7 +450,11 @@ export function FinanceiroDashboard({
         </div>
 
         <Link
-          href={`/financeiro/negativos?periodo=${periodo}`}
+          href={
+            periodo === "periodo"
+              ? `/financeiro/negativos?periodo=periodo&de=${encodeURIComponent(de)}&ate=${encodeURIComponent(ate)}`
+              : `/financeiro/negativos?periodo=${periodo}`
+          }
           className="inline-block text-sm text-at-link hover:underline"
         >
           Negativos recuperados →
@@ -422,7 +463,7 @@ export function FinanceiroDashboard({
         {movimento.rows.length === 0 ? (
           <EmptyState
             title="Nada neste período"
-            description={`Nenhum lançamento em ${periodoLabels[periodo].toLowerCase()}.`}
+            description={`Nenhum lançamento em ${labelPeriodoFiltro(periodo, range).toLowerCase()}.`}
             icon={<Wallet className="h-8 w-8" />}
           />
         ) : (
@@ -494,10 +535,12 @@ function Metric({
   label,
   value,
   tone,
+  isLight = false,
 }: {
   label: string;
   value: number;
   tone: "emerald" | "rose" | "orange" | "cyan" | "amber";
+  isLight?: boolean;
 }) {
   const color =
     tone === "emerald"
@@ -505,9 +548,13 @@ function Metric({
       : tone === "orange"
         ? "text-at-link"
         : tone === "cyan"
-          ? "text-cyan-800 dark:text-cyan-200"
+          ? isLight
+            ? "text-cyan-800"
+            : "text-cyan-200"
           : tone === "amber"
-            ? "text-amber-900 dark:text-amber-100"
+            ? isLight
+              ? "text-amber-900"
+              : "text-amber-100"
             : "text-at-money-neg";
   return (
     <div>

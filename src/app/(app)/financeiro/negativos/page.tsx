@@ -5,21 +5,37 @@ import {
   agregarNegativosPorPonto,
   parsePeriodoFiltro,
 } from "@/lib/financeiro/negativo-recuperacao";
-import { periodoLabels, type PeriodoFiltro } from "@/lib/financeiro/periodo";
+import {
+  labelPeriodoFiltro,
+  periodoLabels,
+  rangePeriodoPadrao,
+  type PeriodoFiltro,
+} from "@/lib/financeiro/periodo";
 import { formatCurrency } from "@/lib/utils";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { redirectSeVisaoRestrita } from "@/lib/visao/bloquear-historico";
 
-const periodos: PeriodoFiltro[] = ["hoje", "7d", "30d", "tudo"];
+const periodos: PeriodoFiltro[] = ["hoje", "7d", "30d", "periodo"];
 
 export default async function NegativosRecuperadosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ periodo?: string }>;
+  searchParams: Promise<{ periodo?: string; de?: string; ate?: string }>;
 }) {
   await redirectSeVisaoRestrita("/dashboard");
-  const { periodo: periodoRaw } = await searchParams;
+  const { periodo: periodoRaw, de: deRaw, ate: ateRaw } = await searchParams;
   const periodo = parsePeriodoFiltro(periodoRaw);
+  const padrao = rangePeriodoPadrao();
+  const de =
+    periodo === "periodo" && deRaw && /^\d{4}-\d{2}-\d{2}$/.test(deRaw)
+      ? deRaw
+      : padrao.de;
+  const ate =
+    periodo === "periodo" && ateRaw && /^\d{4}-\d{2}-\d{2}$/.test(ateRaw)
+      ? ateRaw
+      : padrao.ate;
+  const range = periodo === "periodo" ? { de, ate } : undefined;
+
   const profile = await getProfile();
   const supabase = await createClient();
   const empresaId = profile?.empresa_id;
@@ -44,7 +60,8 @@ export default async function NegativosRecuperadosPage({
   const linhas = agregarNegativosPorPonto(
     (visitas ?? []) as unknown as Parameters<typeof agregarNegativosPorPonto>[0],
     (pendencias ?? []) as unknown as Parameters<typeof agregarNegativosPorPonto>[1],
-    periodo
+    periodo,
+    range
   );
   const totalRecuperado = linhas.reduce((s, l) => s + l.recuperadoPeriodo, 0);
   const totalEmAberto = linhas.reduce((s, l) => s + l.emAberto, 0);
@@ -61,7 +78,7 @@ export default async function NegativosRecuperadosPage({
         <div>
           <h1 className="text-2xl font-bold text-white">Recuperado de negativo</h1>
           <p className="text-at-muted text-sm mt-0.5">
-            Por ponto · {periodoLabels[periodo].toLowerCase()}
+            Por ponto · {labelPeriodoFiltro(periodo, range).toLowerCase()}
           </p>
         </div>
       </div>
@@ -70,7 +87,11 @@ export default async function NegativosRecuperadosPage({
         {periodos.map((p) => (
           <Link
             key={p}
-            href={`/financeiro/negativos?periodo=${p}`}
+            href={
+              p === "periodo"
+                ? `/financeiro/negativos?periodo=periodo&de=${de}&ate=${ate}`
+                : `/financeiro/negativos?periodo=${p}`
+            }
             className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
               periodo === p
                 ? "bg-primary-neon/20 text-primary-neon border border-primary-neon/40"
@@ -81,6 +102,40 @@ export default async function NegativosRecuperadosPage({
           </Link>
         ))}
       </div>
+
+      {periodo === "periodo" && (
+        <form
+          method="get"
+          action="/financeiro/negativos"
+          className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-800 bg-slate-900/40 p-3"
+        >
+          <input type="hidden" name="periodo" value="periodo" />
+          <label className="flex flex-col gap-1 text-xs text-at-muted">
+            De
+            <input
+              type="date"
+              name="de"
+              defaultValue={de}
+              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-xs text-at-muted">
+            Até
+            <input
+              type="date"
+              name="ate"
+              defaultValue={ate}
+              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-white"
+            />
+          </label>
+          <button
+            type="submit"
+            className="rounded-lg bg-primary-neon/20 px-4 py-2 text-sm font-medium text-primary-neon border border-primary-neon/40"
+          >
+            Aplicar
+          </button>
+        </form>
+      )}
 
       <div className="grid gap-3 grid-cols-2">
         <div className="glass-card p-4 border border-orange-500/20">
