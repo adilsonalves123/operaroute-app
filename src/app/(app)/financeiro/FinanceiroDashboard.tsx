@@ -84,17 +84,28 @@ export function FinanceiroDashboard({
     );
     const descontos = somarDescontos(visitasPeriodo);
 
-    const entradas = rows
-      .filter((l) => l.tipo === "entrada")
-      .reduce((s, l) => s + Number(l.valor), 0);
-    const saidas = rows
-      .filter((l) => l.tipo === "saida")
-      .reduce((s, l) => s + Number(l.valor), 0);
+    let entradas = 0;
+    let saidas = 0;
+    let entrouPix = 0;
+    let entrouDinheiro = 0;
+    for (const l of rows) {
+      const valor = Number(l.valor);
+      if (l.tipo === "entrada") {
+        entradas += valor;
+        const b = breakdownLancamento(l);
+        entrouPix += b.pix;
+        entrouDinheiro += b.dinheiro;
+      } else if (l.tipo === "saida") {
+        saidas += valor;
+      }
+    }
 
     return {
       rows,
       entradas: round2(entradas),
       saidas: round2(saidas),
+      entrouPix: round2(entrouPix),
+      entrouDinheiro: round2(entrouDinheiro),
       resultado: round2(entradas - saidas),
       descontoRecebimento: round2(descontos.recebimento),
       deixadoNoPonto: round2(descontos.manual),
@@ -374,9 +385,21 @@ export function FinanceiroDashboard({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3">
           <Metric label="Entradas" value={movimento.entradas} tone="emerald" />
           <Metric label="Saídas" value={movimento.saidas} tone="rose" />
+          <Metric
+            label="Pix"
+            value={movimento.entrouPix}
+            tone="cyan"
+            isLight={isLight}
+          />
+          <Metric
+            label="Dinheiro"
+            value={movimento.entrouDinheiro}
+            tone="amber"
+            isLight={isLight}
+          />
           <Metric
             label="Descontos"
             value={movimento.descontoRecebimento}
@@ -474,14 +497,18 @@ function Metric({
 }: {
   label: string;
   value: number;
-  tone: "emerald" | "rose" | "orange";
+  tone: "emerald" | "rose" | "orange" | "cyan" | "amber";
 }) {
   const color =
     tone === "emerald"
       ? "text-at-money-pos"
       : tone === "orange"
         ? "text-at-link"
-        : "text-at-money-neg";
+        : tone === "cyan"
+          ? "text-cyan-800 dark:text-cyan-200"
+          : tone === "amber"
+            ? "text-amber-900 dark:text-amber-100"
+            : "text-at-money-neg";
   return (
     <div>
       <p className="text-[11px] uppercase tracking-[0.16em] text-at-muted">{label}</p>
