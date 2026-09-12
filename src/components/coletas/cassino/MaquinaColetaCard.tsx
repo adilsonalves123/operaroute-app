@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useState, type Dispatch, type SetStateAction } from "react";
+import { memo, useCallback, useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
 import { AlertCircle, CheckCircle2, Gamepad2, Loader2, Sparkles } from "lucide-react";
 import {
   formatContador,
@@ -10,9 +10,7 @@ import {
 } from "@/lib/nichos/cassino";
 import { formatCurrency, cn } from "@/lib/utils";
 import { getEquipamentoDisplayNome } from "@/lib/equipamentos";
-import { cropFileByNormalizedBox } from "@/lib/ia/crop-image";
 import { analyzePhotoQuality } from "@/lib/ia/photo-quality";
-import { preprocessOcrCrop } from "@/lib/ia/preprocess-ocr-image";
 import { ExpandableImage } from "@/components/ui/ExpandableImage";
 import { AbrirChamadoButton } from "@/components/chamados/AbrirChamadoButton";
 import { FotoColetaLeitura } from "@/components/coletas/FotoColetaLeitura";
@@ -125,6 +123,7 @@ interface MaquinaColetaCardProps {
       };
       manutencaoRecente?: boolean;
       avisos: string[];
+      exigeConfirmacao?: boolean;
     }
   ) => void;
   onConfirmarIa: (id: string) => void;
@@ -150,6 +149,10 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
   erroFoto,
 }: MaquinaColetaCardProps) {
   const [lendoIa, setLendoIa] = useState(false);
+  const leituraRef = useRef(leitura);
+  leituraRef.current = leitura;
+  const reqIdRef = useRef(0);
+  const autoLidaRef = useRef("");
 
   const entradaAtual = getCentesimos(leitura.entradaAtualInput, leitura.entradaAnterior);
   const saidaAtual = getCentesimos(leitura.saidaAtualInput, leitura.saidaAnterior);
@@ -171,78 +174,41 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
 
   const temErro = Boolean(erroEntrada || erroSaida || erroFoto);
   const pronta = leituraEstaPronta(leitura) && !temErro;
+  const fotoToken = leitura.fotoFile
+    ? `${leitura.fotoFile.name}:${leitura.fotoFile.size}:${leitura.fotoFile.lastModified}`
+    : "";
 
-  async function lerContadores() {
-    if (!leitura.fotoFile) {
-      onIaErro(leitura.equipamentoId, "Tire a foto do painel antes de ler.");
+  const lerContadores = useCallback(async () => {
+    const atual = leituraRef.current;
+    if (!atual.fotoFile) {
+      onIaErro(atual.equipamentoId, "Tire a foto do painel antes de ler.");
       return;
     }
+    const reqId = ++reqIdRef.current;
     setLendoIa(true);
-    onIaErro(leitura.equipamentoId, null);
+    onIaErro(atual.equipamentoId, null);
     try {
-      const quality = await analyzePhotoQuality(leitura.fotoFile);
+      const quality = await analyzePhotoQuality(atual.fotoFile);
+      if (reqId !== reqIdRef.current) return;
       if (!quality.ok && quality.metrics.width === 0) {
         onIaErro(
-          leitura.equipamentoId,
+          atual.equipamentoId,
           `Não foi possível abrir esta imagem. Tire outra foto. ${quality.reasons.join(" ")}`
         );
         return;
       }
 
-      const foto = await comprimirFotoParaIa(leitura.fotoFile);
-      let fotoEntradaCrop: File | null = null;
-      let fotoSaidaCrop: File | null = null;
-
-      try {
-        const localizarBody = new FormData();
-        localizarBody.append("foto", foto);
-
-        const localizarRes = await fetch("/api/coletas/cassino/localizar-contadores", {
-          method: "POST",
-          credentials: "include",
-          body: localizarBody,
-        });
-        const localizarData = await localizarRes.json().catch(() => ({}));
-        if (
-          localizarRes.ok &&
-          localizarData?.localizar === true &&
-          localizarData?.entradaBox &&
-          localizarData?.saidaBox
-        ) {
-          const entradaCropBruto = await cropFileByNormalizedBox(
-            leitura.fotoFile,
-            localizarData.entradaBox,
-            "entrada-crop.jpg"
-          );
-          const saidaCropBruto = await cropFileByNormalizedBox(
-            leitura.fotoFile,
-            localizarData.saidaBox,
-            "saida-crop.jpg"
-          );
-          fotoEntradaCrop = await preprocessOcrCrop(
-            entradaCropBruto,
-            "entrada-crop-ocr.jpg"
-          );
-          fotoSaidaCrop = await preprocessOcrCrop(
-            saidaCropBruto,
-            "saida-crop-ocr.jpg"
-          );
-        }
-      } catch {
-        fotoEntradaCrop = null;
-        fotoSaidaCrop = null;
-      }
+      const foto = await comprimirFotoParaIa(atual.fotoFile);
+      if (reqId !== reqIdRef.current) return;
 
       const body = new FormData();
       body.append("foto", foto);
-      if (fotoEntradaCrop) body.append("foto_entrada", fotoEntradaCrop);
-      if (fotoSaidaCrop) body.append("foto_saida", fotoSaidaCrop);
       body.append("ponto_id", pontoId);
-      body.append("equipamento_id", leitura.equipamentoId);
-      body.append("entrada_anterior", String(leitura.entradaAnterior));
-      body.append("saida_anterior", String(leitura.saidaAnterior));
-      if (leitura.iaExcecaoContador) {
-        body.append("excecao_contador", leitura.iaExcecaoContador);
+      body.append("equipamento_id", atual.equipamentoId);
+      body.append("entrada_anterior", String(atual.entradaAnterior));
+      body.append("saida_anterior", String(atual.saidaAnterior));
+      if (atual.iaExcecaoContador) {
+        body.append("excecao_contador", atual.iaExcecaoContador);
       }
 
       const res = await fetch("/api/coletas/cassino/ler-contadores", {
@@ -251,111 +217,91 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         body,
       });
       const data = await res.json().catch(() => ({}));
+      if (reqId !== reqIdRef.current) return;
       if (!res.ok) {
         onIaErro(
-          leitura.equipamentoId,
+          atual.equipamentoId,
           typeof data.error === "string" ? data.error : "Falha ao ler contadores."
         );
         return;
       }
 
-      if (!data.aplicar) {
-        const alternativas =
-          data.alternativas &&
-          typeof data.alternativas === "object" &&
-          Array.isArray(data.alternativas.entrada) &&
-          Array.isArray(data.alternativas.saida)
-            ? {
-                entrada: data.alternativas.entrada.map(String),
-                saida: data.alternativas.saida.map(String),
-              }
-            : null;
-        const entradaSugerida =
-          String(data.entrada ?? "") ||
-          alternativas?.entrada[0] ||
-          leitura.entradaAtualInput;
-        const saidaSugerida =
-          String(data.saida ?? "") ||
-          alternativas?.saida[0] ||
-          leitura.saidaAtualInput;
-        const temSugestao = Boolean(entradaSugerida.trim() || saidaSugerida.trim());
+      const alternativas =
+        data.alternativas &&
+        typeof data.alternativas === "object" &&
+        Array.isArray(data.alternativas.entrada) &&
+        Array.isArray(data.alternativas.saida)
+          ? {
+              entrada: data.alternativas.entrada.map(String),
+              saida: data.alternativas.saida.map(String),
+            }
+          : null;
+      const entradaSugerida =
+        String(data.entrada ?? "") ||
+        alternativas?.entrada[0] ||
+        atual.entradaAtualInput;
+      const saidaSugerida =
+        String(data.saida ?? "") ||
+        alternativas?.saida[0] ||
+        atual.saidaAtualInput;
+      const temSugestao = Boolean(entradaSugerida.trim() || saidaSugerida.trim());
+      const status =
+        data.status === "approved_ai" ||
+        data.status === "needs_review" ||
+        data.status === "rejected"
+          ? data.status
+          : "needs_review";
+      const exigeConfirmacao = status !== "approved_ai";
 
-        if (temSugestao || alternativas) {
-          onIaSugestao(leitura.equipamentoId, {
-            entrada: entradaSugerida,
-            saida: saidaSugerida,
-            readingId: typeof data.reading_id === "string" ? data.reading_id : null,
-            confianca: Number(data.confianca) || 0,
-            score: Number(data.score) || 0,
-            status:
-              data.status === "approved_ai" ||
-              data.status === "needs_review" ||
-              data.status === "rejected"
-                ? data.status
-                : "needs_review",
-            flags: Array.isArray(data.flags) ? data.flags.map(String) : [],
-            revisaoObrigatoria: true,
-            motivo:
-              typeof data.motivo_recusa === "string"
-                ? data.motivo_recusa
-                : "Confira os valores sugeridos pela IA antes de confirmar.",
-            alternativas: alternativas ?? { entrada: [], saida: [] },
-            manutencaoRecente: Boolean(data.manutencao_recente?.detectada),
-            avisos: Array.isArray(data.avisos) ? data.avisos.map(String) : [],
-          });
-        } else {
-          onIaErro(
-            leitura.equipamentoId,
-            typeof data.motivo_recusa === "string"
-              ? data.motivo_recusa
-              : "IA não conseguiu ler entrada e saída. Digite manualmente."
-          );
-        }
+      if (!temSugestao && !alternativas) {
+        onIaErro(
+          atual.equipamentoId,
+          typeof data.motivo_recusa === "string"
+            ? data.motivo_recusa
+            : "IA não conseguiu ler entrada e saída. Digite manualmente."
+        );
         return;
       }
 
-      onIaSugestao(leitura.equipamentoId, {
-        entrada: String(data.entrada ?? ""),
-        saida: String(data.saida ?? ""),
+      onIaSugestao(atual.equipamentoId, {
+        entrada: entradaSugerida,
+        saida: saidaSugerida,
         readingId: typeof data.reading_id === "string" ? data.reading_id : null,
         confianca: Number(data.confianca) || 0,
         score: Number(data.score) || 0,
-        status:
-          data.status === "approved_ai" ||
-          data.status === "needs_review" ||
-          data.status === "rejected"
-            ? data.status
-            : "needs_review",
+        status,
         flags: Array.isArray(data.flags) ? data.flags.map(String) : [],
-        revisaoObrigatoria:
-          data.status !== "approved_ai" ||
-          Number(data.score) < 85 ||
-          Boolean(data.motivo_recusa),
+        revisaoObrigatoria: exigeConfirmacao,
+        exigeConfirmacao,
         motivo:
           typeof data.motivo_recusa === "string"
             ? data.motivo_recusa
-            : data.status === "approved_ai"
-              ? null
-              : "Confira os valores sugeridos pela IA antes de confirmar.",
-        alternativas:
-          data.alternativas &&
-          typeof data.alternativas === "object" &&
-          Array.isArray(data.alternativas.entrada) &&
-          Array.isArray(data.alternativas.saida)
-            ? {
-                entrada: data.alternativas.entrada.map(String),
-                saida: data.alternativas.saida.map(String),
-              }
-            : undefined,
+            : exigeConfirmacao
+              ? "Confira os valores no visor."
+              : null,
+        alternativas: alternativas ?? { entrada: [], saida: [] },
         manutencaoRecente: Boolean(data.manutencao_recente?.detectada),
         avisos: Array.isArray(data.avisos) ? data.avisos.map(String) : [],
       });
     } catch {
-      onIaErro(leitura.equipamentoId, "Erro de conexão ao ler a foto.");
+      if (reqId !== reqIdRef.current) return;
+      onIaErro(atual.equipamentoId, "Erro de conexão ao ler a foto.");
     } finally {
-      setLendoIa(false);
+      if (reqId === reqIdRef.current) setLendoIa(false);
     }
-  }
+  }, [onIaErro, onIaSugestao, pontoId]);
+
+  useEffect(() => {
+    if (!fotoToken) {
+      autoLidaRef.current = "";
+      reqIdRef.current += 1;
+      setLendoIa(false);
+      return;
+    }
+    if (autoLidaRef.current === fotoToken) return;
+    autoLidaRef.current = fotoToken;
+    void lerContadores();
+  }, [fotoToken, lerContadores]);
 
   return (
     <div
@@ -404,6 +350,11 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
               <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-red-500/15 px-2 py-0.5 text-[10px] font-medium text-red-400">
                 <AlertCircle className="h-3 w-3" />
                 Corrigir
+              </span>
+            ) : lendoIa ? (
+              <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-[#c4a574]/15 px-2 py-0.5 text-[10px] font-medium text-[#e8d5b0]">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Lendo
               </span>
             ) : leitura.iaRevisaoObrigatoria ? (
               <span className="ml-auto inline-flex shrink-0 items-center gap-1 rounded-full bg-rose-500/15 px-2 py-0.5 text-[10px] font-medium text-rose-300">
@@ -455,8 +406,9 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           <input
             type="text"
             inputMode="numeric"
-            placeholder="0,00"
+            placeholder={lendoIa ? "Lendo…" : "0,00"}
             value={leitura.entradaAtualInput}
+            disabled={lendoIa}
             onChange={(e) =>
               onUpdate(
                 leitura.equipamentoId,
@@ -481,8 +433,9 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
           <input
             type="text"
             inputMode="numeric"
-            placeholder="0,00"
+            placeholder={lendoIa ? "Lendo…" : "0,00"}
             value={leitura.saidaAtualInput}
+            disabled={lendoIa}
             onChange={(e) =>
               onUpdate(
                 leitura.equipamentoId,
@@ -575,55 +528,55 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         modo="entrada_saida"
         erro={erroFoto}
         label="Foto do painel *"
+        hint="A leitura começa assim que a foto entra."
         alt={`Foto ${leitura.nome}`}
         buttonClassName="py-6 rounded-xl"
       />
 
-      <div className="space-y-2">
-        <button
-          type="button"
-          disabled={lendoIa}
-          onClick={() => {
-            if (!leitura.fotoFile) {
-              onIaErro(
-                leitura.equipamentoId,
-                "Escolha uma foto na Galeria (ou tire na Câmera) antes de ler com a IA."
-              );
-              return;
-            }
-            void lerContadores();
-          }}
-          className={cn(
-            "flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition",
-            "border-[#c4a574]/40 bg-[#c4a574]/10 text-[#e8d5b0] hover:bg-[#c4a574]/15",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            !leitura.fotoFile && "opacity-80"
-          )}
-        >
-          {lendoIa ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Lendo painel…
-            </>
-          ) : (
-            <>
-              <Sparkles className="h-4 w-4" />
-              Ler contadores com IA
-            </>
-          )}
-        </button>
-        {!leitura.fotoFile ? (
+      {leitura.fotoFile ? (
+        <div className="space-y-2">
+          <button
+            type="button"
+            disabled={lendoIa}
+            onClick={() => {
+              autoLidaRef.current = fotoToken;
+              void lerContadores();
+            }}
+            className={cn(
+              "flex w-full items-center justify-center gap-2 rounded-xl border px-4 py-3 text-sm font-semibold transition",
+              "border-[#c4a574]/40 bg-[#c4a574]/10 text-[#e8d5b0] hover:bg-[#c4a574]/15",
+              "disabled:cursor-not-allowed disabled:opacity-50"
+            )}
+          >
+            {lendoIa ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Lendo painel…
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                {temLeituras ? "Ler de novo" : "Ler contadores"}
+              </>
+            )}
+          </button>
           <p className="text-center text-[11px] text-slate-500">
-            {leitura.fotoPreview
-              ? "Tire uma foto nova desta coleta para a IA ler (foto só de referência não envia)."
-              : "Tire a foto do painel acima para liberar a leitura com IA."}
+            {lendoIa
+              ? "Preenchendo entrada e saída a partir da foto."
+              : leitura.iaPendenteConfirmacao
+                ? "Confira no visor — a leitura ficou duvidosa."
+                : temLeituras
+                  ? "Números preenchidos. Confira rápido e siga."
+                  : "Se a leitura falhar, você ainda pode digitar."}
           </p>
-        ) : (
-          <p className="text-center text-[11px] text-slate-500">
-            A IA sugere entrada/saída — você confirma antes de salvar. Só bloqueamos fotos claramente ilegíveis.
-          </p>
-        )}
-      </div>
+        </div>
+      ) : (
+        <p className="text-center text-[11px] text-slate-500">
+          {leitura.fotoPreview
+            ? "Tire uma foto nova desta coleta para a IA ler (foto só de referência não envia)."
+            : "Tire a foto do painel — a IA preenche entrada e saída na hora."}
+        </p>
+      )}
 
       {leitura.iaErro ? (
         <p className="rounded-xl border border-rose-500/25 bg-rose-500/10 px-3 py-2 text-xs text-rose-300">
@@ -922,6 +875,7 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
         };
         manutencaoRecente?: boolean;
         avisos: string[];
+        exigeConfirmacao?: boolean;
       }
     ) => {
       setLeituras((prev) =>
@@ -932,7 +886,7 @@ export function useIaLeituraHandlers(setLeituras: Dispatch<SetStateAction<Leitur
                 entradaAtualInput: data.entrada,
                 saidaAtualInput: data.saida,
                 iaReadingId: data.readingId ?? l.iaReadingId ?? null,
-                iaPendenteConfirmacao: true,
+                iaPendenteConfirmacao: data.exigeConfirmacao ?? true,
                 iaConfianca: data.confianca,
                 iaScore: data.score ?? null,
                 iaStatus: data.status ?? "needs_review",

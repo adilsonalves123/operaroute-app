@@ -12,8 +12,8 @@ import { CASSINO_IA_THRESHOLDS } from "@/lib/nichos/cassino/ia-thresholds";
 import { lerContadoresCassinoDaFoto } from "@/lib/nichos/cassino/ler-contadores-ia";
 
 export const runtime = "nodejs";
-/** Vision pode demorar. */
-export const maxDuration = 60;
+/** Duas visões em paralelo — costuma responder em poucos segundos. */
+export const maxDuration = 30;
 
 const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 
@@ -262,21 +262,12 @@ export async function POST(request: Request) {
   const equipamentoId = parseEquipamentoId(form.get("equipamento_id"));
   const pontoId = parsePontoId(form.get("ponto_id"));
   const excecaoContador = parseExcecaoContador(form.get("excecao_contador"));
-  const fotoEntrada = form.get("foto_entrada");
-  const fotoSaida = form.get("foto_saida");
-
   const imageDataUrl = await fileToDataUrl(foto);
-  const entradaCropDataUrl =
-    fotoEntrada instanceof File && fotoEntrada.size > 0 ? await fileToDataUrl(fotoEntrada) : null;
-  const saidaCropDataUrl =
-    fotoSaida instanceof File && fotoSaida.size > 0 ? await fileToDataUrl(fotoSaida) : null;
 
   const leitura = await lerContadoresCassinoDaFoto({
     imageDataUrl,
     entradaAnterior,
     saidaAnterior,
-    entradaCropDataUrl,
-    saidaCropDataUrl,
   });
 
   if (!leitura.ok) {
@@ -312,11 +303,10 @@ export async function POST(request: Request) {
   let flags = Array.from(new Set([...r.flags, ...historicoAnalise.flags]));
   let avisos = Array.from(new Set([...r.avisos, ...historicoAnalise.avisos]));
   let aplicar = r.aplicar || r.entradaCentesimos > 0 || r.saidaCentesimos > 0;
-  let status = flags.some((flag) => flag.startsWith("historico_"))
-    ? "needs_review"
-    : r.status === "rejected" && aplicar
-      ? "needs_review"
-      : r.status;
+  let status = r.status === "rejected" && aplicar ? "needs_review" : r.status;
+  if (flags.some((flag) => flag.includes("anomalia_severa"))) {
+    status = "needs_review";
+  }
   let motivoRecusa = r.motivoRecusa ?? null;
 
   if (aplicar && status === "rejected") {
@@ -366,7 +356,7 @@ export async function POST(request: Request) {
         modelos: r.modelosUsados,
         divergencia_digitos: r.divergenciaDigitos ?? null,
         historico_resumo: historicoAnalise.resumo,
-        usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
+        usando_recortes: false,
         alternativas: r.alternativas ?? null,
         excecao_contador: excecaoContador,
         imagem_nome: foto.name || null,
@@ -412,7 +402,7 @@ export async function POST(request: Request) {
       modelos: r.modelosUsados,
       divergencia_digitos: r.divergenciaDigitos ?? null,
       historico_resumo: historicoAnalise.resumo,
-      usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
+      usando_recortes: false,
       alternativas: r.alternativas ?? null,
       excecao_contador: excecaoContador,
       manutencao_recente: manutencao.detectada ? manutencao : null,
@@ -442,12 +432,11 @@ export async function POST(request: Request) {
     modelos: r.modelosUsados,
     divergencia_digitos: r.divergenciaDigitos ?? null,
     historico_resumo: historicoAnalise.resumo,
-    usando_recortes: Boolean(entradaCropDataUrl && saidaCropDataUrl),
+    usando_recortes: false,
     alternativas: r.alternativas ?? null,
     excecao_contador: excecaoContador,
     manutencao_recente: manutencao.detectada ? manutencao : null,
     reading_id: readingId,
-    /** Sempre true nesta feature — UI obriga confirmação antes de marcar pronta. */
-    exige_confirmacao: true,
+    exige_confirmacao: status !== "approved_ai",
   });
 }
