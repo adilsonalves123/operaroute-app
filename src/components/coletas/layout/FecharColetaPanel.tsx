@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { coletaInputClass, coletaBtnPrimaryClass } from "./coleta-form-styles";
+import { coletaInputClass } from "./coleta-form-styles";
 
 export function FecharColetaPanel({
   empty,
@@ -17,7 +17,7 @@ export function FecharColetaPanel({
   submitLabel,
   submitDisabled,
   loading,
-  accent = "gold",
+  accent = "cyan",
   title = "Fechar coleta",
   subtitle = "Resultado e próximo passo",
   className,
@@ -34,7 +34,7 @@ export function FecharColetaPanel({
   submitLabel: string;
   submitDisabled?: boolean;
   loading?: boolean;
-  accent?: "pink" | "cyan" | "amber" | "emerald" | "red" | "gold";
+  accent?: "pink" | "cyan" | "amber" | "emerald" | "red";
   title?: string;
   subtitle?: string;
   className?: string;
@@ -53,24 +53,24 @@ export function FecharColetaPanel({
           ? "border-emerald-500/20"
           : accent === "red"
             ? "border-red-500/25"
-            : accent === "gold"
-            ? "border-at"
             : "border-primary-neon/20";
 
   const btnAccent =
-    accent === "red" ? "bg-red-500 text-white hover:bg-red-600" : coletaBtnPrimaryClass("w-full rounded-xl py-3.5");
+    accent === "red"
+      ? "bg-red-400 text-slate-950 hover:bg-red-300"
+      : "bg-primary-neon text-slate-900 hover:bg-cyan-300";
 
   return (
     <aside className={cn("xl:sticky xl:top-20", className)}>
       <div
         className={cn(
-          "flex flex-col gap-0 overflow-hidden rounded-2xl border bg-at-card shadow-sm",
+          "flex flex-col gap-0 overflow-hidden rounded-2xl border bg-slate-950/80 shadow-[0_0_0_1px_rgba(255,255,255,0.03)] backdrop-blur-sm",
           borderAccent
         )}
       >
-        <div className="border-b border-at px-4 py-3.5 sm:px-5">
-          <h2 className="text-base font-semibold tracking-tight text-at-primary">{title}</h2>
-          <p className="mt-0.5 text-xs leading-snug text-at-muted">{subtitle}</p>
+        <div className="border-b border-white/[0.06] px-4 py-3.5 sm:px-5">
+          <h2 className="text-base font-semibold tracking-tight text-white">{title}</h2>
+          <p className="mt-0.5 text-xs leading-snug text-slate-500">{subtitle}</p>
         </div>
 
         <div className="space-y-4 px-4 py-4 sm:px-5">
@@ -80,14 +80,14 @@ export function FecharColetaPanel({
           {previa && <div className="space-y-2">{previa}</div>}
 
           {observacao && (
-            <details className="group rounded-xl border border-at bg-at-card-soft">
-              <summary className="cursor-pointer list-none px-3.5 py-3 text-sm text-at-muted marker:content-none [&::-webkit-details-marker]:hidden">
+            <details className="group rounded-xl border border-white/[0.06] bg-white/[0.02]">
+              <summary className="cursor-pointer list-none px-3.5 py-3 text-sm text-slate-400 marker:content-none [&::-webkit-details-marker]:hidden">
                 <span className="flex items-center justify-between gap-2">
                   <span>Observação (opcional)</span>
-                  <span className="text-[11px] text-at-soft group-open:hidden">Abrir</span>
+                  <span className="text-[11px] text-slate-600 group-open:hidden">Abrir</span>
                 </span>
               </summary>
-              <div className="border-t border-at px-3.5 pb-3.5 pt-3">
+              <div className="border-t border-white/[0.06] px-3.5 pb-3.5 pt-3">
                 <textarea
                   value={observacaoValue ?? ""}
                   onChange={(e) => onObservacaoChange?.(e.target.value)}
@@ -100,13 +100,13 @@ export function FecharColetaPanel({
           )}
 
           {error && (
-            <p className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-at-money-neg">
+            <p className="rounded-xl border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">
               {error}
             </p>
           )}
         </div>
 
-        <div className="space-y-3 border-t border-at bg-at-card-soft px-4 py-3.5 sm:px-5">
+        <div className="space-y-3 border-t border-white/[0.06] bg-black/20 px-4 py-3.5 sm:px-5">
           {depoisDaColeta}
           <button
             type="button"
@@ -119,8 +119,8 @@ export function FecharColetaPanel({
               }
             }}
             className={cn(
-              btnAccent,
-              "inline-flex items-center justify-center gap-2 text-sm font-semibold transition disabled:opacity-50"
+              "inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold transition disabled:opacity-50",
+              btnAccent
             )}
           >
             {loading && <Loader2 className="h-4 w-4 animate-spin" />}

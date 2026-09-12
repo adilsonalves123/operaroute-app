@@ -1,12 +1,12 @@
 "use client";
 
 import { useMemo } from "react";
+import { Printer } from "lucide-react";
 import type { RelatorioFuraFuraData } from "@/lib/nichos/fura-fura/relatorio";
-import { ImprimirRelatorioColetaButton } from "@/components/coletas/ImprimirRelatorioColetaButton";
 import { snapshotFromRelatorioFuraFura } from "@/lib/comprovantes/from-relatorio-nicho";
 import { montarSnapshotRelatorio } from "@/lib/comprovantes/previa-relatorio";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
-import type { RelatorioImpressaoOpts } from "@/lib/coletas/imprimir-relatorio-texto";
+import { abrirImpressaoRelatorioTextoGenerico } from "@/lib/coletas/imprimir-relatorio-texto";
 import { ColetaCobrarPixBar } from "@/components/coletas/ColetaCobrarPixBar";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import type { ComprovanteSnapshot } from "@/lib/comprovantes/types";
@@ -58,12 +58,12 @@ export function PreviaRelatorioFuraFuraPanel({
       nichoModulo: "fura_fura",
       relatorio: { ...data, previa: false },
       previa: false,
-      layout: "relatorio",
+      layout: "historico",
     });
   }
 
-  function getImpressaoOpts(): RelatorioImpressaoOpts {
-    return {
+  function handlePrint() {
+    const ok = abrirImpressaoRelatorioTextoGenerico({
       titulo: "COLETA — FURA-FURA",
       empresaNome: data.empresaNome,
       pontoNome: data.pontoNome,
@@ -90,7 +90,10 @@ export function PreviaRelatorioFuraFuraPanel({
         { label: "A receber", valor: formatCurrency(c.valorAReceber), destaque: true },
         { label: "Lucro", valor: formatCurrency(c.lucroReal) },
       ],
-    };
+    });
+    if (!ok) {
+      window.alert("Permita pop-ups neste site para imprimir.");
+    }
   }
 
   const content = (
@@ -129,7 +132,15 @@ export function PreviaRelatorioFuraFuraPanel({
           whatsappLabel="WhatsApp"
           shareLabel="Compartilhar"
         />
-        <ImprimirRelatorioColetaButton disabled={disabled} getImpressaoOpts={getImpressaoOpts} />
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={handlePrint}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+        >
+          <Printer className="h-4 w-4" />
+          Imprimir
+        </button>
       </div>
     </div>
   );
@@ -137,8 +148,8 @@ export function PreviaRelatorioFuraFuraPanel({
   if (embedded) return content;
 
   return (
-    <div className="rounded-2xl border border-at bg-at-card p-4 space-y-3">
-      <p className="text-sm font-medium text-at-muted">Prévia para o cliente</p>
+    <div className="glass-card space-y-3 border border-amber-500/20 p-4">
+      <p className="text-sm font-medium text-amber-300">Prévia para o cliente</p>
       {content}
     </div>
   );

@@ -307,8 +307,10 @@ export function calcularVisitaCassino(
     lucroDisponivelParaOperacaoCentavos - valorClienteCentavos
   );
   const descontoRecebCentavos = reaisToCentesimos(input.descontoRecebimentoReais);
-  const valorOperacaoEfetivoCentavos =
-    valorOperacaoCentavos - descontoRecebCentavos;
+  const valorOperacaoEfetivoCentavos = Math.max(
+    0,
+    valorOperacaoCentavos - descontoRecebCentavos
+  );
 
   const valorClienteReais = centesimosToReais(valorClienteCentavos);
   const valorOperacaoReais = centesimosToReais(valorOperacaoCentavos);

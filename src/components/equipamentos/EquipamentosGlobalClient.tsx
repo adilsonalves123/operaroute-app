@@ -43,6 +43,11 @@ type FiltroStatus = "todos" | "ativo" | "inativo";
 type FiltroTipo = "todos" | EquipamentoGrupoId;
 type FiltroLocal = "todos" | "estoque" | "alocados";
 
+const chipBase =
+  "shrink-0 rounded-sm border px-3 py-1.5 text-[12px] transition inline-flex items-center gap-1.5";
+const chipOn = "border-[#c4a574]/40 bg-[#c4a574]/12 text-[#c4a574]";
+const chipOff = "border-white/[0.06] text-slate-500 hover:border-white/12 hover:text-slate-300";
+
 export function EquipamentosGlobalClient({
   equipamentos,
   pontos,
@@ -116,22 +121,39 @@ export function EquipamentosGlobalClient({
 
   return (
     <div
-      className={cn(display.variable, sans.variable)}
+      className={cn(
+        display.variable,
+        sans.variable,
+        "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-16 sm:-mx-6 sm:px-6"
+      )}
       style={{ fontFamily: "var(--font-eq-sans), system-ui, sans-serif" }}
     >
-      <div className="relative mx-auto max-w-6xl pt-6 sm:pt-10">
+      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 80% 45% at 50% -8%, rgba(196,165,116,0.12), transparent 55%), radial-gradient(ellipse 40% 30% at 0% 60%, rgba(120,90,50,0.08), transparent 50%), linear-gradient(180deg, #06080e 0%, #0a0e16 55%, #07090f 100%)",
+          }}
+        />
+      </div>
+
+      <div className="mx-auto max-w-6xl pt-6 sm:pt-10">
         <header className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-at-link">
+            <p
+              className="text-[11px] font-medium uppercase text-[#c4a574]/90"
+              style={{ letterSpacing: "0.38em" }}
+            >
               Inventário · OperaRoute
             </p>
             <h1
-              className="mt-3 text-[clamp(2.2rem,5vw,3.4rem)] leading-[0.95] tracking-tight text-at-primary"
+              className="mt-3 text-[clamp(2.2rem,5vw,3.4rem)] leading-[0.95] tracking-tight text-[#f4efe6]"
               style={{ fontFamily: "var(--font-eq-display), Georgia, serif" }}
             >
               Equipamentos
             </h1>
-            <p className="mt-3 max-w-md text-[13px] text-at-muted">
+            <p className="mt-3 max-w-md text-[13px] text-slate-400">
               Máquinas da operação — por tipo, ponto e status.
             </p>
           </div>
@@ -139,14 +161,14 @@ export function EquipamentosGlobalClient({
           <div className="flex flex-wrap gap-2">
             <Link
               href="/estoque?categoria=pecas"
-              className="analise-tab-idle inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-[13px] transition"
+              className="inline-flex items-center gap-2 rounded-sm border border-white/[0.1] px-4 py-2.5 text-[13px] text-slate-400 transition hover:border-white/20 hover:text-[#f4efe6]"
             >
               <Package className="h-3.5 w-3.5 opacity-70" />
               Peças
             </Link>
             <Link
               href="/equipamentos/buscar"
-              className="analise-tab-idle inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-[13px] transition"
+              className="inline-flex items-center gap-2 rounded-sm border border-white/[0.1] px-4 py-2.5 text-[13px] text-slate-400 transition hover:border-white/20 hover:text-[#f4efe6]"
             >
               <Search className="h-3.5 w-3.5 opacity-70" />
               Buscar série
@@ -155,21 +177,21 @@ export function EquipamentosGlobalClient({
           </div>
         </header>
 
-        <div className="mt-8 h-px w-full bg-gradient-to-r from-[var(--at-link)]/50 via-[var(--at-divider)] to-transparent" />
+        <div className="mt-8 h-px w-full bg-gradient-to-r from-[#c4a574]/50 via-white/10 to-transparent" />
 
-        <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-at-grid sm:grid-cols-4">
+        <div className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-4">
           {[
             { label: "Total", value: stats.total },
             { label: "No estoque", value: stats.emEstoque },
             { label: "Ativos", value: stats.ativos },
             { label: "Manutenção", value: stats.emManutencao, warn: stats.emManutencao > 0 },
           ].map((cell) => (
-            <div key={cell.label} className="bg-at-card px-4 py-3.5">
-              <p className="text-[10px] uppercase tracking-[0.16em] text-at-muted">{cell.label}</p>
+            <div key={cell.label} className="bg-[#0a0e16]/95 px-4 py-3.5">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-500">{cell.label}</p>
               <p
                 className={cn(
-                  "mt-1.5 text-[20px] font-medium tabular-nums text-at-primary",
-                  cell.warn && "text-amber-600 dark:text-amber-300/90"
+                  "mt-1.5 text-[20px] font-medium tabular-nums",
+                  cell.warn ? "text-amber-300/90" : "text-[#f4efe6]"
                 )}
               >
                 {cell.value}
@@ -179,8 +201,11 @@ export function EquipamentosGlobalClient({
         </div>
 
         <div className="mt-8 space-y-4">
-          <div className="flex items-center gap-3 rounded-lg border border-at bg-at-card px-3.5 py-2.5 transition focus-within:border-[var(--at-tab-active-border)]">
-            <Search className="h-4 w-4 shrink-0 text-at-muted" aria-hidden />
+          <div className="flex items-center gap-3 rounded-sm border border-white/[0.08] bg-white/[0.03] px-3.5 py-2.5 transition focus-within:border-[#c4a574]/35">
+            <Search
+              className="h-4 w-4 shrink-0 text-slate-500"
+              aria-hidden
+            />
             <input
               type="text"
               inputMode="search"
@@ -188,7 +213,7 @@ export function EquipamentosGlobalClient({
               value={busca}
               onChange={(e) => setBusca(e.target.value)}
               placeholder="Buscar por série, número, nome ou ponto…"
-              className="equipamentos-search min-w-0 flex-1 border-0 !bg-transparent !p-0 text-[13px] text-at-primary shadow-none outline-none placeholder:text-at-soft focus:ring-0"
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] text-[#f4efe6] outline-none placeholder:text-slate-600 shadow-none focus:ring-0"
               aria-label="Buscar equipamentos"
             />
           </div>
@@ -202,10 +227,7 @@ export function EquipamentosGlobalClient({
                   setFiltroLocal(s);
                   if (s === "estoque") setFiltroPonto("");
                 }}
-                className={cn(
-                  "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition",
-                  filtroLocal === s ? "analise-tab-active" : "analise-tab-idle"
-                )}
+                className={cn(chipBase, filtroLocal === s ? chipOn : chipOff)}
               >
                 {s === "estoque" && <Package className="h-3 w-3" />}
                 {s === "todos" ? "Todos" : s === "estoque" ? "No estoque" : "Nos pontos"}
@@ -216,10 +238,7 @@ export function EquipamentosGlobalClient({
                 key={`st-${s}`}
                 type="button"
                 onClick={() => setFiltroStatus(s)}
-                className={cn(
-                  "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition",
-                  filtroStatus === s ? "analise-tab-active" : "analise-tab-idle"
-                )}
+                className={cn(chipBase, filtroStatus === s ? chipOn : chipOff)}
               >
                 {s === "todos" ? "Todos status" : s === "ativo" ? "Ativos" : "Inativos"}
               </button>
@@ -228,8 +247,10 @@ export function EquipamentosGlobalClient({
               type="button"
               onClick={() => setSomenteManutencao((v) => !v)}
               className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition",
-                somenteManutencao ? "analise-tab-active" : "analise-tab-idle"
+                chipBase,
+                somenteManutencao
+                  ? "border-[#c4a574]/40 bg-[#c4a574]/10 text-[#e8d5b0]"
+                  : chipOff
               )}
             >
               <Wrench className="h-3 w-3" />
@@ -239,8 +260,10 @@ export function EquipamentosGlobalClient({
               type="button"
               onClick={() => setSomenteSeriePendente((v) => !v)}
               className={cn(
-                "inline-flex shrink-0 items-center gap-1.5 rounded-full border px-3 py-1.5 text-[12px] font-medium transition",
-                somenteSeriePendente ? "analise-tab-active" : "analise-tab-idle"
+                chipBase,
+                somenteSeriePendente
+                  ? "border-white/20 bg-white/[0.06] text-[#f4efe6]"
+                  : chipOff
               )}
             >
               <Hash className="h-3 w-3" />
@@ -258,7 +281,7 @@ export function EquipamentosGlobalClient({
                 setFiltroPonto(e.target.value);
                 if (e.target.value) setFiltroLocal("alocados");
               }}
-              className="flex-1 rounded-lg border border-at bg-at-card px-3 py-2.5 text-[13px] text-at-primary outline-none focus:border-[var(--at-tab-active-border)]"
+              className="flex-1 rounded-sm border border-white/[0.08] bg-[#0a0e16] px-3 py-2.5 text-[13px] text-[#f4efe6] outline-none focus:border-[#c4a574]/35"
             >
               <option value="">Todos os pontos</option>
               {pontos.map((p) => (
@@ -271,7 +294,7 @@ export function EquipamentosGlobalClient({
             <select
               value={filtroTipo}
               onChange={(e) => setFiltroTipo(e.target.value as FiltroTipo)}
-              className="flex-1 rounded-lg border border-at bg-at-card px-3 py-2.5 text-[13px] text-at-primary outline-none focus:border-[var(--at-tab-active-border)]"
+              className="flex-1 rounded-sm border border-white/[0.08] bg-[#0a0e16] px-3 py-2.5 text-[13px] text-[#f4efe6] outline-none focus:border-[#c4a574]/35"
             >
               <option value="todos">Todos os tipos</option>
               {EQUIPAMENTO_GRUPOS.map((g) => (
@@ -285,26 +308,26 @@ export function EquipamentosGlobalClient({
 
         {equipamentos.length === 0 ? (
           <div className="mt-16 flex flex-col items-center px-4 py-12 text-center">
-            <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-xl border border-at text-at-muted">
+            <div className="mb-4 flex h-14 w-14 items-center justify-center border border-white/[0.08] text-slate-500">
               <Gamepad2 className="h-6 w-6" />
             </div>
             <h3
-              className="text-xl text-at-primary"
+              className="text-xl text-[#f4efe6]"
               style={{ fontFamily: "var(--font-eq-display), Georgia, serif" }}
             >
               Nenhum equipamento
             </h3>
-            <p className="mt-2 max-w-sm text-[13px] text-at-muted">
+            <p className="mt-2 max-w-sm text-[13px] text-slate-500">
               Cadastre no estoque com número de série. Depois aloque no ponto.
             </p>
           </div>
         ) : filtrados.length === 0 ? (
-          <p className="mt-12 text-center text-[13px] text-at-muted">
+          <p className="mt-12 text-center text-[13px] text-slate-500">
             Nenhum equipamento neste filtro.
           </p>
         ) : (
           <div className="mt-8">
-            <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-at-soft">
+            <p className="mb-4 text-[11px] uppercase tracking-[0.18em] text-slate-600">
               {filtrados.length} resultado{filtrados.length === 1 ? "" : "s"}
             </p>
             <EquipamentosList

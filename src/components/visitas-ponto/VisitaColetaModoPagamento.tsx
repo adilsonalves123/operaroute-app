@@ -39,13 +39,13 @@ export function VisitaColetaModoPagamento({
   function btnClass(ativo: boolean) {
     return cn(
       "rounded-xl border px-3 py-3 text-left transition",
-      ativo ? selected : "border-at-soft bg-black/20 text-at-primary/85 hover:border-at-soft"
+      ativo ? selected : "border-white/[0.08] bg-black/20 text-slate-300 hover:border-white/15"
     );
   }
 
   return (
     <div className="space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-at-muted">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
         Depois desta coleta
       </p>
       <div className={cn("grid gap-2.5", tresOpcoes ? "grid-cols-3" : "grid-cols-2")}>
@@ -58,7 +58,7 @@ export function VisitaColetaModoPagamento({
             <ArrowRight className="h-3.5 w-3.5 shrink-0" />
             Salvar e seguir
           </span>
-          <span className="mt-1.5 block text-[11px] leading-snug text-at-muted">
+          <span className="mt-1.5 block text-[11px] leading-snug text-slate-400">
             Não cobra agora · outros nichos · paga no Cobrar
           </span>
         </button>
@@ -73,7 +73,7 @@ export function VisitaColetaModoPagamento({
               <Wallet className="h-3.5 w-3.5 shrink-0" />
               Receber agora
             </span>
-            <span className="mt-1.5 block text-[11px] leading-snug text-at-muted">
+            <span className="mt-1.5 block text-[11px] leading-snug text-slate-400">
               Pix/dinheiro deste nicho · depois escolhe se encerra ou segue
             </span>
           </button>
@@ -89,7 +89,7 @@ export function VisitaColetaModoPagamento({
               <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
               Finalizar
             </span>
-            <span className="mt-1.5 block text-[11px] leading-snug text-at-muted">
+            <span className="mt-1.5 block text-[11px] leading-snug text-slate-400">
               Encerra sem cobrar agora
             </span>
           </button>

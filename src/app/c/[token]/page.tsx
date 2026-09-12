@@ -7,14 +7,6 @@ import { PreviaRelatorioPublicView } from "@/components/comprovantes/PreviaRelat
 import { HistoricoVisitaCassinoPublicView } from "@/components/comprovantes/HistoricoVisitaCassinoPublicView";
 import { HistoricoColetaNichoPublicView } from "@/components/comprovantes/HistoricoColetaNichoPublicView";
 
-const NICHOS_COMPROVANTE_RELATORIO = new Set([
-  "fura_fura",
-  "ursinho",
-  "diversao",
-  "bolinha",
-  "consignado",
-]);
-
 type Props = { params: Promise<{ token: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -39,10 +31,10 @@ export default async function ComprovantePublicPage({ params }: Props) {
 
   if (!isAdminConfigured()) {
     return (
-      <main className="min-h-screen bg-[#070b14] text-at-primary/90">
+      <main className="min-h-screen bg-[#070b14] text-slate-200">
         <div className="mx-auto max-w-md px-4 py-16 text-center">
           <h1 className="text-xl font-semibold text-white">Comprovante indisponível</h1>
-          <p className="mt-2 text-sm text-at-muted">
+          <p className="mt-2 text-sm text-slate-400">
             Configure SUPABASE_SERVICE_ROLE_KEY para liberar links públicos.
           </p>
         </div>
@@ -64,35 +56,21 @@ export default async function ComprovantePublicPage({ params }: Props) {
     snap.layout === "historico" &&
     snap.nichoModulo === "cassino" &&
     !!snap.relatorio;
-  const usarRelatorioNicho =
-    !!snap.nichoModulo &&
-    NICHOS_COMPROVANTE_RELATORIO.has(snap.nichoModulo) &&
-    !!snap.relatorio;
   const usarHistoricoNicho =
     snap.layout === "historico" &&
     !!snap.nichoModulo &&
     snap.nichoModulo !== "cassino" &&
-    !NICHOS_COMPROVANTE_RELATORIO.has(snap.nichoModulo) &&
     !!snap.relatorio;
-  const usarRelatorio = (snap.layout === "relatorio" || usarRelatorioNicho) && !!snap.relatorio;
-
-  const relatorioSnap =
-    usarRelatorioNicho && snap.layout !== "relatorio"
-      ? { ...snap, layout: "relatorio" as const }
-      : snap;
-
-  const mainClass = usarRelatorio
-    ? "min-h-screen bg-[#faf8f4]"
-    : "min-h-screen bg-[#070b14]";
+  const usarRelatorio = snap.layout === "relatorio" && !!snap.relatorio;
 
   return (
-    <main className={mainClass}>
+    <main className="min-h-screen bg-[#070b14]">
       {usarHistoricoCassino ? (
         <HistoricoVisitaCassinoPublicView snapshot={snap} />
       ) : usarHistoricoNicho ? (
         <HistoricoColetaNichoPublicView snapshot={snap} />
       ) : usarRelatorio ? (
-        <PreviaRelatorioPublicView snapshot={relatorioSnap} />
+        <PreviaRelatorioPublicView snapshot={snap} />
       ) : (
         <ComprovantePublicView snapshot={snap} />
       )}

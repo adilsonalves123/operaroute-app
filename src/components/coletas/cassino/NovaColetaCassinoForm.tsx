@@ -56,6 +56,7 @@ import { createClient } from "@/lib/supabase/client";
 import { usePermissoes } from "@/components/layout/PermissoesProvider";
 import { filtrarPontosClientes } from "@/lib/visao/filtro";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
+import { replaceUrlSemRsc } from "@/lib/navigation/replace-url-sem-rsc";
 import {
   clearCassinoLeiturasDraft,
   loadCassinoLeiturasDraft,
@@ -422,6 +423,7 @@ export function NovaColetaCassinoForm() {
 
   // Aplica edição salva / rascunho quando a visita entra na URL — sem recarregar as máquinas
   useEffect(() => {
+    if (sucesso) return;
     if (!pontoId || loadingPonto || leituras.length === 0) return;
     if (!visitaPontoId && !editarVisitaUrl) return;
 
@@ -431,6 +433,7 @@ export function NovaColetaCassinoForm() {
     let cancelled = false;
 
     async function aplicarContextoVisita() {
+      if (sucesso) return;
       const supabase = createClient();
       let visitaParaEditar = editarVisitaUrl || null;
       let visitaPontoFinalizada = false;
@@ -539,13 +542,13 @@ export function NovaColetaCassinoForm() {
               .ilike("descricao", tagLike),
             supabase
               .from("pendencias")
-              .select("id, valor, descricao, tipo, titulo, status")
+              .select("id, valor, descricao, tipo, titulo, status, visita_id")
               .eq("ponto_id", pontoId)
               .eq("status", "aberta")
               .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"]),
             supabase
               .from("pendencias")
-              .select("id, valor, descricao, tipo, titulo, status")
+              .select("id, valor, descricao, tipo, titulo, status, visita_id")
               .eq("ponto_id", pontoId)
               .in("tipo", ["pagamento_pendente", "parcial", "visita_consolidada"])
               .ilike("descricao", tagLike),
@@ -727,7 +730,7 @@ export function NovaColetaCassinoForm() {
     };
     // leituras.length: só espera as máquinas existirem; não reaplicar a cada tecla
     // eslint-disable-next-line react-hooks/exhaustive-deps -- applyKey cobre visita/edição
-  }, [pontoId, visitaPontoId, editarVisitaUrl, loadingPonto, leituras.length]);
+  }, [pontoId, visitaPontoId, editarVisitaUrl, loadingPonto, leituras.length, sucesso]);
 
   useEffect(() => {
     if (!visitaPontoId || !pontoId || editarVisitaId || loadingPonto) return;
@@ -1169,14 +1172,14 @@ export function NovaColetaCassinoForm() {
       });
       concluido = true;
 
-      // Evita F5 reabrir a coleta já salva (leituras + pendências já baixadas = números loucos).
+      // Evita F5 reabrir a coleta já salva — sem `router.replace` (splash do app).
       {
         const params = new URLSearchParams();
         if (pontoId) params.set("ponto", pontoId);
         if (visitaPontoParaSalvar && !finalizarDireto && !eraEdicaoFinalizada) {
           params.set("visita_ponto", visitaPontoParaSalvar);
         }
-        router.replace(
+        replaceUrlSemRsc(
           params.toString()
             ? `/coletas/nova/cassino?${params.toString()}`
             : "/coletas/nova/cassino"

@@ -34,7 +34,7 @@ export function EquipamentoFotoThumb({
       ) : (
         <div
           className={cn(
-            "flex h-11 w-11 flex-col items-center justify-center gap-0.5 rounded-sm border border-dashed border-white/[0.12] text-at-soft"
+            "flex h-11 w-11 flex-col items-center justify-center gap-0.5 rounded-sm border border-dashed border-white/[0.12] text-slate-600"
           )}
           title="Sem foto — adicione em Editar máquina"
         >

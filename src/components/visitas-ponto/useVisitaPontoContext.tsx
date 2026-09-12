@@ -71,20 +71,17 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
   }, [visitaPontoId]);
 
   function voltarAposColeta(opts?: { visitaJaFinalizada?: boolean }) {
+    let href = "/coletas";
     if (visitaPontoId && opts?.visitaJaFinalizada) {
       // Receber agora: comprovante já foi na coleta — não manda pra tela de Cobrar zerada.
       const ponto = pontoId || searchParams.get("ponto")?.trim();
-      router.push(ponto ? `/pontos/${ponto}` : "/coletas");
-      router.refresh();
-      return;
-    }
-    if (visitaPontoId) {
+      href = ponto ? `/pontos/${ponto}` : "/coletas";
+    } else if (visitaPontoId) {
       // Continuar: hub da visita — troca de nicho com clareza; Cobrar fica na nav.
-      router.push(`/visitas-ponto/${visitaPontoId}`);
-    } else {
-      router.push("/coletas");
+      href = `/visitas-ponto/${visitaPontoId}`;
     }
-    router.refresh();
+    // Só um push: `router.refresh()` logo depois deixava o splash de `(app)/loading.tsx` preso.
+    router.push(href);
   }
 
   function fecharDecisao(valor: DecisaoReceberVisita) {

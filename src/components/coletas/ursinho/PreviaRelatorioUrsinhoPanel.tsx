@@ -1,13 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { ImprimirRelatorioColetaButton } from "@/components/coletas/ImprimirRelatorioColetaButton";
+import { Printer } from "lucide-react";
 import { formatContador } from "@/lib/nichos/cassino";
 import type { RelatorioUrsinhoData } from "@/lib/nichos/ursinho/relatorio";
 import { snapshotFromRelatorioUrsinho } from "@/lib/comprovantes/from-relatorio-nicho";
 import { montarSnapshotRelatorio } from "@/lib/comprovantes/previa-relatorio";
 import { CompartilharComprovanteLinkActions } from "@/components/comprovantes/CompartilharComprovanteLinkActions";
-import type { RelatorioImpressaoOpts } from "@/lib/coletas/imprimir-relatorio-texto";
+import { abrirImpressaoRelatorioTextoGenerico } from "@/lib/coletas/imprimir-relatorio-texto";
 import { ColetaCobrarPixBar } from "@/components/coletas/ColetaCobrarPixBar";
 import { cn, formatCurrency, formatDateTime } from "@/lib/utils";
 import type { ComprovanteSnapshot } from "@/lib/comprovantes/types";
@@ -52,12 +52,12 @@ export function PreviaRelatorioUrsinhoPanel({
       nichoModulo: "ursinho",
       relatorio: { ...data, previa: false },
       previa: false,
-      layout: "relatorio",
+      layout: "historico",
     });
   }
 
-  function getImpressaoOpts(): RelatorioImpressaoOpts {
-    return {
+  function handlePrint() {
+    const ok = abrirImpressaoRelatorioTextoGenerico({
       titulo: "COLETA — URSINHO",
       empresaNome: data.empresaNome,
       pontoNome: data.pontoNome,
@@ -84,7 +84,8 @@ export function PreviaRelatorioUrsinhoPanel({
         { label: "A receber", valor: formatCurrency(c.valorAReceber), destaque: true },
         { label: "Lucro real", valor: formatCurrency(c.lucroReal) },
       ],
-    };
+    });
+    if (!ok) window.alert("Permita pop-ups neste site para imprimir.");
   }
 
   const content = (
@@ -115,7 +116,15 @@ export function PreviaRelatorioUrsinhoPanel({
           whatsappLabel="WhatsApp"
           shareLabel="Compartilhar"
         />
-        <ImprimirRelatorioColetaButton disabled={disabled} getImpressaoOpts={getImpressaoOpts} />
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={handlePrint}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-600 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50"
+        >
+          <Printer className="h-4 w-4" />
+          Imprimir
+        </button>
       </div>
 
       {disabled && (

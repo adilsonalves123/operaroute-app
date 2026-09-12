@@ -135,47 +135,6 @@ export function isPendenciaOperacao(tipo: string): boolean {
   );
 }
 
-/** Débito cassino (visita negativa) — recupera no lucro das positivas. */
-export function isNegativoCassinoVisita(p: {
-  tipo?: string | null;
-  visita_id?: string | null;
-}): boolean {
-  return (p.tipo ?? "").toLowerCase() === "negativo" && Boolean(p.visita_id);
-}
-
-/**
- * Manual "deixei no ponto sem leitura" — abate na próxima coleta negativa
- * (mesmo fluxo de pagamento pendente), não soma como débito negativo.
- */
-export function isNegativoManualSemLeitura(p: {
-  tipo?: string | null;
-  visita_id?: string | null;
-}): boolean {
-  return (p.tipo ?? "").toLowerCase() === "negativo" && !p.visita_id;
-}
-
-export function partitionPendenciasNegativasCassino<
-  T extends {
-    id: string;
-    valor: number | null;
-    descricao: string | null;
-    visita_id?: string | null;
-    tipo?: string | null;
-    titulo?: string | null;
-  },
->(rows: T[] | null | undefined): {
-  negativosCassino: T[];
-  operacaoSemLeitura: T[];
-} {
-  const negativosCassino: T[] = [];
-  const operacaoSemLeitura: T[] = [];
-  for (const p of rows ?? []) {
-    if (isNegativoManualSemLeitura(p)) operacaoSemLeitura.push(p);
-    else negativosCassino.push(p);
-  }
-  return { negativosCassino, operacaoSemLeitura };
-}
-
 /** Tipos de pendência que representam dívida da operação a receber do ponto. */
 export const TIPOS_PENDENCIA_OPERACAO = [
   "pagamento_pendente",
@@ -183,18 +142,14 @@ export const TIPOS_PENDENCIA_OPERACAO = [
   "visita_consolidada",
 ] as const;
 
-/** Saldo cobrável: negativo cassino usa abatimentos; manual sem leitura = operação. */
+/** Saldo cobrável: negativo usa abatimentos na descrição; demais usam valor atual. */
 export function saldoPendenciaCobravel(p: {
   tipo: string;
   id: string;
   valor: number;
   observacao?: string | null;
-  visita_id?: string | null;
 }): number {
   if (p.tipo.toLowerCase() === "haver") return 0;
-  if (isNegativoManualSemLeitura(p)) {
-    return Math.max(0, p.valor);
-  }
   if (p.tipo.toLowerCase() === "negativo") {
     return saldoPendenciaReais({
       id: p.id,
@@ -338,6 +293,7 @@ export type PendenciaParaEdicaoVisita = {
   tipo: string | null;
   titulo: string | null;
   status?: string | null;
+  visita_id?: string | null;
 };
 
 /**
@@ -357,6 +313,13 @@ export function pendenciasParaEdicaoVisita(
     const aberta = String(p.status ?? "aberta").toLowerCase() === "aberta";
 
     if (!destaVisita && !aberta) continue;
+
+    const tipo = String(p.tipo ?? "").toLowerCase();
+    const eCobrancaDestaVisita =
+      p.visita_id === visitaId &&
+      (tipo === "pagamento_pendente" || tipo === "parcial" || tipo === "visita_consolidada");
+    // Saldo desta coleta (muitas vezes o desconto) não é dívida antiga — não cobrar de novo.
+    if (eCobrancaDestaVisita) continue;
 
     if (!destaVisita) {
       out.push({
