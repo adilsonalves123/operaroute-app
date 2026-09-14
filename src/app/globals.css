@@ -664,6 +664,26 @@ html[data-app-theme="light"] .ponto-comissao-painel .analise-tab-idle {
   color: #3d3833 !important;
 }
 
+/* GPS / endereço do ponto — ciano e verde neon ilegíveis no claro */
+html[data-app-theme="light"] .ponto-endereco-gps [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .ponto-endereco-campos [class*="text-emerald-"] {
+  color: #047857 !important;
+}
+html[data-app-theme="light"] .ponto-endereco-campos [class*="text-amber-"] {
+  color: #92662a !important;
+}
+html[data-app-theme="light"] .ponto-endereco-gps .text-at-muted {
+  color: #3d3833 !important;
+}
+html:not([data-app-theme="light"]) .ponto-endereco-campos .text-emerald-700 {
+  color: #6ee7b7;
+}
+html:not([data-app-theme="light"]) .ponto-endereco-campos .text-amber-700 {
+  color: #fbbf24;
+}
+
 /* Equipe / painel restrito — amarelo e dourado claros no fundo claro */
 html[data-app-theme="light"] .equipe-pagina {
   --at-primary: #141210;
