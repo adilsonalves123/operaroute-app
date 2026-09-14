@@ -2,6 +2,11 @@ import { createClient, getEmpresa, getProfile } from "@/lib/supabase/server";
 import { PontosClient } from "./PontosClient";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import { aplicarFiltroIdsPontos, resolverVisaoOperador } from "@/lib/visao/resolver";
+import type { Ponto } from "@/lib/types/database";
+
+/** Só o que o card da lista usa — JSON pesado (estoque_brindes) derruba o select e a tela fica vazia. */
+const COLUNAS_LISTA =
+  "id, empresa_id, nome, cidade, bairro, status, foto_url, ultima_coleta, created_at";
 
 export default async function PontosPage() {
   const [profile, supabase] = await Promise.all([getProfile(), createClient()]);
@@ -13,20 +18,37 @@ export default async function PontosPage() {
   const empresa = await getEmpresa(profile.empresa_id);
   const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
   const visao = await resolverVisaoOperador(supabase, acesso);
+  const visaoLista = acesso.isOwner ? { ...visao, restrita: false } : visao;
 
   const query = aplicarFiltroIdsPontos(
     supabase
       .from("pontos")
-      .select(
-        "id, empresa_id, nome, responsavel, whatsapp, cidade, bairro, endereco, latitude, longitude, tipo_ponto, status, comissao_percentual, operador_id, observacoes, abater_automatico, foto_url, ultima_coleta, created_at, preco_furo, furos_estoque, furos_minimo, estoque_brindes, kit_ativo_id, kit_instalado_em"
-      )
+      .select(COLUNAS_LISTA)
       .eq("empresa_id", profile.empresa_id)
       .order("nome"),
-    visao
+    visaoLista
   );
 
-  const { data: pontos } = await query;
+  let { data: pontos, error } = await query;
 
-  // Só a foto cadastrada do ponto (cliente). Foto de coleta não substitui.
-  return <PontosClient pontos={pontos ?? []} />;
+  if (error) {
+    const fallback = aplicarFiltroIdsPontos(
+      supabase
+        .from("pontos")
+        .select("id, nome, cidade, status, foto_url, ultima_coleta")
+        .eq("empresa_id", profile.empresa_id)
+        .order("nome"),
+      visaoLista
+    );
+    const retry = await fallback;
+    pontos = retry.data;
+    error = retry.error;
+  }
+
+  return (
+    <PontosClient
+      pontos={(pontos ?? []) as Ponto[]}
+      erroCarregar={error?.message ?? null}
+    />
+  );
 }

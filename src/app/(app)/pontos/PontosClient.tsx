@@ -21,6 +21,7 @@ const sans = Outfit({
 
 interface PontosClientProps {
   pontos: Ponto[];
+  erroCarregar?: string | null;
 }
 
 const STATUS_TABS: { value: string; label: string }[] = [
@@ -31,7 +32,7 @@ const STATUS_TABS: { value: string; label: string }[] = [
   { value: "inadimplente", label: "Inadimplentes" },
 ];
 
-export function PontosClient({ pontos }: PontosClientProps) {
+export function PontosClient({ pontos, erroCarregar }: PontosClientProps) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
 
@@ -145,11 +146,13 @@ export function PontosClient({ pontos }: PontosClientProps) {
               Nenhum ponto encontrado
             </h3>
             <p className="mt-2 max-w-sm text-[13px] text-at-muted">
-              {pontos.length === 0
-                ? "Cadastre o primeiro ponto para montar a base da operação."
-                : "Nenhum resultado para essa busca ou filtro."}
+              {erroCarregar
+                ? "Não deu para carregar os pontos. Atualize a página."
+                : pontos.length === 0
+                  ? "Cadastre o primeiro ponto para montar a base da operação."
+                  : "Nenhum resultado para essa busca ou filtro."}
             </p>
-            {pontos.length === 0 && (
+            {pontos.length === 0 && !erroCarregar && (
               <Link
                 href="/pontos/novo"
                 className="mt-6 inline-flex items-center gap-2 rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/15 px-5 py-2.5 text-[13px] font-medium text-at-link transition hover:bg-[#c4a574]/22"
