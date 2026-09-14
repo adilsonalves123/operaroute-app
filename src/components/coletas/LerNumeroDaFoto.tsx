@@ -267,14 +267,14 @@ export function LerNumeroDaFoto({
           </button>
 
           {menuAberto ? (
-            <div className="overflow-hidden rounded-xl border border-at-soft bg-slate-900/95 shadow-xl">
+            <div className="foto-fonte-menu overflow-hidden rounded-xl border border-at bg-at-card shadow-lg">
               <button
                 type="button"
                 disabled={lendo}
                 onClick={() => void abrir("camera")}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-slate-100 hover:bg-at-card-soft disabled:opacity-50"
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-at-primary hover:bg-at-card-soft disabled:opacity-50"
               >
-                <Camera className="h-4 w-4 text-cyan-400" />
+                <Camera className="h-4 w-4 text-cyan-500" />
                 <span>
                   <span className="block text-xs font-medium">Câmera</span>
                   <span className="block text-[10px] text-at-muted">Foto do visor agora</span>
@@ -284,9 +284,9 @@ export function LerNumeroDaFoto({
                 type="button"
                 disabled={lendo}
                 onClick={() => void abrir("galeria")}
-                className="flex w-full items-center gap-3 border-t border-at px-3 py-2.5 text-left text-sm text-slate-100 hover:bg-violet-500/10 disabled:opacity-50"
+                className="flex w-full items-center gap-3 border-t border-at px-3 py-2.5 text-left text-sm text-at-primary hover:bg-at-card-soft disabled:opacity-50"
               >
-                <ImageIcon className="h-4 w-4 text-violet-300" />
+                <ImageIcon className="h-4 w-4 text-violet-500" />
                 <span>
                   <span className="block text-xs font-medium">Galeria</span>
                   <span className="block text-[10px] text-at-muted">Escolher foto salva</span>

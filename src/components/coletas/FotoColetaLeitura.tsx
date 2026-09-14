@@ -199,29 +199,29 @@ export function FotoColetaLeitura({
       )}
 
       {menuAberto ? (
-        <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl">
+        <div className="foto-fonte-menu overflow-hidden rounded-xl border border-at bg-at-card shadow-lg">
           <button
             type="button"
             disabled={abrindo != null}
             onClick={() => void abrir("camera")}
-            className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-slate-100 hover:bg-white/[0.04] disabled:opacity-50"
+            className="flex w-full items-center gap-3 px-4 py-3.5 text-left text-sm text-at-primary hover:bg-at-card-soft disabled:opacity-50"
           >
-            <Camera className="h-4 w-4 text-[#c4a574]" />
+            <Camera className="h-4 w-4 text-primary-neon" />
             <span>
               <span className="block font-medium">Câmera</span>
-              <span className="block text-[11px] text-slate-500">Tirar foto agora</span>
+              <span className="block text-[11px] text-at-muted">Tirar foto agora</span>
             </span>
           </button>
           <button
             type="button"
             disabled={abrindo != null}
             onClick={() => void abrir("galeria")}
-            className="flex w-full items-center gap-3 border-t border-white/[0.06] px-4 py-3.5 text-left text-sm text-slate-100 hover:bg-violet-500/10 disabled:opacity-50"
+            className="flex w-full items-center gap-3 border-t border-at px-4 py-3.5 text-left text-sm text-at-primary hover:bg-at-card-soft disabled:opacity-50"
           >
-            <ImageIcon className="h-4 w-4 text-violet-300" />
+            <ImageIcon className="h-4 w-4 text-violet-500" />
             <span>
               <span className="block font-medium">Galeria</span>
-              <span className="block text-[11px] text-slate-500">Escolher foto salva</span>
+              <span className="block text-[11px] text-at-muted">Escolher foto salva</span>
             </span>
           </button>
         </div>

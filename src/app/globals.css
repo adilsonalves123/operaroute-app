@@ -644,6 +644,17 @@ html[data-app-theme="light"] .kits-pagina [class*="border-slate-"] {
   border-color: rgba(28, 25, 23, 0.16) !important;
 }
 
+/* Menu Câmera / Galeria */
+html[data-app-theme="light"] .foto-fonte-menu {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  box-shadow: 0 8px 24px rgba(28, 25, 23, 0.1);
+}
+html[data-app-theme="light"] .foto-fonte-menu [class*="text-slate-1"],
+html[data-app-theme="light"] .foto-fonte-menu .text-white {
+  color: #141210 !important;
+}
+
 /* Equipe / painel restrito — amarelo e dourado claros no fundo claro */
 html[data-app-theme="light"] .equipe-pagina {
   --at-primary: #141210;
