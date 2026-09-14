@@ -98,7 +98,7 @@ export function KitDepositoControles({
                     <p className="mt-0.5 text-sm text-at-muted">{descricao}</p>
                   ) : null}
                 </div>
-                {actions ? <div className="flex flex-wrap gap-1">{actions}</div> : null}
+                {actions ? <div className="relative z-10 flex flex-wrap gap-1">{actions}</div> : null}
               </div>
             </div>
           </div>

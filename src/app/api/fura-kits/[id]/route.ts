@@ -249,18 +249,25 @@ export async function DELETE(_request: Request, ctx: RouteCtx) {
     .from("pontos")
     .select("id, nome")
     .eq("empresa_id", empresaId)
-    .eq("kit_ativo_id", id)
-    .limit(8);
+    .eq("kit_ativo_id", id);
 
   if (pontosComKit && pontosComKit.length > 0) {
-    const nomes = pontosComKit.map((p) => p.nome).join(", ");
-    return NextResponse.json(
-      {
-        error: `Este kit está instalado em ponto(s): ${nomes}. Remova o kit do ponto antes de excluir.`,
-      },
-      { status: 400 }
-    );
+    const { error: unassignErr } = await supabase
+      .from("pontos")
+      .update({ kit_ativo_id: null, kit_instalado_em: null })
+      .eq("empresa_id", empresaId)
+      .eq("kit_ativo_id", id);
+    if (unassignErr) {
+      return NextResponse.json(
+        {
+          error: `Não deu para tirar o kit do ponto. ${unassignErr.message}`,
+        },
+        { status: 400 }
+      );
+    }
   }
+
+  await supabase.from("coletas").update({ kit_id: null }).eq("kit_id", id);
 
   const {
     data: { user },
@@ -268,7 +275,7 @@ export async function DELETE(_request: Request, ctx: RouteCtx) {
 
   const { data: deposito } = await supabase
     .from("fura_kits_estoque")
-    .select("quantidade")
+    .select("id, quantidade")
     .eq("empresa_id", empresaId)
     .eq("kit_id", id)
     .maybeSingle();
@@ -283,12 +290,17 @@ export async function DELETE(_request: Request, ctx: RouteCtx) {
       observacao: "Desmontagem automática ao excluir o kit",
     });
     if (result.error) {
-      return NextResponse.json(
-        {
-          error: `Há ${noDeposito} kit(s) no depósito. Não deu para devolver ao estoque: ${result.error}`,
-        },
-        { status: 400 }
-      );
+      const receitaVazia = /sem itens/i.test(result.error);
+      if (receitaVazia && deposito?.id) {
+        await supabase.from("fura_kits_estoque").delete().eq("id", deposito.id);
+      } else {
+        return NextResponse.json(
+          {
+            error: `Há ${noDeposito} kit(s) no depósito. Não deu para devolver ao estoque: ${result.error}`,
+          },
+          { status: 400 }
+        );
+      }
     }
   }
 

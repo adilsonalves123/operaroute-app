@@ -143,6 +143,7 @@ export function FuraKitsClient({
   const [montarKitId, setMontarKitId] = useState<string | null>(null);
   const [montarQtd, setMontarQtd] = useState(1);
   const [buscaEstoque, setBuscaEstoque] = useState("");
+  const [kitParaExcluir, setKitParaExcluir] = useState<KitCompleto | null>(null);
 
   const estoquePorId = useMemo(() => {
     const map = new Map(estoque.map((e) => [e.id, e]));
@@ -506,19 +507,6 @@ export function FuraKitsClient({
   }
 
   async function excluirKit(kit: KitCompleto) {
-    const noDeposito = kit.quantidade_montada ?? 0;
-    const avisoDeposito =
-      noDeposito > 0
-        ? `\n\nHá ${noDeposito} kit(s) pronto(s) no depósito — serão separados e os itens voltam ao estoque.`
-        : "";
-    if (
-      !confirm(
-        `Excluir o kit "${kit.nome}"?\n\nA receita some da lista. Coletas antigas continuam no histórico.${avisoDeposito}`
-      )
-    ) {
-      return;
-    }
-
     setLoading(true);
     setMsg("");
     try {
@@ -537,6 +525,7 @@ export function FuraKitsClient({
           ? `Kit "${kit.nome}" excluído. ${desmontados} kit(s) do depósito voltaram aos itens soltos.`
           : `Kit "${kit.nome}" excluído.`
       );
+      setKitParaExcluir(null);
       if (editingId === kit.id) resetForm();
       if (montarKitId === kit.id) setMontarKitId(null);
       setKits((prev) => prev.filter((k) => k.id !== kit.id));
@@ -1033,9 +1022,13 @@ export function FuraKitsClient({
                       </button>
                       <button
                         type="button"
-                        onClick={() => void excluirKit(kit)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMsg("");
+                          setKitParaExcluir(kit);
+                        }}
                         disabled={loading}
-                        className="rounded-full px-3 py-1.5 text-xs text-rose-400 hover:bg-rose-500/10 disabled:opacity-50"
+                        className="relative z-10 rounded-full px-3 py-1.5 text-xs font-medium text-rose-500 hover:bg-rose-500/10 disabled:opacity-50"
                       >
                         Excluir
                       </button>
@@ -1087,8 +1080,59 @@ export function FuraKitsClient({
         )}
       </div>
 
+      {kitParaExcluir && (
+        <div
+          className="fixed inset-0 z-[220] flex items-end justify-center bg-black/50 p-4 sm:items-center"
+          onClick={() => !loading && setKitParaExcluir(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl border border-at bg-at-card p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="excluir-kit-titulo"
+          >
+            <h3 id="excluir-kit-titulo" className="text-lg font-semibold text-at-primary">
+              Excluir kit?
+            </h3>
+            <p className="mt-2 text-sm text-at-muted">
+              A receita de &ldquo;{kitParaExcluir.nome}&rdquo; some da lista. Coletas antigas
+              continuam no histórico.
+            </p>
+            {(kitParaExcluir.quantidade_montada ?? 0) > 0 ? (
+              <p className="mt-2 text-sm text-at-muted">
+                Há {kitParaExcluir.quantidade_montada} kit(s) pronto(s) no depósito — os itens
+                voltam ao estoque.
+              </p>
+            ) : null}
+            <p className="mt-2 text-sm text-at-muted">
+              Se estiver alocado em algum ponto, sai de lá.
+            </p>
+            {msg ? <p className="mt-3 text-sm text-rose-500">{msg}</p> : null}
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void excluirKit(kitParaExcluir)}
+                className="rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 disabled:opacity-50"
+              >
+                {loading ? "Excluindo..." : "Excluir kit"}
+              </button>
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => setKitParaExcluir(null)}
+                className="rounded-full border border-at px-5 py-2.5 text-sm text-at-primary hover:bg-at-card-soft disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <LoadingOverlay
-        show={loading}
+        show={loading && !kitParaExcluir}
         messages={["Montando kits...", "Ajustando estoque..."]}
       />
     </div>
