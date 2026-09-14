@@ -612,6 +612,38 @@ html[data-app-theme="light"] .kit-alocar-painel .text-white {
   color: #141210 !important;
 }
 
+/* Cards de kit no depósito — degradê escuro só no tema escuro */
+.kit-deposito-card {
+  background:
+    radial-gradient(ellipse at top left, rgba(0, 212, 255, 0.1), transparent 55%),
+    linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(2, 6, 23, 0.55));
+}
+html[data-app-theme="light"] .kit-deposito-card {
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.1) !important;
+  box-shadow: 0 1px 2px rgba(28, 25, 23, 0.04);
+}
+html[data-app-theme="light"] .kit-deposito-card [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .kit-deposito-card [class*="bg-slate-9"] {
+  background-color: #f3efe6 !important;
+}
+
+html[data-app-theme="light"] .kits-pagina [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .kits-pagina [class*="text-amber-2"],
+html[data-app-theme="light"] .kits-pagina [class*="text-amber-3"] {
+  color: #92662a !important;
+}
+html[data-app-theme="light"] .kits-pagina [class*="bg-slate-9"] {
+  background-color: #f3efe6 !important;
+}
+html[data-app-theme="light"] .kits-pagina [class*="border-slate-"] {
+  border-color: rgba(28, 25, 23, 0.16) !important;
+}
+
 /* Equipe / painel restrito — amarelo e dourado claros no fundo claro */
 html[data-app-theme="light"] .equipe-pagina {
   --at-primary: #141210;

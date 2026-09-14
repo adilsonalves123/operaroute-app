@@ -85,7 +85,7 @@ function QtyStepper({
         aria-label="Diminuir"
         disabled={value <= min}
         onClick={() => onChange(Math.max(min, value - 1))}
-        className="flex h-11 w-11 items-center justify-center rounded-full border border-slate-600 text-white hover:bg-white/5 disabled:opacity-30"
+        className="flex h-11 w-11 items-center justify-center rounded-full border border-at text-at-primary hover:bg-at-card-soft disabled:opacity-30"
       >
         <Minus className="h-4 w-4" />
       </button>
@@ -100,7 +100,7 @@ function QtyStepper({
             const n = Math.floor(Number(e.target.value) || min);
             onChange(Math.min(max, Math.max(min, n)));
           }}
-          className="w-full bg-transparent text-center text-3xl font-bold tabular-nums text-white outline-none"
+          className="w-full bg-transparent text-center text-3xl font-bold tabular-nums text-at-primary outline-none"
         />
       </div>
       <button
@@ -554,11 +554,11 @@ export function FuraKitsClient({
     : Math.min(999, Math.max(1, Math.floor(quantidadeMontar) || 1));
 
   return (
-    <div className="space-y-8">
+    <div className="kits-pagina space-y-8">
       <div className="flex flex-wrap items-center gap-3">
         <Link
           href="/estoque"
-          className="inline-flex items-center gap-1 text-sm text-slate-400 hover:text-primary-neon"
+          className="inline-flex items-center gap-1 text-sm text-at-muted hover:text-primary-neon"
         >
           <ArrowLeft className="h-4 w-4" />
           Estoque central
@@ -570,12 +570,12 @@ export function FuraKitsClient({
           <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-cyan-300/70">
             Fura-fura
           </p>
-          <h1 className="mt-1 text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h1 className="mt-1 text-3xl font-bold tracking-tight text-at-primary sm:text-4xl">
             Kits
           </h1>
-          <p className="mt-2 text-sm leading-relaxed text-slate-400">
-            Monte a receita de <span className="text-slate-200">um</span> kit (ex.: 5 facas). Depois
-            escolha <span className="text-slate-200">quantos kits</span> montar de uma vez — o
+          <p className="mt-2 text-sm leading-relaxed text-at-muted">
+            Monte a receita de <span className="text-at-primary">um</span> kit (ex.: 5 facas). Depois
+            escolha <span className="text-at-primary">quantos kits</span> montar de uma vez — o
             estoque sai multiplicado.
           </p>
         </div>
@@ -971,10 +971,10 @@ export function FuraKitsClient({
 
       <div className="space-y-5 xl:grid xl:grid-cols-2 xl:items-start xl:gap-5 xl:space-y-0">
         {kits.length === 0 ? (
-          <div className="rounded-3xl border border-dashed border-slate-700 px-6 py-16 text-center">
-            <Package className="mx-auto mb-4 h-12 w-12 text-slate-600" />
-            <p className="text-slate-400">Nenhum kit ainda.</p>
-            <p className="mt-1 text-sm text-slate-600">
+          <div className="rounded-3xl border border-dashed border-at px-6 py-16 text-center">
+            <Package className="mx-auto mb-4 h-12 w-12 text-at-soft" />
+            <p className="text-at-muted">Nenhum kit ainda.</p>
+            <p className="mt-1 text-sm text-at-soft">
               Ex.: Kit Faca — 5 facas por kit, monte quantos quiser de uma vez.
             </p>
           </div>
@@ -1027,7 +1027,7 @@ export function FuraKitsClient({
                       <button
                         type="button"
                         onClick={() => void toggleAtivo(kit)}
-                        className="rounded-full px-3 py-1.5 text-xs text-slate-400 hover:bg-white/5"
+                        className="rounded-full px-3 py-1.5 text-xs text-at-muted hover:bg-at-card-soft"
                       >
                         {kit.ativo ? "Desativar" : "Ativar"}
                       </button>
@@ -1044,10 +1044,10 @@ export function FuraKitsClient({
                 />
                 {aberto && (
                   <div className="mt-2 rounded-2xl border border-amber-500/20 bg-amber-500/[0.05] px-4 py-4 sm:px-5">
-                    <p className="text-sm font-medium text-white">
+                    <p className="text-sm font-medium text-at-primary">
                       Montar mais kits de &ldquo;{kit.nome}&rdquo;
                     </p>
-                    <p className="mt-1 text-xs text-slate-400">
+                    <p className="mt-1 text-xs text-at-muted">
                       Usa a mesma receita. Estoque permite até {maxMais} agora.
                     </p>
                     <div className="mt-4 flex flex-wrap items-center gap-4">
@@ -1069,7 +1069,7 @@ export function FuraKitsClient({
                       <button
                         type="button"
                         onClick={() => setMontarKitId(null)}
-                        className="text-sm text-slate-500 hover:text-slate-300"
+                        className="text-sm text-at-muted hover:text-at-primary"
                       >
                         Cancelar
                       </button>

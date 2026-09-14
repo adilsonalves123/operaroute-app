@@ -31,11 +31,11 @@ function ItemFoto({ item }: { item: KitComposicaoVisual }) {
         <LazyThumb
           src={item.foto_url}
           alt={item.nome}
-          className="h-20 w-20 rounded-xl ring-1 ring-white/10"
+          className="h-20 w-20 rounded-xl ring-1 ring-black/10"
           size={160}
         />
       ) : (
-        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-white/10 text-at-soft">
+        <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-at-card-soft ring-1 ring-black/10 text-at-soft">
           <Package className="h-5 w-5" />
         </div>
       )}
@@ -71,8 +71,7 @@ export function KitDepositoControles({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-at",
-        "bg-[radial-gradient(ellipse_at_top_left,_rgba(0,212,255,0.10),_transparent_55%),linear-gradient(180deg,rgba(15,23,42,0.9),rgba(2,6,23,0.55))]",
+        "kit-deposito-card relative overflow-hidden rounded-2xl border border-at",
         className
       )}
     >
@@ -83,18 +82,18 @@ export function KitDepositoControles({
               <LazyThumb
                 src={fotoUrl}
                 alt={nomeKit}
-                className="h-16 w-16 shrink-0 rounded-xl ring-1 ring-white/10 sm:h-20 sm:w-20"
+                className="h-16 w-16 shrink-0 rounded-xl ring-1 ring-black/10 sm:h-20 sm:w-20"
                 size={160}
               />
             ) : actions ? (
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-slate-900/80 ring-1 ring-white/10 text-at-soft sm:h-20 sm:w-20">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-at-card-soft ring-1 ring-black/10 text-at-soft sm:h-20 sm:w-20">
                 <Package className="h-7 w-7" />
               </div>
             ) : null}
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="text-lg font-semibold text-white sm:text-xl">{nomeKit}</h3>
+                  <h3 className="text-lg font-semibold text-at-primary sm:text-xl">{nomeKit}</h3>
                   {descricao ? (
                     <p className="mt-0.5 text-sm text-at-muted">{descricao}</p>
                   ) : null}
@@ -109,7 +108,7 @@ export function KitDepositoControles({
           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-cyan-200/70">
             Pronto no depósito
           </p>
-          <p className="mt-1 text-4xl font-bold tabular-nums tracking-tight text-white">
+          <p className="mt-1 text-4xl font-bold tabular-nums tracking-tight text-at-primary">
             {noDeposito}
             <span className="ml-2 text-base font-medium text-at-muted">
               kit{noDeposito === 1 ? "" : "s"}
