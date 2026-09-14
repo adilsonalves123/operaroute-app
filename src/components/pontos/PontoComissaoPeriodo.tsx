@@ -105,7 +105,7 @@ export function PontoComissaoPeriodo({
   }
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04]">
+    <section className="ponto-comissao-painel overflow-hidden rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04]">
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
@@ -120,11 +120,11 @@ export function PontoComissaoPeriodo({
             {formatCurrency(total)}
           </p>
           {!aberto ? (
-            <p className="mt-0.5 text-[12px] text-at-muted">
+            <p className="mt-0.5 text-[12px] text-at-primary/80">
               {label} · toque para expandir
             </p>
           ) : (
-            <p className="mt-0.5 text-[12px] text-at-muted">{label}</p>
+            <p className="mt-0.5 text-[12px] text-at-primary/80">{label}</p>
           )}
         </div>
         {aberto ? (
@@ -140,6 +140,7 @@ export function PontoComissaoPeriodo({
             atual={periodo}
             basePath={`/pontos/${pontoId}`}
             variante="dashboard"
+            tema="claro"
           />
 
           {porNicho.length > 1 ? (
@@ -159,7 +160,7 @@ export function PontoComissaoPeriodo({
           ) : null}
 
           {total < 0.0001 ? (
-            <p className="text-[13px] text-at-muted">
+            <p className="text-[13px] text-at-primary/85">
               Nenhuma comissão lançada neste período.
             </p>
           ) : null}
@@ -176,7 +177,7 @@ export function PontoComissaoPeriodo({
             <button
               type="button"
               onClick={() => void compartilhar()}
-              className="inline-flex items-center gap-2 rounded-full border border-at-soft bg-at-card-soft px-3.5 py-2 text-[13px] font-medium text-at-primary/90 transition hover:bg-white/[0.08]"
+              className="inline-flex items-center gap-2 rounded-full border border-at-soft bg-at-card px-3.5 py-2 text-[13px] font-medium text-at-primary transition hover:bg-at-card-soft"
             >
               <Share2 className="h-3.5 w-3.5" />
               Compartilhar

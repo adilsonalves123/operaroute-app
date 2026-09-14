@@ -655,6 +655,15 @@ html[data-app-theme="light"] .foto-fonte-menu .text-white {
   color: #141210 !important;
 }
 
+/* Comissão do ponto — verde neon ilegível no fundo claro */
+html[data-app-theme="light"] .ponto-comissao-painel [class*="text-emerald-"] {
+  color: #047857 !important;
+}
+html[data-app-theme="light"] .ponto-comissao-painel .text-at-muted,
+html[data-app-theme="light"] .ponto-comissao-painel .analise-tab-idle {
+  color: #3d3833 !important;
+}
+
 /* Equipe / painel restrito — amarelo e dourado claros no fundo claro */
 html[data-app-theme="light"] .equipe-pagina {
   --at-primary: #141210;
