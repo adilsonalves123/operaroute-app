@@ -33,6 +33,9 @@ export type LeituraContadoresIaResult = {
 const IaJsonSchema = z.object({
   entrada_digitos: z.string().optional().nullable(),
   saida_digitos: z.string().optional().nullable(),
+  entrada_lifetime_digitos: z.string().optional().nullable(),
+  saida_lifetime_digitos: z.string().optional().nullable(),
+  coluna_lida: z.string().optional().nullable(),
   confianca: z.number().min(0).max(1).optional().nullable(),
   rotulo_entrada: z.string().optional().nullable(),
   rotulo_saida: z.string().optional().nullable(),
@@ -62,31 +65,42 @@ function primeiroDigitos(...vals: string[]): string {
 function montarPromptBase(entradaAnterior: number, saidaAnterior: number): string {
   return `Você lê o painel/visor de uma máquina de cassino (entrada e saída) em foto.
 
-TAREFA: identificar os dois contadores ATUAIS e devolver JSON.
+TAREFA: identificar os dois contadores de LIFETIME TOTAL (total acumulado da máquina) e devolver JSON.
 
-MAPA DE RÓTULOS (entrada):
-ENTRADA, IN, CREDIT, CR, CREDITO, DI, DIN, TOTAL IN, IN CREDITS
+COLUNAS (tela METERS / duas fileiras de números):
+- Esquerda = LIFETIME TOTAL / TOTAL / ACUMULADO / VIDA → USE SEMPRE ESTA.
+- Direita = PARTIAL READING / PARCIAL / DESDE RESET / PERIOD → NUNCA use.
+Se houver duas colunas de números, a ENTRADA e a SAÍDA são os valores da coluna LIFETIME (em geral a primeira coluna numérica, números MAIORES).
 
-MAPA DE RÓTULOS (saída):
-SAIDA, SAÍDA, OUT, PAY, PAYOUT, DS, DOUT, TOTAL OUT, OUT CREDITS, PAID
+MAPA DE RÓTULOS (entrada = CASH IN, não CASH PLAYED):
+ENTRADA, IN, CASH IN, CREDIT, CR, CREDITO, DI, DIN, TOTAL IN, IN CREDITS
 
-ÂNCORA (leitura anterior desta máquina, formato BR):
+MAPA DE RÓTULOS (saída = CASH PAID, não CASH WON):
+SAIDA, SAÍDA, OUT, CASH PAID, PAY, PAYOUT, DS, DOUT, TOTAL OUT, OUT CREDITS, PAID
+
+IGNORE estas linhas: CASH PLAYED, CASH WON, DIFFERENCE, PERCENTAGE, RESET PARTIAL, datas, IDs, versão de software.
+
+ÂNCORA (leitura anterior desta máquina — também era LIFETIME, formato BR):
 - entrada_anterior: ${formatContador(entradaAnterior)} (digitos=${String(entradaAnterior)})
 - saida_anterior: ${formatContador(saidaAnterior)} (digitos=${String(saidaAnterior)})
 
 REGRAS:
 1. Use o rótulo no painel quando estiver legível.
-2. Se o rótulo for duvidoso, use a âncora: o valor novo mais próximo/plausível da entrada anterior é a ENTRADA; o outro é a SAÍDA.
-3. Contadores quase nunca diminuem. Prefira valores >= anteriores.
-4. Ignore valores de crédito de jogo, jackpot, data/hora, IDs e números de série.
+2. Se o rótulo for duvidoso, use a âncora: o valor LIFETIME novo mais próximo/plausível da entrada anterior é a ENTRADA; o outro é a SAÍDA. A coluna PARCIAL costuma ser bem menor — descarte.
+3. Contadores LIFETIME quase nunca diminuem. Prefira valores >= anteriores e com ordem de grandeza parecida (mesmo número de dígitos, ou +1).
+4. Ignore jackpot, crédito de jogo, data/hora, IDs e números de série.
 5. Devolva só dígitos (sem ponto/vírgula). Inclua os centavos se o visor mostrar 2 casas decimais (ex.: 1.234,56 → "123456").
 6. Visor LED escuro, reflexo ou foto de celular ainda assim deve ser lido se os números estiverem visíveis.
-7. Preencha entrada_digitos e saida_digitos sempre que enxergar os números. Use ambiguo=true SOMENTE se não conseguir ver os dígitos.
+7. Preencha entrada_lifetime_digitos, saida_lifetime_digitos, entrada_digitos e saida_digitos com os valores LIFETIME. Use ambiguo=true SOMENTE se não conseguir ver os dígitos.
+8. coluna_lida deve ser "lifetime".
 
 Responda APENAS JSON:
 {
+  "entrada_lifetime_digitos": "string",
+  "saida_lifetime_digitos": "string",
   "entrada_digitos": "string",
   "saida_digitos": "string",
+  "coluna_lida": "lifetime",
   "confianca": 0.0,
   "rotulo_entrada": "string|null",
   "rotulo_saida": "string|null",
@@ -101,6 +115,7 @@ function montarPromptLeitura1(entradaAnterior: number, saidaAnterior: number): s
 
 PASSO EXTRA:
 - Faça a leitura principal do painel inteiro.
+- Se houver LIFETIME TOTAL e PARTIAL READING, copie só a coluna LIFETIME (CASH IN e CASH PAID).
 - Se os números estiverem visíveis, preencha os dígitos mesmo com confiança média.`;
 }
 
@@ -109,7 +124,8 @@ function montarPromptLeitura2(entradaAnterior: number, saidaAnterior: number): s
 
 PASSO EXTRA:
 - Refaça a leitura do zero, como uma checagem independente.
-- Revise cuidadosamente os últimos 3 dígitos de cada contador antes de responder.
+- Confirme que NÃO usou a coluna PARTIAL READING.
+- Revise cuidadosamente os últimos 3 dígitos de cada contador LIFETIME antes de responder.
 - Não tente manter consistência com uma leitura anterior; valide apenas o que consegue ver.`;
 }
 
@@ -299,8 +315,14 @@ async function executarLeitura(imageDataUrl: string, prompt: string) {
     model: llm.model,
     text: llm.text,
     data,
-    entradaDigitos: soDigitos(data.entrada_digitos),
-    saidaDigitos: soDigitos(data.saida_digitos),
+    entradaDigitos: primeiroDigitos(
+      String(data.entrada_lifetime_digitos ?? ""),
+      String(data.entrada_digitos ?? "")
+    ),
+    saidaDigitos: primeiroDigitos(
+      String(data.saida_lifetime_digitos ?? ""),
+      String(data.saida_digitos ?? "")
+    ),
     confianca: Math.max(0, Math.min(1, Number(data.confianca) || 0)),
     avisos: Array.isArray(data.avisos) ? data.avisos.map((a) => String(a)).filter(Boolean) : [],
   };

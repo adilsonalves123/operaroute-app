@@ -30,8 +30,10 @@ TAREFA:
 - Se um contador não estiver legível/localizável, marque ambiguo=true e não invente.
 
 MAPA DE RÓTULOS:
-- entrada: ENTRADA, IN, CREDIT, CR, CREDITO, DI, DIN, TOTAL IN, IN CREDITS
-- saída: SAIDA, SAÍDA, OUT, PAY, PAYOUT, DS, DOUT, TOTAL OUT, OUT CREDITS, PAID
+- entrada: ENTRADA, IN, CASH IN, CREDIT, CR, CREDITO, DI, DIN, TOTAL IN, IN CREDITS
+- saída: SAIDA, SAÍDA, OUT, CASH PAID, PAY, PAYOUT, DS, DOUT, TOTAL OUT, OUT CREDITS, PAID
+
+Se o painel tiver duas colunas (LIFETIME TOTAL e PARTIAL READING), as caixas devem cobrir só os números da coluna LIFETIME TOTAL (em geral a da esquerda, valores maiores). Ignore PARTIAL, CASH PLAYED e CASH WON.
 
 Responda APENAS JSON:
 {
