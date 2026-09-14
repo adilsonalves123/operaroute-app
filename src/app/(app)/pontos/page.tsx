@@ -41,7 +41,7 @@ export default async function PontosPage() {
       visaoLista
     );
     const retry = await fallback;
-    pontos = retry.data;
+    pontos = retry.data as typeof pontos;
     error = retry.error;
   }
 
