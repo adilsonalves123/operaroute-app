@@ -198,7 +198,7 @@ export function PontoForm({
   return (
     <>
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="glass-card p-6 space-y-4">
+        <div className="glass-card ponto-form-dados p-6 space-y-4">
           <h3 className="font-semibold text-white">Dados do ponto</h3>
           <FotoPontoField preview={fotoPreview} onChange={handleFotoChange} />
           <FormInput

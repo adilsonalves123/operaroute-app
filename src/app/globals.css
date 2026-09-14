@@ -664,34 +664,42 @@ html[data-app-theme="light"] .ponto-comissao-painel .analise-tab-idle {
   color: #3d3833 !important;
 }
 
-/* GPS / endereço do ponto — cores fixas (tokens cream do premium-desk não entram) */
+/* GPS / endereço do ponto — inline + variáveis (Tailwind cyan não pode ganhar) */
 .ponto-endereco-campos {
   --at-primary: #141210;
   --at-muted: #3d3833;
   --at-soft: #5c564f;
+  --or-gps-box-bg: #f3efe6;
+  --or-gps-box-border: rgba(28, 25, 23, 0.2);
+  --or-gps-btn-bg: #92662a;
+  --or-gps-btn-fg: #faf8f4;
+  --or-gps-end-bg: #ffffff;
+  --or-gps-end-fg: #141210;
+  --or-gps-end-border: rgba(28, 25, 23, 0.28);
+  --or-gps-ajuda: #3d3833;
   color: #141210;
 }
 .ponto-endereco-gps {
-  background: #f3efe6;
-  border-color: rgba(28, 25, 23, 0.16);
+  background: #f3efe6 !important;
+  border-color: rgba(28, 25, 23, 0.2) !important;
 }
 .ponto-btn-gps {
-  background: #92662a;
-  color: #faf8f4;
+  background: #92662a !important;
+  color: #faf8f4 !important;
 }
 .ponto-btn-gps:hover {
   filter: brightness(1.06);
 }
 .ponto-btn-endereco {
-  background: #ffffff;
-  border-color: rgba(28, 25, 23, 0.22);
-  color: #141210;
+  background: #ffffff !important;
+  border-color: rgba(28, 25, 23, 0.28) !important;
+  color: #141210 !important;
 }
 .ponto-btn-endereco:hover {
-  background: #faf8f4;
+  background: #faf8f4 !important;
 }
 .ponto-endereco-ajuda {
-  color: #3d3833;
+  color: #3d3833 !important;
 }
 .ponto-gps-ok,
 .ponto-endereco-hint-ok {
@@ -705,23 +713,31 @@ html:not([data-app-theme="light"]) .ponto-endereco-campos {
   --at-primary: #f4efe6;
   --at-muted: #94a3b8;
   --at-soft: #64748b;
+  --or-gps-box-bg: rgba(8, 12, 20, 0.55);
+  --or-gps-box-border: rgba(255, 255, 255, 0.16);
+  --or-gps-btn-bg: #c4a574;
+  --or-gps-btn-fg: #141210;
+  --or-gps-end-bg: rgba(255, 255, 255, 0.08);
+  --or-gps-end-fg: #f4efe6;
+  --or-gps-end-border: rgba(255, 255, 255, 0.18);
+  --or-gps-ajuda: #cbd5e1;
   color: #f4efe6;
 }
 html:not([data-app-theme="light"]) .ponto-endereco-gps {
-  background: rgba(8, 12, 20, 0.55);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(8, 12, 20, 0.55) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
 }
 html:not([data-app-theme="light"]) .ponto-btn-gps {
-  background: #c4a574;
-  color: #141210;
+  background: #c4a574 !important;
+  color: #141210 !important;
 }
 html:not([data-app-theme="light"]) .ponto-btn-endereco {
-  background: rgba(255, 255, 255, 0.06);
-  border-color: rgba(255, 255, 255, 0.16);
-  color: #f4efe6;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border-color: rgba(255, 255, 255, 0.16) !important;
+  color: #f4efe6 !important;
 }
 html:not([data-app-theme="light"]) .ponto-endereco-ajuda {
-  color: #cbd5e1;
+  color: #cbd5e1 !important;
 }
 html:not([data-app-theme="light"]) .ponto-gps-ok,
 html:not([data-app-theme="light"]) .ponto-endereco-hint-ok {
@@ -2221,5 +2237,26 @@ html[data-app-theme="light"] #detalhe-nicho table td.tabular-nums,
 .analise-premium-root[data-analise-visual="claro"] #detalhe-nicho,
 html[data-app-theme="light"] #detalhe-nicho table td[class*="text-slate"] {
   color: #292524;
+}
+
+/* Cadastro/editar ponto — ciano neon do GPS (classes antigas ou novas) */
+html[data-app-theme="light"] .ponto-form-dados [class*="text-cyan-"],
+html[data-app-theme="light"] .ponto-endereco-campos [class*="text-cyan-"] {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .ponto-form-dados [class*="bg-cyan-500"],
+html[data-app-theme="light"] .ponto-endereco-campos [class*="bg-cyan-500"] {
+  background-color: #f3efe6 !important;
+}
+html[data-app-theme="light"] .ponto-form-dados button[class*="text-cyan-"],
+html[data-app-theme="light"] .ponto-endereco-gps button.ponto-btn-endereco,
+html[data-app-theme="light"] .premium-desk-root .ponto-btn-endereco {
+  background-color: #ffffff !important;
+  color: #141210 !important;
+  border-color: rgba(28, 25, 23, 0.28) !important;
+}
+html[data-app-theme="light"] .premium-desk-root .ponto-endereco-gps {
+  background-color: #f3efe6 !important;
+  border-color: rgba(28, 25, 23, 0.2) !important;
 }
 

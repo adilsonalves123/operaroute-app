@@ -265,13 +265,23 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
 
   return (
     <div className="ponto-endereco-campos space-y-4">
-      <div className="ponto-endereco-gps rounded-xl border p-3 sm:p-4 space-y-3">
+      <div
+        className="ponto-endereco-gps rounded-xl p-3 sm:p-4 space-y-3"
+        style={{
+          backgroundColor: "var(--or-gps-box-bg, #f3efe6)",
+          border: "1px solid var(--or-gps-box-border, rgba(28, 25, 23, 0.2))",
+        }}
+      >
         <div className="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => void handleCapturarGps()}
             disabled={gpsLoading || enderecoLoading}
             className="ponto-btn-gps inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[13px] font-semibold transition disabled:opacity-60"
+            style={{
+              backgroundColor: "var(--or-gps-btn-bg, #92662a)",
+              color: "var(--or-gps-btn-fg, #faf8f4)",
+            }}
           >
             {gpsLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -284,7 +294,12 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
             type="button"
             onClick={() => void handlePreencherEndereco()}
             disabled={gpsLoading || enderecoLoading}
-            className="ponto-btn-endereco inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-[13px] font-semibold transition disabled:opacity-60"
+            className="ponto-btn-endereco inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[13px] font-semibold transition disabled:opacity-60"
+            style={{
+              backgroundColor: "var(--or-gps-end-bg, #ffffff)",
+              color: "var(--or-gps-end-fg, #141210)",
+              border: "1px solid var(--or-gps-end-border, rgba(28, 25, 23, 0.28))",
+            }}
           >
             {enderecoLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -294,7 +309,10 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
             {enderecoLoading ? "Buscando endereço…" : "2. Preencher endereço"}
           </button>
         </div>
-        <p className="ponto-endereco-ajuda text-center text-[11px] leading-relaxed">
+        <p
+          className="ponto-endereco-ajuda text-center text-[11px] leading-relaxed"
+          style={{ color: "var(--or-gps-ajuda, #3d3833)" }}
+        >
           Separe as funções: o GPS grava a posição do ponto; o endereço usa essa
           posição para rua, bairro, cidade e CEP. O número do imóvel digite sempre
           na fachada
