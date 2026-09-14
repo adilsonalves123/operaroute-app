@@ -598,6 +598,20 @@ html[data-app-theme="light"] .kit-montar-painel textarea::placeholder {
   color: #5c564f !important;
 }
 
+/* Kit no ponto — seletor e lista no tema claro */
+html[data-app-theme="light"] .kit-alocar-painel [class*="border-slate-"] {
+  border-color: rgba(28, 25, 23, 0.16) !important;
+}
+html[data-app-theme="light"] .kit-alocar-painel [class*="bg-slate-9"] {
+  background-color: #ffffff !important;
+}
+html[data-app-theme="light"] .kit-alocar-painel [class*="text-cyan-"] {
+  color: #0e7490 !important;
+}
+html[data-app-theme="light"] .kit-alocar-painel .text-white {
+  color: #141210 !important;
+}
+
 /* Equipe / painel restrito — amarelo e dourado claros no fundo claro */
 html[data-app-theme="light"] .equipe-pagina {
   --at-primary: #141210;
@@ -1696,6 +1710,59 @@ html[data-app-theme="light"] .ponto-hero [class*="from-slate-9"] {
 }
 html[data-app-theme="light"] .ponto-hero {
   border-color: rgba(28, 25, 23, 0.2) !important;
+}
+
+/* Fachada provisória — sem foto */
+.ponto-ph-sky { fill: #121826; }
+.ponto-ph-ground { fill: #0c1018; }
+.ponto-ph-wall { fill: #1a2233; }
+.ponto-ph-stroke { stroke: #c4a574; }
+.ponto-ph-awning { fill: #c4a574; }
+.ponto-ph-awning-stripe { fill: #8a6a3a; }
+.ponto-ph-door { fill: #0b1220; stroke: #c4a574; stroke-width: 2; }
+.ponto-ph-knob { fill: #e8d5b0; }
+.ponto-ph-window { fill: #243044; stroke: #c4a574; stroke-width: 2; }
+.ponto-ph-sign { fill: #0b1220; stroke: #c4a574; stroke-width: 2; }
+.ponto-ph-sign-text { stroke: #e8d5b0; }
+.ponto-ph-plant { fill: #3d6b52; }
+
+html[data-app-theme="light"] .ponto-ph-sky { fill: #efe8dc; }
+html[data-app-theme="light"] .ponto-ph-ground { fill: #e4d9c8; }
+html[data-app-theme="light"] .ponto-ph-wall { fill: #f7f2ea; }
+html[data-app-theme="light"] .ponto-ph-stroke { stroke: #92662a; }
+html[data-app-theme="light"] .ponto-ph-awning { fill: #c4a574; }
+html[data-app-theme="light"] .ponto-ph-awning-stripe { fill: #92662a; }
+html[data-app-theme="light"] .ponto-ph-door { fill: #efe8dc; stroke: #92662a; }
+html[data-app-theme="light"] .ponto-ph-knob { fill: #5c4218; }
+html[data-app-theme="light"] .ponto-ph-window { fill: #d9ecf2; stroke: #92662a; }
+html[data-app-theme="light"] .ponto-ph-sign { fill: #faf6ef; stroke: #92662a; }
+html[data-app-theme="light"] .ponto-ph-sign-text { stroke: #5c4218; }
+html[data-app-theme="light"] .ponto-ph-plant { fill: #3f6f4e; }
+
+html[data-app-theme="light"] .ponto-hero-sem-foto .ponto-hero-nome,
+html[data-app-theme="light"] .ponto-hero-sem-foto .text-white {
+  color: #141210 !important;
+}
+html[data-app-theme="light"] .ponto-hero-sem-foto .ponto-hero-local,
+html[data-app-theme="light"] .ponto-hero-sem-foto .text-slate-200,
+html[data-app-theme="light"] .ponto-hero-sem-foto [class*="text-slate-2"] {
+  color: #3d3833 !important;
+}
+html[data-app-theme="light"] .ponto-hero-sem-foto .bg-slate-950,
+html[data-app-theme="light"] .ponto-hero-sem-foto [class*="bg-slate-9"] {
+  background-color: #efe8dc !important;
+}
+html[data-app-theme="light"] .ponto-hero-sem-foto .ponto-hero-overlay-vazio {
+  background: linear-gradient(
+    to top,
+    rgba(250, 248, 244, 0.94),
+    rgba(250, 248, 244, 0.18),
+    transparent
+  ) !important;
+  background-color: transparent !important;
+}
+html[data-app-theme="light"] .ponto-hero-sem-foto [class*="text-emerald-"] {
+  color: #047857 !important;
 }
 
 /* Modal "Coleta registrada" — botão ciano ilegível no tema claro */

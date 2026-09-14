@@ -11,6 +11,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { FotoPontoField } from "@/components/pontos/FotoPontoField";
+import { PontoPlaceholderArt } from "@/components/pontos/PontoPlaceholderArt";
 import { IniciarVisitaButton } from "@/components/visitas-ponto/IniciarVisitaButton";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
@@ -178,7 +179,12 @@ export function PontoHero({
         </button>
       </div>
 
-      <section className="ponto-hero relative overflow-hidden rounded-[1.75rem] border border-at-soft">
+      <section
+        className={cn(
+          "ponto-hero relative overflow-hidden rounded-[1.75rem] border border-at-soft",
+          !fotoUrl && "ponto-hero-sem-foto"
+        )}
+      >
         <div className="relative aspect-[16/10] min-h-[220px] w-full bg-slate-950 sm:aspect-[2/1] sm:min-h-[280px]">
           {fotoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -188,9 +194,26 @@ export function PontoHero({
               className="absolute inset-0 h-full w-full object-cover"
             />
           ) : (
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_30%_20%,rgba(56,189,248,0.12),transparent_55%),linear-gradient(160deg,#0b1220_0%,#05070c_70%)]" />
+            <button
+              type="button"
+              onClick={() => {
+                setPreview(null);
+                setEditando(true);
+              }}
+              className="ponto-hero-placeholder absolute inset-0 overflow-hidden"
+              aria-label="Adicionar foto do ponto"
+            >
+              <PontoPlaceholderArt className="absolute inset-0 h-full w-full" />
+            </button>
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-950/10" />
+          <div
+            className={cn(
+              "pointer-events-none absolute inset-0",
+              fotoUrl
+                ? "bg-gradient-to-t from-slate-950 via-slate-950/55 to-slate-950/10"
+                : "ponto-hero-overlay-vazio bg-gradient-to-t from-slate-950/80 via-slate-950/15 to-transparent"
+            )}
+          />
           <div className="absolute inset-x-0 bottom-0 space-y-3 p-5 sm:p-7">
             <div className="flex flex-wrap items-center gap-2">
               <span

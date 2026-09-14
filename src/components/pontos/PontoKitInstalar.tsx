@@ -67,7 +67,7 @@ function KitThumb({
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-900",
+        "flex shrink-0 items-center justify-center rounded-md border border-at-soft bg-at-card-soft",
         className
       )}
       aria-hidden
@@ -205,11 +205,11 @@ export function PontoKitInstalar({
   const selected = kits.find((k) => k.id === selectedId);
 
   return (
-    <div className="glass-card p-6 space-y-4 border border-cyan-500/10">
+    <div className="kit-alocar-painel glass-card p-6 space-y-4 border border-cyan-500/10">
       <div className="flex items-start gap-3">
         <Package className="h-5 w-5 text-cyan-400 shrink-0 mt-0.5" />
         <div>
-          <h2 className="font-semibold text-white">Kit no ponto</h2>
+          <h2 className="font-semibold text-at-primary">Kit no ponto</h2>
           <p className="text-xs text-at-muted mt-1">
             Alocar kit montado no depósito. Veja abaixo o que está no bar e remova item a item se
             precisar — tudo volta ao estoque central.
@@ -220,7 +220,7 @@ export function PontoKitInstalar({
       {kitAtivoId && (
         <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/5 px-3 py-2 text-sm">
           <span className="text-cyan-300">Kit ativo: </span>
-          <span className="text-white font-medium">{kitAtivoNome ?? "—"}</span>
+          <span className="text-at-primary font-medium">{kitAtivoNome ?? "—"}</span>
           {kitInstaladoEm && (
             <span className="text-at-muted text-xs ml-2">
               desde {new Date(kitInstaladoEm).toLocaleDateString("pt-BR")}
@@ -240,7 +240,7 @@ export function PontoKitInstalar({
       )}
 
       {brindesNoPonto.length > 0 ? (
-        <div className="space-y-2 rounded-lg border border-at-soft bg-slate-950/40 p-3">
+        <div className="space-y-2 rounded-lg border border-at-soft bg-at-card-soft p-3">
           <p className="text-xs font-medium uppercase tracking-wide text-at-muted">
             Itens alocados neste ponto ({brindesNoPonto.length})
           </p>
@@ -260,7 +260,7 @@ export function PontoKitInstalar({
               return (
                 <li
                   key={key}
-                  className="flex items-center gap-3 rounded-lg border border-slate-800/80 bg-slate-900/50 px-3 py-2"
+                  className="flex items-center gap-3 rounded-lg border border-at-soft bg-at-card px-3 py-2"
                 >
                   <div className="h-12 w-12 shrink-0 overflow-hidden rounded-md border border-at-soft">
                     {foto ? (
@@ -272,7 +272,7 @@ export function PontoKitInstalar({
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-white truncate">{item.nome}</p>
+                    <p className="text-sm font-medium text-at-primary truncate">{item.nome}</p>
                     <p className="text-xs text-at-muted tabular-nums">
                       {item.atual} un. no ponto
                       {item.original > 0 ? ` · kit tinha ${item.original}` : ""}
@@ -321,10 +321,10 @@ export function PontoKitInstalar({
               aria-expanded={open}
               aria-haspopup="listbox"
               className={cn(
-                "mt-1 flex w-full items-center gap-2.5 rounded-lg border bg-slate-900/50 px-3 py-2 text-left text-sm text-white transition",
+                "mt-1 flex w-full items-center gap-2.5 rounded-lg border bg-at-card px-3 py-2 text-left text-sm text-at-primary transition",
                 open
                   ? "border-cyan-500/50 ring-1 ring-cyan-500/20"
-                  : "border-slate-700 hover:border-slate-600"
+                  : "border-at hover:border-at-soft"
               )}
             >
               {selected ? (
@@ -348,7 +348,7 @@ export function PontoKitInstalar({
             {open && (
               <ul
                 role="listbox"
-                className="absolute z-30 mt-1.5 max-h-64 w-full overflow-y-auto rounded-lg border border-slate-700 bg-slate-950 py-1 shadow-xl shadow-black/40"
+                className="absolute z-30 mt-1.5 max-h-64 w-full overflow-y-auto rounded-lg border border-at bg-at-card py-1 shadow-lg"
               >
                 <li>
                   <button
@@ -362,7 +362,7 @@ export function PontoKitInstalar({
                     className={cn(
                       "flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm",
                       !selectedId
-                        ? "bg-cyan-500/15 text-cyan-100"
+                        ? "bg-at-card-soft font-medium text-at-primary"
                         : "text-at-muted hover:bg-at-card-soft"
                     )}
                   >
@@ -389,8 +389,8 @@ export function PontoKitInstalar({
                           "flex w-full items-center gap-2.5 px-3 py-2.5 text-left text-sm transition",
                           semEstoque && "cursor-not-allowed opacity-45",
                           ativo
-                            ? "bg-cyan-500/15 text-cyan-100"
-                            : "text-white hover:bg-at-card-soft"
+                            ? "bg-at-card-soft font-medium text-at-primary"
+                            : "text-at-primary hover:bg-at-card-soft"
                         )}
                       >
                         <KitThumb src={fotoDoKit(k)} nome={k.nome} />

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ChevronRight, MapPin } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { formatCurrency, formatDate, cn } from "@/lib/utils";
 import type { Ponto } from "@/lib/types/database";
+import { PontoPlaceholderArt } from "@/components/pontos/PontoPlaceholderArt";
 
 interface PointCardProps {
   ponto: Ponto;
@@ -49,8 +50,8 @@ export function PointCard({ ponto }: PointCardProps) {
           className="h-14 w-14 shrink-0 rounded-sm border border-at-soft bg-at-card-soft object-cover"
         />
       ) : (
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-sm border border-at-soft bg-at-card-soft text-at-link">
-          <MapPin className="h-5 w-5" strokeWidth={1.75} />
+        <div className="ponto-ph-thumb relative h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-at-soft">
+          <PontoPlaceholderArt className="h-full w-full scale-125" />
         </div>
       )}
 
