@@ -664,23 +664,70 @@ html[data-app-theme="light"] .ponto-comissao-painel .analise-tab-idle {
   color: #3d3833 !important;
 }
 
-/* GPS / endereço do ponto — ciano e verde neon ilegíveis no claro */
-html[data-app-theme="light"] .ponto-endereco-gps [class*="text-cyan-"] {
-  color: #0e7490 !important;
+/* GPS / endereço do ponto — cores fixas (tokens cream do premium-desk não entram) */
+.ponto-endereco-campos {
+  --at-primary: #141210;
+  --at-muted: #3d3833;
+  --at-soft: #5c564f;
+  color: #141210;
 }
-html[data-app-theme="light"] .ponto-endereco-campos [class*="text-emerald-"] {
-  color: #047857 !important;
+.ponto-endereco-gps {
+  background: #f3efe6;
+  border-color: rgba(28, 25, 23, 0.16);
 }
-html[data-app-theme="light"] .ponto-endereco-campos [class*="text-amber-"] {
-  color: #92662a !important;
+.ponto-btn-gps {
+  background: #92662a;
+  color: #faf8f4;
 }
-html[data-app-theme="light"] .ponto-endereco-gps .text-at-muted {
-  color: #3d3833 !important;
+.ponto-btn-gps:hover {
+  filter: brightness(1.06);
 }
-html:not([data-app-theme="light"]) .ponto-endereco-campos .text-emerald-700 {
+.ponto-btn-endereco {
+  background: #ffffff;
+  border-color: rgba(28, 25, 23, 0.22);
+  color: #141210;
+}
+.ponto-btn-endereco:hover {
+  background: #faf8f4;
+}
+.ponto-endereco-ajuda {
+  color: #3d3833;
+}
+.ponto-gps-ok,
+.ponto-endereco-hint-ok {
+  color: #047857;
+}
+.ponto-endereco-hint-alerta {
+  color: #92662a;
+}
+
+html:not([data-app-theme="light"]) .ponto-endereco-campos {
+  --at-primary: #f4efe6;
+  --at-muted: #94a3b8;
+  --at-soft: #64748b;
+  color: #f4efe6;
+}
+html:not([data-app-theme="light"]) .ponto-endereco-gps {
+  background: rgba(8, 12, 20, 0.55);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html:not([data-app-theme="light"]) .ponto-btn-gps {
+  background: #c4a574;
+  color: #141210;
+}
+html:not([data-app-theme="light"]) .ponto-btn-endereco {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #f4efe6;
+}
+html:not([data-app-theme="light"]) .ponto-endereco-ajuda {
+  color: #cbd5e1;
+}
+html:not([data-app-theme="light"]) .ponto-gps-ok,
+html:not([data-app-theme="light"]) .ponto-endereco-hint-ok {
   color: #6ee7b7;
 }
-html:not([data-app-theme="light"]) .ponto-endereco-campos .text-amber-700 {
+html:not([data-app-theme="light"]) .ponto-endereco-hint-alerta {
   color: #fbbf24;
 }
 

@@ -265,16 +265,13 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
 
   return (
     <div className="ponto-endereco-campos space-y-4">
-      <div className="ponto-endereco-gps rounded-xl border border-at bg-at-card-soft p-3 sm:p-4 space-y-3">
+      <div className="ponto-endereco-gps rounded-xl border p-3 sm:p-4 space-y-3">
         <div className="grid gap-2 sm:grid-cols-2">
           <button
             type="button"
             onClick={() => void handleCapturarGps()}
             disabled={gpsLoading || enderecoLoading}
-            className={cn(
-              "inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[13px] font-semibold transition",
-              "bg-primary-neon text-slate-900 hover:brightness-110 disabled:opacity-60"
-            )}
+            className="ponto-btn-gps inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-[13px] font-semibold transition disabled:opacity-60"
           >
             {gpsLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -287,10 +284,7 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
             type="button"
             onClick={() => void handlePreencherEndereco()}
             disabled={gpsLoading || enderecoLoading}
-            className={cn(
-              "inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-[13px] font-semibold transition disabled:opacity-60",
-              "border-at bg-at-card text-at-primary hover:bg-at-card-soft"
-            )}
+            className="ponto-btn-endereco inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-3 text-[13px] font-semibold transition disabled:opacity-60"
           >
             {enderecoLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -300,12 +294,10 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
             {enderecoLoading ? "Buscando endereço…" : "2. Preencher endereço"}
           </button>
         </div>
-        <p className="text-center text-[11px] leading-relaxed text-at-primary/80">
+        <p className="ponto-endereco-ajuda text-center text-[11px] leading-relaxed">
           Separe as funções: o GPS grava a posição do ponto; o endereço usa essa
-          posição para rua, bairro, cidade e CEP.{" "}
-          <span className="text-at-primary/80">
-            O número do imóvel digite sempre na fachada
-          </span>
+          posição para rua, bairro, cidade e CEP. O número do imóvel digite sempre
+          na fachada
           {ultimaPrecisaoM != null ? (
             <>
               {" "}
@@ -316,7 +308,7 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
           .
         </p>
         {temGps && (
-          <p className="flex items-center justify-center gap-1.5 text-[11px] font-medium text-emerald-700">
+          <p className="ponto-gps-ok flex items-center justify-center gap-1.5 text-[11px] font-medium">
             <MapPin className="h-3 w-3" />
             GPS no formulário — pode preencher o endereço
           </p>
@@ -411,8 +403,8 @@ export function PontoEnderecoFields({ value, onChange }: Props) {
               hint.toLowerCase().includes("negada") ||
               hint.toLowerCase().includes("falha") ||
               hint.toLowerCase().includes("baixa")
-              ? "text-amber-700"
-              : "text-emerald-700"
+              ? "ponto-endereco-hint-alerta"
+              : "ponto-endereco-hint-ok"
           )}
           role="status"
         >
