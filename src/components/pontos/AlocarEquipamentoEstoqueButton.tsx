@@ -45,7 +45,7 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
 
   if (estoqueDisponivel.length === 0) {
     return (
-      <p className="text-xs text-slate-500 self-center">
+      <p className="text-xs text-at-muted self-center">
         Nenhum equipamento no estoque. Cadastre em{" "}
         <a href="/equipamentos" className="text-cyan-400 hover:underline">
           Máquinas e equipamentos
@@ -115,7 +115,7 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-semibold text-white">Alocar equipamento do estoque</h3>
-                  <p className="mt-0.5 text-xs text-slate-500">
+                  <p className="mt-0.5 text-xs text-at-muted">
                     Digite a série ou escolha na lista e defina o nº neste ponto.
                   </p>
                 </div>
@@ -123,7 +123,7 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
                   type="button"
                   onClick={fechar}
                   disabled={loading}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-800"
+                  className="rounded-lg p-1.5 text-at-muted hover:bg-slate-800"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -154,7 +154,7 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
               />
 
               <div className="space-y-1.5">
-                <label className="block text-sm font-medium text-slate-300">Equipamento *</label>
+                <label className="block text-sm font-medium text-at-primary/85">Equipamento *</label>
                 <select
                   value={equipamentoId}
                   onChange={(e) => {
@@ -181,8 +181,8 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
                   </p>
                 )}
                 {selecionado && (
-                  <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-xs text-slate-400">
-                    <p className="font-medium text-slate-200">
+                  <div className="rounded-lg border border-slate-800 bg-slate-950/50 px-3 py-2 text-xs text-at-muted">
+                    <p className="font-medium text-at-primary/90">
                       {selecionado.nome.trim() || "Sem nome"}
                     </p>
                     <p className="mt-0.5">
@@ -192,7 +192,7 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
                         : ""}
                     </p>
                     {selecionado.observacao?.trim() && (
-                      <p className="mt-1 text-slate-500">{selecionado.observacao.trim()}</p>
+                      <p className="mt-1 text-at-muted">{selecionado.observacao.trim()}</p>
                     )}
                   </div>
                 )}
@@ -220,7 +220,7 @@ export function AlocarEquipamentoEstoqueButton({ pontoId, estoqueDisponivel }: P
                   type="button"
                   onClick={fechar}
                   disabled={loading}
-                  className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:bg-slate-800"
+                  className="rounded-lg border border-slate-700 px-4 py-2 text-sm text-at-primary/85 hover:bg-slate-800"
                 >
                   Cancelar
                 </button>

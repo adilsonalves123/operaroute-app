@@ -247,10 +247,10 @@ export function SelecionarAreaNaFoto({
       aria-label={titulo}
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-4 py-3">
+      <div className="flex items-center justify-between gap-3 border-b border-at-soft px-4 py-3">
         <div className="min-w-0">
           <p className="text-sm font-semibold text-white">{titulo}</p>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-at-muted">
             <span className="text-yellow-300 font-medium">Toque e arraste</span> — não segure parado
             (no tablet isso abre o menu do sistema). Marque só o visor com o número.
           </p>
@@ -258,7 +258,7 @@ export function SelecionarAreaNaFoto({
         <button
           type="button"
           onClick={onCancel}
-          className="shrink-0 rounded-full p-2 text-slate-400 hover:bg-white/10 hover:text-white"
+          className="shrink-0 rounded-full p-2 text-at-muted hover:bg-white/10 hover:text-white"
           aria-label="Cancelar"
         >
           <X className="h-5 w-5" />
@@ -312,7 +312,7 @@ export function SelecionarAreaNaFoto({
         </div>
       </div>
 
-      <div className="space-y-2 border-t border-white/10 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="space-y-2 border-t border-at-soft px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         {erro ? <p className="text-xs text-red-400">{erro}</p> : null}
         {temSelecao ? (
           <p className="text-xs text-emerald-300">
@@ -327,7 +327,7 @@ export function SelecionarAreaNaFoto({
             onClick={() => void confirmarRecorte()}
             className={cn(
               "inline-flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold sm:flex-none disabled:cursor-not-allowed disabled:opacity-50",
-              temSelecao ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-slate-500"
+              temSelecao ? "bg-primary-neon text-slate-900" : "bg-slate-800 text-at-muted"
             )}
           >
             <Crop className="h-4 w-4" />
@@ -337,7 +337,7 @@ export function SelecionarAreaNaFoto({
             type="button"
             disabled={processando}
             onClick={usarFotoInteira}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-slate-200 hover:bg-slate-800 disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-600 px-4 py-3 text-sm font-medium text-at-primary/90 hover:bg-slate-800 disabled:opacity-50"
           >
             Foto inteira
           </button>
@@ -345,7 +345,7 @@ export function SelecionarAreaNaFoto({
             type="button"
             disabled={processando}
             onClick={onCancel}
-            className="inline-flex items-center justify-center rounded-xl border border-slate-700 px-4 py-3 text-sm text-slate-400 hover:bg-slate-900 disabled:opacity-50"
+            className="inline-flex items-center justify-center rounded-xl border border-slate-700 px-4 py-3 text-sm text-at-muted hover:bg-slate-900 disabled:opacity-50"
           >
             Cancelar
           </button>

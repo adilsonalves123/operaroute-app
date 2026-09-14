@@ -42,19 +42,19 @@ export function FotoColetaFuraFura({ preview, onChange, erro, ultimaColeta }: Pr
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-at-muted">
         Compare com a foto da visita anterior para conferir o que saiu da máquina.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-slate-400">Última coleta</label>
+          <label className="block text-sm font-medium text-at-muted">Última coleta</label>
           <ExpandableImage
             src={urlAnterior}
             alt="Foto da última coleta"
             className="h-36"
           />
           {ultimaColeta?.created_at ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-at-muted">
               {formatDateTime(ultimaColeta.created_at)}
             </p>
           ) : null}

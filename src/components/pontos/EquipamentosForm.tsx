@@ -152,7 +152,7 @@ export function EquipamentosForm({
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-white">Equipamentos</h3>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className="text-xs text-at-muted mt-0.5">
               Cadastre cassino, ursinho, bolinha, vending ou fura-fura
             </p>
           </div>
@@ -169,7 +169,7 @@ export function EquipamentosForm({
 
       {equipamentos.length === 0 ? (
         allowMultiple ? (
-          <div className="rounded-lg border border-dashed border-slate-700 p-6 text-center text-sm text-slate-500">
+          <div className="rounded-lg border border-dashed border-slate-700 p-6 text-center text-sm text-at-muted">
             Nenhum equipamento. Clique em Adicionar para cadastrar máquinas neste ponto.
           </div>
         ) : null
@@ -190,13 +190,13 @@ export function EquipamentosForm({
               >
                 {allowMultiple && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-slate-300">
+                    <span className="text-sm font-medium text-at-primary/85">
                       Equipamento {index + 1}
                     </span>
                     <button
                       type="button"
                       onClick={() => removeEquipamento(eq.id)}
-                      className="rounded p-1.5 text-slate-500 hover:bg-red-500/10 hover:text-red-400"
+                      className="rounded p-1.5 text-at-muted hover:bg-red-500/10 hover:text-red-400"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
@@ -210,15 +210,15 @@ export function EquipamentosForm({
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-semibold text-white">{tipoInfo!.label}</p>
-                      <p className="text-[11px] leading-snug text-slate-400">
+                      <p className="text-[11px] leading-snug text-at-muted">
                         {tipoInfo!.description}
                       </p>
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-slate-300">Nicho *</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm font-medium text-at-primary/85">Nicho *</p>
+                    <p className="text-xs text-at-muted">
                       Escolha o tipo de equipamento antes de preencher os demais campos.
                     </p>
                     <div className="grid gap-2 sm:grid-cols-2">
@@ -294,7 +294,7 @@ export function EquipamentosForm({
 
                     {tipoEfetivo === "cassino" && (
                       <>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-at-muted">
                           Leitura atual do painel. Na próxima coleta, esses valores viram
                           entrada/saída anterior.
                         </p>
@@ -364,7 +364,7 @@ export function EquipamentosForm({
                     )}
 
                     {tipoEfetivo === "fura_fura" && (
-                      <p className="text-xs text-slate-500">
+                      <p className="text-xs text-at-muted">
                         A coleta registra furos feitos no ponto. Não é necessário informar
                         leitura de painel.
                       </p>

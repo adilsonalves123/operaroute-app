@@ -97,22 +97,22 @@ export function ColetaDiversaoResumo({
         <p className="mt-1 text-3xl font-bold tabular-nums text-cyan-200">
           {formatCurrency(calculo.valorAReceber)}
         </p>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-at-muted">
           Lucro real:{" "}
           <span className="font-medium text-green-400">{formatCurrency(calculo.lucroReal)}</span>
-          <span className="mx-1.5 text-slate-600">·</span>
+          <span className="mx-1.5 text-at-soft">·</span>
           {calculo.maquinas.length} máq.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-        <span className="text-slate-500">Bruto</span>
-        <span className="text-right tabular-nums text-slate-200">{formatCurrency(calculo.valorBruto)}</span>
-        <span className="text-slate-500">Comissão</span>
+        <span className="text-at-muted">Bruto</span>
+        <span className="text-right tabular-nums text-at-primary/90">{formatCurrency(calculo.valorBruto)}</span>
+        <span className="text-at-muted">Comissão</span>
         <span className="text-right tabular-nums text-amber-300">{formatCurrency(calculo.valorComissao)}</span>
         {calculo.desconto > 0.009 && (
           <>
-            <span className="text-slate-500">Desconto</span>
+            <span className="text-at-muted">Desconto</span>
             <span className="text-right tabular-nums text-rose-300">− {formatCurrency(calculo.desconto)}</span>
           </>
         )}
@@ -170,7 +170,7 @@ export function ColetaDiversaoResumo({
       ) : recebimento && modoVisitaPonto ? (
         <div className="space-y-3">
           {finalizarSemPagar ? (
-            <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/5 px-3 py-3 text-xs text-slate-400">
+            <div className="rounded-lg border border-cyan-500/25 bg-cyan-500/5 px-3 py-3 text-xs text-at-muted">
               Fecha a visita sem cobrar agora. O saldo fica{" "}
               <strong className="text-cyan-300">pendente</strong>.
             </div>

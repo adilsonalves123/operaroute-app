@@ -194,7 +194,7 @@ export function HistoricoNumeroSerie({
       {msgAcao && <p className="text-xs text-emerald-400">{msgAcao}</p>}
 
       {!loading && dados && !dados.encontrado && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-at-muted">
           Nenhum registro anterior para esta série — máquina nova no sistema.
         </p>
       )}
@@ -215,8 +215,8 @@ export function HistoricoNumeroSerie({
                 alt="Foto da máquina"
                 className="h-16 w-16 rounded-lg object-cover border border-slate-700"
               />
-              <div className="text-xs text-slate-400 space-y-1">
-                <p className="font-medium text-slate-200">
+              <div className="text-xs text-at-muted space-y-1">
+                <p className="font-medium text-at-primary/90">
                   {ultimoEquipamento?.nome || "Máquina"}
                 </p>
                 <p>Foto de referência da máquina</p>
@@ -224,7 +224,7 @@ export function HistoricoNumeroSerie({
                   <p className="text-cyan-300/90">Local: estoque central</p>
                 ) : ultimoEquipamento?.ponto_nome ? (
                   <p>
-                    Local: <span className="text-slate-300">{ultimoEquipamento.ponto_nome}</span>
+                    Local: <span className="text-at-primary/85">{ultimoEquipamento.ponto_nome}</span>
                   </p>
                 ) : null}
                 {dados.coletas.length > 0 && (
@@ -288,9 +288,9 @@ export function HistoricoNumeroSerie({
                   className="rounded-md border border-slate-800 bg-slate-950/50 px-3 py-2 text-xs space-y-1"
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-slate-400">{formatDate(c.created_at)}</span>
+                    <span className="text-at-muted">{formatDate(c.created_at)}</span>
                     {c.ponto_nome && (
-                      <span className="text-slate-500 truncate">{c.ponto_nome}</span>
+                      <span className="text-at-muted truncate">{c.ponto_nome}</span>
                     )}
                   </div>
                   <div className="flex flex-wrap gap-x-4 gap-y-1 tabular-nums">
@@ -301,7 +301,7 @@ export function HistoricoNumeroSerie({
                       Saí: {formatContador(Number(c.saida_periodo ?? 0))}
                     </span>
                     {c.lucro_centavos != null && (
-                      <span className="text-slate-300">
+                      <span className="text-at-primary/85">
                         Lucro: {formatCurrency(centesimosToReais(c.lucro_centavos))}
                       </span>
                     )}
@@ -314,7 +314,7 @@ export function HistoricoNumeroSerie({
                         className="h-10 w-10 rounded object-cover border border-slate-700"
                       />
                     ) : (
-                      <span className="text-slate-600">Sem foto na coleta</span>
+                      <span className="text-at-soft">Sem foto na coleta</span>
                     )}
                     {c.visita_id && (
                       <Link

@@ -267,29 +267,29 @@ export function LerNumeroDaFoto({
           </button>
 
           {menuAberto ? (
-            <div className="overflow-hidden rounded-xl border border-white/10 bg-slate-900/95 shadow-xl">
+            <div className="overflow-hidden rounded-xl border border-at-soft bg-slate-900/95 shadow-xl">
               <button
                 type="button"
                 disabled={lendo}
                 onClick={() => void abrir("camera")}
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-slate-100 hover:bg-white/[0.04] disabled:opacity-50"
+                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm text-slate-100 hover:bg-at-card-soft disabled:opacity-50"
               >
                 <Camera className="h-4 w-4 text-cyan-400" />
                 <span>
                   <span className="block text-xs font-medium">Câmera</span>
-                  <span className="block text-[10px] text-slate-500">Foto do visor agora</span>
+                  <span className="block text-[10px] text-at-muted">Foto do visor agora</span>
                 </span>
               </button>
               <button
                 type="button"
                 disabled={lendo}
                 onClick={() => void abrir("galeria")}
-                className="flex w-full items-center gap-3 border-t border-white/[0.06] px-3 py-2.5 text-left text-sm text-slate-100 hover:bg-violet-500/10 disabled:opacity-50"
+                className="flex w-full items-center gap-3 border-t border-at px-3 py-2.5 text-left text-sm text-slate-100 hover:bg-violet-500/10 disabled:opacity-50"
               >
                 <ImageIcon className="h-4 w-4 text-violet-300" />
                 <span>
                   <span className="block text-xs font-medium">Galeria</span>
-                  <span className="block text-[10px] text-slate-500">Escolher foto salva</span>
+                  <span className="block text-[10px] text-at-muted">Escolher foto salva</span>
                 </span>
               </button>
             </div>
@@ -302,15 +302,15 @@ export function LerNumeroDaFoto({
             <img
               src={resultado.preview}
               alt="Foto lida"
-              className="h-14 w-14 shrink-0 rounded-lg object-cover border border-white/10"
+              className="h-14 w-14 shrink-0 rounded-lg object-cover border border-at-soft"
             />
             <div className="min-w-0 flex-1">
-              <p className="text-[10px] uppercase tracking-wide text-slate-500">Número detectado</p>
+              <p className="text-[10px] uppercase tracking-wide text-at-muted">Número detectado</p>
               <p className="text-lg font-semibold tabular-nums text-white break-all">
                 {resultado.numero}
               </p>
               {resultado.rotulo ? (
-                <p className="text-[11px] text-slate-500 truncate">{resultado.rotulo}</p>
+                <p className="text-[11px] text-at-muted truncate">{resultado.rotulo}</p>
               ) : null}
               {resultado.confianca < 0.65 ? (
                 <p className="text-[11px] text-amber-400/90 mt-0.5">
@@ -321,7 +321,7 @@ export function LerNumeroDaFoto({
             <button
               type="button"
               onClick={limpar}
-              className="shrink-0 rounded-full p-1 text-slate-500 hover:text-slate-300"
+              className="shrink-0 rounded-full p-1 text-at-muted hover:text-at-primary/85"
               aria-label="Fechar"
             >
               <X className="h-4 w-4" />
@@ -339,7 +339,7 @@ export function LerNumeroDaFoto({
             <button
               type="button"
               onClick={() => void copiar()}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-2.5 py-1.5 text-xs font-medium text-slate-200 hover:bg-slate-800"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-2.5 py-1.5 text-xs font-medium text-at-primary/90 hover:bg-slate-800"
             >
               {copiado ? <Check className="h-3.5 w-3.5 text-green-400" /> : <Copy className="h-3.5 w-3.5" />}
               {copiado ? "Copiado" : "Copiar"}

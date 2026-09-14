@@ -175,7 +175,7 @@ export function PontoFuraFuraSettings({
       <div className="glass-card p-6 space-y-5 border border-amber-500/10">
         <div>
           <h2 className="font-semibold text-white">Configurações fura-fura</h2>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-at-muted mt-1">
             Preço, estoque de furos e brindes alocados neste ponto.{" "}
             <a href="/estoque" className="text-primary-neon hover:underline">
               Estoque central
@@ -218,9 +218,9 @@ export function PontoFuraFuraSettings({
             aria-expanded={brindesAberto}
           >
             <div className="min-w-0">
-              <p className="text-sm font-medium text-slate-300">Brindes no ponto</p>
+              <p className="text-sm font-medium text-at-primary/85">Brindes no ponto</p>
               {!brindesAberto && (
-                <p className="text-xs text-slate-500 mt-0.5 truncate">
+                <p className="text-xs text-at-muted mt-0.5 truncate">
                   {brindes.length === 0
                     ? "Nenhum brinde alocado"
                     : `${brindes.length} ${brindes.length === 1 ? "item" : "itens"} · ${brindesComEstoque} com estoque`}
@@ -228,16 +228,16 @@ export function PontoFuraFuraSettings({
               )}
             </div>
             {brindesAberto ? (
-              <ChevronUp className="h-4 w-4 shrink-0 text-slate-500" />
+              <ChevronUp className="h-4 w-4 shrink-0 text-at-muted" />
             ) : (
-              <ChevronDown className="h-4 w-4 shrink-0 text-slate-500" />
+              <ChevronDown className="h-4 w-4 shrink-0 text-at-muted" />
             )}
           </button>
 
           {brindesAberto && (
             <div className="space-y-3 mt-3">
           {catalogoDisponivel.length === 0 ? (
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-at-muted">
               Cadastre itens no{" "}
               <a href="/estoque" className="text-primary-neon hover:underline">
                 estoque central
@@ -246,10 +246,10 @@ export function PontoFuraFuraSettings({
             </p>
           ) : (
             <div className="rounded-lg border border-slate-800 bg-slate-900/40 p-3 space-y-3">
-              <p className="text-xs text-slate-500">Alocar do estoque central</p>
+              <p className="text-xs text-at-muted">Alocar do estoque central</p>
               <div className="grid gap-2 sm:grid-cols-[1fr_100px_auto] items-end">
                 <div className="space-y-1.5">
-                  <label className="block text-sm font-medium text-slate-300">Item</label>
+                  <label className="block text-sm font-medium text-at-primary/85">Item</label>
                   <select
                     value={selectedItemId}
                     onChange={(e) => setSelectedItemId(e.target.value)}
@@ -285,7 +285,7 @@ export function PontoFuraFuraSettings({
           )}
 
           {brindes.length === 0 ? (
-            <p className="text-xs text-slate-600">Nenhum brinde neste ponto ainda.</p>
+            <p className="text-xs text-at-soft">Nenhum brinde neste ponto ainda.</p>
           ) : (
             <div className="space-y-2">
               {brindes.map((b, i) => (
@@ -294,9 +294,9 @@ export function PontoFuraFuraSettings({
                   className="grid gap-2 sm:grid-cols-[1fr_90px_auto] items-end rounded-lg border border-slate-800/80 px-3 py-2"
                 >
                   <div>
-                    <p className="text-xs text-slate-500 mb-0.5">Item</p>
+                    <p className="text-xs text-at-muted mb-0.5">Item</p>
                     <p className="text-sm font-medium text-white">{b.nome}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-at-muted">
                       {formatCurrency(Number(b.custo_unitario ?? 0))}/un
                     </p>
                   </div>
@@ -318,7 +318,7 @@ export function PontoFuraFuraSettings({
                   </button>
                 </div>
               ))}
-              <p className="text-xs text-slate-600">
+              <p className="text-xs text-at-soft">
                 Ajuste a quantidade e clique em Salvar. Para repor do central, use Alocar acima.
               </p>
             </div>

@@ -13,6 +13,12 @@ import { cn, formatCurrency } from "@/lib/utils";
 import { CentroInteligencia } from "@/components/analise/CentroInteligencia";
 import { PeriodoAnaliseSelector } from "@/components/analise/PeriodoAnaliseSelector";
 import { SaudePontosPainel } from "@/components/analise/SaudePontosPainel";
+import { TermoHint } from "@/components/ui/TermoHint";
+import { useAppTheme } from "@/components/layout/AppTheme";
+import {
+  appThemeToAnaliseVisual,
+  periodoSelectorTema,
+} from "@/lib/analise/analise-visual-theme";
 import type {
   InteligenciaOperacional,
   RankingCidade,
@@ -65,6 +71,8 @@ const sans = Outfit({
 
 const ACCENT = "#c4a574";
 
+type AnaliseTab = "resumo" | "pontos" | "cidades" | "maquinas" | "sinais" | "detalhe";
+
 type Props = {
   data: InteligenciaOperacional;
   periodo: PeriodoAnaliseRange;
@@ -83,9 +91,9 @@ type Props = {
 };
 
 function moneyTone(n: number) {
-  if (n > 0.009) return "text-emerald-400/95";
-  if (n < -0.009) return "text-rose-400/95";
-  return "text-[#f4efe6]/80";
+  if (n > 0.009) return "text-at-money-pos";
+  if (n < -0.009) return "text-at-money-neg";
+  return "text-at-primary opacity-80";
 }
 
 function CityBar({
@@ -103,15 +111,15 @@ function CityBar({
 
   return (
     <div
-      className="border-b border-white/[0.04] py-4 last:border-0"
+      className="border-b border-at-soft py-4 last:border-0"
       style={{
         animation: `analiseRise 0.55s ${0.04 * index}s ease-out both`,
       }}
     >
       <div className="flex items-baseline justify-between gap-3">
         <div className="min-w-0">
-          <p className="truncate text-[16px] font-medium text-[#f4efe6]">{cidade.cidade}</p>
-          <p className="mt-0.5 text-[12px] tabular-nums text-slate-500">
+          <p className="truncate text-[16px] font-medium text-at-primary">{cidade.cidade}</p>
+          <p className="mt-0.5 text-[12px] tabular-nums text-at-muted">
             {cidade.pontos} ponto{cidade.pontos === 1 ? "" : "s"} · {cidade.movimentos} mov.
             {cidade.shareLucroPct != null
               ? ` · ${cidade.shareLucroPct.toFixed(1)}% da operação`
@@ -123,12 +131,12 @@ function CityBar({
           <p className={cn("text-[15px] font-semibold tabular-nums", moneyTone(cidade.lucro))}>
             {formatCurrency(cidade.lucro)}
           </p>
-          <p className="mt-0.5 text-[12px] tabular-nums text-slate-500">
+          <p className="mt-0.5 text-[12px] tabular-nums text-at-muted">
             entrada {formatCurrency(cidade.bruto || cidade.dinheiroOperacao)}
           </p>
         </div>
       </div>
-      <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-white/[0.04]">
+      <div className="relative mt-3 h-2 overflow-hidden rounded-full bg-at-track">
         <div
           className="absolute inset-y-0 left-0 rounded-full"
           style={{
@@ -183,13 +191,13 @@ function PontoRankCard({
   return (
     <Link
       href={`/pontos/${ponto.pontoId}`}
-      className="block border-b border-white/[0.04] py-3.5 transition last:border-0 hover:bg-white/[0.02]"
+      className="block border-b border-at-soft py-3.5 transition last:border-0 hover:bg-at-card-soft"
     >
       <div className="flex items-start gap-3">
         <span
           className={cn(
             "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center text-[12px] font-medium tabular-nums",
-            variant === "best" ? "text-emerald-400/70" : "text-rose-400/70"
+            variant === "best" ? "text-at-money-pos opacity-70" : "text-at-money-neg opacity-70"
           )}
         >
           {rank}
@@ -197,8 +205,8 @@ function PontoRankCard({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[15px] font-medium text-[#f4efe6]">{ponto.nome}</p>
-              <p className="mt-0.5 text-[12px] tabular-nums text-slate-500">
+              <p className="truncate text-[15px] font-medium text-at-primary">{ponto.nome}</p>
+              <p className="mt-0.5 text-[12px] tabular-nums text-at-muted">
                 {ponto.movimentos} mov.
                 {metric === "bolso" && ponto.lucroPorMovimento != null
                   ? ` · ${formatCurrency(ponto.lucroPorMovimento)}/coleta`
@@ -215,22 +223,22 @@ function PontoRankCard({
               {destaque}
             </p>
           </div>
-          <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] uppercase tracking-wider text-slate-500">
+          <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] uppercase tracking-wider text-at-muted">
             <div>
               <p>Entrada</p>
-              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-300">
+              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-at-primary/80">
                 {formatCurrency(ent)}
               </p>
             </div>
             <div>
               <p>Saída</p>
-              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-300">
+              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-at-primary/80">
                 {formatCurrency(sai)}
               </p>
             </div>
             <div>
               <p>{metric === "bolso" ? "Seu bolso" : "% pago"}</p>
-              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-300">
+              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-at-primary/80">
                 {metric === "bolso"
                   ? formatCurrency(ponto.lucro)
                   : pct != null
@@ -263,22 +271,26 @@ function RankCol({
   empty: string;
 }) {
   return (
-    <div className="rounded-sm border border-white/[0.06] bg-white/[0.015] px-4 py-2 sm:px-5">
-      <div className="border-b border-white/[0.05] py-3">
+    <div className="rounded-sm border border-at bg-at-card-soft px-4 py-2 sm:px-5">
+      <div className="border-b border-at-soft py-3">
         <div className="flex items-center gap-2">
           <Icon
             className={cn(
               "h-4 w-4",
-              variant === "best" ? "text-emerald-400/80" : "text-rose-400/80"
+              metric === "pago" && variant === "best"
+                ? "text-amber-400/85"
+                : variant === "best"
+                  ? "text-at-money-pos opacity-80"
+                  : "text-at-money-neg opacity-80"
             )}
           />
-          <h3 className="text-[14px] font-medium tracking-wide text-[#f4efe6]">{title}</h3>
-          <span className="ml-auto text-[12px] tabular-nums text-slate-500">{items.length}</span>
+          <h3 className="text-[14px] font-medium tracking-wide text-at-primary">{title}</h3>
+          <span className="ml-auto text-[12px] tabular-nums text-at-muted">{items.length}</span>
         </div>
-        {hint ? <p className="mt-1 text-[12px] text-slate-500">{hint}</p> : null}
+        {hint ? <p className="mt-1 text-[12px] text-at-muted">{hint}</p> : null}
       </div>
       {items.length === 0 ? (
-        <p className="py-8 text-[15px] text-slate-500">{empty}</p>
+        <p className="py-8 text-[15px] text-at-muted">{empty}</p>
       ) : (
         items.map((p, i) => (
           <PontoRankCard
@@ -316,12 +328,12 @@ function MaquinaRankRow({
         : "—";
 
   return (
-    <div className="border-b border-white/[0.04] py-3.5 last:border-0">
+    <div className="border-b border-at-soft py-3.5 last:border-0">
       <div className="flex items-start gap-3">
         <span
           className={cn(
             "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center text-[12px] font-medium tabular-nums",
-            variant === "best" ? "text-emerald-400/70" : "text-amber-400/80"
+            variant === "best" ? "text-at-money-pos opacity-70" : "text-amber-400/80"
           )}
         >
           {rank}
@@ -329,13 +341,13 @@ function MaquinaRankRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-baseline justify-between gap-3">
             <div className="min-w-0">
-              <p className="truncate text-[15px] font-medium text-[#f4efe6]">
+              <p className="truncate text-[15px] font-medium text-at-primary">
                 {maquina.nome}
                 {maquina.numeroMaquina ? (
-                  <span className="text-slate-500"> · #{maquina.numeroMaquina}</span>
+                  <span className="text-at-muted"> · #{maquina.numeroMaquina}</span>
                 ) : null}
               </p>
-              <p className="mt-0.5 truncate text-[12px] text-slate-500">
+              <p className="mt-0.5 truncate text-[12px] text-at-muted">
                 {maquina.pontoNome} · {maquina.leituras} leitura
                 {maquina.leituras === 1 ? "" : "s"}
               </p>
@@ -343,28 +355,28 @@ function MaquinaRankRow({
             <p
               className={cn(
                 "shrink-0 text-[15px] font-semibold tabular-nums",
-                metric === "pago" ? "text-amber-300/95" : "text-[#f4efe6]"
+                metric === "pago" ? "text-amber-300/95" : "text-at-primary"
               )}
             >
               {destaque}
             </p>
           </div>
-          <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] uppercase tracking-wider text-slate-500">
+          <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] uppercase tracking-wider text-at-muted">
             <div>
               <p>Entrada</p>
-              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-300">
+              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-at-primary/80">
                 {formatCurrency(ent)}
               </p>
             </div>
             <div>
               <p>Saída</p>
-              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-300">
+              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-at-primary/80">
                 {formatCurrency(sai)}
               </p>
             </div>
             <div>
               <p>% pago</p>
-              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-slate-300">
+              <p className="mt-0.5 text-[13px] font-medium normal-case tracking-normal tabular-nums text-at-primary/80">
                 {pct != null ? `${pct.toFixed(1)}%` : "—"}
               </p>
             </div>
@@ -375,8 +387,15 @@ function MaquinaRankRow({
   );
 }
 
-export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Props) {
+export function AnalisePremiumClient({
+  data,
+  periodo,
+  comissaoStaff = null,
+}: Props) {
+  const { theme: appTheme } = useAppTheme();
+  const visualTema = appThemeToAnaliseVisual(appTheme);
   const [ativo, setAtivo] = useState(false);
+  const [aba, setAba] = useState<AnaliseTab>("resumo");
   const modulosRef = useRef<HTMLElement | null>(null);
   const v = data.visaoGeral;
   const liquido = v.liquidoOperacao ?? v.lucroLiquido;
@@ -513,25 +532,26 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
       data.nichos.consignado,
     ].filter(Boolean).length === 1;
 
+  const temMaquinas =
+    maquinas.maisMovimento.length > 0 || maquinas.maisPaga.length > 0;
+
+  const abas = useMemo(() => {
+    const list: { id: AnaliseTab; label: string }[] = [
+      { id: "resumo", label: "Resumo" },
+      { id: "pontos", label: "Pontos" },
+      { id: "cidades", label: "Cidades" },
+    ];
+    if (temMaquinas) list.push({ id: "maquinas", label: "Máquinas" });
+    if (data.insights.length > 0) list.push({ id: "sinais", label: "Sinais" });
+    list.push({ id: "detalhe", label: umNichoSo ? "Raio-X" : "Detalhe" });
+    return list;
+  }, [data.insights.length, temMaquinas, umNichoSo]);
+
   return (
     <div
-      className={cn(
-        display.variable,
-        sans.variable,
-        "relative -mx-4 -mt-2 min-h-[calc(100dvh-5.5rem)] overflow-hidden px-4 pb-16 text-[15px] sm:-mx-6 sm:px-6 lg:min-h-[calc(100dvh-4rem)]"
-      )}
+      className={cn(display.variable, sans.variable, "text-[15px]")}
       style={{ fontFamily: "var(--font-analise-sans), system-ui, sans-serif" }}
     >
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden>
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 85% 50% at 50% -8%, rgba(196,165,116,0.14), transparent 55%), radial-gradient(ellipse 45% 35% at 95% 25%, rgba(16,185,129,0.05), transparent 50%), radial-gradient(ellipse 40% 30% at 5% 70%, rgba(120,90,50,0.1), transparent 45%), linear-gradient(180deg, #06080e 0%, #0a0e16 50%, #07090f 100%)",
-          }}
-        />
-      </div>
-
       <style>{`
         @keyframes analiseRise {
           from { opacity: 0; transform: translateY(14px); }
@@ -551,41 +571,66 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p
-                className="text-[12px] font-medium uppercase text-[#c4a574]/90"
+                className="text-[12px] font-medium uppercase text-at-accent"
                 style={{ letterSpacing: "0.38em" }}
               >
                 OperaRoute · Private desk
               </p>
               <h1
-                className="mt-3 text-[clamp(2.55rem,6.2vw,3.9rem)] leading-[0.95] tracking-tight text-[#f4efe6]"
+                className="mt-3 text-[clamp(2.55rem,6.2vw,3.9rem)] leading-[0.95] tracking-tight text-at-primary"
                 style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
               >
                 Análise
               </h1>
-              <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-slate-400">
+              <p className="mt-3 max-w-lg text-[15px] leading-relaxed text-at-muted">
                 Leitura real da operação — o que entrou, o que saiu (incluindo
                 negativo pago com caixa) e o líquido do período, mesmo abaixo de
                 zero.
               </p>
             </div>
             <div className="lg:max-w-xl lg:flex-1">
-              <PeriodoAnaliseSelector atual={periodo} />
+              <PeriodoAnaliseSelector
+                atual={periodo}
+                tema={periodoSelectorTema(visualTema)}
+              />
             </div>
           </div>
           <div
-            className="mt-8 h-px w-full origin-left bg-gradient-to-r from-[#c4a574]/60 via-white/10 to-transparent"
+            className="mt-8 h-px w-full origin-left bg-gradient-to-r from-[var(--at-accent)]/60 via-[var(--at-border)] to-transparent"
             style={{ animation: ativo ? "analiseLine 1s 0.25s ease-out both" : undefined }}
           />
         </header>
 
-        {/* Hero — funil */}
+        {/* Navegação por abas */}
+        <nav
+          className="sticky top-0 z-20 -mx-4 mt-6 border-b border-at-divider bg-at-sticky px-4 py-3 backdrop-blur-md sm:-mx-6 sm:px-6"
+          aria-label="Seções da análise"
+        >
+          <div className="flex gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {abas.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setAba(tab.id)}
+                className={cn(
+                  "shrink-0 rounded-full border px-4 py-1.5 text-[13px] font-medium transition",
+                  aba === tab.id ? "analise-tab-active" : "analise-tab-idle"
+                )}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </nav>
+
+        {aba === "resumo" && (
         <section
           className="mt-10"
           style={{ animation: ativo ? "analiseRise 0.7s 0.12s ease-out both" : undefined }}
         >
           <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-end">
             <div>
-              <p className="text-[12px] uppercase tracking-[0.22em] text-slate-500">
+              <p className="text-[12px] uppercase tracking-[0.22em] text-at-muted">
                 Líquido real · {data.periodoLabel}
               </p>
               <p
@@ -597,89 +642,85 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
               >
                 {formatCurrency(liquido)}
               </p>
-              <p className="mt-2 text-[13px] leading-relaxed text-slate-500">
+              <p className="mt-2 text-[13px] leading-relaxed text-at-muted">
                 O que você recebeu / ficou na operação neste período.
               </p>
 
               {cmp && (
-                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-slate-400">
+                <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] text-at-muted">
                   <span className="inline-flex items-center gap-1.5">
                     {cmp.liquidoOperacaoDelta >= 0 ? (
-                      <ArrowUpRight className="h-3.5 w-3.5 text-emerald-400/80" />
+                      <ArrowUpRight className="h-3.5 w-3.5 text-at-money-pos opacity-80" />
                     ) : (
-                      <ArrowDownRight className="h-3.5 w-3.5 text-rose-400/80" />
+                      <ArrowDownRight className="h-3.5 w-3.5 text-at-money-neg opacity-80" />
                     )}
                     <span className={cn("tabular-nums", moneyTone(cmp.liquidoOperacaoDelta))}>
                       {cmp.liquidoOperacaoDelta >= 0 ? "+" : ""}
                       {formatCurrency(cmp.liquidoOperacaoDelta)}
                     </span>
                     {cmp.liquidoOperacaoDeltaPct != null && (
-                      <span className="tabular-nums text-slate-500">
+                      <span className="tabular-nums text-at-muted">
                         ({cmp.liquidoOperacaoDeltaPct >= 0 ? "+" : ""}
                         {cmp.liquidoOperacaoDeltaPct.toFixed(0)}%)
                       </span>
                     )}
                   </span>
-                  <span className="text-slate-600">vs período anterior</span>
+                  <span className="text-at-soft">vs período anterior</span>
                 </div>
               )}
 
-              <div className="mt-6 grid max-w-2xl grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06] sm:grid-cols-4">
+              <div className="mt-6 grid max-w-2xl grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-at-grid sm:grid-cols-4">
                 {[
                   {
                     label: "Entrada",
                     value: formatCurrency(entrada),
                     hint: "Máquinas faturaram",
-                    tone: "text-emerald-400/90",
                   },
                   {
                     label: "Saída",
                     value: formatCurrency(saida),
                     hint: "Saiu das máquinas",
-                    tone: "text-rose-400/90",
                   },
                   {
                     label: "Comissão",
                     value: formatCurrency(comissao),
                     hint: "Parte do cliente",
-                    tone: "text-amber-300/90",
                   },
                   {
                     label: "Movimento",
                     value: formatCurrency(movimento),
                     hint: "Entrada − saída",
-                    tone: "text-[#f4efe6]",
                   },
                 ].map((cell) => (
-                  <div key={cell.label} className="bg-[#0a0e16]/95 px-3 py-3.5 sm:px-4">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                  <div key={cell.label} className="bg-at-card px-3 py-3.5 sm:px-4">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-at-muted">
                       {cell.label}
                     </p>
-                    <p className={cn("mt-1.5 text-[16px] font-medium tabular-nums", cell.tone)}>
+                    <p className="mt-1.5 text-[16px] font-medium tabular-nums text-at-primary">
                       {cell.value}
                     </p>
-                    <p className="mt-1 text-[11px] text-slate-600">{cell.hint}</p>
+                    <p className="mt-1 text-[11px] text-at-soft">{cell.hint}</p>
                   </div>
                 ))}
               </div>
 
-              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px] text-slate-400">
+              <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[14px] text-at-muted">
                 {v.margemPct != null && (
                   <span>
                     Margem{" "}
-                    <span className="tabular-nums text-[#f4efe6]">{v.margemPct.toFixed(1)}%</span>
+                    <span className="tabular-nums text-at-primary">{v.margemPct.toFixed(1)}%</span>
                   </span>
                 )}
                 <span>
                   Brindes{" "}
-                  <span className="tabular-nums text-[#f4efe6]">
+                  <span className="tabular-nums text-at-primary">
                     {formatCurrency(v.custoBrindesMes)}
                   </span>
                 </span>
                 {comissaoStaff && comissaoStaff.linhas.length > 0 && (
                   <span>
                     Ajudante{" "}
-                    <span className="tabular-nums text-violet-200">
+                    <span className="tabular-nums text-at-primary">
                       {formatCurrency(
                         comissaoStaff.linhas.length === 1
                           ? comissaoStaff.linhas[0].valor
@@ -688,12 +729,12 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
                     </span>
                     {(comissaoStaff.totalVales > 0.009 || comissaoStaff.totalAPagar > 0.009) && (
                       <>
-                        <span className="text-slate-600"> · vales </span>
-                        <span className="tabular-nums text-amber-200/90">
+                        <span className="text-at-soft"> · vales </span>
+                        <span className="tabular-nums text-at-primary">
                           {formatCurrency(comissaoStaff.totalVales)}
                         </span>
-                        <span className="text-slate-600"> · a pagar </span>
-                        <span className="tabular-nums text-violet-200">
+                        <span className="text-at-soft"> · a pagar </span>
+                        <span className="tabular-nums text-at-primary">
                           {formatCurrency(comissaoStaff.totalAPagar)}
                         </span>
                       </>
@@ -701,7 +742,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
                   </span>
                 )}
                 {cmp && (
-                  <span className="text-slate-600">
+                  <span className="text-at-soft">
                     Mov. {cmp.movimentosDelta >= 0 ? "+" : ""}
                     {cmp.movimentosDelta} vs ant.
                   </span>
@@ -709,21 +750,28 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-white/[0.06] bg-white/[0.06]">
+            <div className="grid grid-cols-2 gap-px overflow-hidden rounded-sm border border-at bg-at-grid">
               {[
                 { label: "A receber", value: formatCurrency(v.aReceber) },
-                { label: "Haver", value: formatCurrency(v.haver) },
+                {
+                  label: "Haver",
+                  value: formatCurrency(v.haver),
+                  hint: true as const,
+                },
                 { label: "Capital estoque", value: formatCurrency(capitalTotal) },
                 {
                   label: "Pontos c/ movimento",
                   value: String(comMovimento.length),
                 },
               ].map((cell) => (
-                <div key={cell.label} className="bg-[#0a0e16]/95 px-4 py-3.5">
-                  <p className="text-[11px] uppercase tracking-[0.16em] text-slate-500">
+                <div key={cell.label} className="bg-at-card px-4 py-3.5">
+                  <p className="inline-flex items-center gap-1 text-[11px] uppercase tracking-[0.16em] text-at-muted">
                     {cell.label}
+                    {"hint" in cell && cell.hint ? (
+                      <TermoHint texto="Crédito que você deve ao ponto — saldo positivo a favor do cliente." />
+                    ) : null}
                   </p>
-                  <p className="mt-1.5 text-[16px] font-medium tabular-nums text-[#f4efe6]">
+                  <p className="mt-1.5 text-[16px] font-medium tabular-nums text-at-primary">
                     {cell.value}
                   </p>
                 </div>
@@ -731,36 +779,37 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
             </div>
           </div>
         </section>
+        )}
 
-        {/* Geografia */}
+        {aba === "cidades" && (
         <section
-          className="mt-14"
+          className="mt-10"
           style={{ animation: ativo ? "analiseRise 0.7s 0.2s ease-out both" : undefined }}
         >
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <p className="text-[12px] uppercase tracking-[0.22em] text-[#c4a574]/85">
+              <p className="text-[12px] uppercase tracking-[0.22em] text-at-accent">
                 Geografia
               </p>
               <h2
-                className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6] sm:text-[2rem]"
+                className="mt-1.5 text-[1.65rem] tracking-tight text-at-primary sm:text-[2rem]"
                 style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
               >
                 Por cidade
               </h2>
-              <p className="mt-1.5 text-[14px] text-slate-500">
+              <p className="mt-1.5 text-[14px] text-at-muted">
                 Participação no líquido da operação · todos os nichos.
               </p>
             </div>
-            <p className="text-[13px] tabular-nums text-slate-500">
+            <p className="text-[13px] tabular-nums text-at-muted">
               {data.rankingCidades.length} praça
               {data.rankingCidades.length === 1 ? "" : "s"}
             </p>
           </div>
 
-          <div className="mt-6 border-t border-white/[0.06] pt-1">
+          <div className="mt-6 border-t border-at pt-1">
             {data.rankingCidades.length === 0 ? (
-              <p className="py-10 text-[15px] text-slate-500">
+              <p className="py-10 text-[15px] text-at-muted">
                 Sem movimentos no período para agregar por cidade.
               </p>
             ) : (
@@ -770,28 +819,30 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
             )}
           </div>
           {!temCidadesNomeadas && data.rankingCidades.length > 0 && (
-            <p className="mt-3 text-[13px] text-slate-500">
+            <p className="mt-3 text-[13px] text-at-muted">
               Cadastre a cidade em cada ponto para separar o faturamento por praça.
             </p>
           )}
         </section>
+        )}
 
-        {/* Ranking — movimento · % pago · bolso · máquinas */}
+        {aba === "pontos" && (
+        <>
         <section
-          className="mt-14"
+          className="mt-10"
           style={{ animation: ativo ? "analiseRise 0.7s 0.28s ease-out both" : undefined }}
         >
           <div className="mb-6">
-            <p className="text-[12px] uppercase tracking-[0.22em] text-[#c4a574]/85">
+            <p className="text-[12px] uppercase tracking-[0.22em] text-at-accent">
               Performance
             </p>
             <h2
-              className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6] sm:text-[2rem]"
+              className="mt-1.5 text-[1.65rem] tracking-tight text-at-primary sm:text-[2rem]"
               style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
             >
               Movimento · pagamento · seu bolso
             </h2>
-            <p className="mt-1.5 text-[14px] text-slate-500">
+            <p className="mt-1.5 text-[14px] text-at-muted">
               Período: {periodo.label}. Top 10 — entrada das máquinas, quanto o ponto paga, e o
               que ficou com você.
             </p>
@@ -799,7 +850,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
 
           <div className="space-y-8">
             <div>
-              <p className="mb-3 text-[12px] uppercase tracking-[0.16em] text-slate-500">
+              <p className="mb-3 text-[12px] uppercase tracking-[0.16em] text-at-muted">
                 Maior movimento
               </p>
               <div className="grid gap-6 lg:grid-cols-2">
@@ -829,7 +880,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
             </div>
 
             <div>
-              <p className="mb-3 text-[12px] uppercase tracking-[0.16em] text-slate-500">
+              <p className="mb-3 text-[12px] uppercase tracking-[0.16em] text-at-muted">
                 Quanto paga
               </p>
               <div className="grid gap-6 lg:grid-cols-2">
@@ -859,7 +910,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
             </div>
 
             <div>
-              <p className="mb-3 text-[12px] uppercase tracking-[0.16em] text-slate-500">
+              <p className="mb-3 text-[12px] uppercase tracking-[0.16em] text-at-muted">
                 Seu bolso
               </p>
               <div className="grid gap-6 lg:grid-cols-2">
@@ -894,34 +945,72 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           </div>
         </section>
 
-        {/* Máquinas — diagnóstico entrada × saída */}
-        {(maquinas.maisMovimento.length > 0 || maquinas.maisPaga.length > 0) && (
+        {/* Saúde — junto com pontos */}
+        <section
+          className="mt-14"
+          style={{ animation: ativo ? "analiseRise 0.7s 0.32s ease-out both" : undefined }}
+        >
+          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <p className="text-[12px] uppercase tracking-[0.22em] text-at-accent">Base</p>
+              <h2
+                className="mt-1.5 text-[1.65rem] tracking-tight text-at-primary sm:text-[2rem]"
+                style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
+              >
+                Saúde dos pontos
+              </h2>
+              <p className="mt-1.5 text-[14px] text-at-muted">
+                Pelo lucro real no período — forte = top da frota, fraco = prejuízo ou cauda baixa.
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-4 text-[13px] tabular-nums text-at-muted">
+              <span>
+                Fortes <strong className="text-at-money-pos opacity-90">{fortes}</strong>
+              </span>
+              <span>
+                Razoáveis <strong className="text-amber-400/90">{razoaveis}</strong>
+              </span>
+              <span>
+                Fracos <strong className="text-at-money-neg opacity-90">{fracos}</strong>
+              </span>
+            </div>
+          </div>
+          <SaudePontosPainel
+            itens={saude}
+            titulo="Classificação operacional"
+            subtitulo="Lucro real do período selecionado, comparado entre os pontos"
+          />
+        </section>
+        </>
+        )}
+
+        {aba === "maquinas" && temMaquinas && (
           <section
-            className="mt-14"
+            className="mt-10"
             style={{ animation: ativo ? "analiseRise 0.7s 0.3s ease-out both" : undefined }}
           >
             <div className="mb-6">
-              <p className="text-[12px] uppercase tracking-[0.22em] text-[#c4a574]/85">
+              <p className="text-[12px] uppercase tracking-[0.22em] text-at-accent">
                 Máquinas
               </p>
               <h2
-                className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6] sm:text-[2rem]"
+                className="mt-1.5 text-[1.65rem] tracking-tight text-at-primary sm:text-[2rem]"
                 style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
               >
                 Quem puxa o ponto
               </h2>
-              <p className="mt-1.5 text-[14px] text-slate-500">
-                Entrada × saída × % pago — para ver se alguma máquina paga acima do normal.
+              <p className="mt-1.5 text-[14px] text-at-muted">
+                Entrada × saída × % pago — alerta quando alguma máquina paga acima do normal.
               </p>
             </div>
 
             <div className="grid gap-6 lg:grid-cols-3">
-              <div className="rounded-sm border border-white/[0.06] bg-white/[0.015] px-4 py-2 sm:px-5">
-                <div className="border-b border-white/[0.05] py-3">
-                  <h3 className="text-[14px] font-medium tracking-wide text-[#f4efe6]">
+              <div className="rounded-sm border border-at bg-at-card-soft px-4 py-2 sm:px-5">
+                <div className="border-b border-at-soft py-3">
+                  <h3 className="text-[14px] font-medium tracking-wide text-at-primary">
                     Mais movimento
                   </h3>
-                  <p className="mt-1 text-[12px] text-slate-500">Maior entrada no período</p>
+                  <p className="mt-1 text-[12px] text-at-muted">Maior entrada no período</p>
                 </div>
                 {maquinas.maisMovimento.map((m, i) => (
                   <MaquinaRankRow
@@ -934,17 +1023,17 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
                 ))}
               </div>
 
-              <div className="rounded-sm border border-white/[0.06] bg-white/[0.015] px-4 py-2 sm:px-5">
-                <div className="border-b border-white/[0.05] py-3">
-                  <h3 className="text-[14px] font-medium tracking-wide text-[#f4efe6]">
+              <div className="rounded-sm border border-at bg-at-card-soft px-4 py-2 sm:px-5">
+                <div className="border-b border-at-soft py-3">
+                  <h3 className="text-[14px] font-medium tracking-wide text-at-primary">
                     Mais paga
                   </h3>
-                  <p className="mt-1 text-[12px] text-slate-500">
-                    Maior % saída ÷ entrada (ex.: Papa-Léguas)
+                  <p className="mt-1 text-[12px] text-amber-400/80">
+                    Maior % saída ÷ entrada — atenção
                   </p>
                 </div>
                 {maquinas.maisPaga.length === 0 ? (
-                  <p className="py-8 text-[15px] text-slate-500">Sem % pago nas máquinas.</p>
+                  <p className="py-8 text-[15px] text-at-muted">Sem % pago nas máquinas.</p>
                 ) : (
                   maquinas.maisPaga.map((m, i) => (
                     <MaquinaRankRow
@@ -958,17 +1047,17 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
                 )}
               </div>
 
-              <div className="rounded-sm border border-white/[0.06] bg-white/[0.015] px-4 py-2 sm:px-5">
-                <div className="border-b border-white/[0.05] py-3">
-                  <h3 className="text-[14px] font-medium tracking-wide text-[#f4efe6]">
+              <div className="rounded-sm border border-at bg-at-card-soft px-4 py-2 sm:px-5">
+                <div className="border-b border-at-soft py-3">
+                  <h3 className="text-[14px] font-medium tracking-wide text-at-primary">
                     Menos paga
                   </h3>
-                  <p className="mt-1 text-[12px] text-slate-500">
+                  <p className="mt-1 text-[12px] text-at-muted">
                     Menor % saída ÷ entrada — retém mais
                   </p>
                 </div>
                 {maquinas.menosPaga.length === 0 ? (
-                  <p className="py-8 text-[15px] text-slate-500">
+                  <p className="py-8 text-[15px] text-at-muted">
                     Precisa de pelo menos 2 máquinas com % pago.
                   </p>
                 ) : (
@@ -987,52 +1076,14 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           </section>
         )}
 
-        {/* Saúde */}
-        <section
-          className="mt-14"
-          style={{ animation: ativo ? "analiseRise 0.7s 0.32s ease-out both" : undefined }}
-        >
-          <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <p className="text-[12px] uppercase tracking-[0.22em] text-[#c4a574]/85">Base</p>
-              <h2
-                className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6] sm:text-[2rem]"
-                style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
-              >
-                Saúde dos pontos
-              </h2>
-              <p className="mt-1.5 text-[14px] text-slate-500">
-                Pelo lucro real no período — forte = top da frota, fraco = prejuízo ou cauda baixa.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-4 text-[13px] tabular-nums text-slate-500">
-              <span>
-                Fortes <strong className="text-emerald-400/90">{fortes}</strong>
-              </span>
-              <span>
-                Razoáveis <strong className="text-amber-400/90">{razoaveis}</strong>
-              </span>
-              <span>
-                Fracos <strong className="text-rose-400/90">{fracos}</strong>
-              </span>
-            </div>
-          </div>
-          <SaudePontosPainel
-            itens={saude}
-            titulo="Classificação operacional"
-            subtitulo="Lucro real do período selecionado, comparado entre os pontos"
-          />
-        </section>
-
-        {/* Sinais */}
-        {data.insights.length > 0 && (
+        {aba === "sinais" && data.insights.length > 0 && (
           <section
-            className="mt-14"
+            className="mt-10"
             style={{ animation: ativo ? "analiseRise 0.7s 0.34s ease-out both" : undefined }}
           >
-            <p className="text-[12px] uppercase tracking-[0.22em] text-[#c4a574]/85">Sinais</p>
+            <p className="text-[12px] uppercase tracking-[0.22em] text-at-accent">Sinais</p>
             <h2
-              className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6]"
+              className="mt-1.5 text-[1.65rem] tracking-tight text-at-primary"
               style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
             >
               O que merece atenção
@@ -1041,16 +1092,16 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
               {data.insights.slice(0, 8).map((ins) => (
                 <div
                   key={ins.id}
-                  className="border border-white/[0.06] bg-white/[0.02] px-4 py-3.5"
+                  className="border border-at bg-at-card-soft px-4 py-3.5"
                 >
-                  <p className="text-[14px] font-medium text-[#f4efe6]">{ins.titulo}</p>
-                  <p className="mt-1 text-[13px] leading-relaxed text-slate-500">
+                  <p className="text-[14px] font-medium text-at-primary">{ins.titulo}</p>
+                  <p className="mt-1 text-[13px] leading-relaxed text-at-muted">
                     {ins.descricao}
                   </p>
                   {ins.href && ins.hrefLabel && (
                     <Link
                       href={ins.href}
-                      className="mt-2 inline-block text-[13px] text-[#c4a574] hover:underline"
+                      className="mt-2 inline-block text-[13px] text-at-link hover:underline"
                     >
                       {ins.hrefLabel} →
                     </Link>
@@ -1061,24 +1112,24 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           </section>
         )}
 
-        {/* Deep-dive — conteúdo complementar (não repete ranking) */}
+        {aba === "detalhe" && (
         <section
           ref={modulosRef}
           id="detalhe-nicho"
-          className="mt-16 border-t border-white/[0.06] pt-10"
+          className="mt-10 border-t border-at pt-10"
         >
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-[12px] uppercase tracking-[0.22em] text-slate-500">
+              <p className="text-[12px] uppercase tracking-[0.22em] text-at-muted">
                 {umNichoSo ? "Raio-X" : "Detalhamento"}
               </p>
               <h2
-                className="mt-1.5 text-[1.65rem] tracking-tight text-[#f4efe6] sm:text-[2rem]"
+                className="mt-1.5 text-[1.65rem] tracking-tight text-at-primary sm:text-[2rem]"
                 style={{ fontFamily: "var(--font-analise-display), Georgia, serif" }}
               >
                 {umNichoSo ? "O que o ranking não mostra" : "Detalhe por nicho"}
               </h2>
-              <p className="mt-1.5 max-w-lg text-[14px] text-slate-500">
+              <p className="mt-1.5 max-w-lg text-[14px] text-at-muted">
                 {umNichoSo
                   ? "Concentração, ticket por visita, máquinas que pagam alto e tipos de jogo — sem repetir a lista de cima."
                   : "Caixa, capital e alertas por módulo — sem repetir o ranking consolidado."}
@@ -1087,6 +1138,7 @@ export function AnalisePremiumClient({ data, periodo, comissaoStaff = null }: Pr
           </div>
           <CentroInteligencia data={data} mode="modulos" periodo={periodo} />
         </section>
+        )}
       </div>
     </div>
   );

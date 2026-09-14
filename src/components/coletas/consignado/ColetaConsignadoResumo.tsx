@@ -96,14 +96,14 @@ export function ColetaConsignadoResumo({
         <p className="mt-1 text-3xl font-bold tabular-nums text-emerald-200">
           {formatCurrency(calculo.valorBruto)}
         </p>
-        <p className="mt-1 text-xs text-slate-400">
+        <p className="mt-1 text-xs text-at-muted">
           {unidades} {unidades === 1 ? "unidade" : "unidades"} · {calculo.linhas.length} produtos
         </p>
       </div>
 
       {calculo.linhas.some((l) => l.vendido > 0) && (
-        <div className="space-y-1.5 rounded-xl border border-white/[0.06] bg-black/20 p-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        <div className="space-y-1.5 rounded-xl border border-at bg-black/20 p-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wider text-at-muted">
             Comprovante
           </p>
           {calculo.linhas
@@ -114,15 +114,15 @@ export function ColetaConsignadoResumo({
                 className="flex items-start justify-between gap-3 text-xs"
               >
                 <div className="min-w-0">
-                  <p className="text-slate-200">
+                  <p className="text-at-primary/90">
                     <span className="font-semibold tabular-nums text-white">{l.vendido}</span>
                     {" × "}
                     {l.nome}
                     {l.codigo ? (
-                      <span className="text-slate-500"> ({l.codigo})</span>
+                      <span className="text-at-muted"> ({l.codigo})</span>
                     ) : null}
                   </p>
-                  <p className="text-slate-500">
+                  <p className="text-at-muted">
                     {formatCurrency(l.precoVenda)} un
                     {l.comissaoFixa != null && Number(l.comissaoFixa) > 0
                       ? ` · cliente ${formatCurrency(Number(l.comissaoFixa))}/un`
@@ -132,7 +132,7 @@ export function ColetaConsignadoResumo({
                       : ""}
                   </p>
                 </div>
-                <span className="shrink-0 tabular-nums font-medium text-slate-200">
+                <span className="shrink-0 tabular-nums font-medium text-at-primary/90">
                   {formatCurrency(l.receita)}
                 </span>
               </div>
@@ -141,7 +141,7 @@ export function ColetaConsignadoResumo({
       )}
 
       <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-        <span className="text-slate-500">
+        <span className="text-at-muted">
           {calculo.modoComissao === "tabela"
             ? "Repasse ao cliente (tabela)"
             : `Comissão do cliente (${calculo.comissaoPercentual}%)`}
@@ -151,19 +151,19 @@ export function ColetaConsignadoResumo({
         </span>
         {calculo.desconto > 0.009 && (
           <>
-            <span className="text-slate-500">Desconto</span>
+            <span className="text-at-muted">Desconto</span>
             <span className="text-right tabular-nums text-rose-300">
               − {formatCurrency(calculo.desconto)}
             </span>
           </>
         )}
-        <span className="text-slate-500">Valor da operação</span>
+        <span className="text-at-muted">Valor da operação</span>
         <span className="text-right tabular-nums font-semibold text-orange-200">
           {formatCurrency(calculo.valorAReceber)}
         </span>
       </div>
 
-      <div className="space-y-2 rounded-xl border border-white/[0.06] bg-black/25 p-3">
+      <div className="space-y-2 rounded-xl border border-at bg-black/25 p-3">
         <div className="flex items-center justify-between gap-3 text-sm">
           <span className="flex items-center gap-2 text-amber-300/90">
             <Package className="h-3.5 w-3.5" />
@@ -173,14 +173,14 @@ export function ColetaConsignadoResumo({
             {formatCurrency(calculo.custoProdutos)}
           </span>
         </div>
-        <div className="border-t border-white/[0.08] pt-2">
+        <div className="border-t border-at-soft pt-2">
           <div className="flex items-end justify-between gap-3">
             <div>
               <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-green-400/90">
                 <Wallet className="h-3.5 w-3.5" />
                 Livre pra você (lucro)
               </p>
-              <p className="mt-0.5 text-[11px] text-slate-500">
+              <p className="mt-0.5 text-[11px] text-at-muted">
                 Depois de comissão e custo dos produtos
               </p>
             </div>
@@ -243,7 +243,7 @@ export function ColetaConsignadoResumo({
       ) : recebimento && modoVisitaPonto ? (
         <div className="space-y-3">
           {finalizarSemPagar ? (
-            <div className="rounded-lg border border-orange-500/25 bg-orange-500/5 px-3 py-3 text-xs text-slate-400">
+            <div className="rounded-lg border border-orange-500/25 bg-orange-500/5 px-3 py-3 text-xs text-at-muted">
               Fecha a visita sem cobrar agora. O saldo fica{" "}
               <strong className="text-orange-300">pendente</strong>.
             </div>

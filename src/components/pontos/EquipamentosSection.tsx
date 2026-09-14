@@ -299,7 +299,7 @@ export function EquipamentosSection({
         {!showForm && (
           <>
             {multiModulo && (
-              <p className="text-xs text-slate-500 -mt-2">
+              <p className="text-xs text-at-muted -mt-2">
                 Equipamentos agrupados por nicho — cada módulo com regras próprias.
               </p>
             )}
@@ -317,14 +317,14 @@ export function EquipamentosSection({
         {showForm && (
           <div className="space-y-4 border-t border-slate-800 pt-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-slate-400">Cadastrar novo equipamento</p>
+              <p className="text-sm text-at-muted">Cadastrar novo equipamento</p>
               <button
                 type="button"
                 onClick={() => {
                   setShowForm(false);
                   setError("");
                 }}
-                className="rounded p-1 text-slate-500 hover:text-white"
+                className="rounded p-1 text-at-muted hover:text-white"
               >
                 <X className="h-4 w-4" />
               </button>

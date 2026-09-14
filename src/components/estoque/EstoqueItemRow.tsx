@@ -48,9 +48,9 @@ export const EstoqueItemRow = memo(function EstoqueItemRow({
     <div
       ref={rowRef}
       className={cn(
-        "overflow-hidden border border-white/[0.06] bg-white/[0.02]",
+        "overflow-hidden border border-at bg-white/[0.02]",
         isEditing &&
-          "border-[#c4a574]/30 bg-white/[0.03] ring-1 ring-[#c4a574]/15 lg:col-span-2"
+          "border-[#c4a574]/30 bg-at-card-soft ring-1 ring-[#c4a574]/15 lg:col-span-2"
       )}
     >
       <div className="flex w-full items-center gap-2 p-4 sm:gap-3">
@@ -60,7 +60,7 @@ export const EstoqueItemRow = memo(function EstoqueItemRow({
           aria-expanded={isEditing}
           className="flex min-w-0 flex-1 items-center gap-3 text-left sm:gap-4"
         >
-          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-white/[0.08]">
+          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm border border-at-soft">
             {item.foto_url ? (
               <LazyThumb
                 src={item.foto_url}
@@ -69,20 +69,20 @@ export const EstoqueItemRow = memo(function EstoqueItemRow({
                 size={112}
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center bg-slate-900/50 text-slate-600">
+              <div className="flex h-full w-full items-center justify-center bg-slate-900/50 text-at-soft">
                 {ehPeca ? <Cpu className="h-5 w-5" /> : <ImageIcon className="h-5 w-5" />}
               </div>
             )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="font-medium text-[#f4efe6]">{item.nome_item}</p>
+              <p className="font-medium text-at-primary">{item.nome_item}</p>
               {baixo ? <AlertBadge variant="warning">Estoque baixo</AlertBadge> : null}
             </div>
             {item.descricao?.trim() ? (
-              <p className="mt-0.5 truncate text-sm text-slate-300">{item.descricao}</p>
+              <p className="mt-0.5 truncate text-sm text-at-primary/85">{item.descricao}</p>
             ) : null}
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-1 text-xs text-at-muted">
               {labelCategoriaEstoque(item.categoria)} ·{" "}
               {formatCurrency(Number(item.custo_unitario))}/un
               {item.quantidade_minima > 0 && ` · mín. ${item.quantidade_minima}`}
@@ -96,20 +96,20 @@ export const EstoqueItemRow = memo(function EstoqueItemRow({
             disabled={adjustingItemId === item.id || Number(item.quantidade) <= 0}
             onClick={() => onAdjustQty(item.id, -1)}
             aria-label={`Diminuir ${item.nome_item}`}
-            className="flex h-9 w-9 items-center justify-center rounded-sm border border-white/[0.08] text-slate-300 hover:bg-white/[0.04] disabled:pointer-events-none disabled:opacity-40"
+            className="flex h-9 w-9 items-center justify-center rounded-sm border border-at-soft text-at-primary/85 hover:bg-at-card-soft disabled:pointer-events-none disabled:opacity-40"
           >
             <Minus className="h-4 w-4" />
           </button>
           <div className="min-w-[3.25rem] px-1 text-center">
-            <p className="text-lg font-semibold tabular-nums text-[#f4efe6]">{item.quantidade}</p>
-            <p className="text-[10px] leading-3 text-slate-500">un.</p>
+            <p className="text-lg font-semibold tabular-nums text-at-primary">{item.quantidade}</p>
+            <p className="text-[10px] leading-3 text-at-muted">un.</p>
           </div>
           <button
             type="button"
             disabled={adjustingItemId === item.id}
             onClick={() => onAdjustQty(item.id, 1)}
             aria-label={`Aumentar ${item.nome_item}`}
-            className="flex h-9 w-9 items-center justify-center rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/10 text-[#e8d5b0] hover:bg-[#c4a574]/20 disabled:pointer-events-none disabled:opacity-40"
+            className="flex h-9 w-9 items-center justify-center rounded-sm border border-[#c4a574]/40 bg-[#c4a574]/10 text-at-link hover:bg-[#c4a574]/20 disabled:pointer-events-none disabled:opacity-40"
           >
             <Plus className="h-4 w-4" />
           </button>
@@ -120,19 +120,19 @@ export const EstoqueItemRow = memo(function EstoqueItemRow({
           onClick={() => onOpenEdit(item)}
           aria-expanded={isEditing}
           aria-label={isEditing ? "Fechar edição" : "Editar item"}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-slate-500 hover:bg-white/[0.04] hover:text-[#c4a574]"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-sm text-at-muted hover:bg-at-card-soft hover:text-at-link"
         >
           <ChevronDown
             className={cn(
               "h-5 w-5 transition-transform",
-              isEditing && "rotate-180 text-[#c4a574]"
+              isEditing && "rotate-180 text-at-link"
             )}
           />
         </button>
       </div>
 
       {isEditing ? (
-        <div className="space-y-3 border-t border-white/[0.06] px-4 pb-4 pt-3">
+        <div className="space-y-3 border-t border-at px-4 pb-4 pt-3">
           <div className="flex flex-wrap gap-2">
             {!ehPeca ? (
               <button

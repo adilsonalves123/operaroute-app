@@ -112,7 +112,7 @@ export const LazyThumb = memo(function LazyThumb({
       ) : null}
       {!loaded || failed ? (
         <div
-          className="absolute inset-0 flex items-center justify-center bg-slate-800/70 text-slate-600"
+          className="absolute inset-0 flex items-center justify-center bg-slate-800/70 text-at-soft"
           aria-hidden={!failed}
         >
           {failed ? <ImageIcon className="h-4 w-4" /> : null}

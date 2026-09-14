@@ -21,7 +21,7 @@ export function ColetaRecebimentoSalvoLinhas({
 
   return (
     <div className="border-t border-slate-800 pt-4 space-y-2 text-xs">
-      <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-at-muted">
         Recebimento
       </p>
       {(cobrancaSalva?.dividaAnterior ?? 0) > 0.009 ? (
@@ -33,15 +33,15 @@ export function ColetaRecebimentoSalvoLinhas({
         </div>
       ) : null}
       <div className="flex justify-between gap-3">
-        <span className="text-slate-400">Recebido desta coleta</span>
+        <span className="text-at-muted">Recebido desta coleta</span>
         <span className="font-semibold text-green-400 tabular-nums">
           {formatCurrency(calculo.valorPagoRecebido)}
         </span>
       </div>
       {totalPagoVisita != null && totalPagoVisita > calculo.valorPagoRecebido + 0.009 ? (
         <div className="flex justify-between gap-3">
-          <span className="text-slate-400">Total pago na visita</span>
-          <span className="font-medium text-slate-200 tabular-nums">
+          <span className="text-at-muted">Total pago na visita</span>
+          <span className="font-medium text-at-primary/90 tabular-nums">
             {formatCurrency(totalPagoVisita)}
           </span>
         </div>

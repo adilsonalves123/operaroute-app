@@ -41,13 +41,13 @@ export function DashboardSaudeResumo({ saude }: { saude: SaudePontosResumo }) {
   return (
     <div className="bank-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
       <div className="min-w-0 space-y-2">
-        <p className="text-sm text-slate-400">{hint}</p>
+        <p className="text-sm text-at-muted">{hint}</p>
         {destaque && (
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-at-soft">
             {labelSaude(destaque.classe)}:{" "}
-            <span className="text-slate-400">{destaque.nome}</span>
+            <span className="text-at-muted">{destaque.nome}</span>
             {destaque.indice !== null && (
-              <span className="text-slate-600"> · {destaque.indice.toFixed(0)}º percentil</span>
+              <span className="text-at-soft"> · {destaque.indice.toFixed(0)}º percentil</span>
             )}
           </p>
         )}
@@ -66,7 +66,7 @@ export function DashboardSaudeResumo({ saude }: { saude: SaudePontosResumo }) {
             <span className={cn("text-lg font-bold tabular-nums leading-none", cor)}>
               {saude.contagem[key]}
             </span>
-            <span className="text-[11px] text-slate-500">{label}</span>
+            <span className="text-[11px] text-at-muted">{label}</span>
           </div>
         ))}
 

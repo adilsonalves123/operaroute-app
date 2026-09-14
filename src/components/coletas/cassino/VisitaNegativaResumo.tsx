@@ -22,26 +22,26 @@ export function VisitaNegativaResumo({
   return (
     <div className={cn("glass-card space-y-3 p-5", className)}>
       <div className="flex items-baseline justify-between gap-3 text-sm">
-        <p className="text-slate-500">Lucro da visita</p>
+        <p className="text-at-muted">Lucro da visita</p>
         <p className="font-semibold tabular-nums text-red-300">
           {formatContador(totalLucroCentavos)}
         </p>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-2 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">Entrada</p>
+          <p className="text-[10px] uppercase tracking-wide text-at-muted">Entrada</p>
           <p className="mt-0.5 text-sm font-semibold tabular-nums text-emerald-400">
             {formatCurrency(centesimosToReais(calculo.totalEntradaPeriodo))}
           </p>
         </div>
         <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-2 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">Saída</p>
+          <p className="text-[10px] uppercase tracking-wide text-at-muted">Saída</p>
           <p className="mt-0.5 text-sm font-semibold tabular-nums text-rose-400">
             {formatCurrency(centesimosToReais(calculo.totalSaidaPeriodo))}
           </p>
         </div>
         <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-2 py-2">
-          <p className="text-[10px] uppercase tracking-wide text-slate-500">Bruto</p>
+          <p className="text-[10px] uppercase tracking-wide text-at-muted">Bruto</p>
           <p
             className={cn(
               "mt-0.5 text-sm font-semibold tabular-nums",

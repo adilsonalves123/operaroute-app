@@ -51,10 +51,10 @@ export function ConfigRascunhoCard({ ativo, podeEditar, embedded }: Props) {
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <div className="flex items-center gap-2">
-            <ClipboardPen className="h-4 w-4 text-[#c4a574]" />
-            <p className="text-[14px] font-medium text-white">Menu Rascunho</p>
+            <ClipboardPen className="h-4 w-4 text-at-link" />
+            <p className="text-[14px] font-medium text-at-primary">Menu Rascunho</p>
           </div>
-          <p className="text-[13px] leading-relaxed text-slate-500">
+          <p className="text-[13px] leading-relaxed text-at-muted">
             Mostra no menu a tela Rascunho: digite os valores dos pontos, salve e
             veja só o resumo com os números.
           </p>
@@ -67,7 +67,7 @@ export function ConfigRascunhoCard({ ativo, podeEditar, embedded }: Props) {
           onClick={() => void alternar(!ligado)}
           className={cn(
             "relative h-7 w-12 shrink-0 rounded-full transition",
-            ligado ? "bg-emerald-500/80" : "bg-slate-700",
+            ligado ? "bg-emerald-600" : "bg-at-track",
             (!podeEditar || loading) && "opacity-50"
           )}
         >
@@ -80,7 +80,7 @@ export function ConfigRascunhoCard({ ativo, podeEditar, embedded }: Props) {
         </button>
       </div>
       {!podeEditar ? (
-        <p className="text-[12px] text-slate-600">
+        <p className="text-[12px] text-at-soft">
           Só o administrador pode ligar ou desligar.
         </p>
       ) : null}
