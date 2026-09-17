@@ -257,6 +257,8 @@ function sanitizarMoney(raw: string): string {
   return negativo ? `-${resto}` : resto;
 }
 
+const TITULO_PADRAO = "Resumo";
+
 type Props = {
   pontos: PontoRascunho[];
   empresaNome: string;
