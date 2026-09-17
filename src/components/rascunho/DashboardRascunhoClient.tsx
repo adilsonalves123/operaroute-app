@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Instrument_Serif, Outfit } from "next/font/google";
-import { CalendarDays, Copy, Eraser, Link2, Loader2, MessageCircle, Pencil, Share2 } from "lucide-react";
+import { CalendarDays, Copy, Eraser, Link2, Loader2, MessageCircle, Pencil, Plus, Share2, Trash2 } from "lucide-react";
 import {
   criarLinkResumoRascunho,
   compartilharSomenteLink,
@@ -35,7 +35,15 @@ type PontoMetaRascunho = {
   valorImportado: number;
 };
 
-const TITULO_PADRAO = "Resumo";
+type DividaLinha = { id: string; nome: string; valor: string };
+
+function novaDividaLinha(): DividaLinha {
+  return {
+    id: `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+    nome: "",
+    valor: "",
+  };
+}
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;
@@ -279,6 +287,7 @@ export function DashboardRascunhoClient({
   const [linkCompartilhamento, setLinkCompartilhamento] = useState<string | null>(null);
   const [operadoresSel, setOperadoresSel] = useState<string[]>([]);
   const [publicando, setPublicando] = useState(false);
+  const [dividas, setDividas] = useState<DividaLinha[]>([]);
 
   const puxarFolha = useCallback(async (deISO: string, ateISO: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(deISO)) return;
@@ -398,6 +407,22 @@ export function DashboardRascunhoClient({
     [valores, pontoIds]
   );
 
+  const dividasPreenchidas = useMemo(
+    () =>
+      dividas
+        .map((d) => ({
+          nome: d.nome.trim() || "Dívida",
+          valor: Math.abs(parseMoneyInput(d.valor)),
+        }))
+        .filter((d) => d.valor > 0.009),
+    [dividas]
+  );
+  const totalDividas = round2(
+    dividasPreenchidas.reduce((s, d) => s + d.valor, 0)
+  );
+  const totalCaixa = round2(pix + dinheiro);
+  const sobra = round2(totalCaixa - totalDividas);
+
   function montarSnapshot(): ResumoRascunhoSnapshot {
     return {
       empresaNome,
@@ -414,6 +439,13 @@ export function DashboardRascunhoClient({
         valor: r.valor,
         forma: r.forma || undefined,
       })),
+      ...(dividasPreenchidas.length
+        ? {
+            dividas: dividasPreenchidas,
+            totalDividas,
+            sobra,
+          }
+        : {}),
     };
   }
 
@@ -540,6 +572,24 @@ export function DashboardRascunhoClient({
     });
   }
 
+  function setDivida(id: string, field: "nome" | "valor", raw: string) {
+    const valor = field === "valor" ? sanitizarMoney(raw) : raw;
+    setDividas((prev) =>
+      prev.map((d) => (d.id === id ? { ...d, [field]: valor } : d))
+    );
+    setLinkCompartilhamento(null);
+  }
+
+  function adicionarDivida() {
+    setDividas((prev) => [...prev, novaDividaLinha()]);
+    setLinkCompartilhamento(null);
+  }
+
+  function removerDivida(id: string) {
+    setDividas((prev) => prev.filter((d) => d.id !== id));
+    setLinkCompartilhamento(null);
+  }
+
   function limpar() {
     setValores({});
     setMetaPorPonto({});
@@ -551,6 +601,7 @@ export function DashboardRascunhoClient({
     setLinkCompartilhamento(null);
     setFeedback(null);
     setPuxouDia(false);
+    setDividas([]);
   }
 
   function salvar() {
@@ -925,6 +976,128 @@ export function DashboardRascunhoClient({
                   />
                 </label>
               </div>
+              <section className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
+                    Dívidas a descontar
+                  </p>
+                  <button
+                    type="button"
+                    onClick={adicionarDivida}
+                    className="inline-flex items-center gap-1.5 text-[13px] text-[#c4a574] transition hover:text-[#e8d5b0]"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Adicionar
+                  </button>
+                </div>
+                {dividas.length === 0 ? (
+                  <p className="text-[13px] text-slate-500">
+                    Ex.: D.P, Patrão, Renato — desconta do Pix + dinheiro.
+                  </p>
+                ) : (
+                  <ul className="space-y-3">
+                    {dividas.map((d) => (
+                      <li key={d.id} className="flex items-end gap-3">
+                        <label className="min-w-0 flex-1 space-y-1">
+                          <span className="sr-only">Nome da dívida</span>
+                          <input
+                            type="text"
+                            value={d.nome}
+                            onChange={(e) => setDivida(d.id, "nome", e.target.value)}
+                            placeholder="Ex.: D.P, Patrão…"
+                            className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[15px] text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
+                          />
+                        </label>
+                        <label className="w-[7.75rem] shrink-0 space-y-1">
+                          <span className="sr-only">Valor</span>
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={d.valor}
+                            onChange={(e) => setDivida(d.id, "valor", e.target.value)}
+                            placeholder="0,00"
+                            className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-right text-[16px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => removerDivida(d.id)}
+                          className="mb-2 shrink-0 p-1 text-slate-500 transition hover:text-rose-300"
+                          aria-label="Remover dívida"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="space-y-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-4">
+                  <p className="text-[12px] uppercase tracking-[0.16em] text-slate-500">
+                    No caixa
+                  </p>
+                  <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                    <span className="text-slate-500">Pix</span>
+                    <span className="tabular-nums text-[var(--shell-text)]">
+                      {formatCurrency(pix)}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                    <span className="text-slate-500">Dinheiro</span>
+                    <span className="tabular-nums text-[var(--shell-text)]">
+                      {formatCurrency(dinheiro)}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3 text-[13px]">
+                    <span className="text-slate-500">Total no caixa</span>
+                    <span className="tabular-nums text-[var(--shell-text)]">
+                      {formatCurrency(totalCaixa)}
+                    </span>
+                  </div>
+                  {dividasPreenchidas.length > 0 ? (
+                    <>
+                      <div className="space-y-2 border-t border-white/[0.08] pt-3">
+                        <p className="text-[12px] uppercase tracking-[0.16em] text-slate-500">
+                          Dívidas
+                        </p>
+                        {dividasPreenchidas.map((d) => (
+                          <div
+                            key={`${d.nome}-${d.valor}`}
+                            className="flex items-baseline justify-between gap-3 text-[13px]"
+                          >
+                            <span className="min-w-0 truncate text-slate-400">{d.nome}</span>
+                            <span className="tabular-nums text-rose-300">
+                              − {formatCurrency(d.valor)}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="flex items-baseline justify-between gap-3 pt-1 text-[13px]">
+                          <span className="text-slate-500">Total dívidas</span>
+                          <span className="tabular-nums text-rose-300">
+                            − {formatCurrency(totalDividas)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3">
+                        <span className="text-[13px] uppercase tracking-[0.16em] text-slate-500">
+                          Sobra
+                        </span>
+                        <span
+                          className={cn(
+                            "text-[1.35rem] tabular-nums",
+                            sobra < 0 ? "text-rose-300" : "text-[#c4a574]"
+                          )}
+                          style={{
+                            fontFamily: "var(--font-rasc-display), Georgia, serif",
+                          }}
+                        >
+                          {formatCurrency(sobra)}
+                        </span>
+                      </div>
+                    </>
+                  ) : null}
+                </div>
+              </section>
               <p className="text-[13px] text-slate-500">
                 {preenchidos === 0 ? (
                   "Nenhum ponto com valor ainda"
@@ -1062,6 +1235,50 @@ export function DashboardRascunhoClient({
                 </p>
               </div>
             </section>
+
+            {dividasPreenchidas.length > 0 ? (
+              <section className="space-y-4">
+                <h2 className="text-[12px] font-medium uppercase tracking-[0.2em] text-slate-500">
+                  Dívidas
+                </h2>
+                <div className="space-y-2">
+                  {dividasPreenchidas.map((d) => (
+                    <div
+                      key={`${d.nome}-${d.valor}`}
+                      className="flex items-baseline justify-between gap-3 text-[15px]"
+                    >
+                      <span className="min-w-0 truncate text-[var(--shell-text)]">{d.nome}</span>
+                      <span className="tabular-nums text-rose-300">
+                        − {formatCurrency(d.valor)}
+                      </span>
+                    </div>
+                  ))}
+                  <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3 text-[13px] text-slate-500">
+                    <span>Total dívidas</span>
+                    <span className="tabular-nums text-rose-300">
+                      − {formatCurrency(totalDividas)}
+                    </span>
+                  </div>
+                </div>
+                <div className="space-y-2 pt-2">
+                  <p className="text-[12px] uppercase tracking-[0.2em] text-slate-500">
+                    Sobra
+                  </p>
+                  <p
+                    className={cn(
+                      "text-[clamp(2.4rem,8vw,3.4rem)] font-normal leading-none tracking-tight tabular-nums",
+                      sobra < 0 ? "text-rose-300" : "text-[var(--shell-text)]"
+                    )}
+                    style={{ fontFamily: "var(--font-rasc-display), Georgia, serif" }}
+                  >
+                    {formatCurrency(sobra)}
+                  </p>
+                  <p className="text-[13px] text-slate-500">
+                    Caixa {formatCurrency(totalCaixa)} − dívidas {formatCurrency(totalDividas)}
+                  </p>
+                </div>
+              </section>
+            ) : null}
 
             <section className="space-y-5">
               <h2 className="text-[12px] font-medium uppercase tracking-[0.2em] text-slate-500">

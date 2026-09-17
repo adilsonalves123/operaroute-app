@@ -20,6 +20,11 @@ export type ResumoRascunhoSnapshot = {
   pix: number;
   dinheiro: number;
   pontos: ResumoRascunhoPontoSnap[];
+  /** Dívidas manuais a descontar do caixa (Pix + dinheiro). */
+  dividas?: ResumoRascunhoPontoSnap[];
+  totalDividas?: number;
+  /** Caixa (Pix + dinheiro) menos as dívidas. */
+  sobra?: number;
 };
 
 export function gerarTokenResumoRascunho(): string {

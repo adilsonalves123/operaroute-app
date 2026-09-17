@@ -64,6 +64,31 @@ export function ResumoPublicView({ snap }: { snap: ResumoRascunhoSnapshot }) {
               </p>
             </div>
           </div>
+          {(snap.dividas?.length ?? 0) > 0 ? (
+            <div className="space-y-2 border-t border-at-soft pt-4">
+              <p className="text-[11px] uppercase tracking-[0.16em] text-at-muted">
+                Dívidas
+              </p>
+              {snap.dividas!.map((d, i) => (
+                <div key={`${d.nome}-${i}`} className="flex justify-between text-sm">
+                  <span className="min-w-0 truncate text-at-muted">{d.nome}</span>
+                  <span className="tabular-nums text-rose-300">
+                    − {formatCurrency(d.valor)}
+                  </span>
+                </div>
+              ))}
+              <div className="flex justify-between border-t border-at-soft pt-3 text-base font-medium">
+                <span>Sobra</span>
+                <span
+                  className={`tabular-nums ${
+                    (snap.sobra ?? 0) < 0 ? "text-rose-300" : "text-at-link"
+                  }`}
+                >
+                  {formatCurrency(snap.sobra ?? 0)}
+                </span>
+              </div>
+            </div>
+          ) : null}
         </section>
 
         {snap.pontos.length > 0 ? (
