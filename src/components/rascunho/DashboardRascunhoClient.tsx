@@ -8,7 +8,7 @@ import {
   compartilharSomenteLink,
   type ResumoRascunhoSnapshot,
 } from "@/lib/rascunho/compartilhar";
-import { cn, formatCurrency, parseMoneyInput } from "@/lib/utils";
+import { cn, formatCurrency, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
 
 const display = Instrument_Serif({
   weight: "400",
@@ -250,11 +250,32 @@ function numberToMoneyInput(n: number): string {
   return n < 0 ? `-${formatted}` : formatted;
 }
 
-function sanitizarMoney(raw: string): string {
-  const limpo = raw.replace(/[^\d,.\-]/g, "");
-  const negativo = limpo.trimStart().startsWith("-");
-  const resto = limpo.split("-").join("").replace(/-/g, "");
-  return negativo ? `-${resto}` : resto;
+/** 5500 → 5.500 | 5500,5 → 5.500,5 | -160 → -160  (milhar com ponto, centavos com vírgula). */
+function formatPontoVirgula(raw: string): string {
+  const texto = String(raw ?? "");
+  const negativo = texto.trimStart().startsWith("-");
+  const limpo = texto.replace(/-/g, "").replace(/[^\d,]/g, "");
+  if (!limpo) return negativo ? "-" : "";
+
+  const virgula = limpo.indexOf(",");
+  const intRaw = virgula === -1 ? limpo : limpo.slice(0, virgula);
+  const decRaw =
+    virgula === -1 ? undefined : limpo.slice(virgula + 1).replace(/,/g, "").slice(0, 2);
+  const intDigits = intRaw.replace(/^0+(?=\d)/, "");
+  const intFmt = (intDigits || (decRaw !== undefined ? "0" : "")).replace(
+    /\B(?=(\d{3})+(?!\d))/g,
+    "."
+  );
+  if (!intFmt && decRaw === undefined) return negativo ? "-" : "";
+
+  const corpo = decRaw !== undefined ? `${intFmt || "0"},${decRaw}` : intFmt;
+  return negativo ? `-${corpo}` : corpo;
+}
+
+function completarMoney(raw: string): string {
+  const texto = String(raw ?? "").trim();
+  if (!texto || texto === "-") return "";
+  return formatMoneyInputOnBlur(texto);
 }
 
 const TITULO_PADRAO = "Resumo";
@@ -562,7 +583,7 @@ export function DashboardRascunhoClient({
   function setValor(id: string, raw: string) {
     setPixEditadoManual(false);
     setDinheiroEditadoManual(false);
-    const limpo = sanitizarMoney(raw);
+    const limpo = formatPontoVirgula(raw);
     setValores((prev) => {
       const next = { ...prev };
       if (!limpo.trim()) {
@@ -575,7 +596,7 @@ export function DashboardRascunhoClient({
   }
 
   function setDivida(id: string, field: "nome" | "valor", raw: string) {
-    const valor = field === "valor" ? sanitizarMoney(raw) : raw;
+    const valor = field === "valor" ? formatPontoVirgula(raw) : raw;
     setDividas((prev) =>
       prev.map((d) => (d.id === id ? { ...d, [field]: valor } : d))
     );
@@ -842,7 +863,11 @@ export function DashboardRascunhoClient({
                     value={pixInputValue}
                     onChange={(e) => {
                       setPixEditadoManual(true);
-                      setPixStr(sanitizarMoney(e.target.value));
+                      setPixStr(formatPontoVirgula(e.target.value));
+                    }}
+                    onBlur={(e) => {
+                      if (!pixEditadoManual) return;
+                      setPixStr(completarMoney(e.target.value));
                     }}
                     className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
                   />
@@ -858,7 +883,11 @@ export function DashboardRascunhoClient({
                     value={dinheiroInputValue}
                     onChange={(e) => {
                       setDinheiroEditadoManual(true);
-                      setDinheiroStr(sanitizarMoney(e.target.value));
+                      setDinheiroStr(formatPontoVirgula(e.target.value));
+                    }}
+                    onBlur={(e) => {
+                      if (!dinheiroEditadoManual) return;
+                      setDinheiroStr(completarMoney(e.target.value));
                     }}
                     className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
                   />
@@ -899,6 +928,9 @@ export function DashboardRascunhoClient({
                           inputMode="decimal"
                           value={d.valor}
                           onChange={(e) => setDivida(d.id, "valor", e.target.value)}
+                          onBlur={(e) =>
+                            setDivida(d.id, "valor", completarMoney(e.target.value))
+                          }
                           placeholder="0,00"
                           className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-right text-[16px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
                         />
@@ -1023,6 +1055,9 @@ export function DashboardRascunhoClient({
                               placeholder="—"
                               value={valores[p.id] ?? ""}
                               onChange={(e) => setValor(p.id, e.target.value)}
+                              onBlur={(e) =>
+                                setValor(p.id, completarMoney(e.target.value))
+                              }
                               className={cn(
                                 "w-full border-b bg-transparent py-2 pr-1 text-right text-[16px] tabular-nums placeholder:text-[var(--shell-text-muted)] focus:outline-none",
                                 preenchido
@@ -1272,6 +1307,9 @@ export function DashboardRascunhoClient({
                         inputMode="decimal"
                         value={d.valor}
                         onChange={(e) => setDivida(d.id, "valor", e.target.value)}
+                        onBlur={(e) =>
+                          setDivida(d.id, "valor", completarMoney(e.target.value))
+                        }
                         placeholder="0,00"
                         className="w-full border-0 border-b border-[var(--shell-border)] bg-transparent py-2 text-right text-[16px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
                       />
