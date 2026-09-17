@@ -287,7 +287,7 @@ export function DashboardRascunhoClient({
   const [linkCompartilhamento, setLinkCompartilhamento] = useState<string | null>(null);
   const [operadoresSel, setOperadoresSel] = useState<string[]>([]);
   const [publicando, setPublicando] = useState(false);
-  const [dividas, setDividas] = useState<DividaLinha[]>([]);
+  const [dividas, setDividas] = useState<DividaLinha[]>(() => [novaDividaLinha()]);
 
   const puxarFolha = useCallback(async (deISO: string, ateISO: string) => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(deISO)) return;
@@ -601,7 +601,7 @@ export function DashboardRascunhoClient({
     setLinkCompartilhamento(null);
     setFeedback(null);
     setPuxouDia(false);
-    setDividas([]);
+    setDividas([novaDividaLinha()]);
   }
 
   function salvar() {
@@ -631,7 +631,7 @@ export function DashboardRascunhoClient({
         display.variable,
         sans.variable,
         "relative -mx-4 min-h-[60vh] px-4 pb-8 sm:mx-0 sm:px-0",
-        !salvo && "pb-28",
+        !salvo && "pb-36",
         "rascunho-folha font-[family-name:var(--font-rasc-sans)]"
       )}
     >
@@ -824,6 +824,158 @@ export function DashboardRascunhoClient({
               />
             </header>
 
+            <section className="space-y-5 rounded-xl border border-[#c4a574]/25 bg-[#c4a574]/[0.04] p-4">
+              <div className="grid gap-5 sm:grid-cols-2">
+                <label className="block space-y-2">
+                  <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
+                    Pix
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={pixInputValue}
+                    onChange={(e) => {
+                      setPixEditadoManual(true);
+                      setPixStr(sanitizarMoney(e.target.value));
+                    }}
+                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
+                  />
+                </label>
+                <label className="block space-y-2">
+                  <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
+                    Dinheiro
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    placeholder="0,00"
+                    value={dinheiroInputValue}
+                    onChange={(e) => {
+                      setDinheiroEditadoManual(true);
+                      setDinheiroStr(sanitizarMoney(e.target.value));
+                    }}
+                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
+                  />
+                </label>
+              </div>
+
+              <div className="space-y-4 border-t border-white/[0.08] pt-4">
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
+                    Dívidas a descontar
+                  </p>
+                  <button
+                    type="button"
+                    onClick={adicionarDivida}
+                    className="inline-flex items-center gap-1.5 rounded-full bg-[#c4a574] px-3 py-1.5 text-[12px] font-semibold text-[#0a0e16]"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Adicionar
+                  </button>
+                </div>
+                <ul className="space-y-3">
+                  {dividas.map((d) => (
+                    <li key={d.id} className="flex items-end gap-3">
+                      <label className="min-w-0 flex-1 space-y-1">
+                        <span className="sr-only">Nome da dívida</span>
+                        <input
+                          type="text"
+                          value={d.nome}
+                          onChange={(e) => setDivida(d.id, "nome", e.target.value)}
+                          placeholder="Ex.: D.P, Patrão, Renato…"
+                          className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[15px] text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
+                        />
+                      </label>
+                      <label className="w-[7.75rem] shrink-0 space-y-1">
+                        <span className="sr-only">Valor</span>
+                        <input
+                          type="text"
+                          inputMode="decimal"
+                          value={d.valor}
+                          onChange={(e) => setDivida(d.id, "valor", e.target.value)}
+                          placeholder="0,00"
+                          className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-right text-[16px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => removerDivida(d.id)}
+                        className="mb-2 shrink-0 p-1 text-slate-500 transition hover:text-rose-300"
+                        aria-label="Remover dívida"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-white/[0.08] bg-white/[0.03] px-4 py-4">
+                <p className="text-[12px] uppercase tracking-[0.16em] text-slate-500">
+                  No caixa
+                </p>
+                <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                  <span className="text-slate-500">Pix</span>
+                  <span className="tabular-nums text-[var(--shell-text)]">
+                    {formatCurrency(pix)}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 text-[13px]">
+                  <span className="text-slate-500">Dinheiro</span>
+                  <span className="tabular-nums text-[var(--shell-text)]">
+                    {formatCurrency(dinheiro)}
+                  </span>
+                </div>
+                <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3 text-[13px]">
+                  <span className="text-slate-500">Total no caixa</span>
+                  <span className="tabular-nums text-[var(--shell-text)]">
+                    {formatCurrency(totalCaixa)}
+                  </span>
+                </div>
+                {dividasPreenchidas.length > 0 ? (
+                  <div className="space-y-2 border-t border-white/[0.08] pt-3">
+                    <p className="text-[12px] uppercase tracking-[0.16em] text-slate-500">
+                      Dívidas
+                    </p>
+                    {dividasPreenchidas.map((d) => (
+                      <div
+                        key={`${d.nome}-${d.valor}`}
+                        className="flex items-baseline justify-between gap-3 text-[13px]"
+                      >
+                        <span className="min-w-0 truncate text-slate-400">{d.nome}</span>
+                        <span className="tabular-nums text-rose-300">
+                          − {formatCurrency(d.valor)}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="flex items-baseline justify-between gap-3 pt-1 text-[13px]">
+                      <span className="text-slate-500">Total dívidas</span>
+                      <span className="tabular-nums text-rose-300">
+                        − {formatCurrency(totalDividas)}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+                <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3">
+                  <span className="text-[13px] uppercase tracking-[0.16em] text-slate-500">
+                    Sobra
+                  </span>
+                  <span
+                    className={cn(
+                      "text-[1.35rem] tabular-nums",
+                      sobra < 0 ? "text-rose-300" : "text-[#c4a574]"
+                    )}
+                    style={{
+                      fontFamily: "var(--font-rasc-display), Georgia, serif",
+                    }}
+                  >
+                    {formatCurrency(sobra)}
+                  </span>
+                </div>
+              </div>
+            </section>
+
             <div className="flex justify-end">
               <button
                 type="button"
@@ -910,8 +1062,7 @@ export function DashboardRascunhoClient({
               )}
             </section>
 
-            {/* Pix / Dinheiro — depois da lista, antes de salvar */}
-            <section className="space-y-5 border-t border-white/[0.08] pt-8">
+            <section className="space-y-4 border-t border-white/[0.08] pt-8">
               <div className="space-y-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-4">
                 <div className="flex items-baseline justify-between gap-3 text-[13px]">
                   <span className="text-slate-500">Recebido</span>
@@ -941,176 +1092,6 @@ export function DashboardRascunhoClient({
                   </span>
                 </div>
               </div>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <label className="block space-y-2">
-                  <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
-                    Pix
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0,00"
-                    value={pixInputValue}
-                    onChange={(e) => {
-                      setPixEditadoManual(true);
-                      setPixStr(sanitizarMoney(e.target.value));
-                    }}
-                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
-                  />
-                </label>
-                <label className="block space-y-2">
-                  <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
-                    Dinheiro
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0,00"
-                    value={dinheiroInputValue}
-                    onChange={(e) => {
-                      setDinheiroEditadoManual(true);
-                      setDinheiroStr(sanitizarMoney(e.target.value));
-                    }}
-                    className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[18px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
-                  />
-                </label>
-              </div>
-              <section className="space-y-4">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
-                    Dívidas a descontar
-                  </p>
-                  <button
-                    type="button"
-                    onClick={adicionarDivida}
-                    className="inline-flex items-center gap-1.5 text-[13px] text-[#c4a574] transition hover:text-[#e8d5b0]"
-                  >
-                    <Plus className="h-3.5 w-3.5" />
-                    Adicionar
-                  </button>
-                </div>
-                {dividas.length === 0 ? (
-                  <p className="text-[13px] text-slate-500">
-                    Ex.: D.P, Patrão, Renato — desconta do Pix + dinheiro.
-                  </p>
-                ) : (
-                  <ul className="space-y-3">
-                    {dividas.map((d) => (
-                      <li key={d.id} className="flex items-end gap-3">
-                        <label className="min-w-0 flex-1 space-y-1">
-                          <span className="sr-only">Nome da dívida</span>
-                          <input
-                            type="text"
-                            value={d.nome}
-                            onChange={(e) => setDivida(d.id, "nome", e.target.value)}
-                            placeholder="Ex.: D.P, Patrão…"
-                            className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-[15px] text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
-                          />
-                        </label>
-                        <label className="w-[7.75rem] shrink-0 space-y-1">
-                          <span className="sr-only">Valor</span>
-                          <input
-                            type="text"
-                            inputMode="decimal"
-                            value={d.valor}
-                            onChange={(e) => setDivida(d.id, "valor", e.target.value)}
-                            placeholder="0,00"
-                            className="w-full border-0 border-b border-white/15 bg-transparent py-2 text-right text-[16px] tabular-nums text-[var(--shell-text)] placeholder:text-[var(--shell-text-muted)] focus:border-[#c4a574]/50 focus:outline-none"
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => removerDivida(d.id)}
-                          className="mb-2 shrink-0 p-1 text-slate-500 transition hover:text-rose-300"
-                          aria-label="Remover dívida"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <div className="space-y-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-4 py-4">
-                  <p className="text-[12px] uppercase tracking-[0.16em] text-slate-500">
-                    No caixa
-                  </p>
-                  <div className="flex items-baseline justify-between gap-3 text-[13px]">
-                    <span className="text-slate-500">Pix</span>
-                    <span className="tabular-nums text-[var(--shell-text)]">
-                      {formatCurrency(pix)}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3 text-[13px]">
-                    <span className="text-slate-500">Dinheiro</span>
-                    <span className="tabular-nums text-[var(--shell-text)]">
-                      {formatCurrency(dinheiro)}
-                    </span>
-                  </div>
-                  <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3 text-[13px]">
-                    <span className="text-slate-500">Total no caixa</span>
-                    <span className="tabular-nums text-[var(--shell-text)]">
-                      {formatCurrency(totalCaixa)}
-                    </span>
-                  </div>
-                  {dividasPreenchidas.length > 0 ? (
-                    <>
-                      <div className="space-y-2 border-t border-white/[0.08] pt-3">
-                        <p className="text-[12px] uppercase tracking-[0.16em] text-slate-500">
-                          Dívidas
-                        </p>
-                        {dividasPreenchidas.map((d) => (
-                          <div
-                            key={`${d.nome}-${d.valor}`}
-                            className="flex items-baseline justify-between gap-3 text-[13px]"
-                          >
-                            <span className="min-w-0 truncate text-slate-400">{d.nome}</span>
-                            <span className="tabular-nums text-rose-300">
-                              − {formatCurrency(d.valor)}
-                            </span>
-                          </div>
-                        ))}
-                        <div className="flex items-baseline justify-between gap-3 pt-1 text-[13px]">
-                          <span className="text-slate-500">Total dívidas</span>
-                          <span className="tabular-nums text-rose-300">
-                            − {formatCurrency(totalDividas)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-baseline justify-between gap-3 border-t border-white/[0.08] pt-3">
-                        <span className="text-[13px] uppercase tracking-[0.16em] text-slate-500">
-                          Sobra
-                        </span>
-                        <span
-                          className={cn(
-                            "text-[1.35rem] tabular-nums",
-                            sobra < 0 ? "text-rose-300" : "text-[#c4a574]"
-                          )}
-                          style={{
-                            fontFamily: "var(--font-rasc-display), Georgia, serif",
-                          }}
-                        >
-                          {formatCurrency(sobra)}
-                        </span>
-                      </div>
-                    </>
-                  ) : null}
-                </div>
-              </section>
-              <p className="text-[13px] text-slate-500">
-                {preenchidos === 0 ? (
-                  "Nenhum ponto com valor ainda"
-                ) : (
-                  <>
-                    <span className="tabular-nums text-[var(--shell-text)]">
-                      {formatCurrency(resumoCaixa.liquido)}
-                    </span>
-                    {" · "}
-                    {preenchidos} ponto{preenchidos === 1 ? "" : "s"}
-                  </>
-                )}
-              </p>
               {feedback ? (
                 <p className="text-[13px] text-rose-400">{feedback}</p>
               ) : null}
