@@ -98,75 +98,73 @@ export async function POST(request: Request) {
     const db = createAdminClient();
     let result: { token: string; url: string; snapshot: ComprovanteSnapshot };
 
-    // Relatório/histórico: só aceita snapshot do client em prévia (sem IDs).
-    // Com visita_id / visita_ponto_id, monta sempre no servidor (abaixo).
-    if (
-      !visitaPontoId &&
-      !visitaId &&
-      (snapshotFallback?.layout === "relatorio" ||
-        snapshotFallback?.layout === "historico") &&
-      snapshotFallback.relatorio &&
-      snapshotFallback.previa === true
-    ) {
+    const snapshotPrevia = snapshotFallback
+      ? {
+          ...snapshotFallback,
+          pontoNome:
+            String(snapshotFallback.pontoNome ?? "").trim() || "Ponto",
+          empresaNome:
+            String(snapshotFallback.empresaNome ?? "").trim() || "Operação",
+          previa: true,
+        }
+      : null;
+
+    // Coleta em andamento (ainda sem visita salva): o snapshot da tela é a prévia.
+    if (!visitaPontoId && !visitaId) {
+      if (!snapshotPrevia) {
+        return jsonError("Informe visita_ponto_id, visita_id ou snapshot.", 400);
+      }
       result = await insertSnapshotOnly(
         profile.empresa_id,
-        {
-          ...snapshotFallback,
-          previa: true,
-        },
+        snapshotPrevia,
         true
       );
     } else if (visitaPontoId) {
-    try {
-      result = await criarComprovanteVisitaPonto(db, {
-        empresaId: profile.empresa_id,
-        visitaPontoId,
-        previa,
-        dividaSaldo: Number(body.divida_saldo) || 0,
-        desconto: Number(body.desconto) || 0,
-        pix: Number(body.pix) || 0,
-        dinheiro: Number(body.dinheiro) || 0,
-        haverSaldo: Number(body.haver_saldo) || 0,
-        descontarHaver: body.descontar_haver === true,
-        nomeOperacao: (body.nome_operacao as string | null) ?? null,
-        chavePix: (body.chave_pix as string | null) ?? null,
-        snapshotFallback,
-      });
-    } catch (vpErr) {
-      if (visitaId) {
-        result = await criarComprovanteCassino(db, {
+      try {
+        result = await criarComprovanteVisitaPonto(db, {
           empresaId: profile.empresa_id,
-          visitaId,
+          visitaPontoId,
           previa,
+          dividaSaldo: Number(body.divida_saldo) || 0,
+          desconto: Number(body.desconto) || 0,
+          pix: Number(body.pix) || 0,
+          dinheiro: Number(body.dinheiro) || 0,
+          haverSaldo: Number(body.haver_saldo) || 0,
+          descontarHaver: body.descontar_haver === true,
           nomeOperacao: (body.nome_operacao as string | null) ?? null,
           chavePix: (body.chave_pix as string | null) ?? null,
           snapshotFallback,
         });
-      } else if (snapshotFallback?.pontoNome) {
-        result = await insertSnapshotOnly(
-          profile.empresa_id,
-          snapshotFallback,
-          previa
-        );
-      } else {
-        throw vpErr;
+      } catch (vpErr) {
+        if (visitaId) {
+          result = await criarComprovanteCassino(db, {
+            empresaId: profile.empresa_id,
+            visitaId,
+            previa,
+            nomeOperacao: (body.nome_operacao as string | null) ?? null,
+            chavePix: (body.chave_pix as string | null) ?? null,
+            snapshotFallback,
+          });
+        } else if (snapshotPrevia) {
+          result = await insertSnapshotOnly(
+            profile.empresa_id,
+            snapshotPrevia,
+            true
+          );
+        } else {
+          throw vpErr;
+        }
       }
+    } else {
+      result = await criarComprovanteCassino(db, {
+        empresaId: profile.empresa_id,
+        visitaId: visitaId!,
+        previa,
+        nomeOperacao: (body.nome_operacao as string | null) ?? null,
+        chavePix: (body.chave_pix as string | null) ?? null,
+        snapshotFallback,
+      });
     }
-  } else if (visitaId) {
-    result = await criarComprovanteCassino(db, {
-      empresaId: profile.empresa_id,
-      visitaId,
-      previa,
-      nomeOperacao: (body.nome_operacao as string | null) ?? null,
-      chavePix: (body.chave_pix as string | null) ?? null,
-      snapshotFallback,
-    });
-  } else {
-    return jsonError(
-      "Informe visita_ponto_id ou visita_id (comprovante oficial). Snapshot avulso só em prévia.",
-      400
-    );
-  }
 
     const mensagem = mensagemWhatsAppComLink({
       pontoNome: result.snapshot.pontoNome,

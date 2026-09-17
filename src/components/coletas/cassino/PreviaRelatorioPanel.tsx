@@ -67,8 +67,8 @@ export function PreviaRelatorioPanel({
   const snapshotBase = useMemo(
     () =>
       snapshotFromRelatorioColetaData(
-        { ...data, previa: false },
-        { previa: false, chavePix }
+        { ...data, previa: true },
+        { previa: true, chavePix }
       ),
     [data, chavePix]
   );
@@ -79,7 +79,7 @@ export function PreviaRelatorioPanel({
     );
     return {
       ...snapshotBase,
-      previa: false,
+      previa: true,
       layout: "historico",
       nichoModulo: "cassino",
       relatorio: payload as unknown as Record<string, unknown>,

@@ -40,7 +40,7 @@ export function PreviaRelatorioFuraFuraPanel({
   const snapshotBase = useMemo(
     () =>
       snapshotFromRelatorioFuraFura(
-        { ...data, previa: false },
+        { ...data, previa: true },
         {
           chavePix,
           valorACobrar: valorCobrar,
@@ -56,8 +56,8 @@ export function PreviaRelatorioFuraFuraPanel({
     return montarSnapshotRelatorio({
       base: snapshotBase,
       nichoModulo: "fura_fura",
-      relatorio: { ...data, previa: false },
-      previa: false,
+      relatorio: { ...data, previa: true },
+      previa: true,
       layout: "relatorio",
     });
   }

@@ -81,7 +81,17 @@ export async function criarLinkComprovante(input: CriarComprovanteClientInput): 
   url: string;
   mensagem: string;
 }> {
-  const body = enxugarInput(input);
+  const avulso = !input.visita_id && !input.visita_ponto_id;
+  const preparada: CriarComprovanteClientInput = avulso
+    ? {
+        ...input,
+        previa: true,
+        snapshot: input.snapshot
+          ? { ...input.snapshot, previa: true }
+          : input.snapshot,
+      }
+    : input;
+  const body = enxugarInput(preparada);
   const res = await fetch("/api/comprovantes", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

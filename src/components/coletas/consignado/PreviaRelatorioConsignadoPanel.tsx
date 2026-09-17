@@ -39,7 +39,7 @@ export function PreviaRelatorioConsignadoPanel({
   const snapshotBase = useMemo(
     () =>
       snapshotFromRelatorioConsignado(
-        { ...data, previa: false },
+        { ...data, previa: true },
         { chavePix, valorACobrar: valorCobrar }
       ),
     [data, chavePix, valorCobrar]
@@ -49,8 +49,8 @@ export function PreviaRelatorioConsignadoPanel({
     return montarSnapshotRelatorio({
       base: snapshotBase,
       nichoModulo: "consignado",
-      relatorio: { ...data, previa: false },
-      previa: false,
+      relatorio: { ...data, previa: true },
+      previa: true,
       layout: "relatorio",
     });
   }

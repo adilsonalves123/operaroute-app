@@ -35,13 +35,16 @@ function buildInput(
   visitaId?: string | null,
   visitaPontoId?: string | null
 ): CriarComprovanteClientInput {
+  // Sem coleta salva ainda: o link tem que ir como prévia (a API rejeita comprovante oficial sem ID).
+  const avulso = !visitaId && !visitaPontoId;
+  const snap = avulso ? { ...snapshot, previa: true } : snapshot;
   return {
     ...(visitaPontoId ? { visita_ponto_id: visitaPontoId } : {}),
     ...(visitaId ? { visita_id: visitaId } : {}),
-    previa: snapshot.previa === true,
-    nome_operacao: snapshot.empresaNome,
-    chave_pix: snapshot.chavePix,
-    snapshot,
+    previa: snap.previa === true,
+    nome_operacao: snap.empresaNome,
+    chave_pix: snap.chavePix,
+    snapshot: snap,
   };
 }
 

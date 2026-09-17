@@ -40,7 +40,7 @@ export function PreviaRelatorioDiversaoPanel({
   const snapshotBase = useMemo(
     () =>
       snapshotFromRelatorioDiversao(
-        { ...data, previa: false },
+        { ...data, previa: true },
         { chavePix, valorACobrar: valorCobrar }
       ),
     [data, chavePix, valorCobrar]
@@ -50,8 +50,8 @@ export function PreviaRelatorioDiversaoPanel({
     return montarSnapshotRelatorio({
       base: snapshotBase,
       nichoModulo: "diversao",
-      relatorio: { ...data, previa: false },
-      previa: false,
+      relatorio: { ...data, previa: true },
+      previa: true,
       layout: "relatorio",
     });
   }

@@ -39,7 +39,7 @@ export function PreviaRelatorioBolinhaPanel({
   const snapshotBase = useMemo(
     () =>
       snapshotFromRelatorioBolinha(
-        { ...data, previa: false },
+        { ...data, previa: true },
         { chavePix, valorACobrar: valorCobrar }
       ),
     [data, chavePix, valorCobrar]
@@ -49,8 +49,8 @@ export function PreviaRelatorioBolinhaPanel({
     return montarSnapshotRelatorio({
       base: snapshotBase,
       nichoModulo: "bolinha",
-      relatorio: { ...data, previa: false },
-      previa: false,
+      relatorio: { ...data, previa: true },
+      previa: true,
       layout: "relatorio",
     });
   }

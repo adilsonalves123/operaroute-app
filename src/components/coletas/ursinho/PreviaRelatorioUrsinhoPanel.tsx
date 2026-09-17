@@ -40,7 +40,7 @@ export function PreviaRelatorioUrsinhoPanel({
   const snapshotBase = useMemo(
     () =>
       snapshotFromRelatorioUrsinho(
-        { ...data, previa: false },
+        { ...data, previa: true },
         { chavePix, valorACobrar: valorCobrar }
       ),
     [data, chavePix, valorCobrar]
@@ -50,8 +50,8 @@ export function PreviaRelatorioUrsinhoPanel({
     return montarSnapshotRelatorio({
       base: snapshotBase,
       nichoModulo: "ursinho",
-      relatorio: { ...data, previa: false },
-      previa: false,
+      relatorio: { ...data, previa: true },
+      previa: true,
       layout: "relatorio",
     });
   }
