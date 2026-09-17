@@ -631,7 +631,7 @@ export function DashboardRascunhoClient({
         display.variable,
         sans.variable,
         "relative -mx-4 min-h-[60vh] px-4 pb-8 sm:mx-0 sm:px-0",
-        !salvo && "pb-36",
+        !salvo && "pb-52",
         "rascunho-folha font-[family-name:var(--font-rasc-sans)]"
       )}
     >
@@ -657,8 +657,8 @@ export function DashboardRascunhoClient({
                 Resumo
               </h1>
               <p className="max-w-md text-[16px] leading-relaxed text-[var(--shell-text-muted)]">
-                Escolha o dia ou um período — puxa quanto cada ponto mandou (Pix e Dinheiro).
-                Os totais batem: soma dos pontos = Pix + Dinheiro.
+                Escolha o dia ou um período. Dívidas (D.P, Patrão, Renato…) ficam no quadro
+                dourado logo abaixo — e também no botão da faixa de salvar.
               </p>
 
               <div className="space-y-3">
@@ -824,7 +824,10 @@ export function DashboardRascunhoClient({
               />
             </header>
 
-            <section className="space-y-5 rounded-xl border border-[#c4a574]/25 bg-[#c4a574]/[0.04] p-4">
+            <section
+              id="rascunho-dividas"
+              className="space-y-5 rounded-xl border-2 border-[#c4a574] bg-[#c4a574]/10 p-4"
+            >
               <div className="grid gap-5 sm:grid-cols-2">
                 <label className="block space-y-2">
                   <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
@@ -862,7 +865,7 @@ export function DashboardRascunhoClient({
 
               <div className="space-y-4 border-t border-white/[0.08] pt-4">
                 <div className="flex items-center justify-between gap-3">
-                  <p className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
+                  <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#8a6a3a]">
                     Dívidas a descontar
                   </p>
                   <button
@@ -1097,8 +1100,21 @@ export function DashboardRascunhoClient({
               ) : null}
             </section>
 
-            <div className="fixed inset-x-0 bottom-16 z-30 border-t border-[#c4a574]/20 bg-[#0a0e16]/92 px-4 py-3 backdrop-blur-md lg:bottom-0">
-              <div className="mx-auto max-w-2xl">
+            <div className="fixed inset-x-0 bottom-16 z-30 border-t border-[#c4a574]/20 bg-[#f6f1e8]/95 px-4 py-3 backdrop-blur-md lg:bottom-0">
+              <div className="mx-auto flex max-w-2xl flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => {
+                    adicionarDivida();
+                    document
+                      .getElementById("rascunho-dividas")
+                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#c4a574] bg-white px-4 py-3 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:bg-[#c4a574]/15"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar dívidas
+                </button>
                 <button
                   type="button"
                   onClick={salvar}
@@ -1217,9 +1233,12 @@ export function DashboardRascunhoClient({
               </div>
             </section>
 
-            <section className="space-y-4 rounded-xl border border-[#c4a574]/25 bg-[#c4a574]/[0.04] p-4">
+            <section
+              id="rascunho-dividas-fechamento"
+              className="space-y-4 rounded-xl border-2 border-[#c4a574] bg-[#c4a574]/10 p-4"
+            >
               <div className="flex items-center justify-between gap-3">
-                <p className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
+                <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-[#8a6a3a]">
                   Dívidas a descontar
                 </p>
                 <button

@@ -4,5 +4,16 @@
       "path": "/api/cron/limpar-midia-antiga",
       "schedule": "0 5 * * 1"
     }
+  ],
+  "headers": [
+    {
+      "source": "/rascunho",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, must-revalidate"
+        }
+      ]
+    }
   ]
 }
