@@ -10,6 +10,8 @@ export type ResumoRascunhoSnapshot = {
   empresaNome: string;
   titulo: string;
   dataISO: string;
+  /** Quando o resumo é de um intervalo, último dia (inclusive). */
+  dataFimISO?: string;
   /** Entradas (só valores positivos dos pontos). */
   recebido: number;
   /** Valor deixado em ponto(s) — visita negativa, prêmio, etc. */

@@ -218,6 +218,21 @@ function dataLabel(iso: string): string {
   });
 }
 
+function dataCurta(iso: string): string {
+  const d = new Date(`${iso}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("pt-BR", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function intervaloLabel(de: string, ate: string): string {
+  if (!ate || de === ate) return dataLabel(de);
+  return `${dataCurta(de)} — ${dataCurta(ate)}`;
+}
+
 function numberToMoneyInput(n: number): string {
   if (!Number.isFinite(n) || Math.abs(n) < 0.0001) return "";
   const formatted = new Intl.NumberFormat("pt-BR", {
@@ -247,6 +262,8 @@ export function DashboardRascunhoClient({
   operadoresVisao = [],
 }: Props) {
   const [dataSelecionada, setDataSelecionada] = useState(hojeISO);
+  const [dataFim, setDataFim] = useState(hojeISO);
+  const [vista, setVista] = useState<"dia" | "periodo">("dia");
   const [valores, setValores] = useState<Record<string, string>>({});
   const [metaPorPonto, setMetaPorPonto] = useState<Record<string, PontoMetaRascunho>>({});
   const [pixStr, setPixStr] = useState("");
@@ -263,12 +280,17 @@ export function DashboardRascunhoClient({
   const [operadoresSel, setOperadoresSel] = useState<string[]>([]);
   const [publicando, setPublicando] = useState(false);
 
-  const puxarDia = useCallback(async (dataISO: string) => {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(dataISO)) return;
+  const puxarFolha = useCallback(async (deISO: string, ateISO: string) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(deISO)) return;
+    const ate =
+      /^\d{4}-\d{2}-\d{2}$/.test(ateISO) && ateISO >= deISO ? ateISO : deISO;
+    const periodo = ate !== deISO;
     setCarregandoDia(true);
     setFeedback(null);
     try {
-      const res = await fetch(`/api/rascunho/dia?data=${encodeURIComponent(dataISO)}`);
+      const qs = new URLSearchParams({ data: deISO });
+      if (periodo) qs.set("ate", ate);
+      const res = await fetch(`/api/rascunho/dia?${qs.toString()}`);
       const body = (await res.json()) as {
         error?: string;
         porPonto?: Record<
@@ -279,7 +301,12 @@ export function DashboardRascunhoClient({
         dinheiro?: number;
       };
       if (!res.ok) {
-        setFeedback(body.error ?? "Não foi possível carregar o dia.");
+        setFeedback(
+          body.error ??
+            (periodo
+              ? "Não foi possível carregar o período."
+              : "Não foi possível carregar o dia.")
+        );
         return;
       }
 
@@ -304,15 +331,23 @@ export function DashboardRascunhoClient({
       setSalvo(false);
       setLinkCompartilhamento(null);
     } catch {
-      setFeedback("Não foi possível carregar o dia.");
+      setFeedback(
+        periodo
+          ? "Não foi possível carregar o período."
+          : "Não foi possível carregar o dia."
+      );
     } finally {
       setCarregandoDia(false);
     }
   }, []);
 
+  const deFolha = dataSelecionada;
+  const ateFolha =
+    vista === "periodo" && dataFim >= dataSelecionada ? dataFim : dataSelecionada;
+
   useEffect(() => {
-    void puxarDia(dataSelecionada);
-  }, [dataSelecionada, puxarDia]);
+    void puxarFolha(deFolha, ateFolha);
+  }, [deFolha, ateFolha, puxarFolha]);
 
   const lista = useMemo(
     () => [...pontos].sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")),
@@ -367,7 +402,8 @@ export function DashboardRascunhoClient({
     return {
       empresaNome,
       titulo: titulo.trim() || TITULO_PADRAO,
-      dataISO: dataSelecionada,
+      dataISO: deFolha,
+      ...(ateFolha !== deFolha ? { dataFimISO: ateFolha } : {}),
       recebido: resumoCaixa.recebido,
       deixado: resumoCaixa.deixado,
       totalLiquido: resumoCaixa.liquido,
@@ -456,7 +492,7 @@ export function DashboardRascunhoClient({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          data: dataSelecionada,
+          data: vista === "periodo" ? ateFolha : dataSelecionada,
           equipe_ids: operadoresSel,
           valores: pontos.map((p) => ({
             ponto_id: p.id,
@@ -570,57 +606,150 @@ export function DashboardRascunhoClient({
                 Resumo
               </h1>
               <p className="max-w-md text-[16px] leading-relaxed text-[var(--shell-text-muted)]">
-                Escolha o dia — puxa quanto cada ponto mandou (Pix e Dinheiro).
+                Escolha o dia ou um período — puxa quanto cada ponto mandou (Pix e Dinheiro).
                 Os totais batem: soma dos pontos = Pix + Dinheiro.
               </p>
 
-              <label className="block space-y-2">
-                <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
-                  Dia da rota
-                </span>
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative">
-                    <CalendarDays className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#c4a574]/80" />
-                    <input
-                      type="date"
-                      value={dataSelecionada}
-                      onChange={(e) => {
-                        if (e.target.value) setDataSelecionada(e.target.value);
-                      }}
-                      className="w-full min-w-[11rem] border-0 border-b border-[var(--shell-border)] bg-transparent py-2 pl-6 pr-1 text-[16px] text-[var(--shell-text)] focus:border-[#c4a574]/50 focus:outline-none"
-                    />
-                  </div>
-                  {carregandoDia ? (
-                    <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-500">
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      Carregando…
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVista("dia")}
+                    className={cn(
+                      "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition",
+                      vista === "dia"
+                        ? "bg-[#c4a574] text-[#0a0e16]"
+                        : "border border-[var(--shell-border)] text-[var(--shell-text-muted)]"
+                    )}
+                  >
+                    Dia
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setVista("periodo");
+                      if (dataFim < dataSelecionada) setDataFim(dataSelecionada);
+                    }}
+                    className={cn(
+                      "rounded-full px-3.5 py-1.5 text-[13px] font-medium transition",
+                      vista === "periodo"
+                        ? "bg-[#c4a574] text-[#0a0e16]"
+                        : "border border-[var(--shell-border)] text-[var(--shell-text-muted)]"
+                    )}
+                  >
+                    Período
+                  </button>
+                </div>
+
+                {vista === "dia" ? (
+                  <label className="block space-y-2">
+                    <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
+                      Dia da rota
                     </span>
-                  ) : (
-                    <>
-                      {puxouDia ? (
-                        <span className="text-[13px] text-[#c4a574]/90">
-                          Coletas do dia importadas
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="relative">
+                        <CalendarDays className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-[#c4a574]/80" />
+                        <input
+                          type="date"
+                          value={dataSelecionada}
+                          onChange={(e) => {
+                            if (e.target.value) setDataSelecionada(e.target.value);
+                          }}
+                          className="w-full min-w-[11rem] border-0 border-b border-[var(--shell-border)] bg-transparent py-2 pl-6 pr-1 text-[16px] text-[var(--shell-text)] focus:border-[#c4a574]/50 focus:outline-none"
+                        />
+                      </div>
+                      {carregandoDia ? (
+                        <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-500">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Carregando…
                         </span>
                       ) : (
-                        <span className="text-[13px] text-slate-600">
-                          Nenhuma coleta neste dia
-                        </span>
+                        <>
+                          {puxouDia ? (
+                            <span className="text-[13px] text-[#c4a574]/90">
+                              Coletas do dia importadas
+                            </span>
+                          ) : (
+                            <span className="text-[13px] text-slate-600">
+                              Nenhuma coleta neste dia
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => void puxarFolha(deFolha, ateFolha)}
+                            className="text-[13px] text-slate-500 underline-offset-2 transition hover:text-slate-300 hover:underline"
+                          >
+                            Atualizar
+                          </button>
+                        </>
                       )}
-                      <button
-                        type="button"
-                        onClick={() => void puxarDia(dataSelecionada)}
-                        className="text-[13px] text-slate-500 underline-offset-2 transition hover:text-slate-300 hover:underline"
-                      >
-                        Atualizar
-                      </button>
-                    </>
-                  )}
-                </div>
-              </label>
+                    </div>
+                  </label>
+                ) : (
+                  <div className="space-y-3">
+                    <span className="text-[12px] uppercase tracking-[0.18em] text-slate-500">
+                      Período da rota
+                    </span>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <label className="block space-y-1.5">
+                        <span className="text-[13px] text-slate-500">De</span>
+                        <input
+                          type="date"
+                          value={dataSelecionada}
+                          max={dataFim}
+                          onChange={(e) => {
+                            if (e.target.value) setDataSelecionada(e.target.value);
+                          }}
+                          className="w-full border-0 border-b border-[var(--shell-border)] bg-transparent py-2 text-[16px] text-[var(--shell-text)] focus:border-[#c4a574]/50 focus:outline-none"
+                        />
+                      </label>
+                      <label className="block space-y-1.5">
+                        <span className="text-[13px] text-slate-500">Até</span>
+                        <input
+                          type="date"
+                          value={dataFim}
+                          min={dataSelecionada}
+                          onChange={(e) => {
+                            if (e.target.value) setDataFim(e.target.value);
+                          }}
+                          className="w-full border-0 border-b border-[var(--shell-border)] bg-transparent py-2 text-[16px] text-[var(--shell-text)] focus:border-[#c4a574]/50 focus:outline-none"
+                        />
+                      </label>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {carregandoDia ? (
+                        <span className="inline-flex items-center gap-1.5 text-[13px] text-slate-500">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Carregando…
+                        </span>
+                      ) : (
+                        <>
+                          {puxouDia ? (
+                            <span className="text-[13px] text-[#c4a574]/90">
+                              Coletas do período importadas
+                            </span>
+                          ) : (
+                            <span className="text-[13px] text-slate-600">
+                              Nenhuma coleta neste período
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => void puxarFolha(deFolha, ateFolha)}
+                            className="text-[13px] text-slate-500 underline-offset-2 transition hover:text-slate-300 hover:underline"
+                          >
+                            Atualizar
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 border-t border-white/[0.08] pt-4 text-[13px] text-slate-500">
                 <span className="capitalize text-slate-400">
-                  {dataLabel(dataSelecionada)}
+                  {intervaloLabel(deFolha, ateFolha)}
                 </span>
                 <span className="text-slate-700">·</span>
                 <span>
@@ -853,7 +982,7 @@ export function DashboardRascunhoClient({
                 {titulo.trim() || TITULO_PADRAO}
               </h1>
               <p className="capitalize text-[13px] text-slate-500">
-                {dataLabel(dataSelecionada)}
+                {intervaloLabel(deFolha, ateFolha)}
               </p>
               <div
                 className="h-px w-full origin-left bg-gradient-to-r from-[#c4a574]/55 via-white/10 to-transparent"

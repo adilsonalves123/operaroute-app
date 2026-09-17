@@ -24,7 +24,11 @@ export function ResumoPublicView({ snap }: { snap: ResumoRascunhoSnapshot }) {
           <h1 className="text-3xl font-serif leading-tight">
             {snap.titulo || "Resumo"}
           </h1>
-          <p className="capitalize text-sm text-at-muted">{dataLabel(snap.dataISO)}</p>
+          <p className="capitalize text-sm text-at-muted">
+            {snap.dataFimISO && snap.dataFimISO !== snap.dataISO
+              ? `${dataLabel(snap.dataISO)} — ${dataLabel(snap.dataFimISO)}`
+              : dataLabel(snap.dataISO)}
+          </p>
         </header>
 
         <section className="space-y-3 rounded-lg border border-at-soft bg-at-card-soft p-5">

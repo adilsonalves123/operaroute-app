@@ -19,6 +19,8 @@ export type RascunhoPontoDia = {
 
 export type RascunhoDiaDados = {
   data: string;
+  /** Inclusive; igual a `data` quando a folha é de um só dia. */
+  ate?: string;
   porPonto: Record<string, RascunhoPontoDia>;
   pix: number;
   dinheiro: number;
@@ -82,15 +84,24 @@ function somarPonto(
 }
 
 /**
- * Folha da rota: quanto cada ponto mandou no dia (Pix + Dinheiro recebidos).
+ * Folha da rota: quanto cada ponto mandou no dia ou no intervalo (Pix + Dinheiro).
  */
 export async function fetchRascunhoDia(
   supabase: SupabaseClient,
   empresaId: string,
-  dataISO: string
+  dataISO: string,
+  ateISO?: string
 ): Promise<RascunhoDiaDados> {
+  const ate =
+    ateISO && /^\d{4}-\d{2}-\d{2}$/.test(ateISO)
+      ? ateISO < dataISO
+        ? dataISO
+        : ateISO
+      : dataISO;
+
   const vazio: RascunhoDiaDados = {
     data: dataISO,
+    ate,
     porPonto: {},
     pix: 0,
     dinheiro: 0,
@@ -103,7 +114,7 @@ export async function fetchRascunhoDia(
   const periodo = resolverPeriodoAnalise({
     periodo: "personalizado",
     de: dataISO,
-    ate: dataISO,
+    ate,
   });
 
   try {
@@ -222,6 +233,7 @@ export async function fetchRascunhoDia(
 
     return {
       data: dataISO,
+      ate,
       porPonto: porPontoObj,
       pix: round2(pix),
       dinheiro: round2(dinheiro),
