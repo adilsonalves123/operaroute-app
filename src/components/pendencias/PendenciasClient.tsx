@@ -8,7 +8,7 @@ import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur, p
 import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
 import { whatsAppUrl } from "@/lib/nichos/cassino/relatorio";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
-import { AlertTriangle, CheckCircle, ChevronDown, MessageCircle, Pencil, Trash2, X } from "lucide-react";
+import { AlertTriangle, CheckCircle, ChevronDown, MessageCircle, Pencil, Search, Trash2, X } from "lucide-react";
 
 export interface PendenciaItem {
   id: string;
@@ -89,6 +89,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>("todos");
+  const [busca, setBusca] = useState("");
   const [mostrarTodas, setMostrarTodas] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -103,6 +104,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
   >({});
   const [mostrarFiltrosExtras, setMostrarFiltrosExtras] = useState(false);
 
+  const q = busca.trim().toLowerCase();
   const lista = pendencias.filter((p) => {
     const statusOk = mostrarTodas || p.status === "aberta";
     const tipoOk =
@@ -113,7 +115,12 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
           : filtroTipo === "visita_ponto"
             ? isVisitaPontoPendencia(p)
             : p.tipo === filtroTipo;
-    return statusOk && tipoOk;
+    const buscaOk =
+      !q ||
+      (p.pontos?.nome ?? "").toLowerCase().includes(q) ||
+      p.titulo.toLowerCase().includes(q) ||
+      (p.descricao ?? "").toLowerCase().includes(q);
+    return statusOk && tipoOk && buscaOk;
   });
 
   function countTipo(tipo: FiltroTipo) {
@@ -422,6 +429,18 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
           </button>
         </div>
 
+        <div className="pendencias-faixa-search flex items-center gap-2.5 rounded-lg px-3 py-2.5">
+          <Search className="h-4 w-4 shrink-0 opacity-70" aria-hidden />
+          <input
+            type="search"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            placeholder="Buscar pelo nome do ponto…"
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm shadow-none outline-none placeholder:opacity-60 focus:ring-0"
+            aria-label="Buscar pendências pelo nome do ponto"
+          />
+        </div>
+
         <div className="flex flex-wrap gap-1.5">
           {filtrosComItens.map((f) => (
             <button
@@ -483,7 +502,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
 
       {lista.length === 0 ? (
         <p className="text-sm text-slate-400 text-center py-8">
-          Nenhuma pendência neste filtro.
+          {q ? "Nenhuma pendência para essa busca." : "Nenhuma pendência neste filtro."}
         </p>
       ) : (
         <div className="space-y-3">

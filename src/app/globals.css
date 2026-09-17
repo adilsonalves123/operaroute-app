@@ -373,6 +373,11 @@ html[data-app-theme="light"] .rascunho-folha {
   border: 1px solid #c4a574;
   color: #0a0e16;
 }
+.pendencias-faixa-search {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f4efe6;
+}
 
 html[data-app-theme="light"] .pendencias-faixa {
   background: #ffffff !important;
@@ -397,6 +402,11 @@ html[data-app-theme="light"] .pendencias-faixa-chip-on {
   background: #1c1917 !important;
   border-color: #1c1917 !important;
   color: #faf8f4 !important;
+}
+html[data-app-theme="light"] .pendencias-faixa-search {
+  background: #efeae0 !important;
+  border-color: rgba(28, 25, 23, 0.16) !important;
+  color: #141210 !important;
 }
 
 /* Só o card de pagamento da pendência — cinza e amarelo mais fortes no claro */
