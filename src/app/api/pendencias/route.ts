@@ -3,6 +3,7 @@ import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { createClient } from "@/lib/supabase/server";
 import { parseMoneyInput } from "@/lib/utils";
 import { resolverVisaoOperador, visaoPermitePonto } from "@/lib/visao/resolver";
+import { labelTipoPendencia } from "@/lib/pendencias/labels";
 
 const TIPOS_OK = new Set([
   "negativo",
@@ -40,12 +41,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const tituloPadrao =
-    tipo === "haver"
-      ? "Haver do ponto"
-      : tipo === "negativo"
-        ? "Mandou sem leitura"
-        : "Pagamento parcial";
+  const tituloPadrao = labelTipoPendencia(tipo);
 
   const supabase = await createClient();
   const { data, error } = await supabase

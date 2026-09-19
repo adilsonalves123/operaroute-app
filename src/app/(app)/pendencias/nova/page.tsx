@@ -9,12 +9,11 @@ import { ColetaPontoSearchSelect } from "@/components/coletas/ColetaPontoSearchS
 import type { Ponto } from "@/lib/types/database";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
+import { OPCOES_TIPO_PENDENCIA } from "@/lib/pendencias/labels";
 
-const TITULOS_PADRAO: Record<string, string> = {
-  negativo: "Mandou sem leitura",
-  pagamento_pendente: "Pagamento parcial",
-  haver: "Haver do ponto",
-};
+const TITULOS_PADRAO: Record<string, string> = Object.fromEntries(
+  OPCOES_TIPO_PENDENCIA.map((o) => [o.value, o.label])
+);
 
 export default function NovaPendenciaPage() {
   const router = useRouter();
@@ -117,17 +116,7 @@ export default function NovaPendenciaPage() {
           label="Tipo *"
           value={form.tipo}
           onChange={(e) => onTipoChange(e.target.value)}
-          options={[
-            {
-              value: "pagamento_pendente",
-              label: "Pagamento parcial — não pagou tudo na coleta",
-            },
-            {
-              value: "negativo",
-              label: "Mandou sem leitura — deixei dinheiro no ponto",
-            },
-            { value: "haver", label: "Haver do ponto — eu devo ao ponto" },
-          ]}
+          options={[...OPCOES_TIPO_PENDENCIA]}
         />
         {form.tipo === "pagamento_pendente" && (
           <p className="text-xs text-amber-300/90">
