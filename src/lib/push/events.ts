@@ -109,8 +109,6 @@ export function pushPontoCriado(
   );
 }
 
-import { labelTipoPendencia } from "@/lib/pendencias/labels";
-
 export function pushPendenciaCriada(
   opts: BaseOpts & {
     titulo?: string | null;
