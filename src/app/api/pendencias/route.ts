@@ -43,11 +43,9 @@ export async function POST(request: Request) {
   const tituloPadrao =
     tipo === "haver"
       ? "Haver do ponto"
-      : tipo === "pagamento_pendente"
-        ? "Pagamento pendente"
-        : tipo === "parcial"
-          ? "Pagamento parcial"
-          : "Pendência manual";
+      : tipo === "negativo"
+        ? "Mandou sem leitura"
+        : "Pagamento parcial";
 
   const supabase = await createClient();
   const { data, error } = await supabase

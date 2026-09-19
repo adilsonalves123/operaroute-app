@@ -29,6 +29,7 @@ export interface PendenciaNegativaInput {
   descricao?: string | null;
   /** Título da pendência (ex.: "Cliente pagou ganhadores"). */
   titulo?: string | null;
+  tipo?: string | null;
 }
 
 export interface AbatimentoDebito {

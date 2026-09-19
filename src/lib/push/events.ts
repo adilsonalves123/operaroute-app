@@ -1,4 +1,5 @@
 import { notifyEmpresaAdminsBackground } from "@/lib/push/notify-admins";
+import { labelTipoPendencia } from "@/lib/pendencias/labels";
 
 function money(n: number): string {
   return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -108,20 +109,7 @@ export function pushPontoCriado(
   );
 }
 
-function labelTipoPendencia(tipo?: string | null): string {
-  switch (tipo) {
-    case "haver":
-      return "Haver";
-    case "negativo":
-      return "Pendência negativa";
-    case "parcial":
-      return "Pagamento parcial";
-    case "pagamento_pendente":
-      return "Pagamento pendente";
-    default:
-      return "Pendência";
-  }
-}
+import { labelTipoPendencia } from "@/lib/pendencias/labels";
 
 export function pushPendenciaCriada(
   opts: BaseOpts & {

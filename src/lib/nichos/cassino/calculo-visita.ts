@@ -6,6 +6,7 @@ import {
   calcularBaixasValorPendencia,
   isHaverCreditoComum,
   isHaverDeNegativoCliente,
+  isMandouSemLeitura,
   totalDebitoAbertoReais,
   totalHaverAbertoReais,
   totalHaverDeNegativoAbertoReais,
@@ -58,7 +59,7 @@ function mesclarAbatimentos(
 function resultadoNegativo(
   maquinas: ReturnType<typeof calcularMaquina>[],
   totais: ReturnType<typeof calcularTotaisVisita>,
-  debitoTotalReais: number,
+  pendenciasNegativas: PendenciaNegativaInput[],
   valorDeixadoNoPontoReais: number,
   pendenciasOperacao: PendenciaNegativaInput[],
   valorPixReais: number,
@@ -69,21 +70,25 @@ function resultadoNegativo(
   incluirUsarHaverNegativo: boolean
 ): CalculoVisitaResult {
   const prejuizoMaquinasReais = centesimosToReais(Math.abs(totais.totalLucroCentavos));
+  const debitoTotalReais = totalDebitoAbertoReais(pendenciasNegativas);
+  const semLeitura = pendenciasNegativas.filter(isMandouSemLeitura);
+  const saldoSemLeituraReais = totalDebitoAbertoReais(semLeitura);
   const haverTotalReais = totalHaverAbertoReais(pendenciasHaver);
   const pendenciaOperacaoTotalReais = totalDebitoAbertoReais(pendenciasOperacao);
-  const abatimentoAutomaticoPendenciaReais = abaterPendenciaOperacaoNegativa
-    ? Math.min(pendenciaOperacaoTotalReais, prejuizoMaquinasReais)
-    : 0;
 
-  const tetoCoberturaPrejuizoReais = Math.max(
-    0,
-    prejuizoMaquinasReais - abatimentoAutomaticoPendenciaReais
-  );
-  // Aceita valor acima da perda: o excedente vira pendência (não some no teto).
+  let prejuizoRestanteReais = prejuizoMaquinasReais;
+  const coberturaSemLeituraReais = Math.min(saldoSemLeituraReais, prejuizoRestanteReais);
+  prejuizoRestanteReais -= coberturaSemLeituraReais;
+
+  const coberturaOpReais = abaterPendenciaOperacaoNegativa
+    ? Math.min(pendenciaOperacaoTotalReais, prejuizoRestanteReais)
+    : 0;
+  prejuizoRestanteReais -= coberturaOpReais;
+
   const valorDeixadoOperadorReais = Math.max(0, valorDeixadoNoPontoReais);
   const valorAplicadoNoPrejuizoReais = Math.min(
     valorDeixadoOperadorReais,
-    tetoCoberturaPrejuizoReais
+    prejuizoRestanteReais
   );
   const excedenteDeixadoReais = Math.max(
     0,
@@ -91,19 +96,32 @@ function resultadoNegativo(
   );
   let restantePrejuizoReais = Math.max(
     0,
-    prejuizoMaquinasReais -
-      abatimentoAutomaticoPendenciaReais -
-      valorAplicadoNoPrejuizoReais
+    prejuizoRestanteReais - valorAplicadoNoPrejuizoReais
   );
 
   const valorPagoReais = valorPixReais + valorDinheiroReais;
-  const valorPagoCentavos = reaisToCentesimos(valorPagoReais);
-  const totalBaixaPendenciaCentavos = reaisToCentesimos(
-    (abaterPendenciaOperacaoNegativa ? abatimentoAutomaticoPendenciaReais : 0) + valorPagoReais
+  let pagoRestanteReais = valorPagoReais;
+
+  const restanteSemLeituraAposCobertura = Math.max(
+    0,
+    saldoSemLeituraReais - coberturaSemLeituraReais
   );
+  const pagoSemLeituraReais = Math.min(pagoRestanteReais, restanteSemLeituraAposCobertura);
+  pagoRestanteReais -= pagoSemLeituraReais;
+  const baixaSemLeituraReais = coberturaSemLeituraReais + pagoSemLeituraReais;
+
+  const restanteOpAposCobertura = Math.max(0, pendenciaOperacaoTotalReais - coberturaOpReais);
+  const pagoOpReais = Math.min(pagoRestanteReais, restanteOpAposCobertura);
+  const baixaOpReais = coberturaOpReais + pagoOpReais;
+
+  const opSemLeitura =
+    baixaSemLeituraReais > 0.009 && semLeitura.length > 0
+      ? calcularAbatimentos(semLeitura, reaisToCentesimos(baixaSemLeituraReais))
+      : { abatimentos: [] as AbatimentoDebito[], debitoAbatidoCentavos: 0 };
+
   const payPendenciaOperacao =
-    pendenciaOperacaoTotalReais > 0.009 && totalBaixaPendenciaCentavos > 0
-      ? calcularBaixasValorPendencia(pendenciasOperacao, totalBaixaPendenciaCentavos)
+    baixaOpReais > 0.009 && pendenciaOperacaoTotalReais > 0.009
+      ? calcularBaixasValorPendencia(pendenciasOperacao, reaisToCentesimos(baixaOpReais))
       : { abatimentos: [], abatidoCentavos: 0 };
   const pendenciaOperacaoAbatidaReais = centesimosToReais(
     payPendenciaOperacao.abatidoCentavos
@@ -112,6 +130,9 @@ function resultadoNegativo(
     0,
     pendenciaOperacaoTotalReais - pendenciaOperacaoAbatidaReais
   );
+  const debitoAbatidoReais = centesimosToReais(opSemLeitura.debitoAbatidoCentavos);
+  const debitoRestanteReais = Math.max(0, debitoTotalReais - debitoAbatidoReais);
+  const restanteSemLeituraReais = Math.max(0, saldoSemLeituraReais - debitoAbatidoReais);
 
   let haverCompensadoReais = 0;
   let abatimentosHaver: AbatimentoDebito[] = [];
@@ -137,20 +158,24 @@ function resultadoNegativo(
     Math.max(0, reaisToCentesimos(haverTotalReais) - haverAbatidoCentavos)
   );
 
-  /** Total financiado pelo operador nesta visita — recupera inteiro nas positivas. */
   const prejuizoCobertoSóPorPendencia =
     valorDeixadoOperadorReais <= 0.009 &&
-    abatimentoAutomaticoPendenciaReais >= prejuizoMaquinasReais - 0.009;
+    coberturaSemLeituraReais + coberturaOpReais >= prejuizoMaquinasReais - 0.009;
   const novoDebitoReais = prejuizoCobertoSóPorPendencia
     ? 0
     : Math.max(0, prejuizoMaquinasReais - haverGeradoReais - haverCompensadoReais);
 
   const saldoLiquidoReais =
     valorDeixadoOperadorReais > 0.009
-      ? pendenciaOperacaoAbatidaReais + valorDeixadoOperadorReais + haverGeradoReais
-      : abaterPendenciaOperacaoNegativa
-        ? pendenciaOperacaoRestanteReais - haverGeradoReais
-        : pendenciaOperacaoAbatidaReais - haverGeradoReais;
+      ? pendenciaOperacaoAbatidaReais +
+        valorDeixadoOperadorReais +
+        haverGeradoReais +
+        restanteSemLeituraReais
+      : restanteSemLeituraReais +
+        (abaterPendenciaOperacaoNegativa
+          ? pendenciaOperacaoRestanteReais
+          : pendenciaOperacaoAbatidaReais) -
+        haverGeradoReais;
 
   return {
     maquinas,
@@ -160,9 +185,9 @@ function resultadoNegativo(
     saldoNegativo: true,
     debitoTotalReais,
     recuperacaoNegativoReais: 0,
-    debitoAbatidoReais: 0,
-    debitoRestanteReais: debitoTotalReais,
-    abatimentos: [],
+    debitoAbatidoReais,
+    debitoRestanteReais,
+    abatimentos: opSemLeitura.abatimentos,
     descontoManualReais: valorDeixadoOperadorReais,
     saldoAposDebitoReais: 0,
     saldoAposDescontoReais: 0,
@@ -180,7 +205,7 @@ function resultadoNegativo(
     excedenteDeixadoReais,
     valorPagoReais,
     restanteOperacaoReais: 0,
-    restanteReais: pendenciaOperacaoRestanteReais,
+    restanteReais: pendenciaOperacaoRestanteReais + restanteSemLeituraReais,
     haverTotalReais,
     haverDeNegativoTotalReais: 0,
     recuperacaoHaverDeNegativoReais: 0,
@@ -224,7 +249,7 @@ export function calcularVisitaCassino(
     return resultadoNegativo(
       maquinas,
       totais,
-      debitoTotalReais,
+      input.pendenciasNegativas,
       input.descontoManualReais,
       input.pendenciasOperacao ?? [],
       input.valorPixReais ?? 0,

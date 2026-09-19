@@ -95,6 +95,27 @@ export function isHaverDeNegativoCliente(p: {
   );
 }
 
+/**
+ * Dinheiro deixado no ponto sem conferir a máquina.
+ * Não é o “Saldo negativo da coleta” gerado depois de uma leitura.
+ */
+export function isMandouSemLeitura(p: {
+  tipo?: string | null;
+  titulo?: string | null;
+  descricao?: string | null;
+  observacao?: string | null;
+}): boolean {
+  const t = `${p.titulo ?? ""} ${p.descricao ?? ""} ${p.observacao ?? ""}`.toLowerCase();
+  if (
+    t.includes("saldo negativo da coleta") ||
+    t.includes("valor deixado no ponto na visita")
+  ) {
+    return false;
+  }
+  if (t.includes("sem leitura") || t.includes("mandou sem leitura")) return true;
+  return (p.tipo ?? "").toLowerCase() === "negativo";
+}
+
 /** Crédito comum: troco, pagamento a mais, etc. */
 export function isHaverCreditoComum(p: {
   titulo?: string | null;

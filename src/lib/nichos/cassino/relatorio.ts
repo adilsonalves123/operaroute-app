@@ -244,7 +244,7 @@ function buildResumoFinanceiroPositivo(
       valor: formatCurrency(c.debitoTotalReais),
       variant: "warning",
       dividerBefore: true,
-      hint: "Valor que você adiantou — recuperar na coleta",
+        hint: "Valor que você mandou sem leitura — recuperar na coleta",
     });
   }
 
@@ -283,7 +283,7 @@ function buildResumoFinanceiroPositivo(
         label: "Negativo anterior",
         valor: formatCurrency(c.debitoTotalReais),
         variant: "warning",
-        hint: "Adiantamento em visita negativa — recuperar nesta coleta",
+        hint: "Mandou sem leitura — recuperar nesta coleta",
       });
     }
   }
@@ -401,7 +401,7 @@ function buildResumoFinanceiroPositivo(
         valor: formatCurrency(c.restanteOperacaoReais),
         variant: "warning",
         destaque: true,
-        hint: "Pagamento pendente — comissão já calculada",
+        hint: "Pagamento parcial — comissão já calculada",
       });
     } else {
       if (c.debitoRestanteReais > 0.009) {

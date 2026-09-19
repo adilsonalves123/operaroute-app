@@ -763,6 +763,9 @@ export function NovaColetaCassinoForm() {
       id: p.id,
       valor: Number(p.valor ?? 0),
       observacao: p.descricao,
+      descricao: p.descricao,
+      titulo: p.titulo,
+      tipo: p.tipo,
     }));
     const pendenciasHaver = havers.map((p) => ({
       id: p.id,
@@ -1272,13 +1275,13 @@ export function NovaColetaCassinoForm() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-amber-400/90">
-                                Negativo em aberto
+                                Mandou sem leitura
                               </p>
                               <p className="text-xl font-bold tabular-nums text-amber-300">
                                 {formatCurrency(debitoAberto)}
                               </p>
                               <p className="mt-0.5 text-xs text-amber-400/75">
-                                Você adiantou — recuperar nesta coleta
+                                Dinheiro no ponto sem conferir a máquina
                               </p>
                             </div>
                           </div>
@@ -1300,12 +1303,12 @@ export function NovaColetaCassinoForm() {
                               />
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium text-emerald-200">
-                                  Abater este negativo nesta coleta
+                                  Abater este valor nesta coleta
                                 </p>
                                 <p className="mt-0.5 text-xs text-slate-400">
                                   {abaterNegativoAnterior
-                                    ? "O lucro de hoje reduz o negativo e a comissão."
-                                    : "Negativo fica de fora — cobrança só do lucro de hoje."}
+                                    ? "O lucro de hoje reduz o adiantamento e a comissão fica só no que passou."
+                                    : "Fica de fora — cobrança só do lucro de hoje."}
                                 </p>
                               </div>
                             </label>
@@ -1367,11 +1370,7 @@ export function NovaColetaCassinoForm() {
                       {pendenciaOperacaoAberta > 0.009 && (
                         <ColetaStatusFaixa
                           tom={temPagamentoParcial ? "alerta" : "pendencia"}
-                          titulo={
-                            temPagamentoParcial
-                              ? "Pagamento parcial em aberto"
-                              : "Pagamento pendente"
-                          }
+                          titulo="Pagamento parcial em aberto"
                           valor={formatCurrency(pendenciaOperacaoAberta)}
                           icon={<Clock className="h-4 w-4" />}
                           descricao="Dívida da operação de coletas anteriores — pode incluir na cobrança"

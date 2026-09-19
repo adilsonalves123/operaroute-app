@@ -11,9 +11,8 @@ import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
 
 const TITULOS_PADRAO: Record<string, string> = {
-  negativo: "Deixei no ponto (sem leitura)",
-  pagamento_pendente: "Ponto me deve (sem leitura)",
-  parcial: "Pagamento parcial",
+  negativo: "Mandou sem leitura",
+  pagamento_pendente: "Pagamento parcial",
   haver: "Haver do ponto",
 };
 
@@ -121,31 +120,34 @@ export default function NovaPendenciaPage() {
           options={[
             {
               value: "pagamento_pendente",
-              label: "Ponto me deve — vou receber na coleta",
+              label: "Pagamento parcial — não pagou tudo na coleta",
             },
             {
               value: "negativo",
-              label: "Deixei no ponto — recupero nas positivas",
+              label: "Mandou sem leitura — deixei dinheiro no ponto",
             },
-            { value: "parcial", label: "Pagamento parcial" },
-            { value: "haver", label: "Haver (crédito do ponto)" },
+            { value: "haver", label: "Haver do ponto — eu devo ao ponto" },
           ]}
         />
         {form.tipo === "pagamento_pendente" && (
           <p className="text-xs text-amber-300/90">
-            Use quando repôs o ponto sem leitura (ex.: cliente ganhou e você deixou o dinheiro). Na
-            próxima coleta negativa, o valor abate o prejuízo e você informa quanto recebeu do ponto.
+            O ponto ficou devendo da coleta (não pagou o total ou pagou só uma parte). Na próxima
+            visita você cobra o que falta. Pagamento pendente e pagamento parcial são a mesma coisa.
           </p>
         )}
         {form.tipo === "negativo" && (
           <p className="text-xs text-amber-300/90">
-            Use quando você adiantou dinheiro no ponto e quer recuperar nas próximas coletas
-            positivas (abatimento automático no lucro).
+            Você mandou dinheiro no ponto sem conferir a máquina. Na próxima visita: se der
+            negativo, o ponto devolve o que não usou e não tem comissão; se der positivo, a
+            comissão é só sobre o que passou do valor que você mandou, e ele te devolve esse
+            adiantamento.
           </p>
         )}
         {form.tipo === "haver" && (
           <p className="text-xs text-emerald-400/90">
-            Crédito a favor do ponto — entra nas próximas coletas como haver para abater.
+            Você deve ao ponto (crédito). Isso é diferente do haver da coleta quando o ponto paga o
+            prêmio ao cliente — esse outro haver também não gera comissão e já nasce na visita
+            negativa.
           </p>
         )}
         <FormInput

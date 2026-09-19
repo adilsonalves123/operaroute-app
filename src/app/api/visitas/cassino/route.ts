@@ -271,6 +271,9 @@ export async function POST(request: Request) {
         id: p.id,
         valor: Number(p.valor ?? 0),
         observacao: p.descricao,
+        descricao: p.descricao,
+        titulo: p.titulo,
+        tipo: p.tipo,
       })),
       pendenciasHaver: (haverRaw ?? []).map((p) => ({
         id: p.id,

@@ -975,7 +975,7 @@ const linhasAdiantamento = buildResumoFinanceiroLinhas(
   30,
   adiantamentoMistoCaixa
 );
-const linhaOperador = linhasAdiantamento.find((l) => l.label === "Você adiantou");
+const linhaOperador = linhasAdiantamento.find((l) => l.label === "Você repôs no ponto");
 if (!linhaOperador?.hint?.includes("Pix") || !linhaOperador.hint.includes("saiu do caixa")) {
   console.error(
     "FAIL: resumo deveria incluir hint Pix/dinheiro no adiantamento, got",
@@ -1015,10 +1015,10 @@ const positivaNegParcial = calcularVisitaCassino({
   valorDinheiroReais: 0,
 });
 
-if (Math.abs(positivaNegParcial.debitoAbatidoReais - 1400) > 0.02) {
+if (Math.abs(positivaNegParcial.recuperacaoNegativoReais - 1400) > 0.02) {
   console.error(
-    "FAIL: negativo recebido esperado 1400, got",
-    positivaNegParcial.debitoAbatidoReais
+    "FAIL: negativo recuperado no lucro esperado 1400, got",
+    positivaNegParcial.recuperacaoNegativoReais
   );
   process.exit(1);
 }
@@ -1049,7 +1049,7 @@ if (!labelsPosNeg.includes("Recebido hoje") || !labelsPosNeg.includes("Falta rec
   process.exit(1);
 }
 const linhaRecebido = linhasPosNeg.find((l) => l.label === "Recebido hoje");
-if (!linhaRecebido?.hint?.includes("falta operação")) {
+if (!linhaRecebido?.hint?.toLowerCase().includes("opera")) {
   console.error("FAIL: hint do pagamento deveria citar operação pendente, got", linhaRecebido?.hint);
   process.exit(1);
 }
@@ -1131,6 +1131,117 @@ if (Math.abs(pendenciaSemLeituraPaga.pendenciaOperacaoRestanteReais) > 0.02) {
 }
 if (Math.abs(pendenciaSemLeituraPaga.valorPagoReais - 1000) > 0.02) {
   console.error("FAIL: valor pago esperado 1000, got", pendenciaSemLeituraPaga.valorPagoReais);
+  process.exit(1);
+}
+
+// Mandou R$ 500 sem leitura + visita −R$ 50 → devolve R$ 450, sem comissão
+const mandouSemLeituraNegativa = calcularVisitaCassino({
+  leituras: [
+    {
+      equipamentoId: "m-500",
+      nome: "Máquina",
+      entradaAnterior: 100_000,
+      saidaAnterior: 100_000,
+      entradaAtual: 100_000,
+      saidaAtual: 105_000,
+    },
+  ],
+  pendenciasNegativas: [
+    { id: "sl-500", valor: 500, titulo: "Mandou sem leitura", tipo: "negativo" },
+  ],
+  pendenciasOperacao: [],
+  abaterPendenciaOperacaoNegativa: true,
+  comissaoPercentual: 30,
+  descontoManualReais: 0,
+  descontoRecebimentoReais: 0,
+  abaterAutomatico: true,
+  valorPixReais: 0,
+  valorDinheiroReais: 0,
+});
+
+if (mandouSemLeituraNegativa.comissaoAplicada) {
+  console.error("FAIL: visita negativa com mandou-sem-leitura não deve ter comissão");
+  process.exit(1);
+}
+if (Math.abs(mandouSemLeituraNegativa.debitoAbatidoReais - 50) > 0.02) {
+  console.error(
+    "FAIL: usado do adiantamento esperado 50, got",
+    mandouSemLeituraNegativa.debitoAbatidoReais
+  );
+  process.exit(1);
+}
+if (Math.abs(mandouSemLeituraNegativa.debitoRestanteReais - 450) > 0.02) {
+  console.error(
+    "FAIL: devolver esperado 450, got",
+    mandouSemLeituraNegativa.debitoRestanteReais
+  );
+  process.exit(1);
+}
+if (Math.abs(mandouSemLeituraNegativa.saldoLiquidoReais - 450) > 0.02) {
+  console.error(
+    "FAIL: saldo a receber esperado 450, got",
+    mandouSemLeituraNegativa.saldoLiquidoReais
+  );
+  process.exit(1);
+}
+if (Math.abs(mandouSemLeituraNegativa.novoDebitoReais) > 0.02) {
+  console.error(
+    "FAIL: não deveria gerar novo negativo, got",
+    mandouSemLeituraNegativa.novoDebitoReais
+  );
+  process.exit(1);
+}
+
+// Mandou R$ 500 sem leitura + visita +R$ 600 (30%) → comissão só nos 100; cobra 500 + 70
+const mandouSemLeituraPositiva = calcularVisitaCassino({
+  leituras: [
+    {
+      equipamentoId: "m-600",
+      nome: "Máquina",
+      entradaAnterior: 100_000,
+      saidaAnterior: 100_000,
+      entradaAtual: 160_000,
+      saidaAtual: 100_000,
+    },
+  ],
+  pendenciasNegativas: [
+    { id: "sl-500b", valor: 500, titulo: "Mandou sem leitura", tipo: "negativo" },
+  ],
+  pendenciasOperacao: [],
+  comissaoPercentual: 30,
+  descontoManualReais: 0,
+  descontoRecebimentoReais: 0,
+  abaterAutomatico: true,
+  valorPixReais: 0,
+  valorDinheiroReais: 0,
+});
+
+if (Math.abs(mandouSemLeituraPositiva.recuperacaoNegativoReais - 500) > 0.02) {
+  console.error(
+    "FAIL: recuperação do adiantamento esperada 500, got",
+    mandouSemLeituraPositiva.recuperacaoNegativoReais
+  );
+  process.exit(1);
+}
+if (Math.abs(mandouSemLeituraPositiva.valorClienteReais - 30) > 0.02) {
+  console.error(
+    "FAIL: comissão só sobre 100 esperado 30, got",
+    mandouSemLeituraPositiva.valorClienteReais
+  );
+  process.exit(1);
+}
+if (Math.abs(mandouSemLeituraPositiva.valorOperacaoReais - 70) > 0.02) {
+  console.error(
+    "FAIL: parte da operação sobre 100 esperado 70, got",
+    mandouSemLeituraPositiva.valorOperacaoReais
+  );
+  process.exit(1);
+}
+if (Math.abs(mandouSemLeituraPositiva.totalACobrarReais - 570) > 0.02) {
+  console.error(
+    "FAIL: cobrar adiantamento + parte esperado 570, got",
+    mandouSemLeituraPositiva.totalACobrarReais
+  );
   process.exit(1);
 }
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { AlertBadge } from "@/components/ui/AlertBadge";
 import { formatCurrency, formatDate, formatMoneyInput, formatMoneyInputOnBlur, parseMoneyInput } from "@/lib/utils";
+import { isTipoPagamentoParcial, labelTipoPendencia } from "@/lib/pendencias/labels";
 import { saldoPendenciaReais } from "@/lib/nichos/cassino/pendencias";
 import { whatsAppUrl } from "@/lib/nichos/cassino/relatorio";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
@@ -58,11 +59,11 @@ function mensagemCobrancaPendencia(p: PendenciaItem, valor: number): string {
 }
 
 const tipoLabels: Record<string, string> = {
-  negativo: "Débito negativo",
-  parcial: "Pagamento parcial",
-  pagamento_pendente: "Pagamento pendente",
-  haver: "Haver (crédito)",
-  visita_consolidada: "Visita ao ponto",
+  negativo: labelTipoPendencia("negativo"),
+  parcial: labelTipoPendencia("parcial"),
+  pagamento_pendente: labelTipoPendencia("pagamento_pendente"),
+  haver: labelTipoPendencia("haver"),
+  visita_consolidada: labelTipoPendencia("visita_consolidada"),
 };
 
 const tipoVariant: Record<string, "danger" | "warning" | "info" | "success"> = {
@@ -77,10 +78,9 @@ const filtrosTipo = [
   { id: "todos", label: "Todos" },
   { id: "visita_ponto", label: "Visita ao ponto" },
   { id: "fura_fura", label: "Fura Fura" },
-  { id: "parcial", label: "Pagamento parcial" },
-  { id: "pagamento_pendente", label: "Pagamento pendente" },
-  { id: "negativo", label: "Débito negativo" },
-  { id: "haver", label: "Haver" },
+  { id: "pagamento_parcial", label: "Pagamento parcial" },
+  { id: "negativo", label: "Mandou sem leitura" },
+  { id: "haver", label: "Haver do ponto" },
 ] as const;
 
 type FiltroTipo = (typeof filtrosTipo)[number]["id"];
@@ -114,7 +114,9 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
           ? isFuraFuraPendencia(p)
           : filtroTipo === "visita_ponto"
             ? isVisitaPontoPendencia(p)
-            : p.tipo === filtroTipo;
+            : filtroTipo === "pagamento_parcial"
+              ? isTipoPagamentoParcial(p.tipo)
+              : p.tipo === filtroTipo;
     const buscaOk =
       !q ||
       (p.pontos?.nome ?? "").toLowerCase().includes(q) ||
@@ -129,6 +131,7 @@ export function PendenciasClient({ pendencias }: { pendencias: PendenciaItem[] }
       if (tipo === "todos") return statusOk;
       if (tipo === "fura_fura") return statusOk && isFuraFuraPendencia(p);
       if (tipo === "visita_ponto") return statusOk && isVisitaPontoPendencia(p);
+      if (tipo === "pagamento_parcial") return statusOk && isTipoPagamentoParcial(p.tipo);
       return statusOk && p.tipo === tipo;
     }).length;
   }
