@@ -501,6 +501,12 @@ html[data-app-theme="light"] .chamado-novo-modal .chamado-busca-titulo {
   color: #141210 !important;
 }
 
+/* Detalhes / editar / transferir / remover máquina — fundo opaco (iOS Safari). */
+.equipamento-modal {
+  background-color: #070b14;
+  isolation: isolate;
+}
+
 /* Detalhes / editar máquina — portal no body; no claro o fundo escuro + texto remapeado some */
 html[data-app-theme="light"] .equipamento-modal {
   background: #ffffff !important;
