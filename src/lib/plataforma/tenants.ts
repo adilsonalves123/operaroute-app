@@ -190,15 +190,11 @@ export async function fetchTenantsPlataforma(
   for (const p of profileList) {
     if (p.user_id) profileByUserId.set(p.user_id, p);
   }
+  /** Só a empresa apontada por profiles.empresa_id — evita N linhas por retries de onboarding. */
   const profileByEmp = new Map<string, (typeof profileList)[number]>();
-  for (const p of profilesByEmpresa ?? []) {
+  for (const p of profileList) {
     if (!p.empresa_id) continue;
     if (!profileByEmp.has(p.empresa_id)) profileByEmp.set(p.empresa_id, p);
-  }
-  for (const e of empresas) {
-    if (!e.owner_id) continue;
-    const ownerProf = profileByUserId.get(e.owner_id);
-    if (ownerProf) profileByEmp.set(e.id, ownerProf);
   }
 
   type PagamentoInfo = { valor_centavos: number; ciclo: "mensal" | "anual"; pago_em: string };
@@ -242,7 +238,8 @@ export async function fetchTenantsPlataforma(
 
   return empresas.map((e) => {
     const prof = profileByEmp.get(e.id);
-    const cliente_real = Boolean(e.owner_id && prof);
+    // Cliente real = perfil com empresa_id apontando pra esta linha (não só owner_id).
+    const cliente_real = Boolean(prof && prof.empresa_id === e.id);
     const nichos = resolveNichosAtivos(
       nichosByEmp.get(e.id) ?? null,
       e.nicho as Nicho | null

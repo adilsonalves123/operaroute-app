@@ -246,33 +246,76 @@ export async function POST(request: Request) {
       possui_funcionarios: Boolean(possui_funcionarios),
     });
 
-    const insertPayload: Record<string, unknown> = {
-      owner_id: user.id,
-      nome_operacao,
-      nicho: nichoPrincipal,
-      quantidade_pontos: faixa,
-      possui_funcionarios: Boolean(possui_funcionarios),
-      objetivo_principal,
-      plano: slugFromFaixa(faixa),
-      limite_pontos: limitePontos,
-      limite_usuarios: 10,
-      pesquisa_onboarding: pesquisa,
-    };
-
-    let { error: insertError } = await supabase
-      .from("empresas")
-      .insert(insertPayload);
-
-    if (insertError && /pesquisa_onboarding|schema cache/i.test(insertError.message)) {
-      delete insertPayload.pesquisa_onboarding;
-      ({ error: insertError } = await supabase.from("empresas").insert(insertPayload));
+    // Reusa empresa já criada em retries (evita BB/R/dil × N no CRM do dono).
+    let empresaIdReuse: string | null = null;
+    {
+      const { data: jaTem } = await supabase
+        .from("empresas")
+        .select("id")
+        .eq("owner_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      empresaIdReuse = jaTem?.id ?? null;
     }
 
-    if (insertError) {
-      return NextResponse.json(
-        { error: `Erro ao salvar empresa: ${insertError.message}` },
-        { status: 500 }
-      );
+    if (empresaIdReuse) {
+      const updatePayload: Record<string, unknown> = {
+        nome_operacao,
+        nicho: nichoPrincipal,
+        quantidade_pontos: faixa,
+        possui_funcionarios: Boolean(possui_funcionarios),
+        objetivo_principal,
+        plano: slugFromFaixa(faixa),
+        limite_pontos: limitePontos,
+        pesquisa_onboarding: pesquisa,
+      };
+      let { error: updErr } = await supabase
+        .from("empresas")
+        .update(updatePayload)
+        .eq("id", empresaIdReuse);
+      if (updErr && /pesquisa_onboarding|schema cache/i.test(updErr.message)) {
+        delete updatePayload.pesquisa_onboarding;
+        ({ error: updErr } = await supabase
+          .from("empresas")
+          .update(updatePayload)
+          .eq("id", empresaIdReuse));
+      }
+      if (updErr) {
+        return NextResponse.json(
+          { error: `Erro ao atualizar empresa: ${updErr.message}` },
+          { status: 500 }
+        );
+      }
+    } else {
+      const insertPayload: Record<string, unknown> = {
+        owner_id: user.id,
+        nome_operacao,
+        nicho: nichoPrincipal,
+        quantidade_pontos: faixa,
+        possui_funcionarios: Boolean(possui_funcionarios),
+        objetivo_principal,
+        plano: slugFromFaixa(faixa),
+        limite_pontos: limitePontos,
+        limite_usuarios: 10,
+        pesquisa_onboarding: pesquisa,
+      };
+
+      let { error: insertError } = await supabase
+        .from("empresas")
+        .insert(insertPayload);
+
+      if (insertError && /pesquisa_onboarding|schema cache/i.test(insertError.message)) {
+        delete insertPayload.pesquisa_onboarding;
+        ({ error: insertError } = await supabase.from("empresas").insert(insertPayload));
+      }
+
+      if (insertError) {
+        return NextResponse.json(
+          { error: `Erro ao salvar empresa: ${insertError.message}` },
+          { status: 500 }
+        );
+      }
     }
 
     const { data: empresa } = await supabase
