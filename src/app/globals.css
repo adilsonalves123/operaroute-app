@@ -2331,5 +2331,37 @@ html[data-app-theme="light"] .premium-desk-root .ponto-endereco-gps {
     box-shadow: 0 0 0 1px rgba(125, 211, 232, 0.35), 0 28px 70px rgba(125, 211, 232, 0.12);
   }
 }
+.lp-radar {
+  border-radius: 999px;
+  opacity: 0.55;
+}
+.lp-radar-ring {
+  position: absolute;
+  inset: 18%;
+  border-radius: 999px;
+  border: 1px solid rgba(125, 211, 232, 0.12);
+}
+.lp-radar-ring-2 {
+  inset: 32%;
+  border-color: rgba(125, 211, 232, 0.08);
+}
+.lp-radar-sweep {
+  position: absolute;
+  inset: 10%;
+  border-radius: 999px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(125, 211, 232, 0.12) 40deg,
+    transparent 70deg
+  );
+  animation: lp-sweep 9s linear infinite;
+  mask-image: radial-gradient(circle, transparent 35%, black 36%);
+}
+@keyframes lp-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 

@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import { LandingPage } from "@/components/marketing/LandingPage";
 
 export const metadata: Metadata = {
-  title: "OperaRoute — Controle total da sua operação",
+  title: "OperaRoute — Controle de cassino, fura-fura e nichos",
   description:
-    "Organize pontos, coletas e rotas no celular. Menos retrabalho, mais arrecadação. 7 dias grátis.",
+    "Leitura de máquinas, coletas, negativos e financeiro no celular. Cassino, fura-fura, ursinho e mais. 7 dias grátis.",
   openGraph: {
-    title: "OperaRoute — Sua rota rende mais",
+    title: "OperaRoute — Cada leitura no painel. Cada centavo no lugar.",
     description:
-      "Gestão operacional para quem vive de ponto: coletas, rotas e financeiro no mesmo sinal.",
+      "App de operação para quem vive de máquina em ponto: leituras, coletas e fechamento sem planilha.",
   },
 };
 
