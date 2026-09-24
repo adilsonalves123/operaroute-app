@@ -137,8 +137,9 @@ export async function middleware(request: NextRequest) {
       return loginWithNext(request);
     }
 
+    // Visitante: home = landing pública (não manda direto pro login)
     if (pathname === "/" && !user) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return supabaseResponse;
     }
 
     if (user && routeNeedsProfileCheck(pathname, isPublic, isAuthRoute)) {
