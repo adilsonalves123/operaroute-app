@@ -52,10 +52,10 @@ GRANT ALL ON plataforma_config TO service_role;
 INSERT INTO plataforma_planos_catalogo
   (id, nome, descricao, destaque, ativo, ordem, faixa, limite_pontos, max_nichos, preco_mensal, updated_at)
 VALUES
-  ('start', 'Start', 'Operação enxuta — até 10 pontos e 1 nicho.', false, true, 1, '1-10', 10, 1, 99.90, NOW()),
-  ('growth', 'Growth', 'Crescimento — até 50 pontos e 3 nichos.', true, true, 2, '11-50', 50, 3, 259.90, NOW()),
-  ('pro', 'Pro', 'Escala — até 100 pontos e 6 nichos.', false, true, 3, '51-100', 100, 6, 349.90, NOW()),
-  ('elite', 'Elite', 'Grande operação — 100+ pontos e até 6 nichos.', false, true, 4, '100+', 9999, 6, 399.90, NOW())
+  ('start', 'Start', 'De 1 a 10 pontos, até 10 equipamentos, painel simples.', false, true, 1, '1-10', 10, 1, 99.90, NOW()),
+  ('growth', 'Growth', 'De 11 a 50 pontos, até 50 equipamentos, operação em crescimento.', true, true, 2, '11-50', 50, 3, 259.90, NOW()),
+  ('pro', 'Pro', 'De 51 a 100 pontos, escala com Inteligência Artificial.', false, true, 3, '51-100', 100, 6, 499.00, NOW()),
+  ('elite', 'Elite', 'Pontos e nichos ilimitados — o plano mais completo.', false, true, 4, '100+', 9999, 6, 799.00, NOW())
 ON CONFLICT (id) DO UPDATE SET
   nome = EXCLUDED.nome,
   descricao = EXCLUDED.descricao,
