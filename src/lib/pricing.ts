@@ -63,13 +63,14 @@ export const PLANOS_PADRAO: PlanoDefinicao[] = [
     id: "51-100",
     slug: "pro",
     nome: "Pro",
-    descricao: "De 51 a 100 pontos, escala com Inteligência Artificial.",
+    descricao:
+      "De 51 a 100 pontos. Com IA: tire foto do painel — o app lê e preenche os números sozinho.",
     beneficios: [
-      "De 51 a 100 pontos",
+      "Até 100 pontos",
       "Até 100 equipamentos",
       "Até 6 nichos na rota",
-      "Inteligência Artificial liberada",
-      "Análise e insights da operação",
+      "IA: leitura só com foto — sem digitar os números",
+      "IA identifica o visor e preenche a coleta automaticamente",
     ],
     incluiIa: true,
     labelPontos: "51–100 pontos",
@@ -81,12 +82,14 @@ export const PLANOS_PADRAO: PlanoDefinicao[] = [
     id: "100+",
     slug: "elite",
     nome: "Elite",
-    descricao: "Pontos e nichos ilimitados — o plano mais completo.",
+    descricao:
+      "Pontos e nichos ilimitados. IA lê o painel pela foto e preenche os números sozinha.",
     beneficios: [
       "Pontos ilimitados",
       "Equipamentos ilimitados",
       "Todos os nichos que quiser",
-      "Inteligência Artificial liberada",
+      "IA: leitura só com foto — sem digitar os números",
+      "IA identifica o visor e preenche a coleta automaticamente",
       "Prioridade no suporte",
     ],
     incluiIa: true,
@@ -141,10 +144,8 @@ export function montarBeneficiosPlano(
   }
 
   if (planoIncluiIa(plano)) {
-    itens.push("Inteligência Artificial liberada");
-    if (plano.slug === "pro" || plano.slug === "elite") {
-      itens.push("Análise e insights da operação");
-    }
+    itens.push("IA: leitura só com foto — sem digitar os números");
+    itens.push("IA identifica o visor e preenche a coleta automaticamente");
   } else if (plano.slug === "start") {
     itens.push("Painel simples e direto");
     itens.push("Coletas, pendências e fechamento");

@@ -378,6 +378,16 @@ export function PlanosCalculator({
                   {plano.descricao ||
                     `${pontosLabel} · ${nichosLabel}`}
                 </p>
+                {comIa ? (
+                  <p className="mt-3 max-w-lg rounded-xl border border-cyan-400/20 bg-cyan-500/10 px-3.5 py-3 text-[13px] leading-relaxed text-cyan-100/90">
+                    Com a Inteligência Artificial você faz a{" "}
+                    <strong className="font-semibold text-white">
+                      leitura das máquinas só com fotos
+                    </strong>
+                    : não precisa digitar os números — a IA identifica o painel e
+                    preenche automaticamente na coleta.
+                  </p>
+                ) : null}
                 <div className="mt-4 inline-flex rounded-xl border border-white/10 bg-slate-900/40 p-1 backdrop-blur-md">
                   {(
                     [
