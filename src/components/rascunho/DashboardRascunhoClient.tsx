@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Instrument_Serif, Outfit } from "next/font/google";
 import { CalendarDays, Copy, Eraser, Link2, Loader2, MessageCircle, Pencil, Plus, Share2, Trash2 } from "lucide-react";
 import {
@@ -307,6 +308,12 @@ export function DashboardRascunhoClient({
   const [carregandoDia, setCarregandoDia] = useState(false);
   const [puxouDia, setPuxouDia] = useState(false);
   const [compartilhandoLink, setCompartilhandoLink] = useState(false);
+  const [portalPronto, setPortalPronto] = useState(false);
+
+  useEffect(() => {
+    setPortalPronto(true);
+  }, []);
+
   const [linkCompartilhamento, setLinkCompartilhamento] = useState<string | null>(null);
   const [operadoresSel, setOperadoresSel] = useState<string[]>([]);
   const [publicando, setPublicando] = useState(false);
@@ -1137,30 +1144,37 @@ export function DashboardRascunhoClient({
               ) : null}
             </section>
 
-            <div className="fixed inset-x-0 bottom-16 z-30 border-t border-[#c4a574]/20 bg-[#f6f1e8]/95 px-4 py-3 backdrop-blur-md lg:bottom-0">
-              <div className="mx-auto flex max-w-2xl flex-col gap-2 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={() => {
-                    adicionarDivida();
-                    document
-                      .getElementById("rascunho-dividas")
-                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  }}
-                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#c4a574] bg-white px-4 py-3 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:bg-[#c4a574]/15"
-                >
-                  <Plus className="h-4 w-4" />
-                  Adicionar dívidas
-                </button>
-                <button
-                  type="button"
-                  onClick={salvar}
-                  className="flex w-full items-center justify-center rounded-lg bg-[#c4a574] px-4 py-3.5 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:brightness-110"
-                >
-                  Salvar para manter
-                </button>
-              </div>
-            </div>
+            {portalPronto
+              ? createPortal(
+                  <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[45] px-3 lg:px-6">
+                    <div className="pointer-events-auto mx-auto mb-[calc(4rem+env(safe-area-inset-bottom,0px))] max-w-2xl rounded-2xl border border-[#c4a574]/35 bg-[#f6f1e8]/97 px-3 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md lg:mb-4">
+                      <div className="flex flex-col gap-2 sm:flex-row">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            adicionarDivida();
+                            document
+                              .getElementById("rascunho-dividas")
+                              ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                          }}
+                          className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#c4a574] bg-white px-4 py-3 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:bg-[#c4a574]/15"
+                        >
+                          <Plus className="h-4 w-4" />
+                          Adicionar dívidas
+                        </button>
+                        <button
+                          type="button"
+                          onClick={salvar}
+                          className="flex w-full items-center justify-center rounded-lg bg-[#c4a574] px-4 py-3.5 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:brightness-110"
+                        >
+                          Salvar para manter
+                        </button>
+                      </div>
+                    </div>
+                  </div>,
+                  document.body
+                )
+              : null}
           </>
         ) : (
           <div
