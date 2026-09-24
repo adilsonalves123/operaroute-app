@@ -9,6 +9,10 @@ export type PlanoDefinicao = {
   slug: "start" | "growth" | "pro" | "elite";
   nome: string;
   descricao: string;
+  /** Bullets exibidos na página /planos (só UI). */
+  beneficios: string[];
+  /** Planos a partir de R$ 499 — Inteligência Artificial. */
+  incluiIa: boolean;
   labelPontos: string;
   limitePontos: number;
   maxNichos: number;
@@ -22,7 +26,15 @@ export const PLANOS_PADRAO: PlanoDefinicao[] = [
     id: "1-10",
     slug: "start",
     nome: "Start",
-    descricao: "Operação enxuta — até 10 pontos e 1 nicho.",
+    descricao: "De 1 a 10 pontos, até 10 equipamentos, painel simples.",
+    beneficios: [
+      "De 1 a 10 pontos",
+      "Até 10 equipamentos",
+      "Até 1 nicho na rota",
+      "Painel simples e direto",
+      "Coletas, pendências e fechamento",
+    ],
+    incluiIa: false,
     labelPontos: "1–10 pontos",
     limitePontos: 10,
     maxNichos: 1,
@@ -32,7 +44,15 @@ export const PLANOS_PADRAO: PlanoDefinicao[] = [
     id: "11-50",
     slug: "growth",
     nome: "Growth",
-    descricao: "Crescimento — até 50 pontos e 3 nichos.",
+    descricao: "De 11 a 50 pontos, até 50 equipamentos, operação em crescimento.",
+    beneficios: [
+      "De 11 a 50 pontos",
+      "Até 50 equipamentos",
+      "Até 3 nichos na rota",
+      "Painel completo da operação",
+      "Equipe e visão por operador",
+    ],
+    incluiIa: false,
     labelPontos: "11–50 pontos",
     limitePontos: 50,
     maxNichos: 3,
@@ -43,23 +63,44 @@ export const PLANOS_PADRAO: PlanoDefinicao[] = [
     id: "51-100",
     slug: "pro",
     nome: "Pro",
-    descricao: "Escala — até 100 pontos e 6 nichos.",
+    descricao: "De 51 a 100 pontos, escala com Inteligência Artificial.",
+    beneficios: [
+      "De 51 a 100 pontos",
+      "Até 100 equipamentos",
+      "Até 6 nichos na rota",
+      "Inteligência Artificial liberada",
+      "Análise e insights da operação",
+    ],
+    incluiIa: true,
     labelPontos: "51–100 pontos",
     limitePontos: 100,
     maxNichos: 6,
-    precoMensal: 349.9,
+    precoMensal: 499,
   },
   {
     id: "100+",
     slug: "elite",
     nome: "Elite",
-    descricao: "Grande operação — 100+ pontos e até 6 nichos.",
-    labelPontos: "100+ pontos",
+    descricao: "Pontos e nichos ilimitados — o plano mais completo.",
+    beneficios: [
+      "Pontos ilimitados",
+      "Equipamentos ilimitados",
+      "Todos os nichos que quiser",
+      "Inteligência Artificial liberada",
+      "Prioridade no suporte",
+    ],
+    incluiIa: true,
+    labelPontos: "Ilimitado",
     limitePontos: 9999,
     maxNichos: 6,
-    precoMensal: 399.9,
+    precoMensal: 799,
   },
 ];
+
+/** IA liberada em planos a partir de R$ 499 (ou flag do catálogo). */
+export function planoIncluiIa(plano: PlanoDefinicao): boolean {
+  return Boolean(plano.incluiIa) || plano.precoMensal >= 499;
+}
 
 /** @deprecated use PLANOS_PADRAO — compat com UI antiga */
 export const FAIXAS_PONTOS = PLANOS_PADRAO.map((p) => ({

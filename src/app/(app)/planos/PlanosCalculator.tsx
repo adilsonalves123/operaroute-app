@@ -13,6 +13,7 @@ import {
   MULTIPLICADOR_ANUAL_PADRAO,
   NICHOS_PAGOS,
   PLANOS_PADRAO,
+  planoIncluiIa,
   type FaixaPontos,
   type PlanoDefinicao,
 } from "@/lib/pricing";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { useNichoCatalog } from "@/hooks/useNichoCovers";
 import { mensagemNichosTravados } from "@/lib/nichos/nicho-travado";
 import Link from "next/link";
+import { Check, Sparkles } from "lucide-react";
 
 type Props = {
   initialFaixa: FaixaPontos;
@@ -239,6 +241,20 @@ export function PlanosCalculator({
         }) + "/ano"
       : formatPreco(precoMensal);
 
+  const beneficios =
+    plano.beneficios?.length > 0
+      ? plano.beneficios
+      : PLANOS_PADRAO.find((p) => p.id === plano.id)?.beneficios ?? [];
+  const comIa = planoIncluiIa(plano);
+  const nichosLabel =
+    plano.slug === "elite" || plano.maxNichos >= NICHOS_PAGOS.length
+      ? "nichos ilimitados"
+      : `até ${plano.maxNichos} nicho${plano.maxNichos === 1 ? "" : "s"}`;
+  const pontosLabel =
+    plano.limitePontos >= 9999
+      ? "pontos ilimitados"
+      : `até ${plano.limitePontos} pontos`;
+
   return (
     <>
       <div
@@ -247,6 +263,15 @@ export function PlanosCalculator({
           fontFamily: "var(--font-planos-sans), system-ui, sans-serif",
         }}
       >
+        <div
+          className="pointer-events-none absolute -left-16 top-0 h-64 w-64 rounded-full bg-[#4FACFE]/10 blur-[100px]"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute -right-10 top-32 h-56 w-56 rounded-full bg-[#7F00FF]/10 blur-[90px]"
+          aria-hidden
+        />
+
         <header className="relative z-[1] max-w-2xl pt-4 sm:pt-6">
           <p
             className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#c9a87c]"
@@ -255,14 +280,14 @@ export function PlanosCalculator({
             Capacidade da operação
           </p>
           <h1
-            className="mt-3 text-[clamp(1.85rem,4.5vw,2.75rem)] font-medium leading-[0.95] tracking-[-0.04em] text-[#f4f7fb]"
+            className="mt-3 bg-gradient-to-r from-white via-slate-100 to-slate-400 bg-clip-text text-[clamp(1.85rem,4.5vw,2.75rem)] font-bold leading-[0.95] tracking-tight text-transparent"
             style={{ fontFamily: "var(--font-planos-display), system-ui, sans-serif" }}
           >
             Quanto a operação aguenta?
           </h1>
           <p className="mt-3 max-w-md text-[14px] leading-relaxed text-at-muted">
-            Deslize a régua pela quantidade de pontos. Depois marque os nichos
-            e assine pelo Mercado Pago.
+            Deslize a régua pela quantidade de pontos. Veja o que entra em cada
+            plano, marque os nichos e assine pelo Mercado Pago.
           </p>
         </header>
 
@@ -290,12 +315,14 @@ export function PlanosCalculator({
                     onClick={() => escolherPlano(p.id)}
                     className={cn(
                       "group flex flex-col items-center rounded-xl px-1 py-3 text-center transition duration-300 sm:px-2",
-                      selected ? "bg-at-card-soft" : "hover:bg-white/[0.02]"
+                      selected
+                        ? "border border-cyan-400/25 bg-slate-900/50 shadow-[0_0_24px_rgba(0,242,254,0.08)] backdrop-blur-md"
+                        : "hover:bg-white/[0.02]"
                     )}
                   >
                     <span
                       className={cn(
-                        "text-[13px] font-medium tracking-tight transition sm:text-[15px]",
+                        "text-[13px] font-semibold tracking-tight transition sm:text-[15px]",
                         selected
                           ? "text-[#f4f7fb]"
                           : "text-at-muted group-hover:text-at-primary/85"
@@ -315,6 +342,12 @@ export function PlanosCalculator({
                     >
                       {p.labelPontos}
                     </span>
+                    {planoIncluiIa(p) ? (
+                      <span className="mt-1.5 inline-flex items-center gap-0.5 rounded-full bg-cyan-500/15 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-cyan-200">
+                        <Sparkles className="h-2.5 w-2.5" />
+                        IA
+                      </span>
+                    ) : null}
                   </button>
                 );
               })}
@@ -323,74 +356,96 @@ export function PlanosCalculator({
 
           <div
             key={priceKey}
-            className="planos-price-in mt-8 flex flex-wrap items-end justify-between gap-4 border-t border-at pt-6"
+            className="planos-price-in mt-8 space-y-5 border-t border-at pt-6"
           >
-            <div>
-              <p
-                className="text-[clamp(1.75rem,3vw,2.25rem)] font-medium tracking-[-0.03em] text-[#f4f7fb]"
-                style={{
-                  fontFamily: "var(--font-planos-display), system-ui, sans-serif",
-                }}
-              >
-                {plano.nome}
-              </p>
-              <p className="mt-1 text-[13px] text-at-muted">
-                Até{" "}
-                {plano.limitePontos >= 9999 ? "ilimitados" : plano.limitePontos}{" "}
-                pontos · até {plano.maxNichos} nicho
-                {plano.maxNichos === 1 ? "" : "s"}
-              </p>
-              <div className="mt-4 inline-flex rounded-xl border border-at-soft bg-white/[0.02] p-1">
-                {(
-                  [
-                    { id: "mensal" as const, label: "Mensal" },
-                    { id: "anual" as const, label: "Anual" },
-                  ] as const
-                ).map((opt) => (
-                  <button
-                    key={opt.id}
-                    type="button"
-                    onClick={() => {
-                      setCiclo(opt.id);
-                      setPriceKey((k) => k + 1);
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p
+                    className="text-[clamp(1.75rem,3vw,2.25rem)] font-bold tracking-tight text-[#f4f7fb]"
+                    style={{
+                      fontFamily: "var(--font-planos-display), system-ui, sans-serif",
                     }}
-                    className={cn(
-                      "rounded-lg px-3 py-1.5 text-[12px] font-medium transition",
-                      ciclo === opt.id
-                        ? "bg-[#c9a87c]/20 text-at-link"
-                        : "text-at-muted hover:text-at-primary/85"
-                    )}
                   >
-                    {opt.label}
-                  </button>
-                ))}
+                    {plano.nome}
+                  </p>
+                  {comIa ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-cyan-200">
+                      <Sparkles className="h-3 w-3" />
+                      Inteligência Artificial
+                    </span>
+                  ) : null}
+                </div>
+                <p className="mt-1 max-w-md text-[13px] leading-relaxed text-at-muted">
+                  {plano.descricao ||
+                    `${pontosLabel} · ${nichosLabel}`}
+                </p>
+                <div className="mt-4 inline-flex rounded-xl border border-white/10 bg-slate-900/40 p-1 backdrop-blur-md">
+                  {(
+                    [
+                      { id: "mensal" as const, label: "Mensal" },
+                      { id: "anual" as const, label: "Anual" },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => {
+                        setCiclo(opt.id);
+                        setPriceKey((k) => k + 1);
+                      }}
+                      className={cn(
+                        "rounded-lg px-3 py-1.5 text-[12px] font-medium transition",
+                        ciclo === opt.id
+                          ? "bg-[#c9a87c]/20 text-at-link"
+                          : "text-at-muted hover:text-at-primary/85"
+                      )}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="text-right">
+                <p
+                  className="text-[clamp(1.5rem,3vw,2rem)] font-bold tracking-tight text-[#7dd3e8]"
+                  style={{
+                    fontFamily: "var(--font-planos-display), system-ui, sans-serif",
+                  }}
+                >
+                  {precoLabel}
+                </p>
+                {ciclo === "mensal" && precoAnual != null && (
+                  <p className="mt-0.5 text-[12px] text-at-muted">
+                    Anual{" "}
+                    {precoAnual.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    })}{" "}
+                    ({multAnual}×)
+                  </p>
+                )}
+                {ciclo === "anual" && (
+                  <p className="mt-0.5 text-[12px] text-at-muted">
+                    Equiv. {formatPreco(precoMensal)}
+                  </p>
+                )}
               </div>
             </div>
-            <div className="text-right">
-              <p
-                className="text-[clamp(1.5rem,3vw,2rem)] font-medium tracking-tight text-[#7dd3e8]"
-                style={{
-                  fontFamily: "var(--font-planos-display), system-ui, sans-serif",
-                }}
-              >
-                {precoLabel}
-              </p>
-              {ciclo === "mensal" && precoAnual != null && (
-                <p className="mt-0.5 text-[12px] text-at-muted">
-                  Anual{" "}
-                  {precoAnual.toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL",
-                  })}{" "}
-                  ({multAnual}×)
-                </p>
-              )}
-              {ciclo === "anual" && (
-                <p className="mt-0.5 text-[12px] text-at-muted">
-                  Equiv. {formatPreco(precoMensal)}
-                </p>
-              )}
-            </div>
+
+            <ul className="grid gap-2 rounded-2xl border border-white/10 bg-slate-900/50 p-4 backdrop-blur-xl sm:grid-cols-2">
+              {beneficios.map((b) => (
+                <li
+                  key={b}
+                  className="flex items-start gap-2.5 text-[13px] leading-snug text-slate-200"
+                >
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-300">
+                    <Check className="h-3 w-3" strokeWidth={2.5} />
+                  </span>
+                  {b}
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
@@ -403,7 +458,11 @@ export function PlanosCalculator({
             confirmBeforeSelect
             onLockedAttempt={(nicho) => setError(mensagemNichosTravados([nicho]))}
             title="Nichos na rota"
-            subtitle={`${nichosPagos.length} de ${plano.maxNichos} no ${plano.nome} — toque para marcar (definitivo)`}
+            subtitle={
+              plano.slug === "elite"
+                ? `${nichosPagos.length} marcados no Elite — toque para marcar (definitivo)`
+                : `${nichosPagos.length} de ${plano.maxNichos} no ${plano.nome} — toque para marcar (definitivo)`
+            }
           />
           {nichosTravados.length > 0 && (
             <p className="mt-2 text-[12px] text-at-muted">
@@ -414,7 +473,7 @@ export function PlanosCalculator({
               .
             </p>
           )}
-          {nichosPagos.length >= plano.maxNichos && (
+          {nichosPagos.length >= plano.maxNichos && plano.slug !== "elite" && (
             <p className="mt-3 text-[12px] text-[#c9a87c]/90">
               Limite do {plano.nome}. Para mais nichos, avance a régua.
             </p>
@@ -424,7 +483,7 @@ export function PlanosCalculator({
 
       <div className="pointer-events-none fixed inset-x-0 bottom-[4.75rem] z-40 pb-[env(safe-area-inset-bottom)] lg:bottom-4">
         <div className="pointer-events-auto mx-auto max-w-3xl px-4 lg:px-6">
-          <div className="planos-sticky-bar flex flex-col gap-2 rounded-2xl border border-at-soft bg-[#0c1220]/92 px-4 py-3 shadow-[0_-8px_40px_rgba(0,0,0,0.45)] backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+          <div className="planos-sticky-bar flex flex-col gap-2 rounded-2xl border border-white/10 bg-slate-950/90 px-4 py-3 shadow-[0_-8px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between sm:gap-4">
             <div className="min-w-0">
               {error && (
                 <p className="mb-1 text-[12px] text-red-400" role="alert">
@@ -441,7 +500,7 @@ export function PlanosCalculator({
                 className="planos-price-in flex flex-wrap items-baseline gap-x-3 gap-y-0.5"
               >
                 <span
-                  className="text-lg font-medium text-[#f4f7fb]"
+                  className="text-lg font-semibold text-[#f4f7fb]"
                   style={{
                     fontFamily:
                       "var(--font-planos-display), system-ui, sans-serif",
@@ -450,8 +509,9 @@ export function PlanosCalculator({
                   {precoLabel}
                 </span>
                 <span className="text-[12px] text-at-muted">
-                  {plano.nome} · {ciclo} · {nichosPagos.length}/{plano.maxNichos}{" "}
-                  nichos
+                  {plano.nome} · {ciclo} · {nichosPagos.length}/
+                  {plano.slug === "elite" ? "∞" : plano.maxNichos} nichos
+                  {comIa ? " · IA" : ""}
                 </span>
               </div>
             </div>
@@ -461,7 +521,7 @@ export function PlanosCalculator({
                   type="button"
                   onClick={() => void handleSalvarConfig()}
                   disabled={loading || nichosPagos.length === 0}
-                  className="rounded-xl border border-at-soft px-4 py-2.5 text-[12px] font-medium text-at-primary/85 transition hover:bg-at-card-soft disabled:opacity-50"
+                  className="rounded-xl border border-white/10 px-4 py-2.5 text-[12px] font-medium text-at-primary/85 transition hover:bg-white/[0.04] disabled:opacity-50"
                 >
                   Só salvar nichos
                 </button>
@@ -470,7 +530,7 @@ export function PlanosCalculator({
                 type="button"
                 onClick={() => void handleAssinar()}
                 disabled={loading || nichosPagos.length === 0}
-                className="rounded-xl bg-[#7dd3e8] px-5 py-2.5 text-[13px] font-semibold text-[#0a0e1a] transition hover:brightness-110 disabled:opacity-50"
+                className="rounded-xl bg-gradient-to-r from-[#4FACFE] to-[#00F2FE] px-5 py-2.5 text-[13px] font-semibold text-[#0a0e1a] shadow-[0_0_24px_rgba(0,242,254,0.25)] transition hover:brightness-110 disabled:opacity-50"
               >
                 {loading
                   ? "Abrindo Mercado Pago…"

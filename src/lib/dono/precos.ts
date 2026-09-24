@@ -35,6 +35,8 @@ function rowToPlano(row: {
     slug,
     nome: row.nome || padrao?.nome || slug,
     descricao: row.descricao ?? padrao?.descricao ?? "",
+    beneficios: padrao?.beneficios ?? [],
+    incluiIa: padrao?.incluiIa ?? Number(row.preco_mensal ?? 0) >= 499,
     labelPontos: padrao?.labelPontos ?? faixa,
     limitePontos: Number(row.limite_pontos ?? padrao?.limitePontos ?? 10),
     maxNichos: Number(row.max_nichos ?? padrao?.maxNichos ?? 1),
