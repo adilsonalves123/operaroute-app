@@ -2339,11 +2339,34 @@ html[data-app-theme="light"] .premium-desk-root .ponto-endereco-gps {
 }
 @keyframes lp-glow {
   from {
-    box-shadow: 0 0 0 1px rgba(196, 165, 116, 0.2), 0 24px 60px rgba(0, 0, 0, 0.55);
+    box-shadow:
+      0 0 0 1px rgba(0, 242, 254, 0.22),
+      0 24px 60px rgba(0, 0, 0, 0.55),
+      0 0 40px rgba(79, 172, 254, 0.12);
   }
   to {
-    box-shadow: 0 0 0 1px rgba(126, 184, 212, 0.35), 0 28px 70px rgba(196, 165, 116, 0.18);
+    box-shadow:
+      0 0 0 1px rgba(127, 0, 255, 0.28),
+      0 28px 70px rgba(0, 0, 0, 0.5),
+      0 0 56px rgba(0, 242, 254, 0.2);
   }
+}
+/* CTA neon glow */
+.lp-v2 .lp-cta {
+  box-shadow:
+    0 0 0 1px rgba(0, 242, 254, 0.15),
+    0 0 28px rgba(0, 242, 254, 0.25),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.lp-v2 .lp-cta:hover {
+  box-shadow:
+    0 0 0 1px rgba(0, 242, 254, 0.35),
+    0 0 40px rgba(0, 242, 254, 0.45),
+    0 0 72px rgba(79, 172, 254, 0.28),
+    0 12px 28px rgba(0, 0, 0, 0.4);
+}
+.lp-v2 .lp-icon-glow {
+  filter: drop-shadow(0 0 6px rgba(0, 242, 254, 0.55));
 }
 .lp-radar {
   border-radius: 999px;
