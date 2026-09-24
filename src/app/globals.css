@@ -2277,12 +2277,23 @@ html[data-app-theme="light"] .premium-desk-root .ponto-endereco-gps {
 }
 
 /* —— Landing pública (/) —— */
-.lp-root .lp-grid {
+.lp-root .lp-grid,
+.lp-v2 .lp-v2-waves {
   background-image:
     linear-gradient(rgba(125, 211, 232, 0.04) 1px, transparent 1px),
     linear-gradient(90deg, rgba(125, 211, 232, 0.04) 1px, transparent 1px);
   background-size: 48px 48px;
   mask-image: radial-gradient(ellipse 80% 60% at 50% 20%, black, transparent);
+}
+.lp-v2 .lp-v2-waves {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800' viewBox='0 0 1200 800' fill='none'%3E%3Cpath d='M0 400 Q150 300 300 400 T600 400 T900 400 T1200 400' stroke='%237eb8d4' stroke-opacity='0.15' stroke-width='1.2'/%3E%3Cpath d='M0 460 Q150 360 300 460 T600 460 T900 460 T1200 460' stroke='%23c4a574' stroke-opacity='0.12' stroke-width='1'/%3E%3Cpath d='M0 340 Q180 260 360 340 T720 340 T1080 340 T1200 320' stroke='%237eb8d4' stroke-opacity='0.1' stroke-width='1'/%3E%3Cpath d='M0 520 Q200 440 400 520 T800 520 T1200 500' stroke='%23c4a574' stroke-opacity='0.08' stroke-width='1'/%3E%3C/svg%3E");
+  background-size: cover;
+  background-position: center top;
+  mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+}
+.lp-v2-dots {
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.35) 1px, transparent 1.5px);
+  background-size: 14px 14px;
 }
 .lp-live-dot {
   display: inline-block;
@@ -2304,31 +2315,34 @@ html[data-app-theme="light"] .premium-desk-root .ponto-endereco-gps {
     box-shadow: 0 0 0 0 rgba(52, 211, 153, 0);
   }
 }
-.lp-fade-up {
-  animation: lp-rise 0.7s ease-out both;
+.lp-fade-up,
+.lp-v2 .lp-fade-up {
+  animation: lp-rise 0.75s ease-out both;
 }
-.lp-fade-up-delay {
-  animation: lp-rise 0.85s ease-out 0.12s both;
+.lp-fade-up-delay,
+.lp-v2 .lp-fade-up-delay {
+  animation: lp-rise 0.9s ease-out 0.14s both;
 }
 @keyframes lp-rise {
   from {
     opacity: 0;
-    transform: translateY(18px);
+    transform: translateY(22px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
-.lp-phone-screen {
+.lp-phone-screen,
+.lp-phone-glow {
   animation: lp-glow 4s ease-in-out infinite alternate;
 }
 @keyframes lp-glow {
   from {
-    box-shadow: 0 0 0 1px rgba(125, 211, 232, 0.15), 0 24px 60px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 0 0 1px rgba(196, 165, 116, 0.2), 0 24px 60px rgba(0, 0, 0, 0.55);
   }
   to {
-    box-shadow: 0 0 0 1px rgba(125, 211, 232, 0.35), 0 28px 70px rgba(125, 211, 232, 0.12);
+    box-shadow: 0 0 0 1px rgba(126, 184, 212, 0.35), 0 28px 70px rgba(196, 165, 116, 0.18);
   }
 }
 .lp-radar {
@@ -2361,6 +2375,30 @@ html[data-app-theme="light"] .premium-desk-root .ponto-endereco-gps {
 @keyframes lp-sweep {
   to {
     transform: rotate(360deg);
+  }
+}
+.lp-marquee {
+  animation: lp-marquee 28s linear infinite;
+  width: max-content;
+}
+@keyframes lp-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-33.333%);
+  }
+}
+.lp-print-card {
+  animation: lp-rise 0.8s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lp-fade-up,
+  .lp-fade-up-delay,
+  .lp-marquee,
+  .lp-phone-glow,
+  .lp-print-card {
+    animation: none !important;
   }
 }
 

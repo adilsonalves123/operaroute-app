@@ -3,37 +3,35 @@
 import { useState } from "react";
 import Link from "next/link";
 import {
+  Activity,
+  AlertTriangle,
   ArrowRight,
   Camera,
   Check,
-  Gauge,
-  Layers,
   MapPin,
-  ScanLine,
-  Users,
+  Package,
   Wallet,
   X,
 } from "lucide-react";
-import { Space_Grotesk, IBM_Plex_Sans } from "next/font/google";
+import { Instrument_Serif, Outfit } from "next/font/google";
 import {
   PLANOS_PADRAO,
   calcPrecoAnual,
   MULTIPLICADOR_ANUAL_PADRAO,
 } from "@/lib/pricing";
 
-const display = Space_Grotesk({
+const display = Instrument_Serif({
+  weight: "400",
   subsets: ["latin"],
   variable: "--font-lp-display",
-  display: "swap",
 });
 
-const sans = IBM_Plex_Sans({
+const sans = Outfit({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
   variable: "--font-lp-sans",
-  display: "swap",
 });
 
+const GOLD = "#c4a574";
 const WHATSAPP =
   process.env.NEXT_PUBLIC_SUPORTE_WHATSAPP?.replace(/\D/g, "") || "5511999999999";
 
@@ -45,36 +43,13 @@ function formatBRL(n: number) {
   });
 }
 
-const NICHOS_SHOW = [
-  { name: "Cassino", hint: "Entrada · saída · comissão" },
-  { name: "Fura-fura", hint: "Furos · brindes · kits" },
-  { name: "Ursinho", hint: "Visor · estoque de prêmios" },
-  { name: "Bolinha", hint: "Cápsulas · jogada" },
-  { name: "Consignado", hint: "Expositor · recolha" },
-  { name: "Diversão", hint: "Entrada · lucro real" },
-] as const;
-
-const PILARES = [
-  {
-    icon: ScanLine,
-    title: "Leitura que fecha a máquina",
-    text: "Entrada e saída do painel, foto do visor, comissão e o que sobra pra você — tudo na visita.",
-  },
-  {
-    icon: Wallet,
-    title: "Negativo, haver e cobrança",
-    text: "O que o ponto deve e o que você deve ao ponto não some na conversa. Fica no histórico.",
-  },
-  {
-    icon: Layers,
-    title: "Vários nichos, um painel",
-    text: "Cassino, fura-fura, ursinho, bolinha, consignado… a operação inteira no mesmo lugar.",
-  },
-  {
-    icon: Users,
-    title: "Dono e equipe no campo",
-    text: "Operador coleta no celular. Você acompanha arrecadação, pendências e pontos em tempo real.",
-  },
+const NICHOS = [
+  "Cassino",
+  "Fura-fura",
+  "Ursinho",
+  "Bolinha",
+  "Consignado",
+  "Diversão",
 ] as const;
 
 export function LandingPage() {
@@ -82,405 +57,394 @@ export function LandingPage() {
 
   return (
     <div
-      className={`${display.variable} ${sans.variable} lp-root relative min-h-dvh overflow-x-hidden bg-[#060910] text-[#f4f7fb]`}
+      className={`${display.variable} ${sans.variable} lp-v2 relative min-h-dvh overflow-x-hidden bg-[#05070c] text-[#f4efe6]`}
       style={{ fontFamily: "var(--font-lp-sans), system-ui, sans-serif" }}
     >
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="lp-grid absolute inset-0 opacity-40" />
-        <div className="lp-radar absolute left-1/2 top-[8%] h-[70vw] max-h-[640px] w-[70vw] max-w-[640px] -translate-x-1/2">
-          <span className="lp-radar-ring" />
-          <span className="lp-radar-ring lp-radar-ring-2" />
-          <span className="lp-radar-sweep" />
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-[#060910] to-transparent" />
+      {/* atmosfera */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
+        <div className="lp-v2-waves absolute inset-0 opacity-70" />
+        <div className="absolute -right-20 top-24 h-[420px] w-[420px] rounded-full bg-[#c4a574]/10 blur-[100px]" />
+        <div className="absolute left-[-10%] top-[40%] h-[380px] w-[380px] rounded-full bg-[#1e3a5f]/35 blur-[90px]" />
+        <div className="lp-v2-dots absolute right-[8%] top-[18%] hidden h-48 w-36 opacity-40 lg:block" />
       </div>
 
-      <header className="relative z-20 mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="lp-live-dot" aria-hidden />
-          <span
-            className="text-[1.4rem] font-medium tracking-tight"
-            style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-          >
-            Opera<span className="text-[#7dd3e8]">Rout</span>
-          </span>
+      {/* NAV pill */}
+      <header className="relative z-30 mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5 sm:px-6">
+        <Link
+          href="/"
+          className="text-[1.35rem] tracking-tight"
+          style={{ fontFamily: "var(--font-lp-display), Georgia, serif", color: GOLD }}
+        >
+          OperaRout
         </Link>
-        <nav className="hidden items-center gap-7 text-[13px] text-[#8b93a3] md:flex">
-          <a href="#nichos" className="transition hover:text-white">
+        <nav className="hidden items-center rounded-full bg-gradient-to-r from-[#7eb8d4] via-[#a8d4e8] to-[#c4a574]/80 px-1 py-1 shadow-[0_0_30px_rgba(196,165,116,0.25)] md:flex">
+          <a
+            href="#prints"
+            className="rounded-full bg-[#0a0e16] px-4 py-1.5 text-[12px] font-semibold text-[#f4efe6]"
+          >
+            App
+          </a>
+          <a
+            href="#nichos"
+            className="rounded-full px-4 py-1.5 text-[12px] font-semibold text-[#0a0e16]/85 transition hover:bg-white/20"
+          >
             Nichos
           </a>
-          <a href="#leitura" className="transition hover:text-white">
-            Leitura
-          </a>
-          <a href="#planos" className="transition hover:text-white">
+          <a
+            href="#planos"
+            className="rounded-full px-4 py-1.5 text-[12px] font-semibold text-[#0a0e16]/85 transition hover:bg-white/20"
+          >
             Planos
           </a>
-          <Link href="/login" className="transition hover:text-white">
+          <Link
+            href="/login"
+            className="rounded-full px-4 py-1.5 text-[12px] font-semibold text-[#0a0e16]/85 transition hover:bg-white/20"
+          >
             Entrar
           </Link>
         </nav>
         <Link
           href="/cadastro"
-          className="rounded-sm bg-[#7dd3e8] px-3.5 py-2 text-[12px] font-semibold text-[#060910] transition hover:bg-[#9ae0ef]"
+          className="rounded-full border border-[#c4a574]/50 bg-[#c4a574]/15 px-4 py-2 text-[12px] font-semibold text-[#e8d5b0] transition hover:bg-[#c4a574]/25"
         >
           7 dias grátis
         </Link>
       </header>
 
-      {/* HERO — marca + uma promessa + mockup de leitura */}
-      <section className="relative z-10 mx-auto flex min-h-[calc(100dvh-4.5rem)] w-full max-w-6xl flex-col justify-center px-5 pb-16 pt-4 sm:px-8 lg:grid lg:grid-cols-[1.1fr_0.9fr] lg:items-center lg:gap-10 lg:pb-20">
-        <div className="lp-fade-up space-y-5 lg:space-y-6">
-          <p className="text-[10px] font-medium uppercase tracking-[0.3em] text-[#7dd3e8]/75">
-            Controle de operação · máquinas em pontos
-          </p>
+      {/* HERO — composição em camadas */}
+      <section className="relative z-10 mx-auto grid max-w-6xl items-center gap-8 px-4 pb-20 pt-6 sm:px-6 lg:grid-cols-[1fr_1.05fr] lg:gap-4 lg:pb-28 lg:pt-10">
+        <div className="lp-fade-up relative z-20 space-y-5">
+          <div className="inline-flex items-center rounded-full bg-gradient-to-r from-[#7eb8d4] to-[#c4a574] px-4 py-1.5 text-[11px] font-semibold tracking-wide text-[#0a0e16]">
+            Controle de máquinas em pontos
+          </div>
           <h1
-            className="max-w-[11ch] text-[clamp(2.85rem,8.5vw,5.2rem)] font-medium leading-[0.88] tracking-[-0.045em]"
-            style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
+            className="max-w-[12ch] text-[clamp(3rem,9vw,5.5rem)] leading-[0.9] tracking-[-0.02em]"
+            style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
           >
-            Opera
-            <span className="text-[#7dd3e8]">Rout</span>
+            <span className="italic text-[#7eb8d4]">Leitura</span>
+            <br />
+            <span className="text-white">que fecha</span>
+            <br />
+            <span className="italic text-[#c4a574]">o dia.</span>
           </h1>
-          <p
-            className="max-w-[22ch] text-[clamp(1.25rem,3vw,1.65rem)] font-medium leading-snug tracking-tight text-[#e8ecf2]"
-            style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-          >
-            Cada leitura no painel. Cada centavo no lugar.
-          </p>
-          <p className="max-w-md text-[14.5px] leading-relaxed text-[#8b93a3] sm:text-[15px]">
-            App pra quem opera cassino, fura-fura, ursinho e outros nichos: visita o ponto, lê a
-            máquina, fecha a coleta e sabe o que sobrou — sem caderno, sem “acha que”.
+          <p className="max-w-md text-[15px] leading-relaxed text-[#9aa3b2]">
+            OperaRoute é o comando da operação: cassino, fura-fura, ursinho e mais. Visita o
+            ponto, lê o painel, registra foto, cobra — e o negativo não some no WhatsApp.
           </p>
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <Link
               href="/cadastro"
-              className="group inline-flex items-center gap-2 rounded-sm bg-[#7dd3e8] px-5 py-3 text-[13px] font-semibold text-[#060910] transition hover:bg-[#9ae0ef]"
+              className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#7eb8d4] to-[#c4a574] px-6 py-3 text-[13px] font-bold text-[#0a0e16] shadow-[0_0_40px_rgba(126,184,212,0.35)] transition hover:brightness-110"
             >
               Testar grátis agora
               <ArrowRight className="h-4 w-4 transition group-hover:translate-x-0.5" />
             </Link>
             <a
-              href="#leitura"
-              className="inline-flex items-center rounded-sm border border-white/12 px-5 py-3 text-[13px] font-medium text-[#c9d0db] transition hover:border-[#7dd3e8]/35 hover:text-white"
+              href="#prints"
+              className="inline-flex items-center gap-1 rounded-full border border-white/15 px-5 py-3 text-[13px] font-medium text-[#c9d0db] transition hover:border-[#c4a574]/40"
             >
-              Ver como funciona
+              Ver telas do app
+              <span className="text-[#7eb8d4]">≫</span>
             </a>
           </div>
-          <p className="text-[11px] uppercase tracking-[0.14em] text-[#c9a87c]/90">
-            7 dias grátis · sem cartão
-          </p>
         </div>
 
-        <div className="lp-fade-up-delay relative mx-auto mt-12 w-full max-w-[360px] lg:mt-0 lg:max-w-none">
-          <LeituraMockup />
-        </div>
-      </section>
-
-      {/* NICHOS */}
-      <section id="nichos" className="relative z-10 border-y border-white/[0.06] bg-[#080d16]/90">
-        <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#c9a87c]/85">
-                Feito pro seu tipo de máquina
-              </p>
-              <h2
-                className="mt-2 text-[clamp(1.5rem,3.5vw,2.1rem)] font-medium tracking-tight"
-                style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-              >
-                Nichos que o app já entende
-              </h2>
-            </div>
-            <p className="max-w-sm text-[13px] leading-relaxed text-[#7a8494]">
-              Não é planilha genérica. Cada módulo sabe o que perguntar na coleta.
-            </p>
+        <div className="lp-fade-up-delay relative mx-auto h-[520px] w-full max-w-[440px] lg:h-[580px] lg:max-w-none">
+          {/* telefone de trás — dashboard */}
+          <div className="absolute left-0 top-8 w-[58%] rotate-[-8deg] scale-[0.92] opacity-90 lg:left-2">
+            <PhoneBezel>
+              <ScreenDashboard />
+            </PhoneBezel>
           </div>
-          <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-            {NICHOS_SHOW.map((n) => (
-              <div
-                key={n.name}
-                className="border border-white/[0.08] bg-white/[0.02] px-3 py-4 transition hover:border-[#7dd3e8]/30 hover:bg-[#7dd3e8]/[0.04]"
-              >
-                <p
-                  className="text-[14px] font-medium text-[#f4f7fb]"
-                  style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-                >
-                  {n.name}
-                </p>
-                <p className="mt-1 text-[11px] leading-snug text-[#6b7382]">{n.hint}</p>
-              </div>
-            ))}
+          {/* telefone da frente — coleta */}
+          <div className="absolute right-0 top-0 z-10 w-[62%] rotate-[6deg] lg:right-4">
+            <PhoneBezel glow>
+              <ScreenColetaCassino />
+            </PhoneBezel>
           </div>
-        </div>
-      </section>
-
-      {/* PROBLEMA × SOLUÇÃO */}
-      <section className="relative z-10 mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
-        <div className="max-w-2xl">
-          <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#7dd3e8]/75">
-            A diferença no fechamento
-          </p>
-          <h2
-            className="mt-3 text-[clamp(1.65rem,4vw,2.35rem)] font-medium tracking-tight"
-            style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-          >
-            Anotar no Zap ou fechar a máquina de verdade?
-          </h2>
-        </div>
-
-        <div className="mt-12 grid gap-0 overflow-hidden border border-white/[0.08] lg:grid-cols-2">
-          <div className="border-b border-white/[0.08] bg-rose-500/[0.03] p-6 sm:p-8 lg:border-b-0 lg:border-r">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-rose-300/75">
-              No improviso
-            </p>
-            <ul className="mt-5 space-y-3.5 text-[14px] text-[#a8b0bd]">
-              {[
-                "Foto do painel no grupo — ninguém sabe se bateu",
-                "Negativo “combinado” que some na próxima visita",
-                "Comissão calculada no dedo, erro que dói no bolso",
-                "Equipe no campo, dono sem enxergar o dia",
-              ].map((t) => (
-                <li key={t} className="flex gap-3">
-                  <X className="mt-0.5 h-4 w-4 shrink-0 text-rose-400/80" />
-                  {t}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="bg-[#7dd3e8]/[0.04] p-6 sm:p-8">
-            <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#7dd3e8]/85">
-              No OperaRoute
-            </p>
-            <ul className="mt-5 space-y-3.5 text-[14px] text-[#c9d0db]">
-              {[
-                "Leitura com entrada, saída e foto no registro da visita",
-                "Negativo e haver ficam no ponto até quitar",
-                "Comissão e operação calculadas na hora",
-                "Painel ao vivo: o que entrou, o que falta cobrar",
-              ].map((t) => (
-                <li key={t} className="flex gap-3">
-                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#7dd3e8]" />
-                  {t}
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* LEITURA / FLUXO */}
-      <section
-        id="leitura"
-        className="relative z-10 border-t border-white/[0.06] bg-[#080d16]/70"
-      >
-        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
-          <div className="max-w-xl">
-            <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#c9a87c]/85">
-              Fluxo da visita
-            </p>
-            <h2
-              className="mt-3 text-[clamp(1.65rem,4vw,2.35rem)] font-medium tracking-tight"
-              style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
+          {/* chip flutuante */}
+          <div className="absolute bottom-16 left-[8%] z-20 hidden rounded-2xl border border-[#c4a574]/30 bg-[#0a0e16]/95 px-4 py-3 shadow-2xl backdrop-blur sm:block">
+            <p className="text-[10px] uppercase tracking-wider text-[#c4a574]/80">Operação hoje</p>
+            <p
+              className="text-[1.35rem] text-white"
+              style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
             >
-              Do ponto à apuração — em minutos
-            </h2>
-            <p className="mt-3 text-[14.5px] leading-relaxed text-[#8b93a3]">
-              O operador chega, lê, cobra e segue. Você vê o resultado sem ligar perguntando
-              “quanto deu?”.
+              R$ 4.820
             </p>
           </div>
-
-          <ol className="mt-14 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                n: "01",
-                icon: MapPin,
-                t: "Abrir o ponto",
-                d: "Máquinas do local, pendências e o que ficou da última visita.",
-              },
-              {
-                n: "02",
-                icon: Gauge,
-                t: "Ler o painel",
-                d: "Entrada e saída (cassino) ou furos/visor — do jeito do nicho.",
-              },
-              {
-                n: "03",
-                icon: Camera,
-                t: "Provar com foto",
-                d: "Visor na coleta. Histórico limpo se alguém questionar.",
-              },
-              {
-                n: "04",
-                icon: Wallet,
-                t: "Fechar e cobrar",
-                d: "Lucro, comissão, pix/dinheiro, negativo ou haver — registrado.",
-              },
-            ].map((s) => (
-              <li key={s.n} className="relative border-t border-[#7dd3e8]/25 pt-5">
-                <span className="text-[11px] font-medium tracking-[0.2em] text-[#7dd3e8]/70">
-                  {s.n}
-                </span>
-                <s.icon className="mt-3 h-5 w-5 text-[#c9a87c]" />
-                <h3
-                  className="mt-3 text-[1.05rem] font-medium text-white"
-                  style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-                >
-                  {s.t}
-                </h3>
-                <p className="mt-2 text-[13px] leading-relaxed text-[#7a8494]">{s.d}</p>
-              </li>
-            ))}
-          </ol>
         </div>
       </section>
 
-      {/* PILARES */}
-      <section className="relative z-10 mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
-        <h2
-          className="max-w-lg text-[clamp(1.65rem,4vw,2.35rem)] font-medium tracking-tight"
-          style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-        >
-          O que segura a operação no dia a dia
-        </h2>
-        <div className="mt-12 grid gap-10 sm:grid-cols-2">
-          {PILARES.map((p) => (
-            <article key={p.title} className="flex gap-4">
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center border border-[#7dd3e8]/25 bg-[#7dd3e8]/[0.06] text-[#7dd3e8]">
-                <p.icon className="h-5 w-5" />
-              </div>
-              <div>
-                <h3
-                  className="text-[1.1rem] font-medium text-white"
-                  style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-                >
-                  {p.title}
-                </h3>
-                <p className="mt-2 text-[14px] leading-relaxed text-[#8b93a3]">{p.text}</p>
-              </div>
-            </article>
+      {/* marquee nichos */}
+      <div id="nichos" className="relative z-10 border-y border-white/[0.06] bg-[#080b12]/80 py-4">
+        <div className="lp-marquee flex gap-10 whitespace-nowrap text-[13px] font-medium tracking-wide text-[#c4a574]/90">
+          {[...NICHOS, ...NICHOS, ...NICHOS].map((n, i) => (
+            <span key={`${n}-${i}`} className="inline-flex items-center gap-10">
+              {n}
+              <span className="text-[#7eb8d4]/50">◆</span>
+            </span>
           ))}
         </div>
-      </section>
+      </div>
 
-      {/* PLANOS */}
-      <section
-        id="planos"
-        className="relative z-10 border-t border-white/[0.06] bg-gradient-to-b from-[#080d16] to-[#060910]"
-      >
-        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8 sm:py-24">
-          <div className="mx-auto max-w-2xl text-center">
-            <p className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#c9a87c]/85">
-              Por tamanho da operação
+      {/* PRINTS — galeria das telas */}
+      <section id="prints" className="relative z-10 mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#7eb8d4]">
+              Prints do app
             </p>
             <h2
-              className="mt-3 text-[clamp(1.65rem,4vw,2.35rem)] font-medium tracking-tight"
-              style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
+              className="mt-2 max-w-[16ch] text-[clamp(2rem,5vw,3.25rem)] leading-[1.05]"
+              style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
             >
-              Planos que cabem nos seus pontos
+              As telas que você usa no campo.
             </h2>
-            <p className="mt-3 text-[14px] text-[#8b93a3]">
-              Quanto mais pontos e nichos, maior o plano. Teste 7 dias grátis.
-            </p>
-            <div className="mt-8 inline-flex border border-white/10 bg-black/40 p-1">
-              <button
-                type="button"
-                onClick={() => setCiclo("mensal")}
-                className={`px-4 py-2 text-[12px] font-semibold transition ${
-                  ciclo === "mensal"
-                    ? "bg-[#7dd3e8] text-[#060910]"
-                    : "text-[#8b93a3] hover:text-white"
-                }`}
-              >
-                Mensal
-              </button>
-              <button
-                type="button"
-                onClick={() => setCiclo("anual")}
-                className={`px-4 py-2 text-[12px] font-semibold transition ${
-                  ciclo === "anual"
-                    ? "bg-[#7dd3e8] text-[#060910]"
-                    : "text-[#8b93a3] hover:text-white"
-                }`}
-              >
-                Anual · {MULTIPLICADOR_ANUAL_PADRAO}×
-              </button>
-            </div>
           </div>
+          <p className="max-w-sm text-[14px] leading-relaxed text-[#8b93a3]">
+            Não é mock genérico. É o fluxo real: dashboard, leitura de cassino, pontos e
+            pendências — do jeito que a equipe opera.
+          </p>
+        </div>
 
-          <div className="mt-12 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {PLANOS_PADRAO.map((plano) => {
-              const mensal = plano.precoMensal;
-              const anual = calcPrecoAnual(plano.id) ?? mensal * MULTIPLICADOR_ANUAL_PADRAO;
-              const valor = ciclo === "mensal" ? mensal : anual;
-              const porMes =
-                ciclo === "anual" ? Math.round((anual / 12) * 100) / 100 : mensal;
-
-              return (
-                <div
-                  key={plano.id}
-                  className={`relative flex flex-col border p-5 ${
-                    plano.destaque
-                      ? "border-[#7dd3e8]/50 bg-[#7dd3e8]/[0.06]"
-                      : "border-white/[0.08] bg-white/[0.015]"
-                  }`}
+        <div className="mt-14 grid gap-8 lg:grid-cols-12 lg:gap-6">
+          {/* Dashboard — grande */}
+          <figure className="lp-print-card relative lg:col-span-7">
+            <div className="overflow-hidden rounded-[1.5rem] border border-white/10 bg-[#0a0e16] p-3 shadow-[0_30px_80px_rgba(0,0,0,0.55)] sm:p-4">
+              <div className="overflow-hidden rounded-xl border border-white/[0.06]">
+                <ScreenDashboardDesktop />
+              </div>
+            </div>
+            <figcaption className="mt-4 flex items-baseline justify-between gap-3">
+              <div>
+                <p
+                  className="text-[1.25rem] text-white"
+                  style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
                 >
-                  {plano.destaque && (
-                    <span className="absolute -top-2.5 left-4 bg-[#7dd3e8] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-[#060910]">
-                      Mais usado
-                    </span>
-                  )}
-                  <p className="text-[13px] font-semibold text-[#7dd3e8]">{plano.nome}</p>
-                  <p className="mt-0.5 text-[11px] text-[#6b7382]">{plano.labelPontos}</p>
-                  <p
-                    className="mt-4 text-[1.75rem] font-medium tracking-tight"
-                    style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-                  >
-                    {formatBRL(valor)}
-                    <span className="text-[12px] font-normal text-[#6b7382]">
-                      {ciclo === "mensal" ? "/mês" : "/ano"}
-                    </span>
-                  </p>
-                  {ciclo === "anual" && (
-                    <p className="text-[11px] text-[#5c6573]">≈ {formatBRL(porMes)}/mês</p>
-                  )}
-                  <p className="mt-3 flex-1 text-[12.5px] leading-relaxed text-[#8b93a3]">
-                    {plano.descricao}
-                  </p>
-                  <p className="mt-3 text-[11px] text-[#7a8494]">
-                    Até {plano.maxNichos} nicho{plano.maxNichos > 1 ? "s" : ""}
-                  </p>
-                  <Link
-                    href="/cadastro"
-                    className={`mt-5 block py-2.5 text-center text-[12px] font-semibold transition ${
-                      plano.destaque
-                        ? "bg-[#7dd3e8] text-[#060910] hover:bg-[#9ae0ef]"
-                        : "border border-white/12 text-white hover:border-[#7dd3e8]/40"
-                    }`}
-                  >
-                    Começar grátis
-                  </Link>
-                </div>
-              );
-            })}
+                  Dashboard
+                </p>
+                <p className="text-[13px] text-[#7a8494]">
+                  Arrecadação, pendências e pulso da operação
+                </p>
+              </div>
+              <span className="text-[11px] font-medium text-[#c4a574]">01</span>
+            </figcaption>
+          </figure>
+
+          {/* Coleta phone */}
+          <figure className="lp-print-card relative mx-auto w-full max-w-[300px] lg:col-span-5 lg:mx-0 lg:mt-12">
+            <PhoneBezel glow className="mx-auto">
+              <ScreenColetaCassino />
+            </PhoneBezel>
+            <figcaption className="mt-4 text-center lg:text-left">
+              <p
+                className="text-[1.25rem] text-white"
+                style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+              >
+                Coleta · Cassino
+              </p>
+              <p className="text-[13px] text-[#7a8494]">
+                Entrada, saída, foto, comissão e a cobrar
+              </p>
+            </figcaption>
+          </figure>
+
+          {/* Pontos */}
+          <figure className="lp-print-card relative mx-auto w-full max-w-[280px] lg:col-span-4 lg:mx-0">
+            <PhoneBezel>
+              <ScreenPontos />
+            </PhoneBezel>
+            <figcaption className="mt-4">
+              <p
+                className="text-[1.15rem] text-white"
+                style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+              >
+                Pontos
+              </p>
+              <p className="text-[13px] text-[#7a8494]">Máquinas, status e atalho pra visita</p>
+            </figcaption>
+          </figure>
+
+          {/* Pendências */}
+          <figure className="lp-print-card relative mx-auto w-full max-w-[280px] lg:col-span-4 lg:mx-0 lg:mt-10">
+            <PhoneBezel>
+              <ScreenPendencias />
+            </PhoneBezel>
+            <figcaption className="mt-4">
+              <p
+                className="text-[1.15rem] text-white"
+                style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+              >
+                Pendências
+              </p>
+              <p className="text-[13px] text-[#7a8494]">Negativo e haver no lugar certo</p>
+            </figcaption>
+          </figure>
+
+          {/* Visita */}
+          <figure className="lp-print-card relative mx-auto w-full max-w-[280px] lg:col-span-4 lg:mx-0 lg:mt-4">
+            <PhoneBezel>
+              <ScreenVisita />
+            </PhoneBezel>
+            <figcaption className="mt-4">
+              <p
+                className="text-[1.15rem] text-white"
+                style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+              >
+                Visita ao ponto
+              </p>
+              <p className="text-[13px] text-[#7a8494]">Nichos do dia num só fechamento</p>
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      {/* problema */}
+      <section className="relative z-10 border-t border-white/[0.06] bg-[#080b12]/90">
+        <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+          <h2
+            className="max-w-[18ch] text-[clamp(1.85rem,4vw,2.75rem)] leading-[1.08]"
+            style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+          >
+            Caderno no bolso ou painel no celular?
+          </h2>
+          <div className="mt-12 grid overflow-hidden rounded-3xl border border-white/10 lg:grid-cols-2">
+            <div className="border-b border-white/10 bg-rose-950/20 p-7 sm:p-9 lg:border-b-0 lg:border-r">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-rose-300/70">
+                Sem o app
+              </p>
+              <ul className="mt-5 space-y-3 text-[14px] text-[#b0b8c4]">
+                {[
+                  "Foto do visor no grupo — ninguém confere",
+                  "Negativo “combinado” some na próxima",
+                  "Comissão no dedo, erro no bolso",
+                  "Dono só descobre o buraco no fim do mês",
+                ].map((t) => (
+                  <li key={t} className="flex gap-3">
+                    <X className="mt-0.5 h-4 w-4 shrink-0 text-rose-400/80" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="bg-[#c4a574]/[0.06] p-7 sm:p-9">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#c4a574]">
+                Com OperaRoute
+              </p>
+              <ul className="mt-5 space-y-3 text-[14px] text-[#d4d8e0]">
+                {[
+                  "Leitura + foto no registro da visita",
+                  "Negativo e haver ficam no ponto",
+                  "Comissão e operação na hora",
+                  "Dashboard ao vivo pra quem manda",
+                ].map((t) => (
+                  <li key={t} className="flex gap-3">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#c4a574]" />
+                    {t}
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="relative z-10 mx-auto max-w-6xl px-5 pb-20 sm:px-8">
-        <div className="relative overflow-hidden border border-[#7dd3e8]/20 bg-[#0a101c] px-6 py-14 text-center sm:px-12">
-          <div className="pointer-events-none absolute inset-0 lp-grid opacity-20" aria-hidden />
+      {/* planos */}
+      <section id="planos" className="relative z-10 mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
+        <div className="text-center">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#7eb8d4]">
+            Planos
+          </p>
           <h2
-            className="relative text-[clamp(1.55rem,3.5vw,2.15rem)] font-medium tracking-tight"
-            style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
+            className="mt-2 text-[clamp(1.85rem,4vw,2.75rem)]"
+            style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+          >
+            Do tamanho da sua operação
+          </h2>
+          <div className="mt-7 inline-flex rounded-full border border-white/10 bg-black/40 p-1">
+            <button
+              type="button"
+              onClick={() => setCiclo("mensal")}
+              className={`rounded-full px-4 py-2 text-[12px] font-semibold ${
+                ciclo === "mensal" ? "bg-[#c4a574] text-[#0a0e16]" : "text-[#8b93a3]"
+              }`}
+            >
+              Mensal
+            </button>
+            <button
+              type="button"
+              onClick={() => setCiclo("anual")}
+              className={`rounded-full px-4 py-2 text-[12px] font-semibold ${
+                ciclo === "anual" ? "bg-[#c4a574] text-[#0a0e16]" : "text-[#8b93a3]"
+              }`}
+            >
+              Anual · {MULTIPLICADOR_ANUAL_PADRAO}×
+            </button>
+          </div>
+        </div>
+        <div className="mt-12 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {PLANOS_PADRAO.map((plano) => {
+            const mensal = plano.precoMensal;
+            const anual = calcPrecoAnual(plano.id) ?? mensal * MULTIPLICADOR_ANUAL_PADRAO;
+            const valor = ciclo === "mensal" ? mensal : anual;
+            return (
+              <div
+                key={plano.id}
+                className={`relative flex flex-col rounded-2xl border p-5 ${
+                  plano.destaque
+                    ? "border-[#c4a574]/55 bg-[#c4a574]/[0.08] shadow-[0_0_50px_rgba(196,165,116,0.12)]"
+                    : "border-white/[0.08] bg-white/[0.02]"
+                }`}
+              >
+                {plano.destaque && (
+                  <span className="absolute -top-2.5 left-4 rounded-full bg-[#c4a574] px-2.5 py-0.5 text-[9px] font-bold uppercase text-[#0a0e16]">
+                    Mais usado
+                  </span>
+                )}
+                <p className="text-[13px] font-semibold" style={{ color: GOLD }}>
+                  {plano.nome}
+                </p>
+                <p className="text-[11px] text-[#6b7382]">{plano.labelPontos}</p>
+                <p
+                  className="mt-4 text-[1.7rem] text-white"
+                  style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+                >
+                  {formatBRL(valor)}
+                  <span className="text-[12px] text-[#6b7382]">
+                    {ciclo === "mensal" ? "/mês" : "/ano"}
+                  </span>
+                </p>
+                <p className="mt-2 flex-1 text-[12.5px] leading-relaxed text-[#8b93a3]">
+                  {plano.descricao}
+                </p>
+                <Link
+                  href="/cadastro"
+                  className={`mt-5 block rounded-full py-2.5 text-center text-[12px] font-bold ${
+                    plano.destaque
+                      ? "bg-gradient-to-r from-[#7eb8d4] to-[#c4a574] text-[#0a0e16]"
+                      : "border border-white/15 text-white hover:border-[#c4a574]/40"
+                  }`}
+                >
+                  Começar grátis
+                </Link>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto max-w-6xl px-4 pb-20 sm:px-6">
+        <div className="relative overflow-hidden rounded-[2rem] border border-[#c4a574]/25 bg-gradient-to-br from-[#121826] to-[#080b12] px-6 py-14 text-center sm:px-12">
+          <div className="lp-v2-waves absolute inset-0 opacity-30" aria-hidden />
+          <h2
+            className="relative text-[clamp(1.7rem,4vw,2.5rem)]"
+            style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
           >
             Na próxima coleta, o painel já pode estar no app.
           </h2>
-          <p className="relative mx-auto mt-3 max-w-md text-[14px] text-[#8b93a3]">
-            Cadastre a operação, escolha os nichos e leve a equipe pro campo com o mesmo sinal.
-          </p>
           <Link
             href="/cadastro"
-            className="relative mt-8 inline-flex items-center gap-2 bg-[#7dd3e8] px-6 py-3 text-[13px] font-semibold text-[#060910] transition hover:bg-[#9ae0ef]"
+            className="relative mt-8 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#7eb8d4] to-[#c4a574] px-7 py-3 text-[13px] font-bold text-[#0a0e16]"
           >
             Criar conta — 7 dias grátis
             <ArrowRight className="h-4 w-4" />
@@ -488,163 +452,357 @@ export function LandingPage() {
         </div>
       </section>
 
-      <footer className="relative z-10 border-t border-white/[0.06]">
-        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-5 py-12 sm:px-8 md:flex-row md:justify-between">
+      <footer className="relative z-10 border-t border-[#c4a574]/20">
+        <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 sm:px-6 md:flex-row md:justify-between">
           <div>
             <p
-              className="text-[1.25rem] font-medium"
-              style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
+              className="text-[1.4rem]"
+              style={{ fontFamily: "var(--font-lp-display), Georgia, serif", color: GOLD }}
             >
-              Opera<span className="text-[#7dd3e8]">Rout</span>
+              OperaRout
             </p>
-            <p className="mt-2 max-w-xs text-[13px] leading-relaxed text-[#5c6573]">
-              Comando da operação: leituras, coletas, pontos e financeiro — cassino e outros
-              nichos no mesmo app.
+            <p className="mt-2 max-w-xs text-[13px] text-[#5c6573]">
+              Leituras, coletas e financeiro — cassino e nichos no mesmo sinal.
             </p>
           </div>
-          <div className="flex flex-wrap gap-x-10 gap-y-6 text-[13px]">
-            <div className="space-y-2">
-              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#4a5260]">
-                Conta
-              </p>
-              <Link href="/login" className="block text-[#8b93a3] hover:text-white">
-                Entrar
-              </Link>
-              <Link href="/cadastro" className="block text-[#8b93a3] hover:text-white">
-                Criar conta
-              </Link>
-              <a href="#planos" className="block text-[#8b93a3] hover:text-white">
-                Planos
-              </a>
-            </div>
-            <div className="space-y-2">
-              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#4a5260]">
-                Suporte
-              </p>
-              <Link href="/suporte-contato" className="block text-[#8b93a3] hover:text-white">
-                Contato
-              </Link>
-              <a
-                href={`https://wa.me/${WHATSAPP}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-[#8b93a3] hover:text-white"
-              >
-                WhatsApp
-              </a>
-              <Link href="/downloads" className="block text-[#8b93a3] hover:text-white">
-                Baixar app
-              </Link>
-            </div>
-            <div className="space-y-2">
-              <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-[#4a5260]">
-                Legal
-              </p>
-              <Link href="/termos" className="block text-[#8b93a3] hover:text-white">
-                Termos
-              </Link>
-              <Link href="/privacidade" className="block text-[#8b93a3] hover:text-white">
-                Privacidade
-              </Link>
-            </div>
+          <div className="flex flex-wrap gap-x-10 gap-y-5 text-[13px] text-[#8b93a3]">
+            <Link href="/login" className="hover:text-white">
+              Entrar
+            </Link>
+            <Link href="/cadastro" className="hover:text-white">
+              Criar conta
+            </Link>
+            <Link href="/suporte-contato" className="hover:text-white">
+              Contato
+            </Link>
+            <a
+              href={`https://wa.me/${WHATSAPP}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white"
+            >
+              WhatsApp
+            </a>
+            <Link href="/termos" className="hover:text-white">
+              Termos
+            </Link>
+            <Link href="/privacidade" className="hover:text-white">
+              Privacidade
+            </Link>
           </div>
         </div>
-        <div className="border-t border-white/[0.04] py-5 text-center text-[11px] text-[#4a5260]">
-          © {new Date().getFullYear()} OperaRoute · canal seguro
+        <div className="border-t border-white/[0.04] py-4 text-center text-[11px] text-[#4a5260]">
+          © {new Date().getFullYear()} OperaRoute
         </div>
       </footer>
     </div>
   );
 }
 
-/** Mock fiel à coleta cassino: entrada / saída / operação */
-function LeituraMockup() {
+function PhoneBezel({
+  children,
+  glow,
+  className = "",
+}: {
+  children: React.ReactNode;
+  glow?: boolean;
+  className?: string;
+}) {
   return (
-    <div className="lp-phone-screen relative mx-auto aspect-[9/17.5] w-full max-w-[300px] overflow-hidden rounded-[1.85rem] border border-white/12 bg-[#0a0f18] lg:max-w-[320px]">
-      <div className="absolute left-1/2 top-2 z-10 h-4 w-20 -translate-x-1/2 rounded-full bg-black/70" />
-      <div className="flex h-full flex-col px-3.5 pb-4 pt-9">
-        <div className="flex items-start justify-between gap-2">
-          <div>
-            <p className="text-[9px] uppercase tracking-[0.22em] text-[#7dd3e8]/65">
-              Coleta cassino
-            </p>
-            <p
-              className="mt-0.5 text-[15px] font-medium text-white"
-              style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-            >
-              Bar do Pedro
-            </p>
+    <div
+      className={`relative aspect-[9/18.2] w-full overflow-hidden rounded-[1.85rem] border border-white/15 bg-[#05070c] ${
+        glow ? "lp-phone-glow" : "shadow-[0_25px_60px_rgba(0,0,0,0.55)]"
+      } ${className}`}
+    >
+      <div className="absolute left-1/2 top-2 z-10 h-4 w-[4.5rem] -translate-x-1/2 rounded-full bg-black/80" />
+      <div className="h-full overflow-hidden pt-7">{children}</div>
+    </div>
+  );
+}
+
+function ScreenDashboard() {
+  return (
+    <div className="flex h-full flex-col bg-[#070a10] px-3 pb-3 text-[10px]">
+      <p className="text-[9px] uppercase tracking-[0.2em] text-[#c4a574]/70">Operação</p>
+      <p
+        className="text-[15px] text-[#f4efe6]"
+        style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+      >
+        Bom dia, Adilson
+      </p>
+      <div className="mt-3 grid grid-cols-2 gap-1.5">
+        {[
+          { l: "Arrecadado", v: "R$ 4.820", c: "text-emerald-400/90" },
+          { l: "Pendências", v: "7 abertas", c: "text-amber-300/90" },
+          { l: "Pontos", v: "28 ativos", c: "text-[#f4efe6]" },
+          { l: "Negativos", v: "R$ 640", c: "text-rose-400/90" },
+        ].map((k) => (
+          <div key={k.l} className="rounded-lg border border-white/[0.06] bg-white/[0.03] p-2">
+            <p className="text-[8px] text-[#6b7382]">{k.l}</p>
+            <p className={`mt-0.5 text-[11px] font-semibold ${k.c}`}>{k.v}</p>
           </div>
-          <span className="rounded-sm bg-[#c9a87c]/15 px-1.5 py-0.5 text-[9px] font-medium text-[#c9a87c]">
-            2 máquinas
+        ))}
+      </div>
+      <div className="mt-3 flex-1 rounded-lg border border-white/[0.06] bg-white/[0.02] p-2">
+        <p className="mb-2 text-[8px] text-[#6b7382]">Últimos 7 dias</p>
+        <div className="flex h-16 items-end gap-1">
+          {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-sm bg-gradient-to-t from-[#c4a574]/80 to-[#7eb8d4]/50"
+              style={{ height: `${h}%` }}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenDashboardDesktop() {
+  return (
+    <div className="bg-[#070a10] p-4 sm:p-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.22em] text-[#c4a574]/75">Dashboard</p>
+          <p
+            className="text-[1.65rem] text-[#f4efe6] sm:text-[2rem]"
+            style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+          >
+            Pulso da operação
+          </p>
+        </div>
+        <div className="flex gap-2 text-[10px]">
+          <span className="rounded-full border border-[#c4a574]/30 px-2.5 py-1 text-[#c4a574]">
+            Cassino
+          </span>
+          <span className="rounded-full border border-white/10 px-2.5 py-1 text-[#8b93a3]">
+            Fura-fura
           </span>
         </div>
-
-        <div className="mt-4 space-y-2">
-          <div className="border border-white/[0.07] bg-white/[0.03] px-2.5 py-2.5">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-medium text-[#f4f7fb]">Painel 00033</p>
-              <ScanLine className="h-3 w-3 text-[#7dd3e8]" />
+      </div>
+      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[
+          { l: "Arrecadado", v: "R$ 18.420", sub: "+12% vs sem." },
+          { l: "Operação", v: "R$ 11.280", sub: "após comissão" },
+          { l: "Pendências", v: "R$ 2.140", sub: "9 abertas" },
+          { l: "Negativos", v: "R$ 890", sub: "3 pontos" },
+        ].map((k) => (
+          <div
+            key={k.l}
+            className="rounded-xl border border-white/[0.07] bg-white/[0.03] px-3 py-3"
+          >
+            <p className="text-[10px] text-[#6b7382]">{k.l}</p>
+            <p
+              className="mt-1 text-[1.15rem] text-white sm:text-[1.25rem]"
+              style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+            >
+              {k.v}
+            </p>
+            <p className="mt-0.5 text-[10px] text-[#c4a574]/80">{k.sub}</p>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-[1.4fr_1fr]">
+        <div className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+          <p className="text-[10px] text-[#6b7382]">Coletas · 7 dias</p>
+          <div className="mt-3 flex h-24 items-end gap-1.5">
+            {[35, 55, 42, 78, 60, 92, 70].map((h, i) => (
+              <div key={i} className="flex flex-1 flex-col items-center gap-1">
+                <div
+                  className="w-full rounded-sm bg-gradient-to-t from-[#c4a574] to-[#7eb8d4]/70"
+                  style={{ height: `${h}%` }}
+                />
+                <span className="text-[8px] text-[#5c6573]">
+                  {["S", "T", "Q", "Q", "S", "S", "D"][i]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-2 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3">
+          <p className="text-[10px] text-[#6b7382]">Top pontos</p>
+          {[
+            ["Bar do Pedro", "R$ 2.180"],
+            ["Posto Lima", "R$ 1.640"],
+            ["Mercado Sul", "R$ 1.210"],
+          ].map(([n, v]) => (
+            <div key={n} className="flex justify-between text-[11px]">
+              <span className="text-[#c9d0db]">{n}</span>
+              <span className="font-semibold text-[#c4a574]">{v}</span>
             </div>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ScreenColetaCassino() {
+  return (
+    <div className="flex h-full flex-col bg-[#070a10] px-3 pb-3">
+      <p className="text-[8px] uppercase tracking-[0.2em] text-[#c4a574]/70">Coleta cassino</p>
+      <p
+        className="text-[14px] text-white"
+        style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+      >
+        Bar do Pedro
+      </p>
+      <div className="mt-2.5 space-y-1.5">
+        {[
+          { n: "Painel 00033", e: "1.284.500", s: "1.198.200" },
+          { n: "Painel 00041", e: "892.100", s: "851.040" },
+        ].map((m) => (
+          <div key={m.n} className="rounded-lg border border-white/[0.07] bg-white/[0.03] p-2">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-medium text-[#f4efe6]">{m.n}</span>
+              <Camera className="h-3 w-3 text-[#c4a574]" />
+            </div>
+            <div className="mt-1.5 grid grid-cols-2 gap-1 text-[9px]">
               <div>
                 <p className="text-[#5c6573]">Entrada</p>
-                <p className="font-semibold tabular-nums text-emerald-400/90">1.284.500</p>
+                <p className="font-semibold tabular-nums text-emerald-400/90">{m.e}</p>
               </div>
               <div>
                 <p className="text-[#5c6573]">Saída</p>
-                <p className="font-semibold tabular-nums text-rose-400/90">1.198.200</p>
+                <p className="font-semibold tabular-nums text-rose-400/90">{m.s}</p>
               </div>
             </div>
           </div>
-          <div className="border border-white/[0.07] bg-white/[0.03] px-2.5 py-2.5">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-medium text-[#f4f7fb]">Painel 00041</p>
-              <Camera className="h-3 w-3 text-[#c9a87c]" />
-            </div>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
-              <div>
-                <p className="text-[#5c6573]">Entrada</p>
-                <p className="font-semibold tabular-nums text-emerald-400/90">892.100</p>
-              </div>
-              <div>
-                <p className="text-[#5c6573]">Saída</p>
-                <p className="font-semibold tabular-nums text-rose-400/90">851.040</p>
-              </div>
-            </div>
+        ))}
+      </div>
+      <div className="mt-auto space-y-1.5 pt-2">
+        <div className="rounded-lg border border-[#c4a574]/30 bg-[#c4a574]/10 px-2.5 py-2">
+          <div className="flex justify-between text-[8px] text-[#c4a574]/80">
+            <span>Lucro</span>
+            <span>Comissão 30%</span>
           </div>
+          <p
+            className="text-[1.2rem] tabular-nums text-white"
+            style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+          >
+            R$ 1.273,60
+          </p>
         </div>
+        <div className="rounded-md bg-[#c4a574] py-1.5 text-center text-[10px] font-bold text-[#0a0e16]">
+          Registrar coleta
+        </div>
+      </div>
+    </div>
+  );
+}
 
-        <div className="mt-auto space-y-2 pt-4">
-          <div className="border border-[#7dd3e8]/25 bg-[#7dd3e8]/[0.07] px-3 py-2.5">
-            <div className="flex justify-between text-[10px] text-[#7dd3e8]/80">
-              <span>Lucro período</span>
-              <span>Comissão 30%</span>
+function ScreenPontos() {
+  return (
+    <div className="flex h-full flex-col bg-[#070a10] px-3 pb-3">
+      <p className="text-[8px] uppercase tracking-[0.2em] text-[#c4a574]/70">Pontos</p>
+      <p
+        className="text-[14px] text-white"
+        style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+      >
+        28 ativos
+      </p>
+      <div className="mt-3 space-y-1.5">
+        {[
+          { n: "Bar do Pedro", m: "4 máq.", st: "OK" },
+          { n: "Posto Lima", m: "2 máq.", st: "Pend." },
+          { n: "Mercado Sul", m: "3 máq.", st: "OK" },
+          { n: "Lan House RX", m: "6 máq.", st: "Neg." },
+        ].map((p) => (
+          <div
+            key={p.n}
+            className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2 py-2"
+          >
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-[#c4a574]/15">
+              <MapPin className="h-3 w-3 text-[#c4a574]" />
             </div>
-            <div className="mt-1 flex items-end justify-between">
-              <p
-                className="text-[1.35rem] font-medium tabular-nums text-white"
-                style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
-              >
-                R$ 1.273,60
-              </p>
-              <p className="pb-0.5 text-[11px] text-[#8b93a3]">op. R$ 891,52</p>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[10px] font-medium text-[#f4efe6]">{p.n}</p>
+              <p className="text-[8px] text-[#6b7382]">{p.m}</p>
             </div>
+            <span
+              className={`text-[8px] font-semibold ${
+                p.st === "OK"
+                  ? "text-emerald-400/90"
+                  : p.st === "Neg."
+                    ? "text-rose-400/90"
+                    : "text-amber-300/90"
+              }`}
+            >
+              {p.st}
+            </span>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="border border-white/[0.06] bg-black/25 px-2 py-1.5">
-              <p className="text-[8px] uppercase tracking-wide text-[#5c6573]">Negativo</p>
-              <p className="text-[12px] font-semibold text-amber-200/90">R$ 120,00</p>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ScreenPendencias() {
+  return (
+    <div className="flex h-full flex-col bg-[#070a10] px-3 pb-3">
+      <p className="text-[8px] uppercase tracking-[0.2em] text-[#c4a574]/70">Pendências</p>
+      <p
+        className="text-[14px] text-white"
+        style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+      >
+        Em aberto
+      </p>
+      <div className="mt-3 space-y-1.5">
+        {[
+          { t: "Negativo", p: "Lan House RX", v: "R$ 320", ic: AlertTriangle, c: "text-rose-400" },
+          { t: "Haver", p: "Bar do Pedro", v: "R$ 85", ic: Wallet, c: "text-[#7eb8d4]" },
+          { t: "Parcial", p: "Posto Lima", v: "R$ 410", ic: Activity, c: "text-amber-300" },
+          { t: "Negativo", p: "Mercado Sul", v: "R$ 150", ic: AlertTriangle, c: "text-rose-400" },
+        ].map((x) => (
+          <div
+            key={x.p + x.t}
+            className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2 py-2"
+          >
+            <x.ic className={`h-3.5 w-3.5 shrink-0 ${x.c}`} />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-medium text-[#f4efe6]">{x.t}</p>
+              <p className="truncate text-[8px] text-[#6b7382]">{x.p}</p>
             </div>
-            <div className="border border-white/[0.06] bg-black/25 px-2 py-1.5">
-              <p className="text-[8px] uppercase tracking-wide text-[#5c6573]">A cobrar</p>
-              <p className="text-[12px] font-semibold text-[#7dd3e8]">R$ 1.011,52</p>
+            <span className="text-[10px] font-semibold text-white">{x.v}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function ScreenVisita() {
+  return (
+    <div className="flex h-full flex-col bg-[#070a10] px-3 pb-3">
+      <p className="text-[8px] uppercase tracking-[0.2em] text-[#c4a574]/70">Visita ao ponto</p>
+      <p
+        className="text-[14px] text-white"
+        style={{ fontFamily: "var(--font-lp-display), Georgia, serif" }}
+      >
+        Posto Lima
+      </p>
+      <div className="mt-3 space-y-1.5">
+        {[
+          { n: "Cassino", s: "2 leituras", ic: Activity },
+          { n: "Fura-fura", s: "1 coleta", ic: Package },
+          { n: "Cobrar", s: "R$ 680,00", ic: Wallet },
+        ].map((x) => (
+          <div
+            key={x.n}
+            className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.03] px-2.5 py-2.5"
+          >
+            <x.ic className="h-3.5 w-3.5 text-[#c4a574]" />
+            <div className="flex-1">
+              <p className="text-[10px] font-medium text-white">{x.n}</p>
+              <p className="text-[8px] text-[#6b7382]">{x.s}</p>
             </div>
+            <span className="text-[9px] text-[#7eb8d4]">Abrir</span>
           </div>
-          <div className="bg-[#7dd3e8] py-2 text-center text-[11px] font-semibold text-[#060910]">
-            Registrar coleta
-          </div>
-        </div>
+        ))}
+      </div>
+      <div className="mt-auto rounded-md bg-[#c4a574] py-2 text-center text-[10px] font-bold text-[#0a0e16]">
+        Finalizar visita
       </div>
     </div>
   );
