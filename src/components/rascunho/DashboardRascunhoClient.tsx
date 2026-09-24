@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import { Instrument_Serif, Outfit } from "next/font/google";
 import { CalendarDays, Copy, Eraser, Link2, Loader2, MessageCircle, Pencil, Plus, Share2, Trash2 } from "lucide-react";
 import {
@@ -308,12 +307,6 @@ export function DashboardRascunhoClient({
   const [carregandoDia, setCarregandoDia] = useState(false);
   const [puxouDia, setPuxouDia] = useState(false);
   const [compartilhandoLink, setCompartilhandoLink] = useState(false);
-  const [portalPronto, setPortalPronto] = useState(false);
-
-  useEffect(() => {
-    setPortalPronto(true);
-  }, []);
-
   const [linkCompartilhamento, setLinkCompartilhamento] = useState<string | null>(null);
   const [operadoresSel, setOperadoresSel] = useState<string[]>([]);
   const [publicando, setPublicando] = useState(false);
@@ -660,8 +653,7 @@ export function DashboardRascunhoClient({
       className={cn(
         display.variable,
         sans.variable,
-        "relative -mx-4 min-h-[60vh] px-4 pb-8 sm:mx-0 sm:px-0",
-        !salvo && "pb-52",
+        "relative -mx-4 flex min-h-[calc(100dvh-9rem)] flex-col px-4 sm:mx-0 sm:px-0 lg:min-h-[calc(100dvh-5.5rem)]",
         "rascunho-folha font-[family-name:var(--font-rasc-sans)]"
       )}
     >
@@ -673,9 +665,10 @@ export function DashboardRascunhoClient({
         }}
       />
 
-      <div className="relative mx-auto max-w-2xl space-y-10">
+      <div className="relative mx-auto flex w-full max-w-2xl flex-1 flex-col">
         {!salvo ? (
           <>
+            <div className="flex-1 space-y-10 pb-6">
             <header className="space-y-4 pt-2">
               <p className="text-[12px] font-medium uppercase tracking-[0.22em] text-[#c4a574]/90">
                 OperaRoute
@@ -1143,38 +1136,33 @@ export function DashboardRascunhoClient({
                 <p className="text-[13px] text-rose-400">{feedback}</p>
               ) : null}
             </section>
+            </div>
 
-            {portalPronto
-              ? createPortal(
-                  <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[45] px-3 lg:px-6">
-                    <div className="pointer-events-auto mx-auto mb-[calc(4rem+env(safe-area-inset-bottom,0px))] max-w-2xl rounded-2xl border border-[#c4a574]/35 bg-[#f6f1e8]/97 px-3 py-3 shadow-[0_-8px_32px_rgba(0,0,0,0.35)] backdrop-blur-md lg:mb-4">
-                      <div className="flex flex-col gap-2 sm:flex-row">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            adicionarDivida();
-                            document
-                              .getElementById("rascunho-dividas")
-                              ?.scrollIntoView({ behavior: "smooth", block: "center" });
-                          }}
-                          className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#c4a574] bg-white px-4 py-3 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:bg-[#c4a574]/15"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Adicionar dívidas
-                        </button>
-                        <button
-                          type="button"
-                          onClick={salvar}
-                          className="flex w-full items-center justify-center rounded-lg bg-[#c4a574] px-4 py-3.5 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:brightness-110"
-                        >
-                          Salvar para manter
-                        </button>
-                      </div>
-                    </div>
-                  </div>,
-                  document.body
-                )
-              : null}
+            {/* Rodapé da página — preso embaixo (não flutua) */}
+            <div className="sticky bottom-0 z-20 mt-auto border-t border-[#c4a574]/30 bg-[var(--shell-bg,#070a10)]/95 px-0 py-3 backdrop-blur-md">
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => {
+                    adicionarDivida();
+                    document
+                      .getElementById("rascunho-dividas")
+                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-[#c4a574] bg-white px-4 py-3 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:bg-[#c4a574]/15"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar dívidas
+                </button>
+                <button
+                  type="button"
+                  onClick={salvar}
+                  className="flex w-full items-center justify-center rounded-lg bg-[#c4a574] px-4 py-3.5 text-[14px] font-semibold tracking-wide text-[#0a0e16] transition hover:brightness-110"
+                >
+                  Salvar para manter
+                </button>
+              </div>
+            </div>
           </>
         ) : (
           <div
