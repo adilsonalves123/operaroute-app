@@ -340,7 +340,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error:
-            "Salvo parcialmente. Rode onboarding-rpc.sql no Supabase e tente de novo.",
+            "Não foi possível vincular sua operação. Peça ao suporte para rodar fix-onboarding-empresa-bind.sql no Supabase e tente de novo.",
         },
         { status: 500 }
       );

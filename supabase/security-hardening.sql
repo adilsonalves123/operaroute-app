@@ -12,8 +12,11 @@ SET search_path = public
 AS $$
 BEGIN
   -- Impede troca de tenant (cross-tenant takeover).
+  -- Permite o 1º vínculo no onboarding (NULL → empresa_id).
   IF TG_OP = 'UPDATE' THEN
-    NEW.empresa_id := OLD.empresa_id;
+    IF OLD.empresa_id IS NOT NULL THEN
+      NEW.empresa_id := OLD.empresa_id;
+    END IF;
   END IF;
   RETURN NEW;
 END;
