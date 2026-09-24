@@ -1,15 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { LoadingOverlay } from "@/components/ui/LoadingOverlay";
 import { AuthPasswordField } from "@/components/auth/AuthPasswordField";
 import { AuthLegalLinks } from "@/components/auth/AuthLegalLinks";
 
-export default function LoginPage() {
+function safeNextPath(next: string | null | undefined): string {
+  const raw = String(next ?? "").trim();
+  if (!raw.startsWith("/")) return "";
+  if (raw.startsWith("//")) return "";
+  if (raw.includes("\\") || raw.includes("@")) return "";
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) return "";
+  return raw;
+}
+
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -48,10 +58,17 @@ export default function LoginPage() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("onboarding_completo")
-      .single();
+      .select("onboarding_completo, empresa_id")
+      .maybeSingle();
 
-    router.push(profile?.onboarding_completo ? "/dashboard" : "/pesquisa");
+    const nextDest = safeNextPath(searchParams.get("next"));
+    if (profile?.empresa_id && nextDest) {
+      router.push(nextDest);
+    } else if (profile?.empresa_id || profile?.onboarding_completo) {
+      router.push("/dashboard");
+    } else {
+      router.push("/pesquisa");
+    }
     router.refresh();
   }
 
@@ -137,5 +154,13 @@ export default function LoginPage() {
         ]}
       />
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

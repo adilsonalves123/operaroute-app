@@ -307,12 +307,15 @@ export async function POST(request: Request) {
 
   const formaPagamento = deriveFormaPagamento(valorPixEfetivo, valorDinheiroEfetivo);
 
-  // Lucro que quita o negativo zera debitoAbatidoReais (fluxo de pagamento), mas a
-  // recuperação precisa ir para visitas.debito_abatido (card Financeiro).
+  // Lucro que recupera negativo (total ou parcial sem caixa) zera debitoAbatidoReais
+  // no fluxo de pagamento, mas a recuperação precisa ir para visitas.debito_abatido
+  // (cobrável / card Financeiro). Com pagamento em dinheiro, usa o abatido do caixa.
   const negativoRecuperadoReais =
     !calculo.saldoNegativo &&
     calculo.debitoTotalReais > 0.009 &&
-    calculo.recuperacaoNegativoReais + 0.009 >= calculo.debitoTotalReais
+    calculo.recuperacaoNegativoReais > 0.009 &&
+    (calculo.recuperacaoNegativoReais + 0.009 >= calculo.debitoTotalReais ||
+      calculo.debitoAbatidoReais <= 0.009)
       ? calculo.recuperacaoNegativoReais
       : calculo.debitoAbatidoReais;
 

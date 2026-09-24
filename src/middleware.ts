@@ -40,6 +40,26 @@ function routeNeedsProfileCheck(
   return !isPublic;
 }
 
+/** Paths internos seguros (anti open-redirect) — cópia leve p/ Edge, sem crypto. */
+function safeNextPath(next: string | null | undefined): string {
+  const raw = String(next ?? "").trim();
+  if (!raw.startsWith("/")) return "";
+  if (raw.startsWith("//")) return "";
+  if (raw.includes("\\") || raw.includes("@")) return "";
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(raw)) return "";
+  return raw;
+}
+
+/** Login com retorno ao deep link. */
+function loginWithNext(request: NextRequest) {
+  const url = new URL("/login", request.url);
+  const dest = safeNextPath(
+    `${request.nextUrl.pathname}${request.nextUrl.search}`
+  );
+  if (dest) url.searchParams.set("next", dest);
+  return NextResponse.redirect(url);
+}
+
 function fetchComTimeout(
   input: RequestInfo | URL,
   init?: RequestInit
@@ -93,7 +113,7 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (!user && !isPublic && pathname !== "/") {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return loginWithNext(request);
     }
 
     if (pathname === "/" && !user) {
@@ -108,8 +128,13 @@ export async function middleware(request: NextRequest) {
         .maybeSingle();
 
       const onboarding = needsOnboarding(profile);
+      const nextDest = safeNextPath(request.nextUrl.searchParams.get("next"));
 
       if (isAuthRoute) {
+        // Deep link (?next=/pontos/...) — deixa o login na tela para trocar de conta.
+        if (pathname === "/login" && nextDest) {
+          return supabaseResponse;
+        }
         return NextResponse.redirect(
           new URL(onboarding ? "/pesquisa" : "/dashboard", request.url)
         );
@@ -128,13 +153,15 @@ export async function middleware(request: NextRequest) {
         );
       }
 
+      // Conta sem empresa + link direto (ex.: /pontos/uuid do WhatsApp):
+      // vai para login com retorno, não trava na pesquisa de onboarding.
       if (
         !isPublic &&
         pathname !== "/configuracao" &&
         pathname !== "/pesquisa" &&
         onboarding
       ) {
-        return NextResponse.redirect(new URL("/pesquisa", request.url));
+        return loginWithNext(request);
       }
     }
 
@@ -142,7 +169,7 @@ export async function middleware(request: NextRequest) {
   } catch {
     // Timeout/rede: não segura a página no 504. Rotas privadas vão para login.
     if (!isPublic && pathname !== "/") {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return loginWithNext(request);
     }
     return supabaseResponse;
   }

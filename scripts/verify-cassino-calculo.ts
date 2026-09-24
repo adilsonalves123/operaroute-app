@@ -177,7 +177,31 @@ if (Math.abs(lucroMenor.recuperacaoNegativoReais - 500) > 0.02) {
 }
 
 if (Math.abs(lucroMenor.debitoAbatidoReais) > 0.02) {
-  console.error("FAIL: sem pagamento, negativo não abate, got", lucroMenor.debitoAbatidoReais);
+  console.error("FAIL: sem pagamento, negativo não abate em caixa, got", lucroMenor.debitoAbatidoReais);
+  process.exit(1);
+}
+
+if (Math.abs(lucroMenor.debitoRestanteReais - 270) > 0.02) {
+  console.error(
+    "FAIL: parcial sem caixa deve deixar 270 para a próxima, got",
+    lucroMenor.debitoRestanteReais
+  );
+  process.exit(1);
+}
+
+if (lucroMenor.abatimentos.length !== 1) {
+  console.error(
+    "FAIL: parcial sem caixa deve gravar Abatido na pendência, got",
+    lucroMenor.abatimentos.length
+  );
+  process.exit(1);
+}
+
+if (Math.abs(lucroMenor.abatimentos[0]?.valorAbatidoReais - 500) > 0.02) {
+  console.error(
+    "FAIL: Abatido parcial esperado 500, got",
+    lucroMenor.abatimentos[0]?.valorAbatidoReais
+  );
   process.exit(1);
 }
 

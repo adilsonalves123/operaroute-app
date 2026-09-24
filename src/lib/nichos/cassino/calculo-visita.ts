@@ -494,6 +494,19 @@ export function calcularVisitaCassino(
     );
     restanteOperacaoFinal = faltaCobrancaCliente;
     restanteFinal = faltaCobrancaCliente;
+  } else if (
+    // Recuperação parcial sem dinheiro: grava Abatido na pendência para a
+    // próxima coleta bater com "fica para a próxima". Com pagamento em caixa,
+    // o próprio pagamento já escreve o Abatido (evita baixar duas vezes).
+    recuperacaoNegativoReais > 0.009 &&
+    debitoAbatidoReais <= 0.009 &&
+    opNegativoLucro.abatimentos.length > 0
+  ) {
+    abatimentosNegativoFinal = opNegativoLucro.abatimentos;
+    debitoRestanteFinal = Math.max(
+      0,
+      debitoTotalReais - recuperacaoNegativoReais
+    );
   }
 
   let maquinasDistribuidas = distribuirValoresMaquinas(
