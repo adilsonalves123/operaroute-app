@@ -2,6 +2,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   MULTIPLICADOR_ANUAL_PADRAO,
   PLANOS_PADRAO,
+  labelPontosDoPlano,
+  montarBeneficiosPlano,
   type FaixaPontos,
   type PlanoDefinicao,
 } from "@/lib/pricing";
@@ -30,17 +32,30 @@ function rowToPlano(row: {
     (row.id as PlanoDefinicao["slug"])) as PlanoDefinicao["slug"];
   if (!["start", "growth", "pro", "elite"].includes(slug)) return null;
 
+  const limitePontos = Number(row.limite_pontos ?? padrao?.limitePontos ?? 10);
+  const maxNichos = Number(row.max_nichos ?? padrao?.maxNichos ?? 1);
+  const precoMensal = Number(row.preco_mensal ?? padrao?.precoMensal ?? 0);
+  const incluiIa = padrao?.incluiIa ?? precoMensal >= 499;
+  const base = {
+    id: faixa,
+    slug,
+    limitePontos,
+    maxNichos,
+    precoMensal,
+    incluiIa,
+  } as const;
+
   return {
     id: faixa,
     slug,
     nome: row.nome || padrao?.nome || slug,
     descricao: row.descricao ?? padrao?.descricao ?? "",
-    beneficios: padrao?.beneficios ?? [],
-    incluiIa: padrao?.incluiIa ?? Number(row.preco_mensal ?? 0) >= 499,
-    labelPontos: padrao?.labelPontos ?? faixa,
-    limitePontos: Number(row.limite_pontos ?? padrao?.limitePontos ?? 10),
-    maxNichos: Number(row.max_nichos ?? padrao?.maxNichos ?? 1),
-    precoMensal: Number(row.preco_mensal ?? padrao?.precoMensal ?? 0),
+    beneficios: montarBeneficiosPlano(base),
+    incluiIa,
+    labelPontos: labelPontosDoPlano(base),
+    limitePontos,
+    maxNichos,
+    precoMensal,
     destaque: Boolean(row.destaque),
   };
 }

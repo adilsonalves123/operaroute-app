@@ -98,8 +98,66 @@ export const PLANOS_PADRAO: PlanoDefinicao[] = [
 ];
 
 /** IA liberada em planos a partir de R$ 499 (ou flag do catálogo). */
-export function planoIncluiIa(plano: PlanoDefinicao): boolean {
+export function planoIncluiIa(plano: Pick<PlanoDefinicao, "incluiIa" | "precoMensal">): boolean {
   return Boolean(plano.incluiIa) || plano.precoMensal >= 499;
+}
+
+/** Label da régua / card — segue o limite salvo no painel do dono. */
+export function labelPontosDoPlano(
+  plano: Pick<PlanoDefinicao, "slug" | "limitePontos" | "id">
+): string {
+  if (plano.slug === "elite" || plano.limitePontos >= 9999) return "Ilimitado";
+  return `Até ${plano.limitePontos} pontos`;
+}
+
+/**
+ * Bullets da página /planos — sempre derivados do catálogo atual
+ * (não usa texto antigo hardcoded se o dono mudou limite/nichos).
+ */
+export function montarBeneficiosPlano(
+  plano: Pick<
+    PlanoDefinicao,
+    "slug" | "limitePontos" | "maxNichos" | "precoMensal" | "incluiIa"
+  >
+): string[] {
+  const ilimitado = plano.slug === "elite" || plano.limitePontos >= 9999;
+  const todosNichos = plano.slug === "elite" || plano.maxNichos >= 6;
+  const itens: string[] = [];
+
+  if (ilimitado) {
+    itens.push("Pontos ilimitados");
+    itens.push("Equipamentos ilimitados");
+  } else {
+    itens.push(`Até ${plano.limitePontos} pontos`);
+    itens.push(`Até ${plano.limitePontos} equipamentos`);
+  }
+
+  if (todosNichos) {
+    itens.push("Todos os nichos que quiser");
+  } else {
+    itens.push(
+      `Até ${plano.maxNichos} nicho${plano.maxNichos === 1 ? "" : "s"} na rota`
+    );
+  }
+
+  if (planoIncluiIa(plano)) {
+    itens.push("Inteligência Artificial liberada");
+    if (plano.slug === "pro" || plano.slug === "elite") {
+      itens.push("Análise e insights da operação");
+    }
+  } else if (plano.slug === "start") {
+    itens.push("Painel simples e direto");
+    itens.push("Coletas, pendências e fechamento");
+  } else {
+    itens.push("Painel completo da operação");
+    itens.push("Equipe e visão por operador");
+  }
+
+  if (plano.slug === "elite") {
+    itens.push("Prioridade no suporte");
+  }
+
+  return itens;
 }
 
 /** @deprecated use PLANOS_PADRAO — compat com UI antiga */

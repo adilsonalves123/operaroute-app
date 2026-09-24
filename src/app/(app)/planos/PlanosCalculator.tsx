@@ -14,6 +14,7 @@ import {
   NICHOS_PAGOS,
   PLANOS_PADRAO,
   planoIncluiIa,
+  montarBeneficiosPlano,
   type FaixaPontos,
   type PlanoDefinicao,
 } from "@/lib/pricing";
@@ -241,10 +242,7 @@ export function PlanosCalculator({
         }) + "/ano"
       : formatPreco(precoMensal);
 
-  const beneficios =
-    plano.beneficios?.length > 0
-      ? plano.beneficios
-      : PLANOS_PADRAO.find((p) => p.id === plano.id)?.beneficios ?? [];
+  const beneficios = montarBeneficiosPlano(plano);
   const comIa = planoIncluiIa(plano);
   const nichosLabel =
     plano.slug === "elite" || plano.maxNichos >= NICHOS_PAGOS.length
@@ -340,7 +338,7 @@ export function PlanosCalculator({
                         selected ? "text-[#c9a87c]" : "text-at-soft"
                       )}
                     >
-                      {p.labelPontos}
+                      {p.labelPontos || `Até ${p.limitePontos} pontos`}
                     </span>
                     {planoIncluiIa(p) ? (
                       <span className="mt-1.5 inline-flex items-center gap-0.5 rounded-full bg-cyan-500/15 px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wider text-cyan-200">
