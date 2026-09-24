@@ -79,7 +79,7 @@ export function DonoEmpresasClient({
     <DonoShell
       email={email}
       title="Clientes"
-      subtitle="Clientes com dono vinculado — MRR só aparece se houver pagamento."
+      subtitle="Só donos de operação (não equipe). Contas de teste ficam de fora."
       wide
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

@@ -55,6 +55,23 @@ function diasAte(iso: string | null): number | null {
   return Math.ceil((t - Date.now()) / (24 * 60 * 60 * 1000));
 }
 
+/**
+ * Contas de QA / seed: op@op.com, thiago@thiago.com, igor@igor.com…
+ * Não entram no CRM do dono como “cliente”.
+ */
+export function isEmailContaTeste(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const e = email.trim().toLowerCase();
+  const at = e.indexOf("@");
+  if (at < 1) return true;
+  const local = e.slice(0, at);
+  const domain = e.slice(at + 1);
+  const root = domain.split(".")[0] ?? "";
+  if (local === root) return true;
+  if (domain === "op.com") return true;
+  return false;
+}
+
 /** Saúde baseada em pagamento real + trial — ignora flag fantasma de assinatura. */
 export function classificarSaude(input: {
   status: string | null;
@@ -190,12 +207,6 @@ export async function fetchTenantsPlataforma(
   for (const p of profileList) {
     if (p.user_id) profileByUserId.set(p.user_id, p);
   }
-  /** Só a empresa apontada por profiles.empresa_id — evita N linhas por retries de onboarding. */
-  const profileByEmp = new Map<string, (typeof profileList)[number]>();
-  for (const p of profileList) {
-    if (!p.empresa_id) continue;
-    if (!profileByEmp.has(p.empresa_id)) profileByEmp.set(p.empresa_id, p);
-  }
 
   type PagamentoInfo = { valor_centavos: number; ciclo: "mensal" | "anual"; pago_em: string };
   const ultimoPagoByEmp = new Map<string, PagamentoInfo>();
@@ -237,9 +248,11 @@ export async function fetchTenantsPlataforma(
   }
 
   return empresas.map((e) => {
-    const prof = profileByEmp.get(e.id);
-    // Cliente real = perfil com empresa_id apontando pra esta linha (não só owner_id).
-    const cliente_real = Boolean(prof && prof.empresa_id === e.id);
+    // Sempre o dono da operação (empresas.owner_id) — nunca um operador da equipe.
+    const prof = e.owner_id ? profileByUserId.get(e.owner_id) ?? null : null;
+    const donoVinculado = Boolean(prof && prof.empresa_id === e.id);
+    const cliente_real =
+      donoVinculado && !isEmailContaTeste(prof?.email ?? null);
     const nichos = resolveNichosAtivos(
       nichosByEmp.get(e.id) ?? null,
       e.nicho as Nicho | null
