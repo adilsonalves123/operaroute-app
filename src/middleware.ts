@@ -60,6 +60,27 @@ function loginWithNext(request: NextRequest) {
   return NextResponse.redirect(url);
 }
 
+/** Encerra sessão Supabase no redirect (conta incompleta + link direto). */
+function loginWithNextClearingSession(request: NextRequest) {
+  const res = loginWithNext(request);
+  for (const c of request.cookies.getAll()) {
+    if (
+      c.name.startsWith("sb-") ||
+      c.name.includes("auth-token") ||
+      c.name.startsWith("or_")
+    ) {
+      res.cookies.set(c.name, "", {
+        path: "/",
+        maxAge: 0,
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+      });
+    }
+  }
+  return res;
+}
+
 function fetchComTimeout(
   input: RequestInfo | URL,
   init?: RequestInit
@@ -154,14 +175,14 @@ export async function middleware(request: NextRequest) {
       }
 
       // Conta sem empresa + link direto (ex.: /pontos/uuid do WhatsApp):
-      // vai para login com retorno, não trava na pesquisa de onboarding.
+      // encerra a sessão incompleta e abre login com retorno.
       if (
         !isPublic &&
         pathname !== "/configuracao" &&
         pathname !== "/pesquisa" &&
         onboarding
       ) {
-        return loginWithNext(request);
+        return loginWithNextClearingSession(request);
       }
     }
 

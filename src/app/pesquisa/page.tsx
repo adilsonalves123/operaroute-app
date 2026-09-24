@@ -7,6 +7,7 @@ import { NichoCardsCarousel } from "@/components/nichos/NichoCardsCarousel";
 import { TrialGratisCard } from "@/components/onboarding/TrialGratisCard";
 import { savePesquisaDraft } from "@/lib/onboarding/pesquisa-draft";
 import { resumoTrialPorFaixa } from "@/lib/onboarding/trial-resumo";
+import { createClient } from "@/lib/supabase/client";
 import type { Nicho } from "@/lib/types/database";
 
 const PONTOS_OPTIONS = [
@@ -25,6 +26,7 @@ export default function PesquisaPage() {
     null
   );
   const [error, setError] = useState("");
+  const [saindo, setSaindo] = useState(false);
 
   function continuar() {
     setError("");
@@ -49,6 +51,18 @@ export default function PesquisaPage() {
     router.push("/configuracao");
   }
 
+  async function entrarComOutraConta() {
+    setSaindo(true);
+    try {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    } catch {
+      // segue para login mesmo se o signOut falhar
+    }
+    router.replace("/login");
+    router.refresh();
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 sm:p-6">
       <div className="w-full max-w-4xl space-y-8">
@@ -59,6 +73,17 @@ export default function PesquisaPage() {
           <h1 className="mt-2 text-3xl font-bold text-white">Pesquisa rápida</h1>
           <p className="text-at-muted mt-2">
             Só para entender sua operação — leva menos de 1 minuto.
+          </p>
+          <p className="mt-3 text-sm text-at-muted">
+            Já tem conta?{" "}
+            <button
+              type="button"
+              disabled={saindo}
+              onClick={() => void entrarComOutraConta()}
+              className="font-medium text-primary-neon underline-offset-2 hover:underline disabled:opacity-60"
+            >
+              {saindo ? "Saindo…" : "Entrar com outra conta"}
+            </button>
           </p>
         </div>
 
