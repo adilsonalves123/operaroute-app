@@ -100,9 +100,13 @@ export const PLANOS_PADRAO: PlanoDefinicao[] = [
   },
 ];
 
-/** IA liberada em planos a partir de R$ 499 (ou flag do catálogo). */
-export function planoIncluiIa(plano: Pick<PlanoDefinicao, "incluiIa" | "precoMensal">): boolean {
-  return Boolean(plano.incluiIa) || plano.precoMensal >= 499;
+/** IA liberada em Pro/Elite (não depende do preço com desconto de nicho). */
+export function planoIncluiIa(
+  plano: Pick<PlanoDefinicao, "incluiIa" | "slug" | "precoMensal">
+): boolean {
+  if (plano.incluiIa) return true;
+  if (plano.slug === "pro" || plano.slug === "elite") return true;
+  return plano.precoMensal >= 499;
 }
 
 /** Label da régua / card — segue o limite salvo no painel do dono. */
@@ -178,8 +182,32 @@ export const NICHOS_PAGOS: Nicho[] = [
   "consignado",
 ];
 
+/**
+ * Peso do nicho no preço (1 = preço cheio do plano).
+ * Cassino referencia; fura-fura / bolinha mais baratos.
+ * Vários nichos → média dos pesos.
+ */
+export const PESO_PRECO_NICHOS: Record<(typeof NICHOS_PAGOS)[number], number> = {
+  maquinas_cassino: 1,
+  ursinho: 0.9,
+  diversao: 0.85,
+  consignado: 0.8,
+  bolinha: 0.7,
+  fura_fura: 0.65,
+};
+
 export const MAX_NICHOS_PAGOS = 6;
 export const MULTIPLICADOR_ANUAL_PADRAO = 10;
+
+/** Fator 0–1 aplicado sobre o preço do plano, conforme nichos marcados. */
+export function fatorPrecoPorNichos(nichos?: Nicho[] | null): number {
+  const pagos = (nichos ?? []).filter((n): n is (typeof NICHOS_PAGOS)[number] =>
+    NICHOS_PAGOS.includes(n)
+  );
+  if (pagos.length === 0) return 1;
+  const soma = pagos.reduce((acc, n) => acc + (PESO_PRECO_NICHOS[n] ?? 1), 0);
+  return Math.round((soma / pagos.length) * 1000) / 1000;
+}
 
 const LEGACY_FAIXA_MAP: Record<string, FaixaPontos> = {
   "11-30": "11-50",
@@ -286,11 +314,13 @@ export function getLockedNichoCta(
 
 export function calcPrecoMensal(
   faixa: FaixaPontos | string,
-  _nichos?: Nicho[],
+  nichos?: Nicho[],
   planos: PlanoDefinicao[] = PLANOS_PADRAO
 ): number | null {
-  void _nichos;
-  return getPlanoByFaixa(faixa, planos).precoMensal;
+  const base = getPlanoByFaixa(faixa, planos).precoMensal;
+  if (!Number.isFinite(base) || base < 0) return null;
+  const fator = fatorPrecoPorNichos(nichos);
+  return Math.round(base * fator * 100) / 100;
 }
 
 export function calcPrecoAnual(

@@ -8,6 +8,7 @@ import { NICHOS } from "@/lib/nicho";
 import {
   calcPrecoAnual,
   calcPrecoCiclo,
+  calcPrecoMensal,
   formatPreco,
   getPlanoByFaixa,
   MULTIPLICADOR_ANUAL_PADRAO,
@@ -119,10 +120,16 @@ export function PlanosCalculator({
   }, [billingStatus, billingCheckoutId, router]);
 
   const plano = useMemo(() => getPlanoByFaixa(faixa, planos), [faixa, planos]);
-  const precoMensal = plano.precoMensal;
-  const precoAnual = calcPrecoAnual(faixa, nichos, planos, multAnual);
-  const precoCiclo = calcPrecoCiclo(ciclo, faixa, nichos, planos, multAnual);
   const nichosPagos = nichos.filter((n) => NICHOS_PAGOS.includes(n));
+  const precoMensal = calcPrecoMensal(faixa, nichosPagos, planos);
+  const precoAnual = calcPrecoAnual(faixa, nichosPagos, planos, multAnual);
+  const precoCiclo = calcPrecoCiclo(ciclo, faixa, nichosPagos, planos, multAnual);
+  const precoCheio = plano.precoMensal;
+  const temDescontoNicho =
+    precoMensal != null &&
+    precoCheio > 0 &&
+    nichosPagos.length > 0 &&
+    precoMensal < precoCheio - 0.009;
   const activeIndex = Math.max(
     0,
     planos.findIndex((p) => p.id === faixa)
@@ -175,6 +182,7 @@ export function PlanosCalculator({
       return;
     }
     setNichos(pagos);
+    setPriceKey((k) => k + 1);
   }
 
   async function handleAssinar() {
@@ -284,8 +292,8 @@ export function PlanosCalculator({
             Quanto a operação aguenta?
           </h1>
           <p className="mt-3 max-w-md text-[14px] leading-relaxed text-at-muted">
-            Deslize a régua pela quantidade de pontos. Veja o que entra em cada
-            plano, marque os nichos e assine pelo Mercado Pago.
+            Deslize a régua pelos pontos, marque os nichos e o preço se ajusta:
+            cassino no valor cheio; fura-fura e bolinha saem mais em conta.
           </p>
         </header>
 
@@ -423,6 +431,12 @@ export function PlanosCalculator({
                 >
                   {precoLabel}
                 </p>
+                {temDescontoNicho ? (
+                  <p className="mt-0.5 text-[12px] text-emerald-400/90">
+                    Ajuste pelos nichos · tabela{" "}
+                    {formatPreco(precoCheio).replace("/mês", "")}
+                  </p>
+                ) : null}
                 {ciclo === "mensal" && precoAnual != null && (
                   <p className="mt-0.5 text-[12px] text-at-muted">
                     Anual{" "}
@@ -458,6 +472,21 @@ export function PlanosCalculator({
         </section>
 
         <section className="relative z-[1] mt-12 overflow-hidden border-t border-at pt-8">
+          <p className="mb-4 text-[12px] leading-relaxed text-at-muted">
+            Preço por nicho:{" "}
+            <span className="text-slate-300">cassino 100%</span>
+            {" · "}
+            <span className="text-slate-300">ursinho 90%</span>
+            {" · "}
+            <span className="text-slate-300">diversão 85%</span>
+            {" · "}
+            <span className="text-slate-300">consignado 80%</span>
+            {" · "}
+            <span className="text-emerald-300/90">bolinha 70%</span>
+            {" · "}
+            <span className="text-emerald-300/90">fura-fura 65%</span>
+            . Com mais de um, usa a média.
+          </p>
           <NichoCardsCarousel
             values={nichos}
             onChangeMulti={onChangeNichos}

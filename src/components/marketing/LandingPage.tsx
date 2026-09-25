@@ -17,6 +17,7 @@ import { Inter, Space_Grotesk } from "next/font/google";
 import {
   PLANOS_PADRAO,
   calcPrecoAnual,
+  calcPrecoMensal,
   MULTIPLICADOR_ANUAL_PADRAO,
 } from "@/lib/pricing";
 
@@ -421,9 +422,13 @@ export function LandingPage() {
         </div>
         <div className="relative mt-12 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           {PLANOS_PADRAO.map((plano) => {
-            const mensal = plano.precoMensal;
-            const anual = calcPrecoAnual(plano.id) ?? mensal * MULTIPLICADOR_ANUAL_PADRAO;
-            const valor = ciclo === "mensal" ? mensal : anual;
+            const mensalCheio = plano.precoMensal;
+            const mensalDesde =
+              calcPrecoMensal(plano.id, ["fura_fura"]) ?? mensalCheio;
+            const anual =
+              calcPrecoAnual(plano.id, ["fura_fura"]) ??
+              mensalDesde * MULTIPLICADOR_ANUAL_PADRAO;
+            const valor = ciclo === "mensal" ? mensalDesde : anual;
             return (
               <div
                 key={plano.id}
@@ -449,10 +454,16 @@ export function LandingPage() {
                   className="mt-4 text-[1.7rem] font-bold tracking-tight text-white"
                   style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
                 >
+                  <span className="mr-1 text-[11px] font-medium text-slate-500">
+                    a partir de
+                  </span>
                   {formatBRL(valor)}
                   <span className="text-[12px] font-medium text-slate-500">
                     {ciclo === "mensal" ? "/mês" : "/ano"}
                   </span>
+                </p>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Tabela cheia {formatBRL(mensalCheio)}/mês · preço cai com fura-fura/bolinha
                 </p>
                 <p className="mt-2 flex-1 text-[12.5px] leading-relaxed text-slate-400">
                   {plano.descricao}
