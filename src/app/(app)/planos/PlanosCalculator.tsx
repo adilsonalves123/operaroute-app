@@ -130,6 +130,11 @@ export function PlanosCalculator({
     precoCheio > 0 &&
     nichosPagos.length > 0 &&
     precoMensal < precoCheio - 0.009;
+  const temNichoTravado = nichosTravados.length > 0;
+  const precoTravadoCheio =
+    temNichoTravado &&
+    !temDescontoNicho &&
+    nichosPagos.some((n) => nichosTravados.includes(n));
   const activeIndex = Math.max(
     0,
     planos.findIndex((p) => p.id === faixa)
@@ -437,6 +442,18 @@ export function PlanosCalculator({
                     {formatPreco(precoCheio).replace("/mês", "")}
                   </p>
                 ) : null}
+                {precoTravadoCheio ? (
+                  <p className="mt-1 max-w-xs text-right text-[12px] leading-snug text-amber-200/90">
+                    Preço da tabela (nicho confirmado). Para mudar nicho ou plano, fale com o{" "}
+                    <Link
+                      href="/suporte"
+                      className="font-semibold underline underline-offset-2 hover:text-amber-100"
+                    >
+                      suporte
+                    </Link>
+                    .
+                  </p>
+                ) : null}
                 {ciclo === "mensal" && precoAnual != null && (
                   <p className="mt-0.5 text-[12px] text-at-muted">
                     Anual{" "}
@@ -502,13 +519,23 @@ export function PlanosCalculator({
             }
           />
           {nichosTravados.length > 0 && (
-            <p className="mt-2 text-[12px] text-at-muted">
-              Nichos já confirmados ficam travados. Alteração só pelo{" "}
-              <Link href="/suporte" className="text-[#c9a87c] underline-offset-2 hover:underline">
-                suporte
-              </Link>
-              .
-            </p>
+            <div className="mt-4 rounded-xl border border-amber-400/25 bg-amber-500/10 px-3.5 py-3 text-[13px] leading-relaxed text-amber-100/90">
+              <p className="font-semibold text-amber-50">
+                Nichos já confirmados ficam bloqueados
+              </p>
+              <p className="mt-1 text-[12.5px] text-amber-100/80">
+                O preço mostrado é o da sua operação atual
+                {precoTravadoCheio ? " (tabela cheia com os nichos travados)" : ""}.
+                Para trocar nicho, reduzir plano ou liberar outro valor, entre em contato com o{" "}
+                <Link
+                  href="/suporte"
+                  className="font-semibold text-[#c9a87c] underline underline-offset-2 hover:text-[#e8d5b0]"
+                >
+                  suporte
+                </Link>
+                .
+              </p>
+            </div>
           )}
           {nichosPagos.length >= plano.maxNichos && plano.slug !== "elite" && (
             <p className="mt-3 text-[12px] text-[#c9a87c]/90">
@@ -530,6 +557,14 @@ export function PlanosCalculator({
               {success && !error && (
                 <p className="mb-1 text-[12px] text-emerald-400" role="status">
                   {success}
+                </p>
+              )}
+              {temNichoTravado && !error && (
+                <p className="mb-1 text-[11px] text-amber-200/85">
+                  Nicho travado · mudança só pelo{" "}
+                  <Link href="/suporte" className="underline underline-offset-2">
+                    suporte
+                  </Link>
                 </p>
               )}
               <div
