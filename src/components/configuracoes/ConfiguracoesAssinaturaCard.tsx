@@ -10,6 +10,7 @@ import {
 } from "@/lib/assinatura-acesso";
 import { getPlanoByFaixa, type FaixaPontos, type PlanoDefinicao } from "@/lib/pricing";
 import { champagneLink, ConfigPanelBody } from "@/components/configuracoes/configuracoes-ui";
+import { jaTeveAssinaturaPaga } from "@/lib/billing/vencimento";
 
 type Props = {
   acesso: AcessoAssinaturaInput;
@@ -40,7 +41,7 @@ export function ConfiguracoesAssinaturaCard({
     statusLabel = `${dias} dia${dias === 1 ? "" : "s"} de teste`;
     statusClass = "text-at-link border-[var(--at-tab-active-border)] bg-at-tab-active/15";
   } else if (expirado) {
-    statusLabel = "Teste encerrado";
+    statusLabel = jaTeveAssinaturaPaga(acesso) ? "Assinatura vencida" : "Teste encerrado";
     statusClass = "text-rose-700 border-rose-500/25 bg-rose-500/10 dark:text-rose-200";
   }
 

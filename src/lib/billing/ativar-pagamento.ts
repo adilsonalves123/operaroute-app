@@ -38,11 +38,43 @@ export async function ativarCheckoutPago(
     return { ok: true, already: true };
   }
 
+  // Webhook e /confirmar podem chegar juntos: só quem "pega" o checkout aplica o período.
+  const { data: claimed, error: claimError } = await admin
+    .from("plataforma_checkout")
+    .update({
+      status: "pago",
+      mp_payment_id: String(paymentId),
+      mp_status: opts.mpStatus ?? "approved",
+      paid_at: new Date().toISOString(),
+    })
+    .eq("id", checkout.id)
+    .eq("status", checkout.status)
+    .select("id");
+
+  if (claimError) {
+    return { ok: false, error: claimError.message };
+  }
+  if (!claimed || claimed.length === 0) {
+    return { ok: true, already: true };
+  }
+
   const nichos = Array.isArray(checkout.nichos)
     ? (checkout.nichos as Nicho[])
     : [];
 
-  const vence = calcVencimentoAssinatura(checkout.ciclo);
+  const { data: empresaAtual } = await admin
+    .from("empresas")
+    .select("assinatura_vence_em")
+    .eq("id", checkout.empresa_id)
+    .maybeSingle();
+
+  // Renovação antecipada soma ao período que o cliente ainda tem.
+  const venceAtual = empresaAtual?.assinatura_vence_em
+    ? new Date(empresaAtual.assinatura_vence_em)
+    : null;
+  const base =
+    venceAtual && venceAtual.getTime() > Date.now() ? venceAtual : new Date();
+  const vence = calcVencimentoAssinatura(checkout.ciclo, base);
 
   const aplicado = await aplicarPlanoEmpresa(admin, {
     empresaId: checkout.empresa_id,
@@ -55,6 +87,10 @@ export async function ativarCheckoutPago(
   });
 
   if (!aplicado.ok) {
+    await admin
+      .from("plataforma_checkout")
+      .update({ status: checkout.status, paid_at: null })
+      .eq("id", checkout.id);
     return { ok: false, error: aplicado.error };
   }
 
@@ -103,20 +139,6 @@ export async function ativarCheckoutPago(
       // tabela pode não existir — assinatura já foi ativada; segue
       console.error("[billing] plataforma_pagamentos:", payError.message);
     }
-  }
-
-  const { error: updError } = await admin
-    .from("plataforma_checkout")
-    .update({
-      status: "pago",
-      mp_payment_id: String(paymentId),
-      mp_status: opts.mpStatus ?? "approved",
-      paid_at: new Date().toISOString(),
-    })
-    .eq("id", checkout.id);
-
-  if (updError) {
-    return { ok: false, error: updError.message };
   }
 
   return { ok: true };

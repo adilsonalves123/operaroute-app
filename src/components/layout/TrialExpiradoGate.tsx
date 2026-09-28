@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CreditCard, Lock, ShieldCheck } from "lucide-react";
 
 /** Bloqueia o app quando o trial de 7 dias acabou e não há assinatura. */
-export function TrialExpiradoGate() {
+export function TrialExpiradoGate({ assinaturaVencida = false }: { assinaturaVencida?: boolean }) {
   return (
     <div className="flex flex-1 items-center justify-center px-4 py-8 sm:p-6">
       <div className="w-full max-w-3xl overflow-hidden rounded-[28px] border border-at-soft bg-[radial-gradient(circle_at_top,_rgba(196,165,116,0.14),_transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
@@ -17,12 +17,14 @@ export function TrialExpiradoGate() {
           <div className="space-y-6">
             <div className="space-y-3">
               <h1 className="text-3xl font-semibold tracking-tight text-at-primary sm:text-4xl">
-                Seu periodo de teste chegou ao fim
+                {assinaturaVencida
+                  ? "Sua assinatura venceu"
+                  : "Seu periodo de teste chegou ao fim"}
               </h1>
               <p className="max-w-xl text-[15px] leading-relaxed text-at-primary/85 sm:text-base">
-                O OperaRoute bloqueou a operacao porque os 7 dias gratis terminaram
-                e ainda nao houve confirmacao de pagamento. Para liberar tudo de
-                novo, basta escolher um plano e concluir a assinatura.
+                {assinaturaVencida
+                  ? "O periodo pago terminou e a renovacao ainda nao foi confirmada. Renove o plano para liberar a operacao de novo — nada foi apagado."
+                  : "O OperaRoute bloqueou a operacao porque os 7 dias gratis terminaram e ainda nao houve confirmacao de pagamento. Para liberar tudo de novo, basta escolher um plano e concluir a assinatura."}
               </p>
             </div>
 
@@ -59,7 +61,7 @@ export function TrialExpiradoGate() {
                 href="/planos"
                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#c4a574] px-5 py-3 text-[13px] font-semibold text-[#0a0e16] transition hover:brightness-110"
               >
-                Escolher plano agora
+                {assinaturaVencida ? "Renovar agora" : "Escolher plano agora"}
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link

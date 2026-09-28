@@ -12,6 +12,7 @@ import {
   trialFimEfetivoIso,
 } from "@/lib/assinatura-acesso";
 import { cn } from "@/lib/utils";
+import { jaTeveAssinaturaPaga } from "@/lib/billing/vencimento";
 
 interface TrialBannerProps {
   acesso: AcessoAssinaturaInput;
@@ -38,6 +39,7 @@ export function TrialBanner({
 
   const days = diasRestantesTrial(trialFim);
   const plano = planoNome?.trim() || null;
+  const assinaturaVencida = expired && jaTeveAssinaturaPaga(acesso);
 
   return (
     <div
@@ -54,10 +56,12 @@ export function TrialBanner({
                 className="text-[15px] tracking-tight text-at-primary"
                 style={{ fontFamily: "Georgia, serif" }}
               >
-                Avaliação encerrada
+                {assinaturaVencida ? "Assinatura vencida" : "Avaliação encerrada"}
               </span>
               <span className="text-at-soft"> · </span>
-              Escolha um plano para continuar operando.
+              {assinaturaVencida
+                ? "Renove o plano para continuar operando."
+                : "Escolha um plano para continuar operando."}
             </p>
           ) : (
             <p className="text-[13px] leading-snug text-at-muted sm:text-[14px]">
@@ -98,7 +102,7 @@ export function TrialBanner({
                 : "border-at bg-at-card text-at-link hover:border-[var(--at-tab-active-border)] hover:bg-at-card-soft"
             )}
           >
-            {expired ? "Escolher plano" : "Ver planos"}
+            {assinaturaVencida ? "Renovar" : expired ? "Escolher plano" : "Ver planos"}
           </Link>
           {!expired && (
             <button

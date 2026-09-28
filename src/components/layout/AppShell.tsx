@@ -8,7 +8,7 @@ import { SimulacaoTrialBar } from "./SimulacaoTrialBar";
 import { MobileMenuProvider } from "./MobileMenuContext";
 import { MobileAppMenu } from "./MobileAppMenu";
 import { AppHeader } from "./AppHeader";
-import { getAcessoUsuario, type AcessoUsuario } from "@/lib/equipe/acesso";
+import { getAcessoUsuario, usuarioPode, type AcessoUsuario } from "@/lib/equipe/acesso";
 import { resolverVisaoOperador } from "@/lib/visao/resolver";
 import { fetchChamadosAbertosResumo } from "@/lib/chamados/fetch-resumo";
 import { mesclarPermissoes } from "@/lib/equipe/permissions";
@@ -19,6 +19,12 @@ import {
 } from "@/lib/assinatura-acesso";
 import { resolverOwnerProfileAcesso } from "@/lib/assinatura-owner";
 import { resolverAcessoIa } from "@/lib/ia/acesso-ia";
+import {
+  formatarDataVencimento,
+  jaTeveAssinaturaPaga,
+  statusVencimento,
+} from "@/lib/billing/vencimento";
+import { AssinaturaVencimentoBanner } from "./AssinaturaVencimentoBanner";
 import { resumoTrialPorFaixa } from "@/lib/onboarding/trial-resumo";
 import {
   COOKIE_SIMULAR_TRIAL,
@@ -78,6 +84,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const bloqueado = trialExpirado(acessoAssinatura);
+  const assinaturaVencida = bloqueado && jaTeveAssinaturaPaga(acessoAssinatura);
+  const podeRenovar = acesso.isOwner || usuarioPode(acesso, "planos", "editar");
+  const vencimento = podeRenovar ? statusVencimento(acessoAssinatura) : { tipo: "ok" as const };
   const iaLeituraFoto = await resolverAcessoIa(
     empresa?.quantidade_pontos,
     acessoAssinatura
@@ -116,11 +125,20 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
               planoNome={trialResumo.planoNome}
               limitesLabel={`${trialResumo.labelPontos} · ${trialResumo.labelNichos}`}
             />
+            {vencimento.tipo === "vence_em_breve" ? (
+              <AssinaturaVencimentoBanner
+                dias={vencimento.dias}
+                venceEmLabel={formatarDataVencimento(vencimento.venceEm)}
+                renovacaoCancelada={vencimento.renovacaoCancelada}
+              />
+            ) : null}
             <AppHeader nomeUsuario={profile?.nome ?? undefined} />
             <main className="app-shell-main flex-1 overflow-y-auto p-4 lg:p-6 pb-24 lg:pb-6">
               <PushNativeInit />
               <PremiumDeskMain>
-                <TrialAccessBody bloqueado={bloqueado}>{children}</TrialAccessBody>
+                <TrialAccessBody bloqueado={bloqueado} assinaturaVencida={assinaturaVencida}>
+                  {children}
+                </TrialAccessBody>
               </PremiumDeskMain>
             </main>
             <BottomNav />
