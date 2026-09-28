@@ -15,11 +15,18 @@ import {
 } from "lucide-react";
 import { Inter, Space_Grotesk } from "next/font/google";
 import {
-  PLANOS_PADRAO,
   calcPrecoAnual,
   calcPrecoMensal,
-  MULTIPLICADOR_ANUAL_PADRAO,
+  NICHOS_PAGOS,
+  type PesosNichos,
+  type PlanoDefinicao,
 } from "@/lib/pricing";
+import {
+  depoimentosPublicos,
+  iniciais,
+  resolverVideo,
+  type ProvaSocial,
+} from "@/lib/marketing/prova-social";
 
 const display = Space_Grotesk({
   subsets: ["latin"],
@@ -65,8 +72,20 @@ const NICHOS = [
   "Diversão",
 ] as const;
 
-export function LandingPage() {
+type LandingProps = {
+  planos: PlanoDefinicao[];
+  multiplicadorAnual: number;
+  pesos: PesosNichos;
+  prova: ProvaSocial;
+};
+
+export function LandingPage({ planos, multiplicadorAnual, pesos, prova }: LandingProps) {
   const [ciclo, setCiclo] = useState<"mensal" | "anual">("mensal");
+  const video = resolverVideo(prova.video_url);
+  const depoimentos = depoimentosPublicos(prova);
+  const nichoMaisBarato = NICHOS_PAGOS.reduce((menor, n) =>
+    (pesos[n] ?? 1) < (pesos[menor] ?? 1) ? n : menor
+  );
 
   return (
     <div
@@ -112,6 +131,14 @@ export function LandingPage() {
           >
             Nichos
           </a>
+          {depoimentos.length > 0 && (
+            <a
+              href="#depoimentos"
+              className="rounded-full px-4 py-1.5 text-[12px] font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
+            >
+              Clientes
+            </a>
+          )}
           <a
             href="#planos"
             className="rounded-full px-4 py-1.5 text-[12px] font-semibold text-slate-300 transition hover:bg-white/10 hover:text-white"
@@ -214,6 +241,48 @@ export function LandingPage() {
           ))}
         </div>
       </div>
+
+      {video && (
+        <section
+          id="video"
+          className="relative z-10 mx-auto max-w-5xl px-4 pt-20 sm:px-6 sm:pt-28"
+        >
+          <p className="text-center text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-300/80">
+            Veja funcionando
+          </p>
+          <h2
+            className={`mx-auto mt-2 max-w-[22ch] text-center text-[clamp(1.85rem,4vw,2.75rem)] leading-[1.08] ${headline}`}
+            style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
+          >
+            {prova.video_titulo || "Uma coleta do começo ao fim, no celular."}
+          </h2>
+          <div
+            className={`mt-10 overflow-hidden rounded-[1.5rem] p-2 shadow-[0_30px_80px_rgba(0,0,0,0.55)] sm:p-3 ${glassCyan}`}
+          >
+            <div className="relative aspect-video overflow-hidden rounded-xl bg-black">
+              {video.tipo === "embed" ? (
+                <iframe
+                  src={video.src}
+                  title={prova.video_titulo || "Vídeo do OperaRoute"}
+                  className="absolute inset-0 h-full w-full"
+                  loading="lazy"
+                  allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                  allowFullScreen
+                  referrerPolicy="strict-origin-when-cross-origin"
+                />
+              ) : (
+                <video
+                  src={video.src}
+                  controls
+                  playsInline
+                  preload="metadata"
+                  className="absolute inset-0 h-full w-full object-contain"
+                />
+              )}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* PRINTS — galeria das telas */}
       <section id="prints" className="relative z-10 mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-28">
@@ -379,6 +448,58 @@ export function LandingPage() {
         </div>
       </section>
 
+      {depoimentos.length > 0 && (
+        <section
+          id="depoimentos"
+          className="relative z-10 mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-cyan-300/80">
+            Quem já usa
+          </p>
+          <h2
+            className={`mt-2 max-w-[20ch] text-[clamp(1.85rem,4vw,2.75rem)] leading-[1.08] ${headline}`}
+            style={{ fontFamily: "var(--font-lp-display), system-ui, sans-serif" }}
+          >
+            Operadores que fecham o dia no app.
+          </h2>
+          <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {depoimentos.map((d) => (
+              <figure
+                key={d.id}
+                className={`flex flex-col rounded-2xl p-6 ${glass}`}
+              >
+                <blockquote className="flex-1 text-[14px] leading-relaxed text-slate-200">
+                  “{d.texto}”
+                </blockquote>
+                <figcaption className="mt-6 flex items-center gap-3">
+                  {d.foto_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={d.foto_url}
+                      alt={d.nome}
+                      loading="lazy"
+                      className="h-11 w-11 shrink-0 rounded-full border border-white/10 object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-cyan-400/25 bg-cyan-500/10 text-[13px] font-semibold text-cyan-100">
+                      {iniciais(d.nome)}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-[14px] font-semibold text-white">{d.nome}</p>
+                    {(d.operacao || d.cidade) && (
+                      <p className="truncate text-[12px] text-slate-500">
+                        {[d.operacao, d.cidade].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                  </div>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* planos */}
       <section id="planos" className="relative z-10 mx-auto max-w-6xl px-4 py-20 sm:px-6 sm:py-24">
         <div
@@ -416,18 +537,18 @@ export function LandingPage() {
                   : "text-slate-400 hover:text-white"
               }`}
             >
-              Anual · {MULTIPLICADOR_ANUAL_PADRAO}×
+              Anual · {multiplicadorAnual}×
             </button>
           </div>
         </div>
         <div className="relative mt-12 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {PLANOS_PADRAO.map((plano) => {
+          {planos.map((plano) => {
             const mensalCheio = plano.precoMensal;
             const mensalDesde =
-              calcPrecoMensal(plano.id, ["fura_fura"]) ?? mensalCheio;
+              calcPrecoMensal(plano.id, [nichoMaisBarato], planos, pesos) ?? mensalCheio;
             const anual =
-              calcPrecoAnual(plano.id, ["fura_fura"]) ??
-              mensalDesde * MULTIPLICADOR_ANUAL_PADRAO;
+              calcPrecoAnual(plano.id, [nichoMaisBarato], planos, multiplicadorAnual, pesos) ??
+              mensalDesde * multiplicadorAnual;
             const valor = ciclo === "mensal" ? mensalDesde : anual;
             return (
               <div
@@ -463,7 +584,7 @@ export function LandingPage() {
                   </span>
                 </p>
                 <p className="mt-1 text-[11px] text-slate-500">
-                  Tabela cheia {formatBRL(mensalCheio)}/mês · preço cai com fura-fura/bolinha
+                  Tabela cheia {formatBRL(mensalCheio)}/mês · o preço varia conforme o nicho
                 </p>
                 <p className="mt-2 flex-1 text-[12.5px] leading-relaxed text-slate-400">
                   {plano.descricao}

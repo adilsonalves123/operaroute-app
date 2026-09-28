@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getDonoSession } from "@/lib/dono/session";
 import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
 import { loadPrecosPayload, savePrecosPayload } from "@/lib/dono/precos";
@@ -46,6 +47,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: result.error }, { status: 500 });
   }
 
+  revalidatePath("/");
   const data = await loadPrecosPayload(admin);
   return NextResponse.json({ ok: true, ...data });
 }
