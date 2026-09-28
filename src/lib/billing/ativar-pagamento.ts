@@ -1,8 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import {
-  aplicarPlanoEmpresa,
-  calcVencimentoAssinatura,
-} from "@/lib/billing/aplicar-plano";
+import { aplicarPlanoEmpresa } from "@/lib/billing/aplicar-plano";
+import { calcNovoVencimento } from "@/lib/billing/periodo";
 import type { Nicho } from "@/lib/types/database";
 import type { PlanoDefinicao } from "@/lib/pricing";
 
@@ -94,13 +92,7 @@ export async function ativarCheckoutPago(
     .eq("id", checkout.empresa_id)
     .maybeSingle();
 
-  // Renovação antecipada soma ao período que o cliente ainda tem.
-  const venceAtual = empresaAtual?.assinatura_vence_em
-    ? new Date(empresaAtual.assinatura_vence_em)
-    : null;
-  const base =
-    venceAtual && venceAtual.getTime() > Date.now() ? venceAtual : new Date();
-  const vence = calcVencimentoAssinatura(checkout.ciclo, base);
+  const vence = calcNovoVencimento(checkout.ciclo, empresaAtual?.assinatura_vence_em);
 
   const aplicado = opts.somenteEstender
     ? await estenderVencimento(admin, checkout.empresa_id, checkout.ciclo, vence)

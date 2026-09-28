@@ -245,15 +245,4 @@ export async function aplicarPlanoEmpresa(
   };
 }
 
-export function calcVencimentoAssinatura(
-  ciclo: "mensal" | "anual",
-  from = new Date()
-): Date {
-  const d = new Date(from);
-  if (ciclo === "anual") {
-    d.setFullYear(d.getFullYear() + 1);
-  } else {
-    d.setMonth(d.getMonth() + 1);
-  }
-  return d;
-}
+export { calcVencimentoAssinatura } from "@/lib/billing/periodo";

@@ -4,6 +4,7 @@ import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
 import { fetchTenantsPlataforma } from "@/lib/plataforma/tenants";
 import { registrarAuditoria } from "@/lib/auditoria/registrar";
 import { aplicarPlanoEmpresa } from "@/lib/billing/aplicar-plano";
+import { somarMeses } from "@/lib/billing/periodo";
 import { loadPrecosPayload } from "@/lib/dono/precos";
 import type { Nicho } from "@/lib/types/database";
 
@@ -157,11 +158,11 @@ export async function PATCH(request: Request, ctx: Ctx) {
             ? new Date(prof.trial_fim)
             : new Date();
       if (unidade === "meses") {
-        base.setMonth(base.getMonth() + qtd);
+        fim = somarMeses(base, qtd);
       } else {
         base.setDate(base.getDate() + qtd);
+        fim = base;
       }
-      fim = base;
     }
 
     if (fim.getTime() < Date.now() - 24 * 60 * 60 * 1000) {

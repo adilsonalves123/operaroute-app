@@ -7,6 +7,7 @@ import {
   NICHOS_PAGOS,
   normalizeFaixaPontos,
   PLANOS_PADRAO,
+  reaisParaCentavos,
   type FaixaPontos,
   type PlanoDefinicao,
 } from "@/lib/pricing";
@@ -96,7 +97,7 @@ export async function prepararCheckout(
       planos,
       pagos,
       valor,
-      valorCentavos: Math.round(valor * 100),
+      valorCentavos: reaisParaCentavos(valor),
       titulo: `OperaRoute ${plano.nome} — ${ciclo}`,
     },
   };

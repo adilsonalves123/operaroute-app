@@ -312,6 +312,18 @@ export function getLockedNichoCta(
   };
 }
 
+/**
+ * Arredonda para centavos (meio para cima). O toPrecision tira o ruído de ponto
+ * flutuante: 259.9 × 0.85 dá 220.91499999… e precisa virar 220.92.
+ */
+export function arredondarReais(valor: number): number {
+  return Math.round(Number((valor * 100).toPrecision(12))) / 100;
+}
+
+export function reaisParaCentavos(valor: number): number {
+  return Math.round(Number((valor * 100).toPrecision(12)));
+}
+
 export function calcPrecoMensal(
   faixa: FaixaPontos | string,
   nichos?: Nicho[],
@@ -320,7 +332,7 @@ export function calcPrecoMensal(
   const base = getPlanoByFaixa(faixa, planos).precoMensal;
   if (!Number.isFinite(base) || base < 0) return null;
   const fator = fatorPrecoPorNichos(nichos);
-  return Math.round(base * fator * 100) / 100;
+  return arredondarReais(base * fator);
 }
 
 export function calcPrecoAnual(
@@ -331,7 +343,7 @@ export function calcPrecoAnual(
 ): number | null {
   const m = calcPrecoMensal(faixa, nichos, planos);
   if (m == null) return null;
-  return Math.round(m * multiplicadorAnual * 100) / 100;
+  return arredondarReais(m * multiplicadorAnual);
 }
 
 export function calcPrecoCiclo(
