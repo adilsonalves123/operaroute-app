@@ -8,6 +8,8 @@ import { PlanosShell } from "./PlanosShell";
 import { buildAcessoAssinaturaInput, temPagamentoValido } from "@/lib/assinatura-acesso";
 import { resolverOwnerProfileAcesso } from "@/lib/assinatura-owner";
 import { CancelarAssinaturaCard } from "@/components/configuracoes/CancelarAssinaturaCard";
+import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
+import { carregarRenovacaoAutomatica } from "@/lib/billing/assinatura-recorrente";
 
 export default async function PlanosPage({
   searchParams,
@@ -45,11 +47,18 @@ export default async function PlanosPage({
       : undefined;
 
   const billingStatus =
-    billing === "success" || billing === "failure" || billing === "pending"
+    billing === "success" ||
+    billing === "failure" ||
+    billing === "pending" ||
+    billing === "assinatura"
       ? billing
       : null;
 
   const podeCancelar = Boolean(acesso?.isOwner || acesso?.role === "admin");
+  const renovacao =
+    profile?.empresa_id && isAdminConfigured()
+      ? await carregarRenovacaoAutomatica(createAdminClient(), profile.empresa_id)
+      : { ativa: false, preapprovalId: null };
 
   return (
     <PlanosShell>
@@ -59,6 +68,8 @@ export default async function PlanosPage({
         nichosTravados={pagosAtivos}
         preselectNicho={preselectNicho}
         assinaturaAtiva={pagamentoOk}
+        renovacaoAutomatica={renovacao.ativa}
+        emailLogin={profile?.email ?? null}
         billingStatus={billingStatus}
         billingCheckoutId={checkout ?? null}
       />
@@ -66,6 +77,7 @@ export default async function PlanosPage({
         <CancelarAssinaturaCard
           acesso={acessoAssinatura}
           podeCancelar={podeCancelar}
+          renovacaoAutomatica={renovacao.ativa}
         />
       </div>
     </PlanosShell>

@@ -7,6 +7,8 @@ import {
   type ModoCancelamento,
 } from "@/lib/billing/cancelar-assinatura";
 import { registrarAuditoria, requestMeta } from "@/lib/auditoria/registrar";
+import { cancelarRenovacaoAutomatica } from "@/lib/billing/assinatura-recorrente";
+import { isMercadoPagoConfigured } from "@/lib/billing/mp-client";
 
 export async function POST(request: Request) {
   const auth = await requireAcesso("planos", "editar");
@@ -45,6 +47,13 @@ export async function POST(request: Request) {
 
   const client =
     isAdminConfigured() ? createAdminClient() : supabase;
+
+  if (isAdminConfigured() && isMercadoPagoConfigured()) {
+    const recorrencia = await cancelarRenovacaoAutomatica(createAdminClient(), empresaId);
+    if (!recorrencia.ok) {
+      return NextResponse.json({ error: recorrencia.error }, { status: 502 });
+    }
+  }
 
   const result = await cancelarAssinaturaEmpresa(client, {
     empresaId,

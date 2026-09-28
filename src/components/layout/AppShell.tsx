@@ -25,6 +25,8 @@ import {
   statusVencimento,
 } from "@/lib/billing/vencimento";
 import { AssinaturaVencimentoBanner } from "./AssinaturaVencimentoBanner";
+import { carregarRenovacaoAutomatica } from "@/lib/billing/assinatura-recorrente";
+import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
 import { resumoTrialPorFaixa } from "@/lib/onboarding/trial-resumo";
 import {
   COOKIE_SIMULAR_TRIAL,
@@ -86,7 +88,16 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   const bloqueado = trialExpirado(acessoAssinatura);
   const assinaturaVencida = bloqueado && jaTeveAssinaturaPaga(acessoAssinatura);
   const podeRenovar = acesso.isOwner || usuarioPode(acesso, "planos", "editar");
-  const vencimento = podeRenovar ? statusVencimento(acessoAssinatura) : { tipo: "ok" as const };
+  let vencimento = podeRenovar ? statusVencimento(acessoAssinatura) : { tipo: "ok" as const };
+  if (
+    vencimento.tipo === "vence_em_breve" &&
+    !vencimento.renovacaoCancelada &&
+    profile?.empresa_id &&
+    isAdminConfigured()
+  ) {
+    const renovacao = await carregarRenovacaoAutomatica(createAdminClient(), profile.empresa_id);
+    if (renovacao.ativa) vencimento = { tipo: "ok" };
+  }
   const iaLeituraFoto = await resolverAcessoIa(
     empresa?.quantidade_pontos,
     acessoAssinatura

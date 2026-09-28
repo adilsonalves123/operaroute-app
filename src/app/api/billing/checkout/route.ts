@@ -1,22 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { createAdminClient, isAdminConfigured } from "@/lib/supabase/admin";
-import { loadPrecosPayload } from "@/lib/dono/precos";
-import {
-  calcPrecoCiclo,
-  getPlanoByFaixa,
-  NICHOS_PAGOS,
-  normalizeFaixaPontos,
-  PLANOS_PADRAO,
-  type FaixaPontos,
-} from "@/lib/pricing";
 import { createCheckoutPreference, isMercadoPagoConfigured } from "@/lib/billing/mp-client";
-import type { Nicho } from "@/lib/types/database";
-import {
-  loadNichosPagosAtivos,
-  mensagemNichosTravados,
-  nichosRemovidosIndevidamente,
-} from "@/lib/nichos/nicho-travado";
+import { prepararCheckout, type CheckoutBody } from "@/lib/billing/preparar-checkout";
 
 export async function POST(request: Request) {
   const auth = await requireAcesso("planos", "editar");
@@ -45,61 +31,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Empresa não encontrada." }, { status: 400 });
   }
 
-  let body: {
-    nichos?: Nicho[];
-    quantidade_pontos?: FaixaPontos | string;
-    ciclo?: "mensal" | "anual";
-  };
+  let body: CheckoutBody;
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: "Corpo inválido." }, { status: 400 });
   }
 
-  const ciclo = body.ciclo === "anual" ? "anual" : "mensal";
   const admin = createAdminClient();
-  const precos = await loadPrecosPayload(admin);
-  const planos = precos.planos?.length ? precos.planos : PLANOS_PADRAO;
-  const multAnual = precos.multiplicador_anual;
-
-  const pagos = (body.nichos ?? []).filter((n) => NICHOS_PAGOS.includes(n));
-  if (pagos.length === 0) {
-    return NextResponse.json(
-      { error: "Selecione pelo menos um nicho." },
-      { status: 400 }
-    );
-  }
-
-  const nichosJaAtivos = await loadNichosPagosAtivos(admin, empresaId);
-  const removidos = nichosRemovidosIndevidamente(nichosJaAtivos, pagos);
-  if (removidos.length > 0) {
-    return NextResponse.json(
-      { error: mensagemNichosTravados(removidos), code: "nicho_travado" },
-      { status: 403 }
-    );
-  }
-
-  const faixa = normalizeFaixaPontos(body.quantidade_pontos);
-  const plano = getPlanoByFaixa(faixa, planos);
-  if (pagos.length > plano.maxNichos) {
-    return NextResponse.json(
-      {
-        error: `O plano ${plano.nome} permite no máximo ${plano.maxNichos} nicho(s).`,
-      },
-      { status: 403 }
-    );
-  }
-
-  const valor = calcPrecoCiclo(ciclo, faixa, pagos, planos, multAnual);
-  if (valor == null || valor <= 0) {
-    return NextResponse.json({ error: "Preço indisponível para este plano." }, { status: 400 });
-  }
-
-  const valorCentavos = Math.round(valor * 100);
-  const titulo =
-    ciclo === "anual"
-      ? `OperaRoute ${plano.nome} — anual`
-      : `OperaRoute ${plano.nome} — mensal`;
+  const preparado = await prepararCheckout(admin, empresaId, body);
+  if (!preparado.ok) return preparado.response;
+  const { ciclo, faixa, plano, pagos, valor, valorCentavos, titulo } = preparado.dados;
 
   const { data: checkout, error: checkoutError } = await admin
     .from("plataforma_checkout")

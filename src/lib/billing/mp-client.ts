@@ -116,6 +116,104 @@ export async function createCheckoutPreference(
   return { ok: true, preference: result.data };
 }
 
+export type MpPreapproval = {
+  id: string;
+  status: "pending" | "authorized" | "paused" | "cancelled" | string;
+  external_reference?: string | null;
+  init_point?: string;
+  payer_email?: string | null;
+  next_payment_date?: string | null;
+  auto_recurring?: {
+    frequency?: number;
+    frequency_type?: string;
+    transaction_amount?: number | string;
+    currency_id?: string;
+  };
+};
+
+export type CreatePreapprovalInput = {
+  checkoutId: string;
+  reason: string;
+  payerEmail: string;
+  valor: number;
+  frequenciaMeses: 1 | 12;
+  /** Primeira cobrança só nesta data (cliente ainda tem período pago). */
+  inicioCobranca?: Date | null;
+};
+
+/** Assinatura sem plano associado, pendente de cartão — o cliente cadastra no init_point. */
+export async function createPreapproval(
+  input: CreatePreapprovalInput
+): Promise<{ ok: true; preapproval: MpPreapproval } | { ok: false; status: number; message: string }> {
+  const autoRecurring: Record<string, unknown> = {
+    frequency: input.frequenciaMeses,
+    frequency_type: "months",
+    transaction_amount: Math.round(input.valor * 100) / 100,
+    currency_id: "BRL",
+  };
+  if (input.inicioCobranca && input.inicioCobranca.getTime() > Date.now() + 60_000) {
+    autoRecurring.start_date = input.inicioCobranca.toISOString();
+  }
+
+  const result = await mpFetch<MpPreapproval>("/preapproval", {
+    method: "POST",
+    body: JSON.stringify({
+      reason: input.reason.slice(0, 255),
+      external_reference: input.checkoutId,
+      payer_email: input.payerEmail,
+      auto_recurring: autoRecurring,
+      back_url: absoluteUrl(`/planos?billing=assinatura&checkout=${input.checkoutId}`),
+      status: "pending",
+    }),
+  });
+
+  if (!result.ok) return result;
+  if (!result.data?.id || !result.data?.init_point) {
+    return { ok: false, status: 500, message: "Assinatura criada sem link do Mercado Pago." };
+  }
+  return { ok: true, preapproval: result.data };
+}
+
+export async function fetchPreapproval(
+  id: string
+): Promise<{ ok: true; preapproval: MpPreapproval } | { ok: false; status: number; message: string }> {
+  const result = await mpFetch<MpPreapproval>(`/preapproval/${encodeURIComponent(id)}`);
+  if (!result.ok) return result;
+  return { ok: true, preapproval: result.data };
+}
+
+export async function cancelPreapproval(
+  id: string
+): Promise<{ ok: true } | { ok: false; status: number; message: string }> {
+  const result = await mpFetch<MpPreapproval>(`/preapproval/${encodeURIComponent(id)}`, {
+    method: "PUT",
+    body: JSON.stringify({ status: "cancelled" }),
+  });
+  if (!result.ok) return result;
+  return { ok: true };
+}
+
+export type MpAuthorizedPayment = {
+  id: number | string;
+  preapproval_id?: string | null;
+  external_reference?: string | null;
+  transaction_amount?: number | string;
+  status?: string;
+  payment?: { id?: number | string; status?: string; status_detail?: string } | null;
+};
+
+export async function fetchAuthorizedPayment(
+  id: string
+): Promise<
+  { ok: true; authorized: MpAuthorizedPayment } | { ok: false; status: number; message: string }
+> {
+  const result = await mpFetch<MpAuthorizedPayment>(
+    `/authorized_payments/${encodeURIComponent(id)}`
+  );
+  if (!result.ok) return result;
+  return { ok: true, authorized: result.data };
+}
+
 export type MpPayment = {
   id: number | string;
   status: string;

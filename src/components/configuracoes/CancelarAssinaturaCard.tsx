@@ -15,6 +15,7 @@ import { champagneLink, ConfigPanelBody } from "@/components/configuracoes/confi
 type Props = {
   acesso: AcessoAssinaturaInput;
   podeCancelar: boolean;
+  renovacaoAutomatica?: boolean;
   id?: string;
   className?: string;
   embedded?: boolean;
@@ -32,6 +33,7 @@ function formatDay(iso: string | null) {
 export function CancelarAssinaturaCard({
   acesso,
   podeCancelar,
+  renovacaoAutomatica = false,
   id,
   className,
   embedded = false,
@@ -105,8 +107,9 @@ export function CancelarAssinaturaCard({
   <>
       <LoadingOverlay show={loading !== null} message="Processando…" />
       <p className="text-[13px] text-at-muted leading-relaxed">
-        Não há débito automático no cartão. Para parar, cancele a renovação ou
-        simplesmente não pague o próximo período.
+        {renovacaoAutomatica
+          ? "Renovação automática no cartão ativa. Ao cancelar a renovação, o Mercado Pago para de cobrar e você mantém o acesso até o fim do período pago."
+          : "Não há débito automático no cartão. Para parar, cancele a renovação ou simplesmente não pague o próximo período."}
       </p>
 
       {emTrial && !pagamentoOk && (

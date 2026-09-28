@@ -18,6 +18,27 @@ export type CheckoutRow = {
   mp_payment_id?: string | null;
 };
 
+async function estenderVencimento(
+  admin: SupabaseClient,
+  empresaId: string,
+  ciclo: "mensal" | "anual",
+  vence: Date
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  const { error: empError } = await admin
+    .from("empresas")
+    .update({ assinatura_vence_em: vence.toISOString(), ciclo_cobranca: ciclo })
+    .eq("id", empresaId);
+  if (empError) return { ok: false, error: empError.message };
+
+  const { error: profError } = await admin
+    .from("profiles")
+    .update({ assinatura_ativa: true })
+    .eq("empresa_id", empresaId);
+  if (profError) return { ok: false, error: profError.message };
+
+  return { ok: true };
+}
+
 /**
  * Confirma pagamento aprovado: aplica plano, ativa assinatura e registra receita.
  * Idempotente se o checkout já estiver `pago`.
@@ -30,6 +51,11 @@ export async function ativarCheckoutPago(
     mpStatus?: string;
     metodo?: string;
     planos?: PlanoDefinicao[];
+    /**
+     * Cobrança recorrente seguinte (cartão): só estende o vencimento, sem reaplicar
+     * faixa/nichos — o suporte pode ter ajustado o plano entre um mês e outro.
+     */
+    somenteEstender?: boolean;
   }
 ): Promise<{ ok: true; already?: boolean } | { ok: false; error: string }> {
   const { checkout, paymentId } = opts;
@@ -76,15 +102,17 @@ export async function ativarCheckoutPago(
     venceAtual && venceAtual.getTime() > Date.now() ? venceAtual : new Date();
   const vence = calcVencimentoAssinatura(checkout.ciclo, base);
 
-  const aplicado = await aplicarPlanoEmpresa(admin, {
-    empresaId: checkout.empresa_id,
-    nichos,
-    quantidade_pontos: checkout.faixa,
-    planos: opts.planos,
-    ativarAssinatura: true,
-    ciclo: checkout.ciclo,
-    assinaturaVenceEm: vence,
-  });
+  const aplicado = opts.somenteEstender
+    ? await estenderVencimento(admin, checkout.empresa_id, checkout.ciclo, vence)
+    : await aplicarPlanoEmpresa(admin, {
+        empresaId: checkout.empresa_id,
+        nichos,
+        quantidade_pontos: checkout.faixa,
+        planos: opts.planos,
+        ativarAssinatura: true,
+        ciclo: checkout.ciclo,
+        assinaturaVenceEm: vence,
+      });
 
   if (!aplicado.ok) {
     await admin

@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils";
 import { useNichoCatalog } from "@/hooks/useNichoCovers";
 import { mensagemNichosTravados } from "@/lib/nichos/nicho-travado";
 import Link from "next/link";
-import { Check, Sparkles } from "lucide-react";
+import { Check, CreditCard, QrCode, RefreshCw, Sparkles } from "lucide-react";
 
 type Props = {
   initialFaixa: FaixaPontos;
@@ -33,9 +33,15 @@ type Props = {
   nichosTravados?: Nicho[];
   preselectNicho?: Nicho;
   assinaturaAtiva?: boolean;
-  billingStatus?: "success" | "failure" | "pending" | null;
+  /** Recorrência no cartão (Mercado Pago) já ativa. */
+  renovacaoAutomatica?: boolean;
+  /** E-mail de login — sugestão para o e-mail da conta Mercado Pago. */
+  emailLogin?: string | null;
+  billingStatus?: "success" | "failure" | "pending" | "assinatura" | null;
   billingCheckoutId?: string | null;
 };
+
+type FormaPagamento = "avulso" | "cartao_recorrente";
 
 function mergePreselectNicho(initialNichos: Nicho[], preselect?: Nicho): Nicho[] {
   if (!preselect || initialNichos.includes(preselect)) return initialNichos;
@@ -48,9 +54,15 @@ export function PlanosCalculator({
   nichosTravados = [],
   preselectNicho,
   assinaturaAtiva = false,
+  renovacaoAutomatica = false,
+  emailLogin = null,
   billingStatus = null,
   billingCheckoutId = null,
 }: Props) {
+  const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>(
+    renovacaoAutomatica ? "cartao_recorrente" : "avulso"
+  );
+  const [emailMp, setEmailMp] = useState(emailLogin ?? "");
   const router = useRouter();
   const catalog = useNichoCatalog();
   const [planos, setPlanos] = useState<PlanoDefinicao[]>(PLANOS_PADRAO);
@@ -110,6 +122,30 @@ export function PlanosCalculator({
           .catch(() => {});
       }
       router.refresh();
+    } else if (billingStatus === "assinatura") {
+      setSuccess("Conferindo o cartão no Mercado Pago…");
+      if (billingCheckoutId) {
+        void fetch("/api/billing/assinatura/sincronizar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ checkout_id: billingCheckoutId }),
+        })
+          .then((r) => r.json())
+          .then((d) => {
+            if (d?.status === "authorized") {
+              setSuccess(
+                "Renovação automática ativada. A cobrança no cartão é feita pelo Mercado Pago e o acesso libera sozinho (a primeira pode levar até 1 hora)."
+              );
+              router.refresh();
+            } else {
+              setSuccess(
+                "Cartão ainda não confirmado. Se você concluiu no Mercado Pago, a ativação chega em instantes."
+              );
+            }
+          })
+          .catch(() => {});
+      }
     } else if (billingStatus === "failure") {
       setError("Pagamento não concluído. Tente novamente.");
     } else if (billingStatus === "pending") {
@@ -193,9 +229,14 @@ export function PlanosCalculator({
   async function handleAssinar() {
     setError("");
     setSuccess("");
+    const recorrente = formaPagamento === "cartao_recorrente";
+    if (recorrente && !emailMp.trim()) {
+      setError("Informe o e-mail da sua conta Mercado Pago.");
+      return;
+    }
     setLoading(true);
     try {
-      const res = await fetch("/api/billing/checkout", {
+      const res = await fetch(recorrente ? "/api/billing/assinatura" : "/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -203,6 +244,7 @@ export function PlanosCalculator({
           nichos,
           quantidade_pontos: faixa,
           ciclo,
+          ...(recorrente ? { payer_email: emailMp.trim() } : {}),
         }),
       });
       const data = await res.json();
@@ -485,6 +527,89 @@ export function PlanosCalculator({
                 </li>
               ))}
             </ul>
+
+            <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 backdrop-blur-xl">
+              <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-at-muted">
+                Forma de pagamento
+              </p>
+              {renovacaoAutomatica ? (
+                <p className="mt-2 flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-2 text-[12px] text-emerald-200">
+                  <RefreshCw className="h-3.5 w-3.5 shrink-0" />
+                  Renovação automática ativa no cartão. Para trocar o plano, assine de novo no cartão — a
+                  cobrança antiga é cancelada sozinha.
+                </p>
+              ) : null}
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {(
+                  [
+                    {
+                      id: "cartao_recorrente" as const,
+                      icon: CreditCard,
+                      titulo: "Cartão · renova sozinho",
+                      texto: "Cobrança automática todo período. Sem risco de travar a operação.",
+                    },
+                    {
+                      id: "avulso" as const,
+                      icon: QrCode,
+                      titulo: "Pix, boleto ou cartão",
+                      texto: "Paga um período por vez. Avisamos antes de vencer.",
+                    },
+                  ] as const
+                ).map((opt) => {
+                  const Icon = opt.icon;
+                  const ativo = formaPagamento === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setFormaPagamento(opt.id)}
+                      className={cn(
+                        "flex items-start gap-3 rounded-xl border px-3.5 py-3 text-left transition",
+                        ativo
+                          ? "border-cyan-400/40 bg-cyan-500/10"
+                          : "border-white/10 bg-white/[0.02] hover:bg-white/[0.04]"
+                      )}
+                      aria-pressed={ativo}
+                    >
+                      <Icon
+                        className={cn(
+                          "mt-0.5 h-4 w-4 shrink-0",
+                          ativo ? "text-cyan-300" : "text-at-muted"
+                        )}
+                      />
+                      <span className="min-w-0">
+                        <span className="block text-[13px] font-semibold text-at-primary">
+                          {opt.titulo}
+                        </span>
+                        <span className="mt-0.5 block text-[12px] leading-snug text-at-muted">
+                          {opt.texto}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {formaPagamento === "cartao_recorrente" ? (
+                <label className="mt-3 block">
+                  <span className="text-[12px] font-medium text-at-primary/85">
+                    E-mail da sua conta Mercado Pago
+                  </span>
+                  <input
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    value={emailMp}
+                    onChange={(e) => setEmailMp(e.target.value)}
+                    placeholder="voce@email.com"
+                    className="mt-1.5 w-full rounded-xl border border-white/10 bg-slate-950/60 px-3.5 py-2.5 text-[13px] text-at-primary outline-none focus:border-cyan-400/50"
+                  />
+                  <span className="mt-1 block text-[11px] leading-snug text-at-muted">
+                    Precisa ser o mesmo e-mail com que você entra no Mercado Pago — senão o MP
+                    recusa o cartão.
+                  </span>
+                </label>
+              ) : null}
+            </div>
           </div>
         </section>
 
@@ -606,9 +731,13 @@ export function PlanosCalculator({
               >
                 {loading
                   ? "Abrindo Mercado Pago…"
-                  : assinaturaAtiva
-                    ? `Renovar ${plano.nome}`
-                    : `Assinar ${plano.nome}`}
+                  : formaPagamento === "cartao_recorrente"
+                    ? renovacaoAutomatica
+                      ? `Trocar para ${plano.nome} no cartão`
+                      : `Assinar ${plano.nome} no cartão`
+                    : assinaturaAtiva
+                      ? `Renovar ${plano.nome}`
+                      : `Assinar ${plano.nome}`}
               </button>
             </div>
           </div>
