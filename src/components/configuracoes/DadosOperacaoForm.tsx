@@ -18,6 +18,7 @@ import {
   type PlanoDefinicao,
 } from "@/lib/pricing";
 import type { Nicho } from "@/lib/types/database";
+import { limiteEhIlimitado } from "@/lib/billing/limite-equipamentos-regras";
 import {
   champagneBtn,
   champagneBtnSolid,
@@ -35,6 +36,8 @@ type Props = {
   faixaInicial: FaixaPontos;
   nichosIniciais: Nicho[];
   pontosAtivos: number;
+  equipamentosAtivos: number;
+  limiteEquipamentos: number;
   planos?: PlanoDefinicao[];
   embedded?: boolean;
 };
@@ -46,6 +49,8 @@ export function DadosOperacaoForm({
   faixaInicial,
   nichosIniciais,
   pontosAtivos,
+  equipamentosAtivos,
+  limiteEquipamentos,
   planos: planosProp,
   embedded = false,
 }: Props) {
@@ -231,6 +236,12 @@ export function DadosOperacaoForm({
           <ConfigDataRow
             label="Pontos em uso"
             value={`${pontosAtivos} / ${plano.limitePontos >= 9999 ? "∞" : plano.limitePontos}`}
+          />
+          <ConfigDataRow
+            label="Equipamentos em uso"
+            value={`${equipamentosAtivos} / ${
+              limiteEhIlimitado(limiteEquipamentos) ? "∞" : limiteEquipamentos
+            }`}
           />
         </ConfigDataGrid>
       ) : (

@@ -3,6 +3,7 @@ import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { canUseEquipamentoTipo, resolveNichosAtivos } from "@/lib/assinatura";
 import type { EquipamentoTipo } from "@/lib/equipamentos";
 import { parseLeituraContador, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
+import { bloqueioLimiteEquipamentos } from "@/lib/billing/limite-equipamentos";
 
 function parsePrecoJogada(raw: unknown): number | null {
   if (raw == null || raw === "") return null;
@@ -85,6 +86,9 @@ export async function POST(
       { status: 403 }
     );
   }
+
+  const bloqueio = await bloqueioLimiteEquipamentos(supabase, empresa, 1);
+  if (bloqueio) return bloqueio;
 
   const precoJogada = tipo === "bolinha" ? parsePrecoJogada(body.preco_jogada) : null;
 

@@ -4,6 +4,7 @@ import { createClient, getProfile } from "@/lib/supabase/server";
 import { canUseEquipamentoTipo, resolveNichosAtivos } from "@/lib/assinatura";
 import type { EquipamentoTipo } from "@/lib/equipamentos";
 import { isEquipamentoTipoDiversao, parseLeituraContador } from "@/lib/equipamentos";
+import { bloqueioLimiteEquipamentos } from "@/lib/billing/limite-equipamentos";
 
 function parsePrecoJogada(raw: unknown): number | null {
   if (raw == null || raw === "") return null;
@@ -50,6 +51,9 @@ export async function POST(request: Request) {
       { status: 403 }
     );
   }
+
+  const bloqueio = await bloqueioLimiteEquipamentos(supabase, empresa, 1);
+  if (bloqueio) return bloqueio;
 
   const { encontrarSerieEmUso, mensagemSerieJaCadastrada } = await import(
     "@/lib/equipamentos/serie-unica"

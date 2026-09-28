@@ -50,6 +50,8 @@ type Props = {
   faixa: FaixaPontos;
   nichosAtivos: Nicho[];
   pontosAtivos: number;
+  equipamentosAtivos: number;
+  limiteEquipamentos: number;
   planos?: PlanoDefinicao[];
   acesso: AcessoAssinaturaInput;
   podeCancelar: boolean;
@@ -156,6 +158,8 @@ export function ConfiguracoesClient(props: Props) {
           faixaInicial={props.faixa}
           nichosIniciais={props.nichosAtivos}
           pontosAtivos={props.pontosAtivos}
+          equipamentosAtivos={props.equipamentosAtivos}
+          limiteEquipamentos={props.limiteEquipamentos}
           planos={props.planos}
           embedded
         />

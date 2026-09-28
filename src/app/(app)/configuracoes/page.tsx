@@ -12,6 +12,8 @@ import type { Nicho } from "@/lib/types/database";
 import { buildAcessoAssinaturaInput } from "@/lib/assinatura-acesso";
 import { resolverOwnerProfileAcesso } from "@/lib/assinatura-owner";
 import { ConfiguracoesClient } from "@/components/configuracoes/ConfiguracoesClient";
+import { contarEquipamentosAtivos } from "@/lib/billing/limite-equipamentos";
+import { getLimiteEquipamentos } from "@/lib/billing/limite-equipamentos-regras";
 
 export default async function ConfiguracoesPage() {
   const profile = await getProfile();
@@ -26,6 +28,16 @@ export default async function ConfiguracoesPage() {
         .eq("empresa_id", empresa.id)
         .eq("status", "ativo")
     : { count: 0 };
+  const equipamentosAtivos = empresa
+    ? await contarEquipamentosAtivos(
+        isAdminConfigured() ? createAdminClient() : supabase,
+        empresa.id
+      )
+    : 0;
+  const limiteEquipamentos = getLimiteEquipamentos(
+    empresa?.quantidade_pontos,
+    empresa?.limite_pontos
+  );
 
   let acesso = null;
   if (profile?.empresa_id) {
@@ -61,6 +73,8 @@ export default async function ConfiguracoesPage() {
       faixa={faixa}
       nichosAtivos={nichosAtivos as Nicho[]}
       pontosAtivos={pontosAtivos ?? 0}
+      equipamentosAtivos={equipamentosAtivos}
+      limiteEquipamentos={limiteEquipamentos}
       planos={planosList}
       acesso={acessoAssinatura}
       podeCancelar={podeCancelar}

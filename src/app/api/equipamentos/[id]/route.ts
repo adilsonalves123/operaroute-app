@@ -11,6 +11,7 @@ import {
 } from "@/lib/auditoria/anomalias";
 import { getAcessoUsuario } from "@/lib/equipe/acesso";
 import { getEmpresa } from "@/lib/supabase/server";
+import { bloqueioLimiteEquipamentos } from "@/lib/billing/limite-equipamentos";
 
 export async function GET(
   _request: Request,
@@ -154,6 +155,11 @@ export async function PATCH(
   if ("numero_maquina" in body) patch.numero_maquina = String(body.numero_maquina ?? "").trim();
   if ("observacao" in body) patch.observacao = String(body.observacao ?? "").trim() || null;
   if ("status" in body) patch.status = String(body.status ?? "ativo").trim() || "ativo";
+
+  if (patch.status === "ativo" && atual.status !== "ativo") {
+    const bloqueio = await bloqueioLimiteEquipamentos(supabase, auth.empresa, 1);
+    if (bloqueio) return bloqueio;
+  }
 
   if (
     atual.tipo === "cassino" ||

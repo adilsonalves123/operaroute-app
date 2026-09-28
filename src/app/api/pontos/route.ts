@@ -6,6 +6,7 @@ import type { EquipamentoTipo } from "@/lib/equipamentos";
 import { parseLeituraContador, isEquipamentoTipoDiversao } from "@/lib/equipamentos";
 import { registrarMovimentoPonto } from "@/lib/pontos-movimentos";
 import { formatCidadeCampo } from "@/lib/endereco/brasil";
+import { bloqueioLimiteEquipamentos } from "@/lib/billing/limite-equipamentos";
 
 async function resolveEmpresaId(): Promise<string | null> {
   const supabase = await createClient();
@@ -154,6 +155,13 @@ export async function POST(request: Request) {
       );
     }
   }
+
+  const bloqueioEquipamentos = await bloqueioLimiteEquipamentos(
+    supabase,
+    empresa,
+    equipamentos.length
+  );
+  if (bloqueioEquipamentos) return bloqueioEquipamentos;
 
   const {
     encontrarSerieDuplicadaNoLote,
