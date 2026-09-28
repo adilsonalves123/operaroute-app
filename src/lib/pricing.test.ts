@@ -4,11 +4,16 @@ import {
   calcPrecoAnual,
   calcPrecoCiclo,
   calcPrecoMensal,
+  beneficiosExtrasPadrao,
   fatorPrecoPorNichos,
   getNichoPlanoStatus,
   getPlanoByFaixa,
+  montarBeneficiosPlano,
   NICHOS_PAGOS,
+  normalizarBeneficiosExtras,
+  normalizarPesosNichos,
   normalizeFaixaPontos,
+  PESO_PRECO_NICHOS,
   planoIncluiIa,
   planoMinimoParaNichos,
   PLANOS_PADRAO,
@@ -149,5 +154,69 @@ describe("faixas e limites de plano", () => {
     expect(planoIncluiIa(elite!)).toBe(true);
     expect(planoIncluiIa({ ...pro!, incluiIa: false })).toBe(true);
     expect(planoIncluiIa({ ...growth!, precoMensal: 499 })).toBe(true);
+  });
+});
+
+describe("pesos dos nichos editáveis", () => {
+  it("sem nada salvo, usa os pesos padrão", () => {
+    expect(normalizarPesosNichos(null)).toEqual(PESO_PRECO_NICHOS);
+    expect(normalizarPesosNichos([0.5])).toEqual(PESO_PRECO_NICHOS);
+  });
+
+  it("completa nichos faltando e ignora chaves desconhecidas", () => {
+    const pesos = normalizarPesosNichos({ fura_fura: 0.5, inventado: 0.2 });
+    expect(pesos.fura_fura).toBe(0.5);
+    expect(pesos.maquinas_cassino).toBe(1);
+    expect(pesos).not.toHaveProperty("inventado");
+  });
+
+  it("prende o peso entre 10% e 100% do plano", () => {
+    const pesos = normalizarPesosNichos({ fura_fura: 0, bolinha: 3, ursinho: "abc" });
+    expect(pesos.fura_fura).toBe(0.1);
+    expect(pesos.bolinha).toBe(1);
+    expect(pesos.ursinho).toBe(0.9);
+  });
+
+  it("o preço cobrado segue o peso salvo", () => {
+    const pesos = normalizarPesosNichos({ fura_fura: 0.5 });
+    expect(fatorPrecoPorNichos(["fura_fura"], pesos)).toBe(0.5);
+    expect(calcPrecoMensal("11-50", ["fura_fura"], PLANOS_PADRAO, pesos)).toBe(129.95);
+    expect(calcPrecoAnual("11-50", ["fura_fura"], PLANOS_PADRAO, 10, pesos)).toBe(1299.5);
+    expect(calcPrecoCiclo("mensal", "11-50", ["fura_fura", "maquinas_cassino"], PLANOS_PADRAO, 10, pesos)).toBe(194.93);
+  });
+});
+
+describe("benefícios editáveis", () => {
+  const start = PLANOS_PADRAO.find((p) => p.slug === "start")!;
+
+  it("sem personalização, repete o texto padrão", () => {
+    expect(montarBeneficiosPlano(start)).toEqual([
+      "Até 10 pontos",
+      "Até 10 equipamentos",
+      "Até 1 nicho na rota",
+      ...beneficiosExtrasPadrao(start),
+    ]);
+  });
+
+  it("linhas do dono substituem só o texto livre; limites continuam automáticos", () => {
+    const itens = montarBeneficiosPlano({
+      ...start,
+      limitePontos: 20,
+      beneficiosExtras: ["Suporte no WhatsApp", "  ", "Relatório mensal"],
+    });
+    expect(itens).toEqual([
+      "Até 20 pontos",
+      "Até 20 equipamentos",
+      "Até 1 nicho na rota",
+      "Suporte no WhatsApp",
+      "Relatório mensal",
+    ]);
+  });
+
+  it("limpa linhas vazias, corta texto longo e limita a quantidade", () => {
+    const muitas = Array.from({ length: 12 }, (_, i) => `Item ${i}`);
+    expect(normalizarBeneficiosExtras(muitas)).toHaveLength(8);
+    expect(normalizarBeneficiosExtras(["x".repeat(200)])[0]).toHaveLength(120);
+    expect(normalizarBeneficiosExtras("não é lista")).toEqual([]);
   });
 });

@@ -260,7 +260,8 @@ export async function fetchTenantsPlataforma(
     const mrrCatalogo = calcPrecoMensal(
       normalizeFaixaPontos(e.quantidade_pontos),
       nichos,
-      planos
+      planos,
+      precos.pesos_nichos
     );
 
     const venceEm = (e as { assinatura_vence_em?: string | null }).assinatura_vence_em ?? null;

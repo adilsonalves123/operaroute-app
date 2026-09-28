@@ -38,7 +38,8 @@ export async function GET() {
         t.quantidade_pontos ?? "1-10",
         t.nichos_ativos,
         precos.planos,
-        precos.multiplicador_anual
+        precos.multiplicador_anual,
+        precos.pesos_nichos
       ),
       owner_email: t.owner_email,
     })),

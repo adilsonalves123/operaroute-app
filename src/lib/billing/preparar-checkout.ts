@@ -77,7 +77,14 @@ export async function prepararCheckout(
     };
   }
 
-  const valor = calcPrecoCiclo(ciclo, faixa, pagos, planos, precos.multiplicador_anual);
+  const valor = calcPrecoCiclo(
+    ciclo,
+    faixa,
+    pagos,
+    planos,
+    precos.multiplicador_anual,
+    precos.pesos_nichos
+  );
   if (valor == null || valor <= 0) {
     return {
       ok: false,

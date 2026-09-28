@@ -5,10 +5,19 @@ import { Loader2, RotateCcw, Save } from "lucide-react";
 import { DonoShell } from "@/components/dono/DonoShell";
 import { useDonoTheme } from "@/components/dono/DonoTheme";
 import {
+  beneficiosExtrasPadrao,
+  MAX_BENEFICIOS_EXTRAS,
   MULTIPLICADOR_ANUAL_PADRAO,
+  NICHOS_PAGOS,
+  normalizarPesosNichos,
+  PESO_NICHO_MAX,
+  PESO_NICHO_MIN,
+  PESO_PRECO_NICHOS,
   PLANOS_PADRAO,
+  type PesosNichos,
   type PlanoDefinicao,
 } from "@/lib/pricing";
+import { getNichoConfig } from "@/lib/nicho";
 import { cn, formatMoneyInput, parseMoneyInput } from "@/lib/utils";
 
 function clonePlanos(list: PlanoDefinicao[]) {
@@ -24,6 +33,8 @@ export function DonoPlanosClient({ email }: { email: string }) {
   );
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [multAnual, setMultAnual] = useState(MULTIPLICADOR_ANUAL_PADRAO);
+  const [pesos, setPesos] = useState<PesosNichos>(() => ({ ...PESO_PRECO_NICHOS }));
+  const [pesoDrafts, setPesoDrafts] = useState<Record<string, string>>({});
   const [fonte, setFonte] = useState<"banco" | "padrao">("padrao");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -43,6 +54,8 @@ export function DonoPlanosClient({ email }: { email: string }) {
       setPlanos(clonePlanos(data.planos ?? PLANOS_PADRAO));
       setDrafts({});
       setMultAnual(Number(data.multiplicador_anual) || MULTIPLICADOR_ANUAL_PADRAO);
+      setPesos(normalizarPesosNichos(data.pesos_nichos));
+      setPesoDrafts({});
       setFonte(data.fonte === "banco" ? "banco" : "padrao");
     } catch {
       setErro("Falha de rede.");
@@ -73,6 +86,33 @@ export function DonoPlanosClient({ email }: { email: string }) {
     setOk("");
   }
 
+  function pesoPct(nicho: string) {
+    if (nicho in pesoDrafts) return pesoDrafts[nicho];
+    const peso = pesos[nicho as keyof PesosNichos] ?? 1;
+    return String(Math.round(peso * 100));
+  }
+
+  function onPesoChange(nicho: string, raw: string) {
+    const limpo = raw.replace(/\D/g, "").slice(0, 3);
+    setPesoDrafts((d) => ({ ...d, [nicho]: limpo }));
+    const pct = Number(limpo);
+    if (limpo && Number.isFinite(pct)) {
+      setPesos((prev) => normalizarPesosNichos({ ...prev, [nicho]: pct / 100 }));
+    }
+    setOk("");
+  }
+
+  function onBeneficiosChange(slug: string, texto: string) {
+    setPlanos((prev) =>
+      prev.map((x) =>
+        x.slug === slug
+          ? { ...x, beneficiosExtras: texto ? texto.split("\n") : null }
+          : x
+      )
+    );
+    setOk("");
+  }
+
   async function salvar() {
     setSaving(true);
     setErro("");
@@ -84,6 +124,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
         body: JSON.stringify({
           planos,
           multiplicador_anual: multAnual,
+          pesos_nichos: pesos,
         }),
       });
       const data = await res.json();
@@ -94,8 +135,12 @@ export function DonoPlanosClient({ email }: { email: string }) {
       setPlanos(clonePlanos(data.planos));
       setDrafts({});
       setMultAnual(Number(data.multiplicador_anual) || 10);
+      setPesos(normalizarPesosNichos(data.pesos_nichos));
+      setPesoDrafts({});
       setFonte("banco");
-      setOk("4 planos salvos. Clientes e MRR usam esses valores agora.");
+      setOk(
+        "Planos, pesos e benefícios salvos. Novos checkouts, a página de planos e o MRR já usam esses valores."
+      );
     } catch {
       setErro("Falha de rede.");
     } finally {
@@ -114,7 +159,7 @@ export function DonoPlanosClient({ email }: { email: string }) {
     <DonoShell
       email={email}
       title="Planos & preços"
-      subtitle="4 planos fixos: pontos + limite de nichos + preço. Anual = mensal × multiplicador."
+      subtitle="4 planos fixos: pontos + limite de nichos + preço + benefícios. Preço final = plano × peso dos nichos. Anual = mensal × multiplicador."
     >
       {loading && (
         <div className="flex items-center gap-2 text-at-muted">
@@ -160,6 +205,8 @@ export function DonoPlanosClient({ email }: { email: string }) {
                 setPlanos(clonePlanos(PLANOS_PADRAO));
                 setDrafts({});
                 setMultAnual(10);
+                setPesos({ ...PESO_PRECO_NICHOS });
+                setPesoDrafts({});
                 setOk("");
               }}
               className={cn(
@@ -183,7 +230,8 @@ export function DonoPlanosClient({ email }: { email: string }) {
             </label>
             <span className="text-[12px] text-at-muted">
               Fonte: {fonte === "banco" ? "banco" : "padrão"} — rode
-              plataforma-precos.sql se ainda não rodou
+              plataforma-precos.sql e plataforma-precos-pesos-beneficios.sql se
+              ainda não rodou
             </span>
           </div>
 
@@ -313,8 +361,70 @@ export function DonoPlanosClient({ email }: { email: string }) {
                     currency: "BRL",
                   })}
                 </p>
+
+                <label className="mt-3 block text-[11px] text-at-muted">
+                  Benefícios na página de planos (um por linha, até{" "}
+                  {MAX_BENEFICIOS_EXTRAS})
+                  <textarea
+                    value={(p.beneficiosExtras ?? []).join("\n")}
+                    onChange={(e) => onBeneficiosChange(p.slug, e.target.value)}
+                    placeholder={beneficiosExtrasPadrao(p).join("\n")}
+                    rows={4}
+                    className={cn(inputCls, "mt-1")}
+                  />
+                </label>
+                <p className="mt-1 text-[11px] text-at-muted">
+                  Pontos, equipamentos e nichos entram sozinhos no topo, pelos limites
+                  acima. Em branco = texto padrão (o que aparece apagado).
+                </p>
               </div>
             ))}
+          </div>
+
+          <div className={card}>
+            <p className="text-[14px] font-medium">Peso de cada nicho no preço</p>
+            <p className="mt-1 text-[12px] text-at-muted">
+              % do preço cheio do plano. Com vários nichos, vale a média. Entre{" "}
+              {Math.round(PESO_NICHO_MIN * 100)}% e {Math.round(PESO_NICHO_MAX * 100)}%.
+              Não muda o valor de quem já assinou no cartão; vale para os próximos
+              pagamentos e renovações manuais.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {NICHOS_PAGOS.map((nicho) => {
+                const peso = pesos[nicho] ?? 1;
+                const growth = planos.find((x) => x.slug === "growth");
+                return (
+                  <label key={nicho} className="text-[11px] text-at-muted">
+                    {getNichoConfig(nicho).label}
+                    <div className="mt-1 flex items-center gap-2">
+                      <input
+                        inputMode="numeric"
+                        value={pesoPct(nicho)}
+                        onChange={(e) => onPesoChange(nicho, e.target.value)}
+                        onBlur={() =>
+                          setPesoDrafts((d) => {
+                            const n = { ...d };
+                            delete n[nicho];
+                            return n;
+                          })
+                        }
+                        className={cn(inputCls, "w-20 tabular-nums")}
+                      />
+                      <span>%</span>
+                      {growth && (
+                        <span className="ml-auto tabular-nums">
+                          {growth.nome}:{" "}
+                          {(growth.precoMensal * peso).toLocaleString("pt-BR", {
+                            style: "currency",
+                            currency: "BRL",
+                          })}
+                        </span>
+                      )}
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}

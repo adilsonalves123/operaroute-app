@@ -219,13 +219,15 @@ export async function buildReceitaDashboard(
         calcPrecoMensal(
           t.quantidade_pontos ?? "1-10",
           t.nichos_ativos,
-          planos
+          planos,
+          precos.pesos_nichos
         );
       const precoA = calcPrecoAnual(
         t.quantidade_pontos ?? "1-10",
         t.nichos_ativos,
         planos,
-        multAnual
+        multAnual,
+        precos.pesos_nichos
       );
       if (precoM != null) {
         mrr += precoM;

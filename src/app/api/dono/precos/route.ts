@@ -39,6 +39,7 @@ export async function PUT(request: Request) {
   const result = await savePrecosPayload(admin, {
     planos,
     multiplicador_anual,
+    pesos_nichos: body.pesos_nichos,
   });
 
   if (!result.ok) {

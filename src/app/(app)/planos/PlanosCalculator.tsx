@@ -13,10 +13,13 @@ import {
   getPlanoByFaixa,
   MULTIPLICADOR_ANUAL_PADRAO,
   NICHOS_PAGOS,
+  normalizarPesosNichos,
+  PESO_PRECO_NICHOS,
   PLANOS_PADRAO,
   planoIncluiIa,
   montarBeneficiosPlano,
   type FaixaPontos,
+  type PesosNichos,
   type PlanoDefinicao,
 } from "@/lib/pricing";
 import type { Nicho } from "@/lib/types/database";
@@ -67,6 +70,7 @@ export function PlanosCalculator({
   const catalog = useNichoCatalog();
   const [planos, setPlanos] = useState<PlanoDefinicao[]>(PLANOS_PADRAO);
   const [multAnual, setMultAnual] = useState(MULTIPLICADOR_ANUAL_PADRAO);
+  const [pesos, setPesos] = useState<PesosNichos>(PESO_PRECO_NICHOS);
   const [faixa, setFaixa] = useState<FaixaPontos>(initialFaixa);
   const [nichos, setNichos] = useState<Nicho[]>(() =>
     mergePreselectNicho(initialNichos, preselectNicho)
@@ -87,6 +91,7 @@ export function PlanosCalculator({
       .then((d) => {
         if (d?.planos?.length) setPlanos(d.planos);
         if (d?.multiplicador_anual) setMultAnual(Number(d.multiplicador_anual));
+        if (d?.pesos_nichos) setPesos(normalizarPesosNichos(d.pesos_nichos));
       })
       .catch(() => {});
   }, []);
@@ -157,9 +162,9 @@ export function PlanosCalculator({
 
   const plano = useMemo(() => getPlanoByFaixa(faixa, planos), [faixa, planos]);
   const nichosPagos = nichos.filter((n) => NICHOS_PAGOS.includes(n));
-  const precoMensal = calcPrecoMensal(faixa, nichosPagos, planos);
-  const precoAnual = calcPrecoAnual(faixa, nichosPagos, planos, multAnual);
-  const precoCiclo = calcPrecoCiclo(ciclo, faixa, nichosPagos, planos, multAnual);
+  const precoMensal = calcPrecoMensal(faixa, nichosPagos, planos, pesos);
+  const precoAnual = calcPrecoAnual(faixa, nichosPagos, planos, multAnual, pesos);
+  const precoCiclo = calcPrecoCiclo(ciclo, faixa, nichosPagos, planos, multAnual, pesos);
   const precoCheio = plano.precoMensal;
   const temDescontoNicho =
     precoMensal != null &&

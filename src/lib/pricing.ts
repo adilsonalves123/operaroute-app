@@ -11,6 +11,11 @@ export type PlanoDefinicao = {
   descricao: string;
   /** Bullets exibidos na página /planos (só UI). */
   beneficios: string[];
+  /**
+   * Linhas editáveis no painel do dono, abaixo das de limite (pontos,
+   * equipamentos, nichos). Vazio/ausente = texto padrão do plano.
+   */
+  beneficiosExtras?: string[] | null;
   /** Planos a partir de R$ 499 — Inteligência Artificial. */
   incluiIa: boolean;
   labelPontos: string;
@@ -125,7 +130,7 @@ export function montarBeneficiosPlano(
   plano: Pick<
     PlanoDefinicao,
     "slug" | "limitePontos" | "maxNichos" | "precoMensal" | "incluiIa"
-  >
+  > & { beneficiosExtras?: string[] | null }
 ): string[] {
   const ilimitado = plano.slug === "elite" || plano.limitePontos >= 9999;
   const todosNichos = plano.slug === "elite" || plano.maxNichos >= 6;
@@ -147,6 +152,17 @@ export function montarBeneficiosPlano(
     );
   }
 
+  const extras = normalizarBeneficiosExtras(plano.beneficiosExtras);
+  itens.push(...(extras.length > 0 ? extras : beneficiosExtrasPadrao(plano)));
+
+  return itens;
+}
+
+/** Linhas abaixo dos limites quando o dono não personalizou o plano. */
+export function beneficiosExtrasPadrao(
+  plano: Pick<PlanoDefinicao, "slug" | "precoMensal" | "incluiIa">
+): string[] {
+  const itens: string[] = [];
   if (planoIncluiIa(plano)) {
     itens.push("IA: leitura só com foto — sem digitar os números");
     itens.push("IA identifica o visor e preenche a coleta automaticamente");
@@ -157,12 +173,21 @@ export function montarBeneficiosPlano(
     itens.push("Painel completo da operação");
     itens.push("Equipe e visão por operador");
   }
-
   if (plano.slug === "elite") {
     itens.push("Prioridade no suporte");
   }
-
   return itens;
+}
+
+export const MAX_BENEFICIOS_EXTRAS = 8;
+export const MAX_CHARS_BENEFICIO = 120;
+
+export function normalizarBeneficiosExtras(valor: unknown): string[] {
+  if (!Array.isArray(valor)) return [];
+  return valor
+    .map((v) => String(v ?? "").trim().slice(0, MAX_CHARS_BENEFICIO))
+    .filter((v) => v.length > 0)
+    .slice(0, MAX_BENEFICIOS_EXTRAS);
 }
 
 /** @deprecated use PLANOS_PADRAO — compat com UI antiga */
@@ -187,7 +212,9 @@ export const NICHOS_PAGOS: Nicho[] = [
  * Cassino referencia; fura-fura / bolinha mais baratos.
  * Vários nichos → média dos pesos.
  */
-export const PESO_PRECO_NICHOS: Partial<Record<Nicho, number>> = {
+export type PesosNichos = Partial<Record<Nicho, number>>;
+
+export const PESO_PRECO_NICHOS: PesosNichos = {
   maquinas_cassino: 1,
   ursinho: 0.9,
   diversao: 0.85,
@@ -196,16 +223,44 @@ export const PESO_PRECO_NICHOS: Partial<Record<Nicho, number>> = {
   fura_fura: 0.65,
 };
 
+/** Peso nunca passa do preço cheio do plano nem zera a cobrança. */
+export const PESO_NICHO_MIN = 0.1;
+export const PESO_NICHO_MAX = 1;
+
 export const MAX_NICHOS_PAGOS = 6;
 export const MULTIPLICADOR_ANUAL_PADRAO = 10;
 
+/**
+ * Pesos salvos pelo dono completados com o padrão; valores fora da faixa
+ * são presos em [PESO_NICHO_MIN, PESO_NICHO_MAX].
+ */
+export function normalizarPesosNichos(valor: unknown): PesosNichos {
+  const pesos: PesosNichos = { ...PESO_PRECO_NICHOS };
+  if (!valor || typeof valor !== "object" || Array.isArray(valor)) return pesos;
+  for (const nicho of NICHOS_PAGOS) {
+    const bruto = (valor as Record<string, unknown>)[nicho];
+    if (bruto == null || bruto === "") continue;
+    const n = Number(bruto);
+    if (!Number.isFinite(n)) continue;
+    pesos[nicho] =
+      Math.round(Math.min(PESO_NICHO_MAX, Math.max(PESO_NICHO_MIN, n)) * 100) / 100;
+  }
+  return pesos;
+}
+
 /** Fator 0–1 aplicado sobre o preço do plano, conforme nichos marcados. */
-export function fatorPrecoPorNichos(nichos?: Nicho[] | null): number {
+export function fatorPrecoPorNichos(
+  nichos?: Nicho[] | null,
+  pesos: PesosNichos = PESO_PRECO_NICHOS
+): number {
   const pagos = (nichos ?? []).filter((n): n is (typeof NICHOS_PAGOS)[number] =>
     NICHOS_PAGOS.includes(n)
   );
   if (pagos.length === 0) return 1;
-  const soma = pagos.reduce((acc, n) => acc + (PESO_PRECO_NICHOS[n] ?? 1), 0);
+  const soma = pagos.reduce(
+    (acc, n) => acc + (pesos[n] ?? PESO_PRECO_NICHOS[n] ?? 1),
+    0
+  );
   return Math.round((soma / pagos.length) * 1000) / 1000;
 }
 
@@ -327,11 +382,12 @@ export function reaisParaCentavos(valor: number): number {
 export function calcPrecoMensal(
   faixa: FaixaPontos | string,
   nichos?: Nicho[],
-  planos: PlanoDefinicao[] = PLANOS_PADRAO
+  planos: PlanoDefinicao[] = PLANOS_PADRAO,
+  pesos: PesosNichos = PESO_PRECO_NICHOS
 ): number | null {
   const base = getPlanoByFaixa(faixa, planos).precoMensal;
   if (!Number.isFinite(base) || base < 0) return null;
-  const fator = fatorPrecoPorNichos(nichos);
+  const fator = fatorPrecoPorNichos(nichos, pesos);
   return arredondarReais(base * fator);
 }
 
@@ -339,9 +395,10 @@ export function calcPrecoAnual(
   faixa: FaixaPontos | string,
   nichos?: Nicho[],
   planos: PlanoDefinicao[] = PLANOS_PADRAO,
-  multiplicadorAnual = MULTIPLICADOR_ANUAL_PADRAO
+  multiplicadorAnual = MULTIPLICADOR_ANUAL_PADRAO,
+  pesos: PesosNichos = PESO_PRECO_NICHOS
 ): number | null {
-  const m = calcPrecoMensal(faixa, nichos, planos);
+  const m = calcPrecoMensal(faixa, nichos, planos, pesos);
   if (m == null) return null;
   return arredondarReais(m * multiplicadorAnual);
 }
@@ -351,11 +408,12 @@ export function calcPrecoCiclo(
   faixa: FaixaPontos | string,
   nichos?: Nicho[],
   planos: PlanoDefinicao[] = PLANOS_PADRAO,
-  multiplicadorAnual = MULTIPLICADOR_ANUAL_PADRAO
+  multiplicadorAnual = MULTIPLICADOR_ANUAL_PADRAO,
+  pesos: PesosNichos = PESO_PRECO_NICHOS
 ): number | null {
   return ciclo === "anual"
-    ? calcPrecoAnual(faixa, nichos, planos, multiplicadorAnual)
-    : calcPrecoMensal(faixa, nichos, planos);
+    ? calcPrecoAnual(faixa, nichos, planos, multiplicadorAnual, pesos)
+    : calcPrecoMensal(faixa, nichos, planos, pesos);
 }
 
 export function formatPreco(preco: number | null): string {
