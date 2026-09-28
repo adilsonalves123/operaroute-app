@@ -4,9 +4,18 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { parseFetchJson } from "@/lib/http/parse-fetch-json";
 import { ReceberVisitaDecisaoDialog } from "@/components/visitas-ponto/ReceberVisitaDecisaoDialog";
+import type { PedidoDepois } from "@/lib/offline/envio-coleta";
 
 /** Resultado da escolha após “Receber” neste nicho. */
 export type DecisaoReceberVisita = "encerrar" | "continuar" | "abortar";
+
+type OpcoesFinalizarVisita = {
+  pix: number;
+  dinheiro: number;
+  desconto?: number;
+  /** Pagamento já aplicado na coleta (receber agora) — só fecha, sem recriar dívida. */
+  somenteFechar?: boolean;
+};
 
 /**
  * Quando a operação tem 2+ nichos e há um ponto selecionado,
@@ -125,13 +134,30 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
     }
   }
 
-  async function finalizarVisitaAgora(opts: {
-    pix: number;
-    dinheiro: number;
-    desconto?: number;
-    /** Pagamento já aplicado na coleta (receber agora) — só fecha, sem recriar dívida. */
-    somenteFechar?: boolean;
-  }) {
+  function corpoFinalizar(opts: OpcoesFinalizarVisita) {
+    return {
+      // API parseRecebimentoPixDinheiro espera valor_pix / valor_dinheiro
+      valor_pix: opts.pix,
+      valor_dinheiro: opts.dinheiro,
+      pix: opts.pix,
+      dinheiro: opts.dinheiro,
+      desconto: opts.desconto ?? 0,
+      somente_fechar: opts.somenteFechar === true,
+      pagamento_ja_aplicado: opts.somenteFechar === true,
+    };
+  }
+
+  /** Mesmo pedido de finalizar, para ir na fila offline logo depois da coleta. */
+  function pedidoFinalizarVisita(opts: OpcoesFinalizarVisita): PedidoDepois | null {
+    if (!visitaPontoId) return null;
+    return {
+      url: `/api/visitas-ponto/${visitaPontoId}/finalizar`,
+      body: corpoFinalizar(opts),
+      titulo: "Fechar visita",
+    };
+  }
+
+  async function finalizarVisitaAgora(opts: OpcoesFinalizarVisita) {
     if (!visitaPontoId) {
       throw new Error("Visita ao ponto não encontrada.");
     }
@@ -140,16 +166,7 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify({
-        // API parseRecebimentoPixDinheiro espera valor_pix / valor_dinheiro
-        valor_pix: opts.pix,
-        valor_dinheiro: opts.dinheiro,
-        pix: opts.pix,
-        dinheiro: opts.dinheiro,
-        desconto: opts.desconto ?? 0,
-        somente_fechar: opts.somenteFechar === true,
-        pagamento_ja_aplicado: opts.somenteFechar === true,
-      }),
+      body: JSON.stringify(corpoFinalizar(opts)),
     });
 
     const data = await res.json().catch(() => ({}));
@@ -175,6 +192,7 @@ export function useVisitaPontoContext(pontoIdSelecionado?: string) {
     voltarAposColeta,
     confirmarReceberEncerrar,
     finalizarVisitaAgora,
+    pedidoFinalizarVisita,
     decisaoDialogEl,
   };
 }

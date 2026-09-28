@@ -6,7 +6,14 @@ import { useSearchParams } from "next/navigation";
 import { FotoColetaLeitura } from "@/components/coletas/FotoColetaLeitura";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
-import { uploadFotosMaquinasParalelo } from "@/lib/storage/coleta-fotos";
+import {
+  enviarColeta,
+  erroDaResposta,
+  subirFotosMaquinasOuGuardar,
+} from "@/lib/offline/envio-coleta";
+import { previstoCobranca } from "@/lib/coletas/envio-offline";
+import { useEnvioId } from "@/hooks/use-envio-id";
+import { ColetaGuardadaAviso } from "@/components/offline/ColetaGuardadaAviso";
 import { useVisitaPontoContext } from "@/components/visitas-ponto/useVisitaPontoContext";
 import { VisitaPontoNav } from "@/components/visitas-ponto/VisitaPontoNav";
 import {
@@ -88,12 +95,15 @@ export function NovaColetaDiversaoForm() {
     ensuringVisita,
     voltarAposColeta,
     finalizarVisitaAgora,
+    pedidoFinalizarVisita,
     confirmarReceberEncerrar,
     decisaoDialogEl,
   } = useVisitaPontoContext(pontoId);
 
   const [loading, setLoading] = useState(false);
   const submitLock = useSubmitLock();
+  const envioId = useEnvioId();
+  const [guardada, setGuardada] = useState<{ fechou: boolean } | null>(null);
   const [loadingPonto, setLoadingPonto] = useState(false);
   const [editandoCarregado, setEditandoCarregado] = useState(!editarColetaId);
   const [error, setError] = useState("");
@@ -457,19 +467,21 @@ export function NovaColetaDiversaoForm() {
     let concluido = false;
 
     try {
-      const supabase = createClient();
       const fotos = maquinas
         .filter((maquina) => maquina.fotoFile)
         .map((maquina) => ({
           equipamentoId: maquina.equipamentoId,
           file: maquina.fotoFile!,
         }));
-      const fotoUrls = await uploadFotosMaquinasParalelo(
-        supabase,
+      const { urls: fotoUrls, pendentes: fotosPendentes } = await subirFotosMaquinasOuGuardar(
         empresaId,
         `diversao-${Date.now()}`,
         fotos
       );
+      if (editarColetaId && fotosPendentes.length > 0) {
+        setError("Sem sinal para subir as fotos. Para editar a coleta é preciso internet.");
+        return;
+      }
 
       let visitaPontoParaSalvar = visitaPontoId || null;
       if (editarColetaId) {
@@ -496,11 +508,27 @@ export function NovaColetaDiversaoForm() {
         }
       }
 
-      const res = await fetch("/api/coletas/diversao", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
+      const pagamentoFechar = {
+        pix: parseMoneyInput(valorPix),
+        dinheiro: parseMoneyInput(valorDinheiro),
+        desconto: parseMoneyInput(desconto),
+        somenteFechar: true,
+      };
+      const envio = await enviarColeta({
+        envioId: envioId.atual(),
+        url: "/api/coletas/diversao",
+        titulo: "Coleta diversão",
+        pontoNome: ponto?.nome ?? null,
+        permitirFila: !editarColetaId,
+        fotosPendentes,
+        previsto: previstoCobranca({
+          cobrandoAgora,
+          dividaPonto: pendenciaPonto?.totalPendente ?? 0,
+          descontarHaver,
+          haverSaldo,
+        }),
+        depois: fecharVisitaAgora ? pedidoFinalizarVisita(pagamentoFechar) : null,
+        body: {
           ponto_id: pontoId,
           comissao_percentual: Number(comissaoPercentual) || 0,
           desconto: parseMoneyInput(desconto),
@@ -522,22 +550,21 @@ export function NovaColetaDiversaoForm() {
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
           religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
-        }),
+        },
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error ?? "Erro ao registrar coleta de diversão.");
+      if (envio.tipo === "guardado") {
+        setGuardada({ fechou: fecharVisitaAgora });
+        concluido = true;
+        return;
+      }
+      if (!envio.res.ok) {
+        setError(erroDaResposta(envio.data, "Erro ao registrar coleta de diversão."));
         return;
       }
 
       if (fecharVisitaAgora) {
-        await finalizarVisitaAgora({
-          pix: parseMoneyInput(valorPix),
-          dinheiro: parseMoneyInput(valorDinheiro),
-          desconto: parseMoneyInput(desconto),
-          somenteFechar: true,
-        });
+        await finalizarVisitaAgora(pagamentoFechar);
       }
 
       voltarAposColeta(fecharVisitaAgora ? { visitaJaFinalizada: true } : undefined);
@@ -814,6 +841,11 @@ export function NovaColetaDiversaoForm() {
 
       <LoadingOverlay show={loading || loadingPonto} message="Salvando coleta de diversão..." />
       {decisaoDialogEl}
+      <ColetaGuardadaAviso
+        aberto={Boolean(guardada)}
+        comFechamento={guardada?.fechou}
+        onVoltar={() => voltarAposColeta(guardada?.fechou ? { visitaJaFinalizada: true } : undefined)}
+      />
     </ColetaNovaPageShell>
   );
 }

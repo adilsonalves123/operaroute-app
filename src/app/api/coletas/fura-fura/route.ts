@@ -14,6 +14,8 @@ import {
   type EstoqueBrindePonto,
 } from "@/lib/nichos/fura-fura";
 import { baixarHaverNicho, somarHaverNichoAberto } from "@/lib/coletas/haver-nicho";
+import { comEnvioIdempotente } from "@/lib/coletas/envio-idempotente";
+import { coletadoEmDoEnvio } from "@/lib/coletas/envio-offline";
 import {
   carregarKitCompleto,
   validarBrindesContraPremiosKit,
@@ -57,7 +59,9 @@ function deduzirEstoquePonto(
   return next;
 }
 
-export async function POST(request: Request) {
+export const POST = comEnvioIdempotente("coletas/fura-fura", registrarColetaFuraFura);
+
+async function registrarColetaFuraFura(request: Request) {
   try {
     return await postColetaFuraFura(request);
   } catch (err) {
@@ -88,6 +92,9 @@ async function postColetaFuraFura(request: Request) {
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "Corpo da requisição inválido." }, { status: 400 });
   }
+  const coletadoEm = coletadoEmDoEnvio(body);
+  const quando = coletadoEm ?? new Date();
+  const criadoEm: { created_at?: string } = coletadoEm ? { created_at: quando.toISOString() } : {};
   const visitaPontoId = parseVisitaPontoId(body.visita_ponto_id);
   const receberAgora = Boolean(body.receber_agora);
   const modoVisitaPonto = Boolean(visitaPontoId);
@@ -212,6 +219,7 @@ async function postColetaFuraFura(request: Request) {
   const pendenciaAnterior = dividaPonto;
 
   let haverAbatido = 0;
+  let haverSaldo: number | null = null;
   if (cobrandoAgora && descontarHaverNaCobranca) {
     const { data: havers } = await supabase
       .from("pendencias")
@@ -220,7 +228,7 @@ async function postColetaFuraFura(request: Request) {
       .eq("ponto_id", pontoId)
       .eq("status", "aberta")
       .ilike("tipo", "haver");
-    const haverSaldo = somarHaverNichoAberto(havers ?? [], "fura-fura");
+    haverSaldo = somarHaverNichoAberto(havers ?? [], "fura-fura");
     haverAbatido = Math.min(haverSaldo, calculo.valorAReceber);
   }
 
@@ -249,6 +257,7 @@ async function postColetaFuraFura(request: Request) {
   } = await supabase.auth.getUser();
 
   const coletaInsert = {
+    ...criadoEm,
     empresa_id: profile.empresa_id,
     ponto_id: pontoId,
     operador_id: user?.id ?? null,
@@ -307,7 +316,7 @@ async function postColetaFuraFura(request: Request) {
   }
 
   const pontoUpdates: Record<string, unknown> = {
-    ultima_coleta: new Date().toISOString(),
+    ultima_coleta: quando.toISOString(),
   };
 
   if (ponto.furos_estoque != null) {
@@ -346,6 +355,7 @@ async function postColetaFuraFura(request: Request) {
     );
 
     await supabase.from("coleta_pagamentos").insert({
+      ...criadoEm,
       empresa_id: profile.empresa_id,
       coleta_id: coleta.id,
       ponto_id: pontoId,
@@ -362,7 +372,7 @@ async function postColetaFuraFura(request: Request) {
       tipo: "entrada",
       categoria: "Coleta fura-fura",
       valor: recebimentoRateado.aplicadoColetaAtual,
-      data: dataOperacaoBR(),
+      data: dataOperacaoBR(quando),
       descricao: pagamentoDetalhe
         ? `Coleta ${ponto.nome} — ${pagamentoDetalhe}`
         : `Coleta ${ponto.nome}`,
@@ -381,7 +391,7 @@ async function postColetaFuraFura(request: Request) {
       coleta_id: coleta.id,
       tipo: recebimentoRateado.aplicadoColetaAtual > 0.009 ? "parcial" : "pagamento_pendente",
       titulo: "Coleta fura-fura pendente",
-      descricao: `Saldo da coleta de ${new Date().toLocaleDateString("pt-BR")} — ${ponto.nome}`,
+      descricao: `Saldo da coleta de ${quando.toLocaleDateString("pt-BR")} — ${ponto.nome}`,
       valor: recebimentoRateado.saldoPendenteColeta,
       prioridade: "media",
       status: "aberta",
@@ -501,6 +511,10 @@ async function postColetaFuraFura(request: Request) {
     dividaQuitada: cobrandoAgora ? recebimentoRateado.aplicadoDividaAnterior : 0,
     ponto: { nome: ponto.nome, whatsapp: ponto.whatsapp },
     modo_visita_ponto: modoVisitaPonto,
+    lido_no_envio: {
+      ...(cobrandoAgora ? { divida_ponto: pendenciaAnterior } : {}),
+      ...(haverSaldo != null ? { haver: haverSaldo } : {}),
+    },
   });
 }
 

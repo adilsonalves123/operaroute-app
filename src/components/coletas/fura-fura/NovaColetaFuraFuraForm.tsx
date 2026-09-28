@@ -29,9 +29,12 @@ import {
 } from "@/lib/coletas/total-cobranca-nicho";
 import { createClient } from "@/lib/supabase/client";
 import { getEmpresaIdForUser } from "@/lib/supabase/empresa";
-import { uploadFotoFuraFura } from "@/lib/storage/coleta-fotos";
+import { caminhoFotoFuraFura } from "@/lib/storage/coleta-fotos";
+import { enviarColeta, erroDaResposta, subirFotosOuGuardar } from "@/lib/offline/envio-coleta";
+import { previstoCobranca } from "@/lib/coletas/envio-offline";
+import { useEnvioId } from "@/hooks/use-envio-id";
+import { ColetaGuardadaAviso } from "@/components/offline/ColetaGuardadaAviso";
 import { useVisitaPontoContext } from "@/components/visitas-ponto/useVisitaPontoContext";
-import { parseFetchJson } from "@/lib/http/parse-fetch-json";
 import { replaceUrlSemRsc } from "@/lib/navigation/replace-url-sem-rsc";
 import { VisitaPontoNav } from "@/components/visitas-ponto/VisitaPontoNav";
 import {
@@ -77,6 +80,8 @@ export function NovaColetaFuraFuraForm() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const submitLock = useSubmitLock();
+  const envioId = useEnvioId();
+  const [guardada, setGuardada] = useState<{ fechou: boolean } | null>(null);
   const [error, setError] = useState("");
   const [pontos, setPontos] = useState<PontoFura[]>([]);
   const [pendenciasPorPonto, setPendenciasPorPonto] = useState<
@@ -109,6 +114,7 @@ export function NovaColetaFuraFuraForm() {
     ensuringVisita,
     voltarAposColeta,
     finalizarVisitaAgora,
+    pedidoFinalizarVisita,
     confirmarReceberEncerrar,
     decisaoDialogEl,
   } = useVisitaPontoContext(form.ponto_id);
@@ -599,14 +605,26 @@ export function NovaColetaFuraFuraForm() {
     let concluido = false;
 
     try {
-      const supabase = createClient();
       let fotoUrl = fotoUrlExistente;
+      let fotosPendentes: Awaited<ReturnType<typeof subirFotosOuGuardar>>["pendentes"] = [];
       if (fotoFile) {
-        fotoUrl = await uploadFotoFuraFura(supabase, empresaId, form.ponto_id, fotoFile);
+        const subida = await subirFotosOuGuardar([
+          {
+            chave: "foto",
+            path: caminhoFotoFuraFura(empresaId, form.ponto_id, fotoFile),
+            file: fotoFile,
+          },
+        ]);
+        fotoUrl = subida.urls.get("foto") ?? null;
+        fotosPendentes = subida.pendentes;
       }
       if (!fotoUrl) {
         setErroFoto("Foto obrigatória");
         setError("Tire a foto da máquina antes de registrar.");
+        return;
+      }
+      if (editarColetaId && fotosPendentes.length > 0) {
+        setError("Sem sinal para subir a foto. Para editar a coleta é preciso internet.");
         return;
       }
 
@@ -636,10 +654,27 @@ export function NovaColetaFuraFuraForm() {
         }
       }
 
-      const res = await fetch("/api/coletas/fura-fura", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      const pagamentoFechar = {
+        pix: parseMoneyInput(form.valor_pix),
+        dinheiro: parseMoneyInput(form.valor_dinheiro),
+        desconto: parseMoneyInput(form.desconto),
+        somenteFechar: true,
+      };
+      const envio = await enviarColeta({
+        envioId: envioId.atual(),
+        url: "/api/coletas/fura-fura",
+        titulo: "Coleta fura-fura",
+        pontoNome: ponto?.nome ?? null,
+        permitirFila: !editarColetaId,
+        fotosPendentes,
+        previsto: previstoCobranca({
+          cobrandoAgora,
+          dividaPonto: pendenciaPonto?.totalPendente ?? 0,
+          descontarHaver,
+          haverSaldo,
+        }),
+        depois: fecharVisitaAgora ? pedidoFinalizarVisita(pagamentoFechar) : null,
+        body: {
           ...form,
           valor_pix: cobrandoAgora ? form.valor_pix : "",
           valor_dinheiro: cobrandoAgora ? form.valor_dinheiro : "",
@@ -653,26 +688,26 @@ export function NovaColetaFuraFuraForm() {
           descontar_haver_na_cobranca: cobrandoAgora && descontarHaver,
           incluir_pendencia_operacao: cobrandoAgora && incluirPendencia,
           religar_visita_finalizada: Boolean(editarColetaId && visitaPontoParaSalvar),
-        }),
+        },
       });
-      const data = await parseFetchJson<{
-        error?: string;
+
+      if (envio.tipo === "guardado") {
+        setGuardada({ fechou: fecharVisitaAgora });
+        concluido = true;
+        return;
+      }
+      if (!envio.res.ok) {
+        setError(erroDaResposta(envio.data, "Erro ao registrar coleta."));
+        return;
+      }
+      const data = envio.data as {
         id?: string;
         calculo?: CalculoColetaFuraFuraResult;
         ponto?: { nome?: string; whatsapp?: string | null };
-      }>(res);
-      if (!res.ok) {
-        setError(data.error ?? "Erro ao registrar coleta.");
-        return;
-      }
+      };
 
       if (fecharVisitaAgora) {
-        await finalizarVisitaAgora({
-          pix: parseMoneyInput(form.valor_pix),
-          dinheiro: parseMoneyInput(form.valor_dinheiro),
-          desconto: parseMoneyInput(form.desconto),
-          somenteFechar: true,
-        });
+        await finalizarVisitaAgora(pagamentoFechar);
       }
 
       const calculoSalvo: CalculoColetaFuraFuraResult =
@@ -1149,6 +1184,11 @@ export function NovaColetaFuraFuraForm() {
       )}
 
       {decisaoDialogEl}
+      <ColetaGuardadaAviso
+        aberto={Boolean(guardada)}
+        comFechamento={guardada?.fechou}
+        onVoltar={() => voltarAposColeta(guardada?.fechou ? { visitaJaFinalizada: true } : undefined)}
+      />
 
       <LoadingOverlay
         show={loading}

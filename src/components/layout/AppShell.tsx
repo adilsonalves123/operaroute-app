@@ -35,6 +35,7 @@ import {
 import { AuditoriaSessaoBeacon } from "@/components/auditoria/AuditoriaSessaoBeacon";
 import { PushNativeInit } from "@/components/push/PushNativeInit";
 import { PremiumDeskMain } from "@/components/layout/PremiumDeskMain";
+import { FilaColetasSync } from "@/components/offline/FilaColetasSync";
 import { cookies } from "next/headers";
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
@@ -144,6 +145,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
               />
             ) : null}
             <AppHeader nomeUsuario={profile?.nome ?? undefined} />
+            <FilaColetasSync />
             <main className="app-shell-main flex-1 overflow-y-auto p-4 lg:p-6 pb-24 lg:pb-6">
               <PushNativeInit />
               <PremiumDeskMain>

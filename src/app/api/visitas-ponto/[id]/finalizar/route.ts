@@ -2,11 +2,13 @@ import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { parseRecebimentoPixDinheiro } from "@/lib/nichos/fura-fura/recebimento-pagamento";
 import { finalizarVisitaPontoComCheckout } from "@/lib/visitas-ponto/checkout";
+import { comEnvioIdempotente } from "@/lib/coletas/envio-idempotente";
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+type Ctx = { params: Promise<{ id: string }> };
+
+export const POST = comEnvioIdempotente<Ctx>("visitas-ponto/finalizar", finalizarVisitaPonto);
+
+async function finalizarVisitaPonto(request: Request, { params }: Ctx) {
   const { id } = await params;
   const auth = await requireAcesso("coletas", "editar");
   if (!auth.ok) return auth.response;

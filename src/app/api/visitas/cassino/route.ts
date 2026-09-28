@@ -18,6 +18,8 @@ import {
   valorSaidaPermitidaNoCaixa,
 } from "@/lib/financeiro/saldo-caixa";
 import { dataOperacaoBR } from "@/lib/financeiro/data-operacao";
+import { comEnvioIdempotente } from "@/lib/coletas/envio-idempotente";
+import { coletadoEmDoEnvio, type ValoresLidos } from "@/lib/coletas/envio-offline";
 
 import type { CorrecaoHumanaPayload } from "@/lib/nichos/cassino/correcao-humana";
 import type { ExcecaoContadorTipo } from "@/lib/nichos/cassino/excecoes-contador";
@@ -99,12 +101,21 @@ function descricaoHaverAposBaixa(
   return base ? `${base}\n${linha}` : linha;
 }
 
-export async function POST(request: Request) {
+function somarValores(rows: { valor: number | null }[] | null | undefined): number {
+  return Math.round((rows ?? []).reduce((s, p) => s + Number(p.valor ?? 0), 0) * 100) / 100;
+}
+
+export const POST = comEnvioIdempotente("visitas/cassino", registrarVisitaCassino);
+
+async function registrarVisitaCassino(request: Request) {
   const auth = await requireAcesso("coletas", "criar");
   if (!auth.ok) return auth.response;
   const { profile, supabase } = auth;
 
   const body = await request.json();
+  const coletadoEm = coletadoEmDoEnvio(body);
+  const quando = coletadoEm ?? new Date();
+  const criadoEm: { created_at?: string } = coletadoEm ? { created_at: quando.toISOString() } : {};
   const visitaPontoId = parseVisitaPontoId(body.visita_ponto_id);
 
   if (!body.ponto_id || !Array.isArray(body.leituras) || body.leituras.length === 0) {
@@ -322,6 +333,7 @@ export async function POST(request: Request) {
   const { data: visita, error: visitaError } = await supabase
     .from("visitas")
     .insert({
+      ...criadoEm,
       empresa_id: profile.empresa_id,
       ponto_id: body.ponto_id,
       operador_id: profile.user_id,
@@ -384,6 +396,7 @@ export async function POST(request: Request) {
     const { data: coleta, error: coletaError } = await supabase
       .from("coletas")
       .insert({
+        ...criadoEm,
         empresa_id: profile.empresa_id,
         ponto_id: body.ponto_id,
         visita_id: visita.id,
@@ -447,7 +460,7 @@ export async function POST(request: Request) {
   }
 
   for (const ab of calculo.abatimentosHaver) {
-    const dataStr = new Date().toLocaleDateString("pt-BR");
+    const dataStr = quando.toLocaleDateString("pt-BR");
     await supabase
       .from("pendencias")
       .update({
@@ -545,7 +558,7 @@ export async function POST(request: Request) {
       tipo: "entrada",
       categoria: "Coleta cassino",
       valor: pagoRecebido,
-      data: dataOperacaoBR(),
+      data: dataOperacaoBR(quando),
       descricao: `Coleta - ${ponto.nome}${partes.length ? ` (${partes.join(" · ")})` : ""}`,
       forma_pagamento: deriveFormaPagamento(entradaPix, entradaDinheiro),
       ponto_id: body.ponto_id,
@@ -579,7 +592,7 @@ export async function POST(request: Request) {
         tipo: "saida",
         categoria: "Adiantamento ponto",
         valor: saidaCaixa,
-      data: dataOperacaoBR(),
+      data: dataOperacaoBR(quando),
         descricao,
         forma_pagamento: deriveFormaPagamento(saidaPix, saidaDinheiro),
         ponto_id: body.ponto_id,
@@ -602,7 +615,7 @@ export async function POST(request: Request) {
         tipo: "saida",
         categoria: "Adiantamento ponto",
         valor: saida,
-      data: dataOperacaoBR(),
+      data: dataOperacaoBR(quando),
         descricao,
         forma_pagamento: "dinheiro",
         ponto_id: body.ponto_id,
@@ -645,7 +658,7 @@ export async function POST(request: Request) {
         tipo: "saida",
         categoria: "Pagamento haver",
         valor: saidaCaixa,
-      data: dataOperacaoBR(),
+      data: dataOperacaoBR(quando),
         descricao,
         forma_pagamento: deriveFormaPagamento(saidaPix, saidaDinheiro),
         ponto_id: body.ponto_id,
@@ -657,7 +670,7 @@ export async function POST(request: Request) {
 
   if (calculo.saldoNegativo && calculo.haverGeradoReais > 0.009) {
     const operadorRepostou = calculo.valorDeixadoOperadorReais > 0.009;
-    const dataStr = new Date().toLocaleDateString("pt-BR");
+    const dataStr = quando.toLocaleDateString("pt-BR");
 
     if (operadorRepostou) {
       await supabase.from("pendencias").insert({
@@ -693,7 +706,7 @@ export async function POST(request: Request) {
       visita_id: visita.id,
       tipo: "negativo",
       titulo: "Saldo negativo da coleta",
-      descricao: `Valor deixado no ponto na visita de ${new Date().toLocaleDateString("pt-BR")}`,
+      descricao: `Valor deixado no ponto na visita de ${quando.toLocaleDateString("pt-BR")}`,
       valor: calculo.novoDebitoReais,
       status: "aberta",
       prioridade: "alta",
@@ -701,7 +714,7 @@ export async function POST(request: Request) {
   }
 
   if (calculo.saldoNegativo && calculo.excedenteDeixadoReais > 0.009) {
-    const dataStr = new Date().toLocaleDateString("pt-BR");
+    const dataStr = quando.toLocaleDateString("pt-BR");
     await supabase.from("pendencias").insert({
       empresa_id: profile.empresa_id,
       ponto_id: body.ponto_id,
@@ -722,7 +735,7 @@ export async function POST(request: Request) {
       visita_id: visita.id,
       tipo: calculo.valorPagoReais > 0 ? "parcial" : "pagamento_pendente",
       titulo: "Pagamento pendente da coleta",
-      descricao: `Dívida da operação — visita de ${new Date().toLocaleDateString("pt-BR")}`,
+      descricao: `Dívida da operação — visita de ${quando.toLocaleDateString("pt-BR")}`,
       valor: calculo.restanteOperacaoReais,
       status: "aberta",
       prioridade: "media",
@@ -734,7 +747,7 @@ export async function POST(request: Request) {
         visita_id: visita.id,
         tipo: "haver",
         titulo: "Haver do cliente",
-        descricao: `Pagamento a mais (troco/crédito) na visita de ${new Date().toLocaleDateString("pt-BR")}. Total a cobrar: R$ ${calculo.totalACobrarReais.toFixed(2).replace(".", ",")}, pago: R$ ${calculo.valorPagoReais.toFixed(2).replace(".", ",")}.`,
+        descricao: `Pagamento a mais (troco/crédito) na visita de ${quando.toLocaleDateString("pt-BR")}. Total a cobrar: R$ ${calculo.totalACobrarReais.toFixed(2).replace(".", ",")}, pago: R$ ${calculo.valorPagoReais.toFixed(2).replace(".", ",")}.`,
         valor: calculo.haverReais,
         status: "aberta",
         prioridade: "baixa",
@@ -743,7 +756,7 @@ export async function POST(request: Request) {
 
   await supabase
     .from("pontos")
-    .update({ ultima_coleta: new Date().toISOString() })
+    .update({ ultima_coleta: quando.toISOString() })
     .eq("id", body.ponto_id);
 
   const visitaPontoIdLink = parseVisitaPontoId(body.visita_ponto_id);
@@ -837,6 +850,16 @@ export async function POST(request: Request) {
     });
   }
 
+  const lidoNoEnvio: ValoresLidos = {
+    negativo: somarValores(pendenciasRaw),
+    haver: somarValores(haverRaw),
+    pendencia_operacao: somarValores(operacaoPendencias),
+  };
+  for (const l of leiturasPayload) {
+    lidoNoEnvio[`contador:${l.equipamentoId}:entrada`] = l.entradaAnterior;
+    lidoNoEnvio[`contador:${l.equipamentoId}:saida`] = l.saidaAnterior;
+  }
+
   return NextResponse.json({
     success: true,
     visita_id: visita.id,
@@ -847,5 +870,6 @@ export async function POST(request: Request) {
       haver: calculo.haverReais,
       saldoNegativo: calculo.saldoNegativo,
     },
+    lido_no_envio: lidoNoEnvio,
   });
 }

@@ -51,7 +51,14 @@ import {
   pendenciasParaEdicaoVisita,
 } from "@/lib/nichos/cassino/pendencias";
 import type { RelatorioColetaData } from "@/lib/nichos/cassino/relatorio";
-import { uploadFotosMaquinasParalelo } from "@/lib/storage/coleta-fotos";
+import {
+  enviarColeta,
+  erroDaResposta,
+  subirFotosMaquinasOuGuardar,
+} from "@/lib/offline/envio-coleta";
+import type { ValoresLidos } from "@/lib/coletas/envio-offline";
+import { useEnvioId } from "@/hooks/use-envio-id";
+import { ColetaGuardadaAviso } from "@/components/offline/ColetaGuardadaAviso";
 import { createClient } from "@/lib/supabase/client";
 import { usePermissoes } from "@/components/layout/PermissoesProvider";
 import { filtrarPontosClientes } from "@/lib/visao/filtro";
@@ -134,6 +141,7 @@ export function NovaColetaCassinoForm() {
     ensuringVisita,
     voltarAposColeta,
     finalizarVisitaAgora,
+    pedidoFinalizarVisita,
     confirmarReceberEncerrar,
     decisaoDialogEl,
   } =
@@ -141,6 +149,8 @@ export function NovaColetaCassinoForm() {
 
   const [loading, setLoading] = useState(false);
   const submitLock = useSubmitLock();
+  const envioId = useEnvioId();
+  const [guardada, setGuardada] = useState<{ fechou: boolean } | null>(null);
   const [loadingPonto, setLoadingPonto] = useState(false);
   const [error, setError] = useState("");
   const [empresaId, setEmpresaId] = useState<string | null>(null);
@@ -1020,19 +1030,21 @@ export function NovaColetaCassinoForm() {
     let concluido = false;
 
     try {
-      const supabase = createClient();
       const visitaFolder = crypto.randomUUID();
 
       const fotos = leituras
         .filter((l): l is typeof l & { fotoFile: File } => !!l.fotoFile)
         .map((l) => ({ equipamentoId: l.equipamentoId, file: l.fotoFile }));
 
-      const fotoUrls = await uploadFotosMaquinasParalelo(
-        supabase,
+      const { urls: fotoUrls, pendentes: fotosPendentes } = await subirFotosMaquinasOuGuardar(
         empresaId,
         visitaFolder,
         fotos
       );
+      if (editarVisitaId && fotosPendentes.length > 0) {
+        setError("Sem sinal para subir as fotos. Para editar a coleta é preciso internet.");
+        return;
+      }
 
       const recebimentoPixReais = parseMoneyInput(pagamento.valor_pix);
       const recebimentoDinheiroReais = parseMoneyInput(pagamento.valor_dinheiro);
@@ -1063,11 +1075,36 @@ export function NovaColetaCassinoForm() {
         }
       }
 
-      const res = await fetch("/api/visitas/cassino", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
+      const somar = (rows: { valor?: number | null }[]) =>
+        Math.round(rows.reduce((s, p) => s + Number(p.valor ?? 0), 0) * 100) / 100;
+      const previsto: ValoresLidos = {
+        negativo: somar(pendencias),
+        haver: somar(havers),
+        pendencia_operacao: somar(pendenciasOperacao),
+      };
+      for (const l of leituras) {
+        previsto[`contador:${l.equipamentoId}:entrada`] = l.entradaAnterior;
+        previsto[`contador:${l.equipamentoId}:saida`] = l.saidaAnterior;
+      }
+      const pagamentoFechar = {
+        pix: finalizarVisitaSemPagar ? 0 : recebimentoPixReais,
+        dinheiro: finalizarVisitaSemPagar ? 0 : recebimentoDinheiroReais,
+        desconto: finalizarVisitaSemPagar
+          ? 0
+          : parseMoneyInput(pagamento.desconto_recebimento),
+        somenteFechar: true,
+      };
+
+      const envio = await enviarColeta({
+        envioId: envioId.atual(),
+        url: "/api/visitas/cassino",
+        titulo: "Coleta cassino",
+        pontoNome: ponto?.nome ?? null,
+        permitirFila: !editarVisitaId,
+        fotosPendentes,
+        previsto,
+        depois: finalizarDireto ? pedidoFinalizarVisita(pagamentoFechar) : null,
+        body: {
           ponto_id: pontoId,
           leituras: leituras.map((l) => {
             const correcao =
@@ -1128,10 +1165,20 @@ export function NovaColetaCassinoForm() {
           // Continuar: defere o pagamento para o checkout.
           // Correção pós-finalização: sempre aplica pagamento na coleta.
           receber_agora: receberAgora || editandoVisitaFinalizada,
-        }),
+        },
       });
 
-      const data = await res.json();
+      if (envio.tipo === "guardado") {
+        if (visitaPontoId && pontoId) {
+          clearCassinoLeiturasDraft(visitaPontoId, pontoId);
+        }
+        setGuardada({ fechou: finalizarDireto });
+        concluido = true;
+        return;
+      }
+
+      const { res } = envio;
+      const data = envio.data as { visita_id?: string; already_done?: boolean };
       if (!res.ok) {
         // Já gravou na 1ª tentativa — não trata como erro fatal se veio do 2º clique.
         if (res.status === 409 && data.already_done && data.visita_id) {
@@ -1145,7 +1192,7 @@ export function NovaColetaCassinoForm() {
           concluido = true;
           return;
         }
-        setError(data.error ?? "Erro ao registrar coleta.");
+        setError(erroDaResposta(envio.data, "Erro ao registrar coleta."));
         return;
       }
 
@@ -1154,21 +1201,14 @@ export function NovaColetaCassinoForm() {
       }
 
       if (finalizarDireto) {
-        await finalizarVisitaAgora({
-          pix: finalizarVisitaSemPagar ? 0 : recebimentoPixReais,
-          dinheiro: finalizarVisitaSemPagar ? 0 : recebimentoDinheiroReais,
-          desconto: finalizarVisitaSemPagar
-            ? 0
-            : parseMoneyInput(pagamento.desconto_recebimento),
-          somenteFechar: true,
-        });
+        await finalizarVisitaAgora(pagamentoFechar);
       }
 
       const eraEdicaoFinalizada = editandoVisitaFinalizada;
       setEditarVisitaId(null);
       setEditandoVisitaFinalizada(false);
       setSucesso({
-        visitaId: data.visita_id,
+        visitaId: String(data.visita_id ?? ""),
         empresaId,
         relatorioData: { ...relatorioData, previa: false },
         visitaJaFinalizada: finalizarDireto || eraEdicaoFinalizada,
@@ -2412,6 +2452,11 @@ export function NovaColetaCassinoForm() {
       )}
 
       {decisaoDialogEl}
+      <ColetaGuardadaAviso
+        aberto={Boolean(guardada)}
+        comFechamento={guardada?.fechou}
+        onVoltar={() => voltarAposColeta(guardada?.fechou ? { visitaJaFinalizada: true } : undefined)}
+      />
 
       <LoadingOverlay
         show={loading}

@@ -22,13 +22,20 @@ import {
 import { parseVisitaPontoId, vincularItemVisitaPonto } from "@/lib/visitas-ponto/vincular-item";
 import { aplicarPagamentoDividaAnterior } from "@/lib/visitas-ponto/checkout";
 import { totalDividaAnteriorPonto } from "@/lib/visitas-ponto/divida-ponto";
+import { comEnvioIdempotente } from "@/lib/coletas/envio-idempotente";
+import { coletadoEmDoEnvio } from "@/lib/coletas/envio-offline";
 
-export async function POST(request: Request) {
+export const POST = comEnvioIdempotente("coletas/bolinha", registrarColetaBolinha);
+
+async function registrarColetaBolinha(request: Request) {
   const auth = await requireAcesso("coletas", "criar");
   if (!auth.ok) return auth.response;
   const { profile, supabase } = auth;
 
   const body = await request.json();
+  const coletadoEm = coletadoEmDoEnvio(body);
+  const quando = coletadoEm ?? new Date();
+  const criadoEm: { created_at?: string } = coletadoEm ? { created_at: quando.toISOString() } : {};
   const visitaPontoId = parseVisitaPontoId(body.visita_ponto_id);
   const receberAgora = Boolean(body.receber_agora);
   const modoVisitaPonto = Boolean(visitaPontoId);
@@ -153,6 +160,7 @@ export async function POST(request: Request) {
       : 0;
 
     let haverAbatido = 0;
+    let haverSaldo: number | null = null;
     if (cobrandoAgora && descontarHaverNaCobranca) {
       const { data: havers } = await supabase
         .from("pendencias")
@@ -161,7 +169,7 @@ export async function POST(request: Request) {
         .eq("ponto_id", pontoId)
         .eq("status", "aberta")
         .ilike("tipo", "haver");
-      const haverSaldo = somarHaverNichoAberto(havers ?? [], "bolinha");
+      haverSaldo = somarHaverNichoAberto(havers ?? [], "bolinha");
       haverAbatido = Math.min(haverSaldo, calculo.valorAReceber);
     }
 
@@ -196,6 +204,7 @@ export async function POST(request: Request) {
       const { data: coleta, error: coletaError } = await supabase
         .from("coletas")
         .insert({
+          ...criadoEm,
           empresa_id: profile.empresa_id,
           ponto_id: pontoId,
           equipamento_id: maquina.equipamentoId,
@@ -258,6 +267,7 @@ export async function POST(request: Request) {
         );
 
         await supabase.from("coleta_pagamentos").insert({
+          ...criadoEm,
           empresa_id: profile.empresa_id,
           coleta_id: coleta.id,
           ponto_id: pontoId,
@@ -274,7 +284,7 @@ export async function POST(request: Request) {
           tipo: "entrada",
           categoria: "Coleta Bolinha",
           valor: valorPagoMaquina,
-      data: dataOperacaoBR(),
+      data: dataOperacaoBR(quando),
           descricao: pagamentoDetalhe
             ? `Coleta Bolinha - ${ponto.nome} - ${maquina.nome} — ${pagamentoDetalhe}`
             : `Coleta Bolinha - ${ponto.nome} - ${maquina.nome}`,
@@ -293,7 +303,7 @@ export async function POST(request: Request) {
         coleta_id: primeiraColetaId,
         tipo: recebimentoRateado.aplicadoColetaAtual > 0.009 ? "parcial" : "pagamento_pendente",
         titulo: "Coleta Bolinha pendente",
-        descricao: `Saldo da coleta de ${new Date().toLocaleDateString("pt-BR")} — ${ponto.nome}`,
+        descricao: `Saldo da coleta de ${quando.toLocaleDateString("pt-BR")} — ${ponto.nome}`,
         valor: recebimentoRateado.saldoPendenteColeta,
         prioridade: "media",
         status: "aberta",
@@ -356,7 +366,7 @@ export async function POST(request: Request) {
     await supabase
       .from("pontos")
       .update({
-        ultima_coleta: new Date().toISOString(),
+        ultima_coleta: quando.toISOString(),
       })
       .eq("id", pontoId)
       .eq("empresa_id", profile.empresa_id);
@@ -442,6 +452,10 @@ export async function POST(request: Request) {
         haver: cobrandoAgora ? haverGerado : 0,
       },
       modo_visita_ponto: modoVisitaPonto,
+      lido_no_envio: {
+        ...(cobrandoAgora ? { divida_ponto: pendenciaAnterior } : {}),
+        ...(haverSaldo != null ? { haver: haverSaldo } : {}),
+      },
     });
   } catch (error) {
     return NextResponse.json(

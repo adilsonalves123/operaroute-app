@@ -70,6 +70,33 @@ async function uploadNoBucket(
   );
 }
 
+export function caminhoFotoMaquina(
+  empresaId: string,
+  equipamentoId: string,
+  file: File,
+  visitaFolder: string
+): string {
+  return `${empresaId}/fotos_coleta/${visitaFolder}/${equipamentoId}.${extFromFile(file)}`;
+}
+
+export function caminhoFotoFuraFura(empresaId: string, pontoId: string, file: File): string {
+  return `${empresaId}/fotos_fura/${pontoId}/${Date.now()}.${extFromFile(file)}`;
+}
+
+export function urlPublicaFotoColeta(supabase: SupabaseClient, path: string): string {
+  return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+}
+
+/** Sobe uma foto num caminho já definido (usado pela fila offline). */
+export async function enviarFotoColeta(
+  supabase: SupabaseClient,
+  path: string,
+  file: File | Blob,
+  contentType?: string
+): Promise<void> {
+  await uploadNoBucket(supabase, path, file, contentType ?? mimeTypeFoto(file));
+}
+
 export async function uploadFotoMaquina(
   supabase: SupabaseClient,
   empresaId: string,
@@ -77,8 +104,7 @@ export async function uploadFotoMaquina(
   file: File,
   visitaFolder: string
 ): Promise<string> {
-  const ext = extFromFile(file);
-  const path = `${empresaId}/fotos_coleta/${visitaFolder}/${equipamentoId}.${ext}`;
+  const path = caminhoFotoMaquina(empresaId, equipamentoId, file, visitaFolder);
   await uploadNoBucket(supabase, path, file, mimeTypeFoto(file));
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
@@ -111,8 +137,7 @@ export async function uploadFotoFuraFura(
   pontoId: string,
   file: File
 ): Promise<string> {
-  const ext = extFromFile(file);
-  const path = `${empresaId}/fotos_fura/${pontoId}/${Date.now()}.${ext}`;
+  const path = caminhoFotoFuraFura(empresaId, pontoId, file);
   await uploadNoBucket(supabase, path, file, mimeTypeFoto(file));
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
   return data.publicUrl;
