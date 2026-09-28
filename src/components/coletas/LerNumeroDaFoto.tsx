@@ -1,7 +1,9 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { Camera, Check, Copy, ImageIcon, Loader2, Sparkles, X } from "lucide-react";
+import { Camera, Check, Copy, ImageIcon, Loader2, Lock, Sparkles, X } from "lucide-react";
+import { useIaLeituraFoto } from "@/components/layout/PermissoesProvider";
+import { IaBloqueadaAviso } from "@/components/ia/IaBloqueadaAviso";
 import { capturarFotoNativa } from "@/lib/camera/captura-nativa";
 import { isNativeAndroidApp } from "@/lib/push/client";
 import { cn } from "@/lib/utils";
@@ -70,6 +72,9 @@ export function LerNumeroDaFoto({
   const [fotoPendente, setFotoPendente] = useState<{ file: File; preview: string } | null>(
     null
   );
+
+  const iaInfo = useIaLeituraFoto();
+  const [avisoIaAberto, setAvisoIaAberto] = useState(false);
 
   const autoColocarNoCampo = isTouchTablet();
 
@@ -250,7 +255,20 @@ export function LerNumeroDaFoto({
         onChange={handleInputChange}
       />
 
-      {!resultado ? (
+      {!iaInfo.liberada ? (
+        <>
+          <button
+            type="button"
+            disabled={disabled}
+            onClick={() => setAvisoIaAberto((v) => !v)}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs font-medium text-slate-400 transition hover:bg-white/[0.06] disabled:opacity-50"
+          >
+            <Lock className="h-3.5 w-3.5" />
+            Ler da foto
+          </button>
+          {avisoIaAberto ? <IaBloqueadaAviso info={iaInfo} compacto /> : null}
+        </>
+      ) : !resultado ? (
         <>
           <button
             type="button"

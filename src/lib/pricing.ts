@@ -187,7 +187,7 @@ export const NICHOS_PAGOS: Nicho[] = [
  * Cassino referencia; fura-fura / bolinha mais baratos.
  * Vários nichos → média dos pesos.
  */
-export const PESO_PRECO_NICHOS: Record<(typeof NICHOS_PAGOS)[number], number> = {
+export const PESO_PRECO_NICHOS: Partial<Record<Nicho, number>> = {
   maquinas_cassino: 1,
   ursinho: 0.9,
   diversao: 0.85,

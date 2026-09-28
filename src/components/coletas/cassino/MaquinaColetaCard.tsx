@@ -24,6 +24,8 @@ import { coletaInputClass } from "@/components/coletas/layout/coleta-form-styles
 import {
   valoresDivergemDaSugestao,
 } from "@/lib/nichos/cassino/correcao-humana";
+import { useIaLeituraFoto } from "@/components/layout/PermissoesProvider";
+import { IaBloqueadaAviso } from "@/components/ia/IaBloqueadaAviso";
 
 export interface LeituraFormState {
   equipamentoId: string;
@@ -149,6 +151,8 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
   erroFoto,
 }: MaquinaColetaCardProps) {
   const [lendoIa, setLendoIa] = useState(false);
+  const iaInfo = useIaLeituraFoto();
+  const iaLiberada = iaInfo.liberada;
   const leituraRef = useRef(leitura);
   leituraRef.current = leitura;
   const reqIdRef = useRef(0);
@@ -298,10 +302,11 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
       setLendoIa(false);
       return;
     }
+    if (!iaLiberada) return;
     if (autoLidaRef.current === fotoToken) return;
     autoLidaRef.current = fotoToken;
     void lerContadores();
-  }, [fotoToken, lerContadores]);
+  }, [fotoToken, lerContadores, iaLiberada]);
 
   return (
     <div
@@ -528,12 +533,18 @@ export const MaquinaColetaCard = memo(function MaquinaColetaCard({
         modo="entrada_saida"
         erro={erroFoto}
         label="Foto do painel *"
-        hint="A leitura começa assim que a foto entra."
+        hint={
+          iaLiberada
+            ? "A leitura começa assim que a foto entra."
+            : "Digite entrada e saída acima — ou toque na foto para marcar e copiar os números."
+        }
         alt={`Foto ${leitura.nome}`}
         buttonClassName="py-6 rounded-xl"
       />
 
-      {leitura.fotoFile ? (
+      {!iaLiberada ? (
+        <IaBloqueadaAviso info={iaInfo} />
+      ) : leitura.fotoFile ? (
         <div className="space-y-2">
           <button
             type="button"

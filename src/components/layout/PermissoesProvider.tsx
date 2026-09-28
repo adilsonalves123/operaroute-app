@@ -5,6 +5,20 @@ import type { PermissaoAcao, PermissaoModulo, PermissoesResolvidas } from "@/lib
 import { pode, podeVer } from "@/lib/equipe/permissions";
 import type { UserRole } from "@/lib/types/database";
 
+export type IaLeituraFotoInfo = {
+  liberada: boolean;
+  motivo: "plano" | "trial" | "bloqueada";
+  planoAtual: string;
+  planosComIa: string;
+};
+
+const IA_LIBERADA_PADRAO: IaLeituraFotoInfo = {
+  liberada: true,
+  motivo: "plano",
+  planoAtual: "",
+  planosComIa: "Pro e Elite",
+};
+
 type PermissoesContextValue = {
   role: UserRole;
   isOwner: boolean;
@@ -16,6 +30,8 @@ type PermissoesContextValue = {
   /** Operador vê só pontos/valores publicados; coleta real continua. */
   visaoRestrita: boolean;
   visaoPontoIds: string[];
+  /** Leitura por foto com IA — só Pro/Elite (ou trial). */
+  iaLeituraFoto: IaLeituraFotoInfo;
   pode: (modulo: PermissaoModulo, acao: PermissaoAcao) => boolean;
   podeVer: (modulo: PermissaoModulo) => boolean;
 };
@@ -30,6 +46,7 @@ export function PermissoesProvider({
   rascunhoDashboardAtivo = false,
   visaoRestrita = false,
   visaoPontoIds = [],
+  iaLeituraFoto = IA_LIBERADA_PADRAO,
   children,
 }: {
   role: UserRole;
@@ -39,6 +56,7 @@ export function PermissoesProvider({
   rascunhoDashboardAtivo?: boolean;
   visaoRestrita?: boolean;
   visaoPontoIds?: string[];
+  iaLeituraFoto?: IaLeituraFotoInfo;
   children: React.ReactNode;
 }) {
   const value: PermissoesContextValue = {
@@ -49,6 +67,7 @@ export function PermissoesProvider({
     rascunhoDashboardAtivo,
     visaoRestrita,
     visaoPontoIds,
+    iaLeituraFoto,
     pode: (modulo, acao) => isOwner || pode(permissoes, modulo, acao),
     podeVer: (modulo) => isOwner || podeVer(permissoes, modulo),
   };
@@ -62,4 +81,9 @@ export function usePermissoes() {
     throw new Error("usePermissoes deve ser usado dentro de PermissoesProvider");
   }
   return ctx;
+}
+
+/** Fora do provider assume liberada — o servidor continua bloqueando se o plano não tiver IA. */
+export function useIaLeituraFoto(): IaLeituraFotoInfo {
+  return useContext(PermissoesContext)?.iaLeituraFoto ?? IA_LIBERADA_PADRAO;
 }

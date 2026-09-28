@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { iaDisponivel } from "@/lib/ia/openai-client";
+import { exigirIaLiberada } from "@/lib/ia/acesso-ia";
 import { localizarNumerosNaFoto } from "@/lib/ia/localizar-numeros-foto";
 
 export const runtime = "nodejs";
@@ -20,6 +21,9 @@ export async function POST(request: Request) {
   const authColetas = await requireAcesso("coletas", "criar");
   const auth = authColetas.ok ? authColetas : await requireAcesso("pontos", "editar");
   if (!auth.ok) return auth.response;
+
+  const bloqueioIa = await exigirIaLiberada();
+  if (bloqueioIa) return bloqueioIa;
 
   if (!iaDisponivel()) {
     return NextResponse.json(

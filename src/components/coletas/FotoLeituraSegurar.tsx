@@ -11,6 +11,7 @@ import {
   getFotoImageLayoutFromElement,
 } from "@/lib/ia/foto-image-layout";
 import { cn } from "@/lib/utils";
+import { useIaLeituraFoto } from "@/components/layout/PermissoesProvider";
 
 type DisplayRect = { x: number; y: number; width: number; height: number };
 
@@ -31,6 +32,7 @@ type SeletorProps = {
 };
 
 function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: SeletorProps) {
+  const { liberada: iaLiberada, planosComIa } = useIaLeituraFoto();
   const areaRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const startRef = useRef<{ x: number; y: number } | null>(null);
@@ -104,6 +106,13 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
           return;
         }
 
+        if (!iaLiberada) {
+          setErro(
+            `Não leu esse trecho. Marque de novo ou digite o número (leitura com IA é dos planos ${planosComIa}).`
+          );
+          return;
+        }
+
         const form = new FormData();
         form.append("foto", recorte);
         form.append("modo", "contador");
@@ -129,7 +138,7 @@ function SeletorManualFullscreen({ file, previewUrl, aberto, onFechar }: Seletor
         setLendo(false);
       }
     },
-    [file, pixelRect]
+    [file, pixelRect, iaLiberada, planosComIa]
   );
 
   function pontoLocal(clientX: number, clientY: number) {

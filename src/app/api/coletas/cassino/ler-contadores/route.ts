@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { iaDisponivel } from "@/lib/ia/openai-client";
+import { exigirIaLiberada } from "@/lib/ia/acesso-ia";
 import { buscarManutencaoRecente } from "@/lib/nichos/cassino/buscar-manutencao-recente";
 import {
   ajustarFlagsRegressao,
@@ -226,6 +227,9 @@ function analisarHistoricoMaquina(args: {
 export async function POST(request: Request) {
   const auth = await requireAcesso("coletas", "criar");
   if (!auth.ok) return auth.response;
+
+  const bloqueioIa = await exigirIaLiberada();
+  if (bloqueioIa) return bloqueioIa;
 
   if (!iaDisponivel()) {
     return NextResponse.json(

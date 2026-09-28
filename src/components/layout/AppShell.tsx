@@ -18,6 +18,7 @@ import {
   trialExpirado,
 } from "@/lib/assinatura-acesso";
 import { resolverOwnerProfileAcesso } from "@/lib/assinatura-owner";
+import { resolverAcessoIa } from "@/lib/ia/acesso-ia";
 import { resumoTrialPorFaixa } from "@/lib/onboarding/trial-resumo";
 import {
   COOKIE_SIMULAR_TRIAL,
@@ -77,6 +78,10 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const bloqueado = trialExpirado(acessoAssinatura);
+  const iaLeituraFoto = await resolverAcessoIa(
+    empresa?.quantidade_pontos,
+    acessoAssinatura
+  );
   const trialResumo = resumoTrialPorFaixa(
     empresa?.quantidade_pontos,
     (empresa?.pesquisa_onboarding?.nichos_interesse as never) ?? []
@@ -93,6 +98,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
       rascunhoDashboardAtivo={Boolean(empresa?.rascunho_dashboard_ativo)}
       visaoRestrita={acesso.visaoRestrita && !acesso.isOwner}
       visaoPontoIds={visaoPontoIds}
+      iaLeituraFoto={iaLeituraFoto}
     >
       <MobileMenuProvider>
         <AuditoriaSessaoBeacon />
