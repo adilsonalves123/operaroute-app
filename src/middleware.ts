@@ -203,6 +203,6 @@ export const config = {
      * Páginas apenas. /api/* autentica sozinho (requireAcesso/getProfile) —
      * tirar do middleware evita 504 em leituras IA / uploads longos.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/|downloads/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|apk)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|sw-push\\.js|sw-offline\\.js|api/|downloads/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|apk)$).*)",
   ],
 };

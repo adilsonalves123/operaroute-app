@@ -1,4 +1,10 @@
 /* OperaRoute — Web Push service worker */
+try {
+  importScripts("/sw-offline.js");
+} catch {
+  /* sem modo campo: o push continua funcionando */
+}
+
 self.addEventListener("push", (event) => {
   let data = { title: "OperaRoute", body: "", url: "/dashboard" };
   try {

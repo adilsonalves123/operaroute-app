@@ -330,6 +330,7 @@ export function moduloDaRota(pathname: string): PermissaoModulo | null {
   if (p.startsWith("/pontos")) return "pontos";
   if (p.startsWith("/equipamentos")) return "pontos";
   if (p.startsWith("/coletas")) return "coletas";
+  if (p.startsWith("/campo-offline")) return "coletas";
   if (p.startsWith("/financeiro")) return "financeiro";
   if (p.startsWith("/pendencias")) return "pendencias";
   if (p.startsWith("/chamados")) return "chamados";
