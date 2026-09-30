@@ -27,9 +27,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className={`${geist.variable} h-full`} suppressHydrationWarning>
       <head>
+        {/* Links públicos de comprovante (/c/) só têm visual escuro — não herdam o tema salvo de quem abre. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem("or_app_theme");if(t==="light"||t==="dark")document.documentElement.dataset.appTheme=t;}catch(e){}})();`,
+            __html: `(function(){try{if(location.pathname.indexOf("/c/")===0){document.documentElement.dataset.appTheme="dark";return;}var t=localStorage.getItem("or_app_theme");if(t==="light"||t==="dark")document.documentElement.dataset.appTheme=t;}catch(e){}})();`,
           }}
         />
       </head>
