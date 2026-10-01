@@ -6,7 +6,10 @@ import { requireAcesso } from "@/lib/equipe/require-acesso";
 import { extrairTotalAbatido } from "@/lib/nichos/cassino/pendencias";
 import { parseMoneyInput } from "@/lib/utils";
 import { baixarPendenciaVisitaPonto } from "@/lib/visitas-ponto/checkout";
-import { sincronizarOrigemAposEdicaoPendencia } from "@/lib/visitas-ponto/sync-pendencia-edit";
+import {
+  sincronizarOrigemAposBaixaPendencia,
+  sincronizarOrigemAposEdicaoPendencia,
+} from "@/lib/visitas-ponto/sync-pendencia-edit";
 import type { FormaPagamento } from "@/lib/types/database";
 import { resolverVisaoOperador, visaoPermitePonto } from "@/lib/visao/resolver";
 
@@ -245,6 +248,18 @@ export async function PATCH(
   }
 
   if (baixaFinanceira && baixaFinanceira.valor > 0) {
+    try {
+      await sincronizarOrigemAposBaixaPendencia(supabase, {
+        empresaId: profile.empresa_id,
+        coletaId: pendencia.coleta_id ?? null,
+        visitaId: pendencia.visita_id ?? null,
+        valorRecebidoReais: baixaFinanceira.valor,
+        tipo: String(pendencia.tipo ?? ""),
+      });
+    } catch {
+      /* o recebimento ainda precisa entrar no financeiro */
+    }
+
     const forma = deriveFormaPagamento(baixaFinanceira.pix, baixaFinanceira.dinheiro);
     let valorLancamento = baixaFinanceira.valor;
     let descricaoExtra = "";
