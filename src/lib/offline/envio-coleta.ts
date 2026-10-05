@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/client";
 import { HEADER_ENVIO_ID, type ValoresLidos } from "@/lib/coletas/envio-offline";
 import {
+  arquivoParaUpload,
   caminhoFotoMaquina,
   enviarFotoColeta,
   mimeTypeFoto,
@@ -241,18 +242,22 @@ const RESUMO_VAZIO: ResumoSincronizacao = { enviados: 0, revisar: [], precisaLog
 let emAndamento: Promise<ResumoSincronizacao> | null = null;
 
 /** Manda o que está guardado, na ordem em que as coletas foram feitas. */
-export function sincronizarFila(): Promise<ResumoSincronizacao> {
+export function sincronizarFila(opts?: {
+  /** Botão Enviar agora: tenta de novo o que já tinha sido recusado. */
+  incluirErros?: boolean;
+}): Promise<ResumoSincronizacao> {
   if (emAndamento) return emAndamento;
+  const incluirErros = opts?.incluirErros === true;
   emAndamento = (async () => {
     try {
       if (!filaDisponivel() || semSinalAgora()) return RESUMO_VAZIO;
       const locks = typeof navigator !== "undefined" ? navigator.locks : undefined;
-      if (!locks) return await rodarSincronizacao();
+      if (!locks) return await rodarSincronizacao(incluirErros);
       // Duas abas abertas não mandam a mesma fila ao mesmo tempo.
       const r = await locks.request(
         "operaroute-fila-coletas",
         { ifAvailable: true },
-        async (lock) => (lock ? rodarSincronizacao() : RESUMO_VAZIO)
+        async (lock) => (lock ? rodarSincronizacao(incluirErros) : RESUMO_VAZIO)
       );
       return r ?? RESUMO_VAZIO;
     } catch {
@@ -270,14 +275,14 @@ function mensagemErro(data: Record<string, unknown>, status: number): string {
     : `O servidor recusou (erro ${status}).`;
 }
 
-async function rodarSincronizacao(): Promise<ResumoSincronizacao> {
+async function rodarSincronizacao(incluirErros = false): Promise<ResumoSincronizacao> {
   const itens = await listarFila();
   const naFila = new Set(itens.map((i) => i.id));
   const resumo: ResumoSincronizacao = { enviados: 0, revisar: [], precisaLogin: false };
   const supabase = createClient();
 
   for (const item of itens) {
-    if (item.status === "erro") continue;
+    if (item.status === "erro" && !incluirErros) continue;
     if (item.depende_de && naFila.has(item.depende_de)) continue;
 
     const fotosOk = await subirFotosDoEnvio(supabase, item);
@@ -336,27 +341,40 @@ async function rodarSincronizacao(): Promise<ResumoSincronizacao> {
   return resumo;
 }
 
+function fotoSemBytes(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /no content provided/i.test(msg);
+}
+
 async function subirFotosDoEnvio(
   supabase: ReturnType<typeof createClient>,
   item: EnvioFila
 ): Promise<"ok" | "sem_sinal" | "erro"> {
   for (const path of item.fotos) {
     const foto = await lerFoto(path);
-    if (foto) {
-      try {
-        await comTempo(
-          enviarFotoColeta(supabase, path, foto.blob, foto.content_type),
-          TIMEOUT_FOTO_MS
-        );
-      } catch (err) {
-        if (ehFalhaDeRede(err)) return "sem_sinal";
-        await atualizarEnvio(item.id, {
-          status: "erro",
-          erro: `Foto não subiu: ${err instanceof Error ? err.message : "erro"}`,
-          tentativas: item.tentativas + 1,
-        });
-        return "erro";
+    // Blob vazio (ou sem nome, recusado pelo storage): não trava a coleta.
+    // O corpo já tem a URL; a leitura entra mesmo se essa imagem não subir.
+    if (!foto || !arquivoParaUpload(path, foto.blob, foto.content_type)) {
+      await removerFotoDaFila(item.id, path);
+      continue;
+    }
+    try {
+      await comTempo(
+        enviarFotoColeta(supabase, path, foto.blob, foto.content_type),
+        TIMEOUT_FOTO_MS
+      );
+    } catch (err) {
+      if (ehFalhaDeRede(err)) return "sem_sinal";
+      if (fotoSemBytes(err)) {
+        await removerFotoDaFila(item.id, path);
+        continue;
       }
+      await atualizarEnvio(item.id, {
+        status: "erro",
+        erro: `Foto não subiu: ${err instanceof Error ? err.message : "erro"}`,
+        tentativas: item.tentativas + 1,
+      });
+      return "erro";
     }
     await removerFotoDaFila(item.id, path);
   }

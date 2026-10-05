@@ -40,10 +40,10 @@ export function FilaColetasSync() {
     }
   }, []);
 
-  const sincronizar = useCallback(async () => {
+  const sincronizar = useCallback(async (incluirErros = false) => {
     setEnviando(true);
     try {
-      const r = await sincronizarFila();
+      const r = await sincronizarFila({ incluirErros });
       if (r.enviados > 0 || r.revisar.length > 0 || r.precisaLogin) setAviso(r);
     } finally {
       setEnviando(false);
@@ -135,7 +135,7 @@ export function FilaColetasSync() {
             </button>
             <button
               type="button"
-              onClick={() => void sincronizar()}
+              onClick={() => void sincronizar(true)}
               disabled={enviando || !online}
               className="flex shrink-0 items-center gap-1.5 rounded-sm border border-at bg-at-card px-3 py-1.5 text-[12px] font-medium text-at-link transition hover:bg-at-card-soft disabled:opacity-50 sm:text-[13px]"
             >

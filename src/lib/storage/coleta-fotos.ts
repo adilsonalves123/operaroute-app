@@ -87,6 +87,22 @@ export function urlPublicaFotoColeta(supabase: SupabaseClient, path: string): st
   return supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
 }
 
+/**
+ * A fila offline devolve a foto como Blob, sem nome. O storage recusa isso
+ * com "No content provided" e a coleta inteira fica parada.
+ */
+export function arquivoParaUpload(
+  path: string,
+  file: File | Blob | null | undefined,
+  contentType?: string
+): File | null {
+  if (!file || typeof file.size !== "number" || file.size <= 0) return null;
+  const tipo = (contentType || file.type || "image/jpeg").trim() || "image/jpeg";
+  const base = path.split("/").filter(Boolean).pop() || "foto.jpg";
+  const nome = /\.[a-z0-9]+$/i.test(base) ? base : `${base}.jpg`;
+  return new File([file], nome, { type: tipo });
+}
+
 /** Sobe uma foto num caminho já definido (usado pela fila offline). */
 export async function enviarFotoColeta(
   supabase: SupabaseClient,
@@ -94,7 +110,9 @@ export async function enviarFotoColeta(
   file: File | Blob,
   contentType?: string
 ): Promise<void> {
-  await uploadNoBucket(supabase, path, file, contentType ?? mimeTypeFoto(file));
+  const arquivo = arquivoParaUpload(path, file, contentType);
+  if (!arquivo) throw new Error("No content provided");
+  await uploadNoBucket(supabase, path, arquivo, arquivo.type || contentType);
 }
 
 export async function uploadFotoMaquina(
