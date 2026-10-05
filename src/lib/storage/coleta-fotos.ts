@@ -112,7 +112,7 @@ export async function enviarFotoColeta(
 ): Promise<void> {
   const arquivo = arquivoParaUpload(path, file, contentType);
   if (!arquivo) throw new Error("No content provided");
-  await uploadNoBucket(supabase, path, arquivo, arquivo.type || contentType);
+  await uploadNoBucket(supabase, path, arquivo, arquivo.type || contentType || "image/jpeg");
 }
 
 export async function uploadFotoMaquina(
