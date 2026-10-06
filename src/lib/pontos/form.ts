@@ -7,6 +7,7 @@ import {
   parseComissaoPorNicho,
 } from "@/lib/pontos/comissao-nicho";
 import type { Nicho } from "@/lib/types/database";
+import { gpsParaSalvar } from "@/lib/pontos/gps-cadastro";
 
 export type PontoFormSource = {
   nome: string;
@@ -84,14 +85,14 @@ export function valuesFromPonto(
     cep: "",
     rua,
     numero,
-    latitude:
-      p.latitude != null && Number.isFinite(Number(p.latitude))
-        ? String(Number(p.latitude))
-        : "",
-    longitude:
-      p.longitude != null && Number.isFinite(Number(p.longitude))
-        ? String(Number(p.longitude))
-        : "",
+    latitude: (() => {
+      const n = gpsParaSalvar(p.latitude);
+      return n == null ? "" : String(n);
+    })(),
+    longitude: (() => {
+      const n = gpsParaSalvar(p.longitude);
+      return n == null ? "" : String(n);
+    })(),
     status: (p.status as PontoStatus) || "ativo",
     comissao_percentual: legado,
     comissao_por_nicho,

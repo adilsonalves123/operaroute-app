@@ -9,6 +9,7 @@ import {
 } from "@/lib/pontos-movimentos";
 import type { PontoStatus } from "@/lib/types/database";
 import { formatCidadeCampo } from "@/lib/endereco/brasil";
+import { gpsParaSalvar } from "@/lib/pontos/gps-cadastro";
 
 export async function PATCH(
   request: Request,
@@ -48,13 +49,7 @@ export async function PATCH(
     if (key === "comissao_percentual" || key === "preco_furo") {
       updates[key] = parseFloat(body[key]) || 0;
     } else if (key === "latitude" || key === "longitude") {
-      const raw = body[key];
-      if (raw == null || raw === "") {
-        updates[key] = null;
-      } else {
-        const n = typeof raw === "number" ? raw : parseFloat(String(raw).replace(",", "."));
-        updates[key] = Number.isFinite(n) ? n : null;
-      }
+      updates[key] = gpsParaSalvar(body[key]);
     } else if (key === "comissao_por_nicho") {
       const raw = body[key];
       if (!raw || typeof raw !== "object" || Array.isArray(raw)) {

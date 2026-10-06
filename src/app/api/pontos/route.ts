@@ -7,6 +7,7 @@ import { parseLeituraContador, isEquipamentoTipoDiversao } from "@/lib/equipamen
 import { registrarMovimentoPonto } from "@/lib/pontos-movimentos";
 import { formatCidadeCampo } from "@/lib/endereco/brasil";
 import { bloqueioLimiteEquipamentos } from "@/lib/billing/limite-equipamentos";
+import { gpsParaSalvar } from "@/lib/pontos/gps-cadastro";
 
 async function resolveEmpresaId(): Promise<string | null> {
   const supabase = await createClient();
@@ -203,14 +204,8 @@ export async function POST(request: Request) {
       cidade: formatCidadeCampo(body.cidade) ?? (body.cidade || null),
       bairro: body.bairro || null,
       endereco: body.endereco || null,
-      latitude: (() => {
-        const n = Number(body.latitude);
-        return Number.isFinite(n) ? n : null;
-      })(),
-      longitude: (() => {
-        const n = Number(body.longitude);
-        return Number.isFinite(n) ? n : null;
-      })(),
+      latitude: gpsParaSalvar(body.latitude),
+      longitude: gpsParaSalvar(body.longitude),
       status: body.status || "ativo",
       comissao_percentual: parseFloat(body.comissao_percentual) || 0,
       comissao_por_nicho:
