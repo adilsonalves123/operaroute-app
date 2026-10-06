@@ -160,21 +160,32 @@ export function RotaMapaAvancado({
           .bindPopup("<strong>Você</strong>");
       }
 
-      const paradasComCoords = paradas.filter((p) => p.temCoordenadas);
+      const naOrdemRecebida = paradas.filter((p) => p.temCoordenadas);
+      const paradasComCoords = [...naOrdemRecebida].sort((a, b) => a.ordem - b.ordem);
+      const primeiraOrdem = paradasComCoords[0]?.ordem;
+      const ultimaOrdem = paradasComCoords[paradasComCoords.length - 1]?.ordem;
       for (const p of paradasComCoords) {
         if (p.latitude == null || p.longitude == null) continue;
         const pos: [number, number] = [p.latitude, p.longitude];
         latLngs.push(pos);
 
         const isDestino =
-          indiceDestino != null && paradasComCoords[indiceDestino]?.id === p.id;
+          indiceDestino != null && naOrdemRecebida[indiceDestino]?.id === p.id;
         const selected = paradaSelecionada === p.id || isDestino;
+        const papel =
+          p.ordem === primeiraOrdem
+            ? "início"
+            : p.ordem === ultimaOrdem && ultimaOrdem !== primeiraOrdem
+              ? "fim"
+              : null;
+        const fundo = papel === "início" ? "#22c55e" : papel === "fim" ? "#e11d48" : "#f59e0b";
+        const borda = selected ? "#22d3ee" : "#fff";
 
         const icon = L.divIcon({
           className: "",
-          html: `<div style="width:36px;height:36px;border-radius:50%;background:${selected ? "#22d3ee" : "#f59e0b"};border:3px solid #fff;box-shadow:0 2px 12px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#0f172a">${p.ordem}</div>`,
-          iconSize: [36, 36],
-          iconAnchor: [18, 18],
+          html: `<div style="display:flex;flex-direction:column;align-items:center;width:46px"><div style="width:34px;height:34px;border-radius:50%;background:${fundo};border:3px solid ${borda};box-shadow:0 2px 12px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#0f172a">${p.ordem}</div>${papel ? `<span style="margin-top:1px;padding:0 5px;border-radius:999px;background:${fundo};color:#0f172a;font-size:9px;font-weight:800;line-height:14px">${papel}</span>` : ""}</div>`,
+          iconSize: papel ? [46, 50] : [34, 34],
+          iconAnchor: papel ? [23, 17] : [17, 17],
         });
 
         const foto = p.fotoUrl
@@ -184,7 +195,7 @@ export function RotaMapaAvancado({
         L.marker(pos, { icon, zIndexOffset: selected ? 1000 : 0 })
           .addTo(group)
           .bindPopup(
-            `<div style="min-width:140px;font-family:system-ui,sans-serif">${foto}<strong>${p.ordem}. ${p.nome}</strong></div>`
+            `<div style="min-width:140px;font-family:system-ui,sans-serif">${foto}<strong>${p.ordem}. ${p.nome}</strong>${papel ? `<div style="margin-top:4px;font-size:11px;font-weight:700;color:${fundo}">${papel === "início" ? "Primeiro da região" : "Último da região"}</div>` : ""}</div>`
           )
           .on("click", () => onSelectRef.current?.(p.id));
       }

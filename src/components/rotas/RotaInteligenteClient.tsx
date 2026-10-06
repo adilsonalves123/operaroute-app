@@ -27,6 +27,7 @@ import {
 } from "@/lib/nichos/fura-fura";
 import { scoreChamadoRota, type ChamadoResumoPonto } from "@/lib/chamados/resumo";
 import {
+  extremosDaRota,
   linkGoogleMapsRota,
   moverParadaNaLista,
   otimizarParadasRestantes,
@@ -409,6 +410,37 @@ export function RotaInteligenteClient({
     aplicarResultadoParadas(resultado.paradas, resultado.distanciaTotalKm);
   }
 
+  function otimizarOrdemAtual() {
+    if (!paradas) return;
+    if (paradas.some((p) => p.statusParada === "concluida" || p.statusParada === "pulada")) {
+      otimizarRestantes();
+      return;
+    }
+    const anterior = new Map(paradas.map((p) => [p.id, p]));
+    const resultado = otimizarRota(
+      paradas.map((p) => ({
+        id: p.id,
+        nome: p.nome,
+        latitude: p.latitude,
+        longitude: p.longitude,
+        fotoUrl: p.fotoUrl,
+        endereco: p.endereco,
+        cidade: p.cidade,
+        scorePrioridade: p.scorePrioridade,
+        pendente: p.pendente,
+      })),
+      inicio
+    );
+    aplicarResultadoParadas(
+      resultado.paradas.map((p) => ({
+        ...p,
+        rotaParadaId: anterior.get(p.id)?.rotaParadaId,
+        statusParada: anterior.get(p.id)?.statusParada,
+      })),
+      resultado.distanciaTotalKm
+    );
+  }
+
   async function marcarParadaAvancada(pontoId: string, pulada: boolean) {
     if (!rotaAtiva) return;
     const parada = rotaAtiva.paradas.find((p) => p.ponto_id === pontoId);
@@ -594,27 +626,45 @@ export function RotaInteligenteClient({
     );
   }
 
-  function renderMapaELista() {
+  function renderMapaELista(opcoes?: { lista?: boolean }) {
     if (!paradas?.length || !mapaProps) return null;
+    const mostrarLista = opcoes?.lista !== false;
+    const extremos = extremosDaRota(paradas);
     return (
       <>
         <div className="flex flex-wrap items-center gap-3 rounded-xl border border-at bg-slate-900/40 p-4">
+          {extremos.primeiro && extremos.ultimo && (
+            <p className="w-full text-sm text-at-primary/90">
+              <span className="font-semibold text-emerald-400">
+                1 · {extremos.primeiro.nome}
+              </span>
+              {extremos.ultimo.id !== extremos.primeiro.id && (
+                <>
+                  <span className="text-at-muted"> até </span>
+                  <span className="font-semibold text-rose-400">
+                    {extremos.ultimo.ordem} · {extremos.ultimo.nome}
+                  </span>
+                </>
+              )}
+              <span className="text-at-muted"> · verde é o primeiro, vermelho é o último</span>
+            </p>
+          )}
           {distanciaKm != null && (
             <span className="text-sm text-at-muted">
               <Route className="mr-1 inline h-4 w-4 text-primary-neon" />
               ~{distanciaKm.toFixed(1)} km entre paradas
             </span>
           )}
-          {temParadasConcluidas && paradasPendentes.length > 0 && (
-            <button
-              type="button"
-              onClick={otimizarRestantes}
-              className="inline-flex items-center gap-2 rounded-lg border border-primary-neon/40 px-3 py-2 text-sm text-primary-neon hover:bg-primary-neon/10"
-            >
-              <Sparkles className="h-4 w-4" />
-              Reotimizar restantes ({paradasPendentes.length})
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={otimizarOrdemAtual}
+            className="inline-flex items-center gap-2 rounded-lg border border-primary-neon/40 px-3 py-2 text-sm text-primary-neon hover:bg-primary-neon/10"
+          >
+            <Sparkles className="h-4 w-4" />
+            {temParadasConcluidas && paradasPendentes.length > 0
+              ? `Otimizar restantes (${paradasPendentes.length})`
+              : "Otimizar"}
+          </button>
           {googleLink && (
             <a
               href={googleLink}
@@ -679,7 +729,7 @@ export function RotaInteligenteClient({
             document.body
           )}
 
-        <div className="grid gap-6 xl:grid-cols-2">
+        <div className={cn("grid gap-6", mostrarLista && "xl:grid-cols-2")}>
           <div
             className={cn(
               "relative min-h-[min(420px,50vh)]",
@@ -704,13 +754,15 @@ export function RotaInteligenteClient({
               </>
             )}
           </div>
-          <ParadasOrdenaveisList
-            paradas={paradas}
-            pontos={pontos}
-            paradaAtiva={paradaAtiva}
-            onHoverParada={setParadaAtiva}
-            onMover={moverParada}
-          />
+          {mostrarLista && (
+            <ParadasOrdenaveisList
+              paradas={paradas}
+              pontos={pontos}
+              paradaAtiva={paradaAtiva}
+              onHoverParada={setParadaAtiva}
+              onMover={moverParada}
+            />
+          )}
         </div>
       </>
     );
@@ -834,7 +886,7 @@ export function RotaInteligenteClient({
             <p className="text-sm text-at-muted mt-1">
               {wizardStep === 1
                 ? "Escolha a cidade e marque os pontos — mesmo sem endereço cadastrado."
-                : "Nomeie, atribua o operador e salve no app."}
+                : "Veja o primeiro e o último no mapa, otimize se quiser, e envie para o funcionário."}
             </p>
           </div>
 
@@ -979,6 +1031,7 @@ export function RotaInteligenteClient({
 
               {wizardStep === 2 && paradas && (
                 <div className="space-y-5">
+                  {renderMapaELista({ lista: showAjusteOrdem })}
                   <div className="space-y-5 rounded-2xl border border-at-soft bg-slate-900/40 p-5">
                     <EnviarRotaWizardFields
                       nome={nomeNova}
@@ -1034,7 +1087,6 @@ export function RotaInteligenteClient({
                       </button>
                     </div>
                   </div>
-                  {showAjusteOrdem && renderMapaELista()}
                 </div>
               )}
             </>

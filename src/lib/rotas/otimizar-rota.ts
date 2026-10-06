@@ -190,6 +190,19 @@ function paradaConcluida(p: ParadaRota): boolean {
   return p.statusParada === "concluida" || p.statusParada === "pulada";
 }
 
+/** Primeiro e último da ordem salva — a região que o funcionário vai percorrer. */
+export function extremosDaRota(paradas: ParadaRota[]): {
+  primeiro: ParadaRota | null;
+  ultimo: ParadaRota | null;
+} {
+  const ordenadas = [...paradas].sort((a, b) => a.ordem - b.ordem);
+  if (ordenadas.length === 0) return { primeiro: null, ultimo: null };
+  return {
+    primeiro: ordenadas[0],
+    ultimo: ordenadas[ordenadas.length - 1],
+  };
+}
+
 /** Recalcula ordem e distâncias após reordenação manual. */
 export function recalcularOrdemParadas(
   paradas: ParadaRota[],

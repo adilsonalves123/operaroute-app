@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
   ArrowLeft,
   CheckCircle2,
@@ -10,12 +11,24 @@ import {
   Package,
   SkipForward,
 } from "lucide-react";
-import type { ParadaRota } from "@/lib/rotas/otimizar-rota";
+import { extremosDaRota, type ParadaRota } from "@/lib/rotas/otimizar-rota";
 import type { RotaSalva } from "@/lib/rotas/rotas-salvas";
 import { progressoRota } from "@/lib/rotas/rotas-salvas";
 import { linksNavegacaoPonto } from "@/lib/nichos/fura-fura";
 import type { PontoRotaEnriquecido } from "@/components/rotas/RotaInteligenteClient";
 import { cn, formatCurrency } from "@/lib/utils";
+
+const RotaMapaAvancado = dynamic(
+  () => import("./RotaMapaAvancado").then((m) => m.RotaMapaAvancado),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[320px] items-center justify-center rounded-xl border border-at-soft bg-slate-900/50 text-sm text-at-muted">
+        Carregando mapa…
+      </div>
+    ),
+  }
+);
 
 type Props = {
   rota: RotaSalva;
@@ -27,8 +40,7 @@ type Props = {
 };
 
 /**
- * Execução de campo: próximo ponto → Coletar → Faltam N.
- * Sem mapa/reordenar como tela principal.
+ * Execução de campo: mapa numerado da região, depois o próximo ponto.
  */
 export function RotaDoDiaExecute({
   rota,
@@ -63,6 +75,7 @@ export function RotaDoDiaExecute({
     total_paradas: rota.total_paradas || paradas.length,
   });
 
+  const extremos = useMemo(() => extremosDaRota(paradas), [paradas]);
   const feitos = Math.max(0, prog.total - pendentes.length);
   const percentual =
     prog.total > 0 ? Math.round((feitos / prog.total) * 100) : 100;
@@ -115,6 +128,35 @@ export function RotaDoDiaExecute({
           style={{ width: `${percentual}%` }}
         />
       </div>
+
+      {paradas.some((p) => p.temCoordenadas) && (
+        <section className="space-y-2">
+          {extremos.primeiro && extremos.ultimo && (
+            <p className="text-sm text-at-primary/90">
+              <span className="font-semibold text-emerald-400">
+                1 · {extremos.primeiro.nome}
+              </span>
+              {extremos.ultimo.id !== extremos.primeiro.id && (
+                <>
+                  <span className="text-at-muted"> até </span>
+                  <span className="font-semibold text-rose-400">
+                    {extremos.ultimo.ordem} · {extremos.ultimo.nome}
+                  </span>
+                </>
+              )}
+            </p>
+          )}
+          <RotaMapaAvancado
+            paradas={paradas}
+            inicio={null}
+            mapKey={`rota-${rota.id}`}
+            className="h-[min(360px,55vh)] w-full rounded-xl overflow-hidden border border-at-soft"
+          />
+          <p className="text-[11px] text-at-muted">
+            Verde é o primeiro da região, vermelho é o último. O número é a ordem da rota.
+          </p>
+        </section>
+      )}
 
       {!proximo ? (
         <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 px-5 py-10 text-center">
@@ -227,7 +269,7 @@ export function RotaDoDiaExecute({
             Ainda faltam ({pendentes.length})
           </h3>
           <ul className="space-y-1.5">
-            {pendentes.map((p, i) => {
+            {pendentes.map((p) => {
               const ativo = proximo?.id === p.id;
               return (
                 <li key={p.id}>
@@ -241,8 +283,17 @@ export function RotaDoDiaExecute({
                         : "border-at bg-slate-900/40 hover:border-white/12"
                     )}
                   >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-800 text-xs font-semibold tabular-nums text-at-primary/85">
-                      {i + 1}
+                    <span
+                      className={cn(
+                        "flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
+                        p.ordem === extremos.primeiro?.ordem
+                          ? "bg-emerald-500 text-slate-950"
+                          : p.ordem === extremos.ultimo?.ordem
+                            ? "bg-rose-500 text-white"
+                            : "bg-slate-800 text-at-primary/85"
+                      )}
+                    >
+                      {p.ordem}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium text-white">{p.nome}</span>
