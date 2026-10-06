@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { ParadaRota, Coordenada } from "@/lib/rotas/otimizar-rota";
+import { coordenadaValida, type ParadaRota, type Coordenada } from "@/lib/rotas/otimizar-rota";
 import type { PosicaoAoVivo } from "@/lib/rotas/use-geolocalizacao";
 import { cn } from "@/lib/utils";
 import "leaflet/dist/leaflet.css";
@@ -160,7 +160,7 @@ export function RotaMapaAvancado({
           .bindPopup("<strong>Você</strong>");
       }
 
-      const naOrdemRecebida = paradas.filter((p) => p.temCoordenadas);
+      const naOrdemRecebida = paradas.filter((p) => coordenadaValida(p.latitude, p.longitude));
       const paradasComCoords = [...naOrdemRecebida].sort((a, b) => a.ordem - b.ordem);
       const primeiraOrdem = paradasComCoords[0]?.ordem;
       const ultimaOrdem = paradasComCoords[paradasComCoords.length - 1]?.ordem;

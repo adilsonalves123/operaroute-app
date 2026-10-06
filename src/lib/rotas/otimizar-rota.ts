@@ -34,6 +34,18 @@ export type ResultadoRotaOtimizada = {
 
 const EARTH_RADIUS_KM = 6371;
 
+/** 0,0 cai no oceano ao lado da África. Não é GPS de ponto. */
+export function coordenadaValida(
+  latitude: number | null | undefined,
+  longitude: number | null | undefined
+): boolean {
+  if (latitude == null || longitude == null) return false;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return false;
+  if (Math.abs(latitude) < 0.000001 && Math.abs(longitude) < 0.000001) return false;
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) return false;
+  return true;
+}
+
 export function haversineKm(a: Coordenada, b: Coordenada): number {
   const toRad = (d: number) => (d * Math.PI) / 180;
   const dLat = toRad(b.latitude - a.latitude);
@@ -144,8 +156,8 @@ export function otimizarRota(
   pontos: PontoRotaInput[],
   inicio: Coordenada | null = null
 ): ResultadoRotaOtimizada {
-  const comCoords = pontos.filter((p) => p.latitude != null && p.longitude != null);
-  const semCoords = pontos.filter((p) => p.latitude == null || p.longitude == null);
+  const comCoords = pontos.filter((p) => coordenadaValida(p.latitude, p.longitude));
+  const semCoords = pontos.filter((p) => !coordenadaValida(p.latitude, p.longitude));
 
   const geoOrdenados = otimizarCaminhoGeografico(comCoords, inicio);
   const semOrdenados = [...semCoords].sort((a, b) => a.scorePrioridade - b.scorePrioridade);
@@ -156,13 +168,13 @@ export function otimizarRota(
 
   const paradas: ParadaRota[] = sequencia.map((p, idx) => {
     let distAnterior: number | null = null;
-    if (p.latitude != null && p.longitude != null) {
+    if (coordenadaValida(p.latitude, p.longitude)) {
       if (prev) {
         const d =
           "latitude" in prev && "longitude" in prev && !("id" in prev)
             ? haversineKm(prev as Coordenada, {
-                latitude: p.latitude,
-                longitude: p.longitude,
+                latitude: p.latitude as number,
+                longitude: p.longitude as number,
               })
             : distanciaEntre(prev as PontoRotaInput, p);
         distAnterior = Math.round(d * 100) / 100;
@@ -173,7 +185,7 @@ export function otimizarRota(
     return {
       ...p,
       ordem: idx + 1,
-      temCoordenadas: p.latitude != null && p.longitude != null,
+      temCoordenadas: coordenadaValida(p.latitude, p.longitude),
       distanciaAnteriorKm: distAnterior,
     };
   });
@@ -213,13 +225,13 @@ export function recalcularOrdemParadas(
 
   const reordenadas: ParadaRota[] = paradas.map((p, idx) => {
     let distAnterior: number | null = null;
-    if (p.latitude != null && p.longitude != null) {
+    if (coordenadaValida(p.latitude, p.longitude)) {
       if (prev) {
         const d =
           "latitude" in prev && "longitude" in prev && !("id" in prev)
             ? haversineKm(prev as Coordenada, {
-                latitude: p.latitude,
-                longitude: p.longitude,
+                latitude: p.latitude as number,
+                longitude: p.longitude as number,
               })
             : distanciaEntre(prev as PontoRotaInput, p);
         distAnterior = Math.round(d * 100) / 100;
@@ -230,7 +242,7 @@ export function recalcularOrdemParadas(
     return {
       ...p,
       ordem: idx + 1,
-      temCoordenadas: p.latitude != null && p.longitude != null,
+      temCoordenadas: coordenadaValida(p.latitude, p.longitude),
       distanciaAnteriorKm: distAnterior,
     };
   });

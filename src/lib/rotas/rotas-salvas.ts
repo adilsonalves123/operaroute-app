@@ -1,5 +1,5 @@
 import type { ParadaRota, PontoRotaInput } from "./otimizar-rota";
-import { haversineKm } from "./otimizar-rota";
+import { coordenadaValida, haversineKm } from "./otimizar-rota";
 import type { Coordenada } from "./otimizar-rota";
 
 export type RotaSalvaParada = {
@@ -46,7 +46,7 @@ export function paradasFromOrdemSalva(
     const p = pontos.find((x) => x.id === sorted[i].ponto_id);
     if (!p) continue;
 
-    const temCoordenadas = p.latitude != null && p.longitude != null;
+    const temCoordenadas = coordenadaValida(p.latitude, p.longitude);
     let distanciaAnteriorKm: number | null = null;
 
     if (temCoordenadas && prev) {

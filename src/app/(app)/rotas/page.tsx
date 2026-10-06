@@ -7,6 +7,7 @@ import {
 } from "@/components/rotas/RotaInteligenteClient";
 import { agregarPendenciasPorPonto, NICHO_MODULO_FURA_FURA } from "@/lib/nichos/fura-fura";
 import { fetchChamadosAbertosResumo } from "@/lib/chamados/fetch-resumo";
+import { coordenadaValida } from "@/lib/rotas/otimizar-rota";
 import { listarRotasSalvas } from "@/lib/rotas/listar-rotas-salvas";
 import type { OperadorRotaOpcao } from "@/lib/rotas/rotas-salvas";
 
@@ -47,7 +48,7 @@ export default async function RotasPage() {
   const acesso = await getAcessoUsuario(supabase, profile, empresa?.owner_id);
   const podeGerenciarRotas = acesso.podeGerenciarRotas;
   const pontos = pontosResult.data ?? [];
-  const pontosSemGps = pontos.filter((p) => p.latitude == null || p.longitude == null);
+  const pontosSemGps = pontos.filter((p) => !coordenadaValida(p.latitude, p.longitude));
   const limiteGpsColeta = Math.min(Math.max(pontosSemGps.length * 8, 300), 2000);
 
   const [coletasPendResult, coletasGpsResult, chamadosResumo, rotasSalvas] = await Promise.all([
@@ -76,8 +77,7 @@ export default async function RotasPage() {
     if (
       c.ponto_id &&
       !gpsPorPonto.has(c.ponto_id) &&
-      c.latitude != null &&
-      c.longitude != null
+      coordenadaValida(c.latitude, c.longitude)
     ) {
       gpsPorPonto.set(c.ponto_id, {
         latitude: Number(c.latitude),
@@ -91,8 +91,12 @@ export default async function RotasPage() {
     const gpsFallback = gpsPorPonto.get(p.id);
     return {
       ...p,
-      latitude: p.latitude ?? gpsFallback?.latitude ?? null,
-      longitude: p.longitude ?? gpsFallback?.longitude ?? null,
+      latitude: coordenadaValida(p.latitude, p.longitude)
+        ? p.latitude
+        : (gpsFallback?.latitude ?? null),
+      longitude: coordenadaValida(p.latitude, p.longitude)
+        ? p.longitude
+        : (gpsFallback?.longitude ?? null),
       // Só foto cadastrada do ponto/cliente — foto de coleta não substitui
       fotoExibir: p.foto_url ?? null,
       pendente: pendencias.get(p.id)?.totalPendente ?? 0,
