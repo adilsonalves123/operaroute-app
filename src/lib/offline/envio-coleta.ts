@@ -448,9 +448,9 @@ async function enviarListaDeFotos(
         content_type: leve.contentType,
       };
       try {
-        if (!arquivoParaUpload(pronta.path, pronta.blob, pronta.contentType)) return null;
+        if (!arquivoParaUpload(pronta.path, pronta.blob, pronta.content_type)) return null;
         await comTempo(
-          enviarFotoColeta(supabase, pronta.path, pronta.blob, pronta.contentType),
+          enviarFotoColeta(supabase, pronta.path, pronta.blob, pronta.content_type),
           TIMEOUT_FOTO_MS
         );
         return null;
