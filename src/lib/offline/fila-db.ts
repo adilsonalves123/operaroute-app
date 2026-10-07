@@ -14,7 +14,7 @@ export type EnvioFila = {
   ordem: number;
   url: string;
   body: Record<string, unknown>;
-  /** Caminhos no bucket das fotos que ainda precisam subir antes do POST. */
+  /** Fotos ainda no celular. A leitura sobe sem elas; a imagem tenta depois. */
   fotos: string[];
   titulo: string;
   ponto_nome: string | null;
