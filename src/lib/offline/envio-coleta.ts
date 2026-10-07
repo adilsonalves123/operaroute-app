@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/client";
 import { HEADER_ENVIO_ID, type ValoresLidos } from "@/lib/coletas/envio-offline";
+import { comprimirImagemParaJpeg } from "@/lib/storage/comprimir-foto-cliente";
 import {
   arquivoParaUpload,
   caminhoFotoMaquina,
@@ -95,17 +96,26 @@ export async function subirFotosOuGuardar(
 
   await Promise.all(
     itens.map(async ({ chave, path, file }) => {
-      const contentType = mimeTypeFoto(file);
-      urls.set(chave, urlPublicaFotoColeta(supabase, path));
+      const leve = await deixarFotoLeve(file);
+      const pathFinal = leve.contentType === "image/jpeg" ? caminhoJpeg(path) : path;
+      urls.set(chave, urlPublicaFotoColeta(supabase, pathFinal));
+      const guardada: FotoGuardada = {
+        path: pathFinal,
+        blob: leve.blob,
+        content_type: leve.contentType,
+      };
       if (!subirAgora && podeGuardar) {
-        pendentes.push({ path, blob: file, content_type: contentType });
+        pendentes.push(guardada);
         return;
       }
       try {
         if (podeGuardar && semSinalAgora()) throw new SemSinalError();
-        await comTempo(enviarFotoColeta(supabase, path, file, contentType), TIMEOUT_FOTO_MS);
+        await comTempo(
+          enviarFotoColeta(supabase, pathFinal, leve.blob, leve.contentType),
+          TIMEOUT_FOTO_MS
+        );
       } catch {
-        if (podeGuardar) pendentes.push({ path, blob: file, content_type: contentType });
+        if (podeGuardar) pendentes.push(guardada);
       }
     })
   );
@@ -429,19 +439,46 @@ async function enviarListaDeFotos(
   supabase: ReturnType<typeof createClient>,
   fotos: FotoGuardada[]
 ): Promise<FotoGuardada[]> {
-  const falhas: FotoGuardada[] = [];
-  for (const foto of fotos) {
-    try {
-      if (!arquivoParaUpload(foto.path, foto.blob, foto.content_type)) continue;
-      await comTempo(
-        enviarFotoColeta(supabase, foto.path, foto.blob, foto.content_type),
-        TIMEOUT_FOTO_MS
-      );
-    } catch {
-      falhas.push(foto);
+  const resultados = await Promise.all(
+    fotos.map(async (foto) => {
+      const leve = await deixarFotoLeve(foto.blob);
+      const pronta: FotoGuardada = {
+        path: foto.path,
+        blob: leve.blob,
+        content_type: leve.contentType,
+      };
+      try {
+        if (!arquivoParaUpload(pronta.path, pronta.blob, pronta.contentType)) return null;
+        await comTempo(
+          enviarFotoColeta(supabase, pronta.path, pronta.blob, pronta.contentType),
+          TIMEOUT_FOTO_MS
+        );
+        return null;
+      } catch {
+        return pronta;
+      }
+    })
+  );
+  return resultados.filter((foto): foto is FotoGuardada => foto !== null);
+}
+
+/** Foto de celular vira JPEG menor. O contador continua legível e o envio cabe no sinal. */
+async function deixarFotoLeve(file: Blob): Promise<{ blob: Blob; contentType: string }> {
+  const originalType = mimeTypeFoto(file);
+  try {
+    const jpeg = await comprimirImagemParaJpeg(file, { maxSide: 1600, maxBytes: 700_000 });
+    if (jpeg.size > 0 && jpeg.size < file.size) {
+      return { blob: jpeg, contentType: "image/jpeg" };
     }
+  } catch {
+    /* segue com o arquivo original */
   }
-  return falhas;
+  return { blob: file, contentType: originalType };
+}
+
+function caminhoJpeg(path: string): string {
+  if (/\.jpe?g$/i.test(path)) return path;
+  return `${path.replace(/\.[a-z0-9]+$/i, "")}.jpg`;
 }
 
 export async function tentarEnvioDeNovo(id: string): Promise<void> {
