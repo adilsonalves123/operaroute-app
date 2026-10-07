@@ -5,7 +5,7 @@ const STORE_FOTOS = "fotos";
 
 export const EVENTO_FILA_MUDOU = "operaroute:fila-coletas";
 
-export type StatusEnvioFila = "pendente" | "erro" | "login";
+export type StatusEnvioFila = "pendente" | "erro" | "login" | "fotos";
 
 /** Uma requisição guardada no celular esperando sinal. */
 export type EnvioFila = {
@@ -91,7 +91,8 @@ function proximaOrdem(): number {
 
 export async function guardarNaFila(
   envio: Omit<EnvioFila, "ordem" | "status" | "tentativas" | "erro">,
-  fotos: Omit<FotoFila, "envio_id">[]
+  fotos: Omit<FotoFila, "envio_id">[],
+  status: StatusEnvioFila = "pendente"
 ): Promise<void> {
   const db = await abrir();
   const tx = db.transaction([STORE_ENVIOS, STORE_FOTOS], "readwrite");
@@ -99,7 +100,7 @@ export async function guardarNaFila(
     ...envio,
     fotos: fotos.map((f) => f.path),
     ordem: proximaOrdem(),
-    status: "pendente",
+    status,
     tentativas: 0,
     erro: null,
   };

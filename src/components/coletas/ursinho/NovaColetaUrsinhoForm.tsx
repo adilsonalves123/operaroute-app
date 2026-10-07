@@ -647,7 +647,8 @@ export function NovaColetaUrsinhoForm() {
       const { urls: fotoUrls, pendentes: fotosPendentes } = await subirFotosMaquinasOuGuardar(
         empresaId,
         `ursinho-${Date.now()}`,
-        fotos
+        fotos,
+        { subirAgora: Boolean(editarColetaId) }
       );
       if (editarColetaId && fotosPendentes.length > 0) {
         setError("Sem sinal para subir as fotos. Para editar a coleta é preciso internet.");

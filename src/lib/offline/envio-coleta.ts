@@ -80,28 +80,33 @@ export type FotoGuardada = Omit<FotoFila, "envio_id">;
 export type FotoParaSubir = { chave: string; path: string; file: File };
 
 /**
- * Sobe as fotos; se faltar sinal, devolve a URL final mesmo assim e guarda a foto
- * no celular para subir junto com a coleta quando o sinal voltar.
+ * Monta a URL da foto na hora. A leitura não espera o arquivo.
+ * `subirAgora` só na edição, que precisa da imagem no storage antes de gravar.
  */
 export async function subirFotosOuGuardar(
-  itens: FotoParaSubir[]
+  itens: FotoParaSubir[],
+  opts?: { subirAgora?: boolean }
 ): Promise<{ urls: Map<string, string>; pendentes: FotoGuardada[] }> {
   const supabase = createClient();
   const urls = new Map<string, string>();
   const pendentes: FotoGuardada[] = [];
   const podeGuardar = filaDisponivel();
+  const subirAgora = !opts || opts.subirAgora !== false;
 
   await Promise.all(
     itens.map(async ({ chave, path, file }) => {
       const contentType = mimeTypeFoto(file);
+      urls.set(chave, urlPublicaFotoColeta(supabase, path));
+      if (!subirAgora && podeGuardar) {
+        pendentes.push({ path, blob: file, content_type: contentType });
+        return;
+      }
       try {
         if (podeGuardar && semSinalAgora()) throw new SemSinalError();
         await comTempo(enviarFotoColeta(supabase, path, file, contentType), TIMEOUT_FOTO_MS);
       } catch {
-        // Foto que falha não cancela a leitura. O corpo já leva a URL.
         if (podeGuardar) pendentes.push({ path, blob: file, content_type: contentType });
       }
-      urls.set(chave, urlPublicaFotoColeta(supabase, path));
     })
   );
 
@@ -112,14 +117,16 @@ export async function subirFotosOuGuardar(
 export function subirFotosMaquinasOuGuardar(
   empresaId: string,
   visitaFolder: string,
-  fotos: { equipamentoId: string; file: File }[]
+  fotos: { equipamentoId: string; file: File }[],
+  opts?: { subirAgora?: boolean }
 ) {
   return subirFotosOuGuardar(
     fotos.map(({ equipamentoId, file }) => ({
       chave: equipamentoId,
       path: caminhoFotoMaquina(empresaId, equipamentoId, file, visitaFolder),
       file,
-    }))
+    })),
+    opts
   );
 }
 
@@ -130,8 +137,8 @@ export type ResultadoEnvioColeta =
 export type PedidoDepois = { url: string; body: Record<string, unknown>; titulo: string };
 
 /**
- * Envia a coleta com código único. Sem sinal (ou com coletas mais antigas
- * esperando), guarda no celular e manda sozinho quando o sinal voltar.
+ * Envia a coleta com código único. Sem sinal, guarda no celular.
+ * Com internet, a leitura sobe na hora — uma foto ou um envio antigo não segura.
  */
 export async function enviarColeta(opts: {
   envioId: string;
@@ -195,10 +202,10 @@ export async function enviarColeta(opts: {
     return { tipo: "guardado" };
   };
 
-  if (podeGuardar) {
-    if (semSinalAgora() || (await temEnviosAguardando())) {
-      return guardar();
-    }
+  if (podeGuardar && semSinalAgora()) return guardar();
+
+  if (podeGuardar && (await temEnviosAguardando())) {
+    await sincronizarFila();
   }
 
   let res: Response;
@@ -218,7 +225,7 @@ export async function enviarColeta(opts: {
     fotosPendentes.length > 0 &&
     (res.ok || (res.status === 409 && data.already_done === true))
   ) {
-    await tentarFotosSoltas(createClient(), fotosPendentes);
+    lembrarFotos(fotosPendentes, opts.pontoNome ?? null);
   }
   return { tipo: "enviado", res, data };
 }
@@ -230,7 +237,7 @@ export function erroDaResposta(data: Record<string, unknown>, padrao: string): s
 async function temEnviosAguardando(): Promise<boolean> {
   try {
     const itens = await listarFila();
-    return itens.some((i) => i.status !== "erro");
+    return itens.some((i) => i.status === "pendente" || i.status === "login");
   } catch {
     return false;
   }
@@ -284,17 +291,31 @@ async function rodarSincronizacao(incluirErros = false): Promise<ResumoSincroniz
   const itens = await listarFila();
   const naFila = new Set(itens.map((i) => i.id));
   const resumo: ResumoSincronizacao = { enviados: 0, revisar: [], precisaLogin: false };
-  const supabase = createClient();
 
   for (const item of itens) {
     if (item.status === "erro" && !incluirErros) continue;
     if (item.depende_de && naFila.has(item.depende_de)) continue;
 
+    if (item.status === "fotos" || !item.url) {
+      const fotos = await copiarFotos(item);
+      await removerEnvio(item.id);
+      naFila.delete(item.id);
+      lembrarFotos(fotos, item.ponto_nome);
+      continue;
+    }
+
     let res: Response;
     try {
       res = await postarComChave(item.url, item.body, item.id);
     } catch (err) {
-      if (ehFalhaDeRede(err)) return resumo;
+      if (ehFalhaDeRede(err)) {
+        await atualizarEnvio(item.id, {
+          status: "pendente",
+          erro: "A internet não respondeu agora.",
+          tentativas: item.tentativas + 1,
+        });
+        return resumo;
+      }
       await atualizarEnvio(item.id, {
         status: "erro",
         erro: err instanceof Error ? err.message : "Erro ao enviar.",
@@ -302,12 +323,20 @@ async function rodarSincronizacao(incluirErros = false): Promise<ResumoSincroniz
       });
       continue;
     }
-    if (STATUS_SEM_RESPOSTA.has(res.status)) return resumo;
+    if (STATUS_SEM_RESPOSTA.has(res.status)) {
+      const tentativas = item.tentativas + 1;
+      await atualizarEnvio(item.id, {
+        status: tentativas < MAX_TENTATIVAS_5XX ? "pendente" : "erro",
+        tentativas,
+        erro: `O servidor não respondeu (erro ${res.status}).`,
+      });
+      continue;
+    }
 
     const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
 
     if (res.ok || (res.status === 409 && data.already_done === true)) {
-      await tentarFotosDepois(supabase, item);
+      const fotos = await copiarFotos(item);
       await removerEnvio(item.id);
       naFila.delete(item.id);
       resumo.enviados += 1;
@@ -315,10 +344,17 @@ async function rodarSincronizacao(incluirErros = false): Promise<ResumoSincroniz
         const nome = item.ponto_nome ? `${item.ponto_nome}: ` : "";
         for (const m of data.revisar) if (typeof m === "string") resumo.revisar.push(nome + m);
       }
+      lembrarFotos(fotos, item.ponto_nome);
       continue;
     }
 
-    if (res.status === 409 && data.code === "envio_processando") return resumo;
+    if (res.status === 409 && data.code === "envio_processando") {
+      await atualizarEnvio(item.id, {
+        status: "pendente",
+        erro: "O servidor ainda está gravando esta coleta.",
+      });
+      continue;
+    }
 
     const semSessao =
       res.status === 401 ||
@@ -335,7 +371,7 @@ async function rodarSincronizacao(incluirErros = false): Promise<ResumoSincroniz
     const tentativas = item.tentativas + 1;
     if (res.status >= 500 && tentativas < MAX_TENTATIVAS_5XX) {
       await atualizarEnvio(item.id, { status: "pendente", tentativas, erro: mensagemErro(data, res.status) });
-      return resumo;
+      continue;
     }
     await atualizarEnvio(item.id, { status: "erro", tentativas, erro: mensagemErro(data, res.status) });
   }
@@ -343,40 +379,69 @@ async function rodarSincronizacao(incluirErros = false): Promise<ResumoSincroniz
   return resumo;
 }
 
-/** Uma tentativa depois que a leitura já entrou. Falha não segura a fila. */
-async function tentarFotosDepois(
-  supabase: ReturnType<typeof createClient>,
-  item: EnvioFila
-): Promise<void> {
+/** Copia os bytes antes de apagar a fila. Se a foto não abrir, a leitura segue sem ela. */
+async function copiarFotos(item: EnvioFila): Promise<FotoGuardada[]> {
+  const saida: FotoGuardada[] = [];
   for (const path of item.fotos) {
-    const foto = await lerFoto(path);
-    if (!foto || !arquivoParaUpload(path, foto.blob, foto.content_type)) continue;
     try {
-      await comTempo(
-        enviarFotoColeta(supabase, path, foto.blob, foto.content_type),
-        TIMEOUT_FOTO_MS
-      );
+      const foto = await comTempo(lerFoto(path), 8_000);
+      if (!foto?.blob || foto.blob.size <= 0) continue;
+      saida.push({
+        path,
+        blob: foto.blob,
+        content_type: foto.content_type || "image/jpeg",
+      });
     } catch {
-      return;
+      continue;
     }
   }
+  return saida;
 }
 
-async function tentarFotosSoltas(
+/** Sobe o que der. O que falhar volta só como foto — a leitura não fica presa. */
+function lembrarFotos(fotos: FotoGuardada[], pontoNome: string | null) {
+  if (!fotos.length || !filaDisponivel()) return;
+  void (async () => {
+    try {
+      const falhas = await enviarListaDeFotos(createClient(), fotos);
+      if (!falhas.length) return;
+      await guardarNaFila(
+        {
+          id: crypto.randomUUID(),
+          url: "",
+          body: {},
+          fotos: [],
+          titulo: "Fotos da coleta",
+          ponto_nome: pontoNome,
+          criado_em: new Date().toISOString(),
+          depende_de: null,
+        },
+        falhas,
+        "fotos"
+      );
+    } catch {
+      /* a leitura já entrou */
+    }
+  })();
+}
+
+async function enviarListaDeFotos(
   supabase: ReturnType<typeof createClient>,
   fotos: FotoGuardada[]
-): Promise<void> {
+): Promise<FotoGuardada[]> {
+  const falhas: FotoGuardada[] = [];
   for (const foto of fotos) {
-    if (!arquivoParaUpload(foto.path, foto.blob, foto.content_type)) continue;
     try {
+      if (!arquivoParaUpload(foto.path, foto.blob, foto.content_type)) continue;
       await comTempo(
         enviarFotoColeta(supabase, foto.path, foto.blob, foto.content_type),
         TIMEOUT_FOTO_MS
       );
     } catch {
-      return;
+      falhas.push(foto);
     }
   }
+  return falhas;
 }
 
 export async function tentarEnvioDeNovo(id: string): Promise<void> {

@@ -84,9 +84,12 @@ export function FilaColetasSync() {
     };
   }, [recarregar, sincronizar]);
 
-  const aguardando = itens.filter((i) => i.status !== "erro");
+  const aguardando = itens.filter((i) => i.status === "pendente" || i.status === "login");
+  const soFotos = itens.filter((i) => i.status === "fotos");
   const comErro = itens.filter((i) => i.status === "erro");
   const precisaLogin = itens.some((i) => i.status === "login");
+  const fotosRestantes = soFotos.reduce((n, i) => n + i.fotos.length, 0);
+  const erroAguardando = aguardando.find((i) => i.erro)?.erro ?? null;
 
   if (itens.length === 0 && !aviso) return null;
 
@@ -114,8 +117,20 @@ export function FilaColetasSync() {
                       ? "1 envio guardado no celular"
                       : `${aguardando.length} envios guardados no celular`}
                   </span>
+                ) : soFotos.length > 0 ? (
+                  <span className="text-at-primary">A coleta já entrou</span>
                 ) : null}
-                {aguardando.length > 0 && comErro.length > 0 ? (
+                {aguardando.length > 0 && (comErro.length > 0 || soFotos.length > 0) ? (
+                  <span className="text-at-soft"> · </span>
+                ) : null}
+                {soFotos.length > 0 ? (
+                  <span className="text-at-soft">
+                    {fotosRestantes === 1
+                      ? "1 foto ainda sobe"
+                      : `${fotosRestantes} fotos ainda sobem`}
+                  </span>
+                ) : null}
+                {soFotos.length > 0 && comErro.length > 0 ? (
                   <span className="text-at-soft"> · </span>
                 ) : null}
                 {comErro.length > 0 ? (
@@ -127,9 +142,13 @@ export function FilaColetasSync() {
                   {" · "}
                   {precisaLogin
                     ? "entre de novo no app para enviar"
-                    : online
-                      ? "enviando sozinho"
-                      : "sem sinal — envia quando voltar"}
+                    : aguardando.length === 0 && soFotos.length > 0
+                      ? "só a imagem"
+                      : erroAguardando
+                        ? erroAguardando
+                        : online
+                          ? "enviando sozinho"
+                          : "sem sinal — envia quando voltar"}
                 </span>
               </span>
             </button>
@@ -167,7 +186,7 @@ export function FilaColetasSync() {
                     {item.ponto_nome ? <span className="text-at-muted"> · {item.ponto_nome}</span> : null}
                   </p>
                   <p className="text-[12px] text-at-soft">
-                    Feita em {horaCurta(item.criado_em)}
+                    {item.status === "fotos" ? "A leitura já foi" : `Feita em ${horaCurta(item.criado_em)}`}
                     {item.fotos.length > 0
                       ? ` · ${item.fotos.length} foto${item.fotos.length > 1 ? "s" : ""} para subir`
                       : ""}

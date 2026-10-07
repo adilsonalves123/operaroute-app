@@ -1039,7 +1039,8 @@ export function NovaColetaCassinoForm() {
       const { urls: fotoUrls, pendentes: fotosPendentes } = await subirFotosMaquinasOuGuardar(
         empresaId,
         visitaFolder,
-        fotos
+        fotos,
+        { subirAgora: Boolean(editarVisitaId) }
       );
       if (editarVisitaId && fotosPendentes.length > 0) {
         setError("Sem sinal para subir as fotos. Para editar a coleta é preciso internet.");

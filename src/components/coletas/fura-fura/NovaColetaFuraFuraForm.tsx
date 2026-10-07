@@ -608,13 +608,16 @@ export function NovaColetaFuraFuraForm() {
       let fotoUrl = fotoUrlExistente;
       let fotosPendentes: Awaited<ReturnType<typeof subirFotosOuGuardar>>["pendentes"] = [];
       if (fotoFile) {
-        const subida = await subirFotosOuGuardar([
-          {
-            chave: "foto",
-            path: caminhoFotoFuraFura(empresaId, form.ponto_id, fotoFile),
-            file: fotoFile,
-          },
-        ]);
+        const subida = await subirFotosOuGuardar(
+          [
+            {
+              chave: "foto",
+              path: caminhoFotoFuraFura(empresaId, form.ponto_id, fotoFile),
+              file: fotoFile,
+            },
+          ],
+          { subirAgora: Boolean(editarColetaId) }
+        );
         fotoUrl = subida.urls.get("foto") ?? null;
         fotosPendentes = subida.pendentes;
       }

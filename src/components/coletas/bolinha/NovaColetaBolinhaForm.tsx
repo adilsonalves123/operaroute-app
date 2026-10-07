@@ -536,7 +536,8 @@ export function NovaColetaBolinhaForm() {
       const { urls: fotoUrls, pendentes: fotosPendentes } = await subirFotosMaquinasOuGuardar(
         empresaId,
         `Bolinha-${Date.now()}`,
-        fotos
+        fotos,
+        { subirAgora: Boolean(editarColetaId) }
       );
       if (editarColetaId && fotosPendentes.length > 0) {
         setError("Sem sinal para subir as fotos. Para editar a coleta é preciso internet.");

@@ -96,11 +96,15 @@ export function arquivoParaUpload(
   file: File | Blob | null | undefined,
   contentType?: string
 ): File | null {
-  if (!file || typeof file.size !== "number" || file.size <= 0) return null;
-  const tipo = (contentType || file.type || "image/jpeg").trim() || "image/jpeg";
-  const base = path.split("/").filter(Boolean).pop() || "foto.jpg";
-  const nome = /\.[a-z0-9]+$/i.test(base) ? base : `${base}.jpg`;
-  return new File([file], nome, { type: tipo });
+  try {
+    if (!file || typeof file.size !== "number" || file.size <= 0) return null;
+    const tipo = (contentType || file.type || "image/jpeg").trim() || "image/jpeg";
+    const base = path.split("/").filter(Boolean).pop() || "foto.jpg";
+    const nome = /\.[a-z0-9]+$/i.test(base) ? base : `${base}.jpg`;
+    return new File([file], nome, { type: tipo });
+  } catch {
+    return null;
+  }
 }
 
 /** Sobe uma foto num caminho já definido (usado pela fila offline). */
